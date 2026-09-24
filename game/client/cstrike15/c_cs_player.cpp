@@ -4294,13 +4294,6 @@ void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, f
 static ConVar cl_viewmodel_lean_lower( "cl_viewmodel_lean_lower", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
 	"Additional weapon lowering at full lean. 0 disables lowering; 4 uses the original drop. Does not change weapon bob.",
 	true, 0.0f, true, 4.0f );
-static ConVar cl_viewmodel_lean_inward( "cl_viewmodel_lean_inward", "1.5", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
-	"Move the weapon toward the center at full lean. 0 disables the inward shift.",
-	true, 0.0f, true, 4.0f );
-static ConVar cl_viewmodel_lean_roll( "cl_viewmodel_lean_roll", "0.3", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
-	"Weapon roll relative to the leaning camera, per degree of lean. 0 disables the additional roll.",
-	true, 0.0f, true, 0.5f );
-
 void C_CSPlayer::CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAngles )
 {
 	if ( !IsLocalPlayer() || m_flLeanAngle == 0.0f || !IsAlive() || ::input->CAM_IsThirdPerson() )
@@ -4309,22 +4302,15 @@ void C_CSPlayer::CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAn
 		return;
 	}
 
-	Vector right, up;
-	AngleVectors( eyeAngles, NULL, &right, &up );
+	Vector up;
+	AngleVectors( eyeAngles, NULL, NULL, &up );
 	// Follow the camera's already collision-resolved lean once. OpenMoHAA's
 	// vm_lean_lower drops its own rig by 4 units at full lean; that cuts too much
 	// of CS:GO's hands out of its tighter 60-degree viewmodel projection.
-	// Tuck the rig inward and use a smaller drop for CS:GO's weapon/hand framing.
-	// The renderer mirrors this camera-relative offset for left-handed weapons.
+	// Keep the original camera-relative position and angles apart from the
+	// smaller drop. Let CS:GO's stock bob, sway, running pose and landing dip run.
 	const float leanFraction = clamp( fabsf( m_flLeanAngle ) / 40.0f, 0.0f, 1.0f );
-	const Vector vmOrigin = eyeOrigin - leanFraction *
-		( right * cl_viewmodel_lean_inward.GetFloat() + up * cl_viewmodel_lean_lower.GetFloat() );
-	QAngle vmAngles = eyeAngles;
-	// OpenMoHAA's PmoveAdjustAngleSettings_Client rolls the arms by 0.7 of
-	// the lean, versus 0.4 for the AA camera: 0.3 remains relative to the view.
-	vmAngles[ROLL] += m_flLeanAngle * cl_viewmodel_lean_roll.GetFloat();
-	// Keep CS:GO's existing bob, sway, running pose and landing dip.
-	BaseClass::CalcViewModelView( vmOrigin, vmAngles );
+	BaseClass::CalcViewModelView( eyeOrigin - up * ( leanFraction * cl_viewmodel_lean_lower.GetFloat() ), eyeAngles );
 }
 #endif
 
