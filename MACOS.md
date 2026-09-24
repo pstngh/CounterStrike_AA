@@ -107,6 +107,18 @@ Use `cg_drawviewmodel 0` to hide the first-person weapon and hands, `cg_drawview
 
 Left Shift leans left, Space leans right, and F jumps. Lean uses OpenMoHAA's
 Allied Assault multiplayer timing, 40-degree limit, camera pivot, and roll.
+The weapon and hands tuck inward while leaning, with OpenMoHAA's arm roll
+relative to the camera. The original four-unit viewmodel drop cropped too much
+of the CS:GO rig at its 60-degree weapon FOV, so the default drop is now 1 unit.
+`cl_viewmodel_lean_lower` controls that drop (0–4 units),
+`cl_viewmodel_lean_inward` controls the inward shift (default 1.5, range 0–4 units),
+and `cl_viewmodel_lean_roll` controls the extra roll per degree of lean
+(default 0.3, range 0–0.5; 12 extra degrees at full lean).
+Each effect follows the existing smooth lean transition and can be disabled
+with 0. For the previous lean framing, use lower 4, inward 0, and roll 0.
+These settings leave CS:GO's stock bob, sway, running pose, and landing dip
+unchanged, including while leaning. They do not change the camera, aim,
+collision, FOV, or the standing/running pose when lean is released.
 Left or right Control toggles crouch; C toggles walk.
 W/S and A/D use nullbind-style SOCD: the most recently pressed direction wins
 while both are held, and releasing it resumes the other held direction.
