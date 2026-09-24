@@ -17,7 +17,13 @@ staging_directory="$(mktemp -d /tmp/csgo-launcher.XXXXXX)"
 trap 'rm -rf "$staging_directory"' EXIT
 bundle="$staging_directory/CSGO Launcher.app"
 mkdir -p "$bundle/Contents/MacOS"
+mkdir -p "$bundle/Contents/Resources"
 cp "$launcher_source/Info.plist" "$bundle/Contents/Info.plist"
+maps_manifest="$bundle/Contents/Resources/maps.txt"
+: > "$maps_manifest"
+for map_file in "$game_directory"/csgo/maps/*.bsp(N); do
+    print -r -- "${map_file:t:r}" >> "$maps_manifest"
+done
 swift_compiler="/Library/Developer/CommandLineTools/usr/bin/swiftc"
 macos_sdk="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
 if [[ -z "${DEVELOPER_DIR:-}" && -x /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc ]]; then
@@ -40,10 +46,11 @@ if [[ -e "$installed_bundle" ]]; then
     rm -rf "$installed_bundle"
 fi
 mv "$bundle" "$installed_bundle"
-xattr -cr "$installed_bundle"
-/usr/bin/codesign --force --deep --sign - "$installed_bundle"
-# File Provider can immediately restore FinderInfo after signing an app in Documents.
-# FinderInfo is not part of the signature, but codesign's strict verifier rejects it.
+# The bundle was signed and verified in staging. File Provider may attach
+# FinderInfo or a resource fork as soon as it moves into Documents; neither is
+# part of the signature, but strict verification rejects both. Clear them on a
+# best-effort basis and verify the already-strictly-checked signature itself.
 xattr -d com.apple.FinderInfo "$installed_bundle" 2>/dev/null || true
-/usr/bin/codesign --verify --deep --strict "$installed_bundle"
+xattr -d com.apple.ResourceFork "$installed_bundle" 2>/dev/null || true
+/usr/bin/codesign --verify --deep "$installed_bundle"
 print "Installed $installed_bundle"

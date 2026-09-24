@@ -20,5 +20,7 @@
     <string>12.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>CS:GO Mac Launcher needs access to the local game files stored beside this app.</string>
 </dict>
 </plist>

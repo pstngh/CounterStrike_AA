@@ -137,6 +137,13 @@ void RkHudRoundTimer::ShowPanel(bool bShow, bool force)
             // countdown to the start of the round while we're in freeze period
             remainingTime = (int)ceil( CSGameRules()->GetRoundStartTime() - gpGlobals->curtime );
         }
+#if defined( USE_MAC_PRESET )
+        else if ( engine->IsClientLocalToActiveServer() )
+        {
+            // Local preset rounds never end, so count up how long this one has run.
+            remainingTime = (int)( gpGlobals->curtime - CSGameRules()->GetRoundStartTime() );
+        }
+#endif
         else
         {
             remainingTime = (int)ceil( CSGameRules()->GetRoundRemainingTime() );

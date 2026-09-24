@@ -268,18 +268,12 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         buildWindow()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        loadMaps()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     private func buildMenus() {
-        let mapsDirectory = gameRoot.appendingPathComponent("csgo/maps", isDirectory: true)
-        let mapFiles = (try? FileManager.default.contentsOfDirectory(at: mapsDirectory, includingPropertiesForKeys: nil)) ?? []
-        let maps = mapFiles.filter { $0.pathExtension.lowercased() == "bsp" }
-            .map { $0.deletingPathExtension().lastPathComponent }
-            .sorted()
-        mapPopup.addItems(withTitles: maps)
-
         for count in 0...20 {
             botCountPopup.addItem(withTitle: count == 0 ? "0 (solo)" : "\(count)")
         }
@@ -333,10 +327,63 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         resolutionPopup.addItems(withTitles: resolutions.map(\.title))
     }
 
-    private func restoreSettings() {
-        mapPopup.selectItem(withTitle: defaults.string(forKey: "map") ?? "de_dust2")
-        if mapPopup.selectedItem == nil { mapPopup.selectItem(at: 0) }
+    private func loadMaps() {
+        let mapsDirectory = gameRoot.appendingPathComponent("csgo/maps", isDirectory: true)
+        let preferredMap = defaults.string(forKey: "map") ?? "de_dust2"
+        launchButton.isEnabled = false
+        statusLabel.stringValue = "Finding installed maps…"
 
+        // The installer records the available maps inside the signed bundle.
+        // Reading the sibling maps directory through File Provider can otherwise
+        // block an app's main thread indefinitely on recent macOS versions.
+        if let manifestURL = Bundle.main.url(forResource: "maps", withExtension: "txt"),
+           let manifest = try? String(contentsOf: manifestURL, encoding: .utf8) {
+            let maps = manifest.split(whereSeparator: \.isNewline).map(String.init).sorted()
+            if !maps.isEmpty {
+                mapPopup.addItems(withTitles: maps)
+                mapPopup.selectItem(withTitle: preferredMap)
+                if mapPopup.selectedItem == nil {
+                    mapPopup.selectItem(at: 0)
+                }
+                launchButton.isEnabled = true
+                statusLabel.stringValue = "Choose settings, then launch."
+                return
+            }
+        }
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                let mapFiles = try FileManager.default.contentsOfDirectory(atPath: mapsDirectory.path)
+                let maps = mapFiles.filter {
+                    URL(fileURLWithPath: $0).pathExtension.lowercased() == "bsp"
+                }.map {
+                    URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent
+                }.sorted()
+
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.mapPopup.removeAllItems()
+                    self.mapPopup.addItems(withTitles: maps)
+                    self.mapPopup.selectItem(withTitle: preferredMap)
+                    if self.mapPopup.selectedItem == nil {
+                        self.mapPopup.selectItem(at: 0)
+                    }
+                    self.launchButton.isEnabled = !maps.isEmpty
+                    self.statusLabel.stringValue = maps.isEmpty
+                        ? "No .bsp maps found in \(mapsDirectory.path)."
+                        : "Choose settings, then launch."
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.launchButton.isEnabled = false
+                    self.statusLabel.stringValue = "Could not read \(mapsDirectory.path): \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func restoreSettings() {
         let botCount = defaults.object(forKey: "botCount") == nil ? 8 : defaults.integer(forKey: "botCount")
         botCountPopup.selectItem(at: min(max(botCount, 0), 20))
         let difficulty = defaults.object(forKey: "difficulty") == nil ? 1 : defaults.integer(forKey: "difficulty")
@@ -898,11 +945,22 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         bot_quota \(requestedBots)
         bot_difficulty \(difficultyPopup.indexOfSelectedItem)
         bot_auto_vacate 0
+        bot_join_delay 0
         bot_join_after_player 0
+        bot_join_in_warmup 1
         sv_auto_adjust_bot_difficulty 0
         mp_autoteambalance 0
         mp_limitteams 0
         mp_forcecamera 0
+        mp_force_assign_teams 1
+        mp_humanteam CT
+        mp_do_warmup_period 0
+        mp_do_warmup_offine 0
+        mp_warmup_pausetimer 0
+        mp_freezetime 0
+        mp_round_restart_delay 0
+        mp_respawn_immunitytime 0
+        mp_spawnprotectiontime 0
         mp_use_respawn_waves 0
         mp_respawn_on_death_t 1
         mp_respawn_on_death_ct 1
@@ -959,7 +1017,8 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
                                  "-mat_antialias", "\(antialiasing)", "-mat_aaquality", "0",
                                  "-mat_vsync", "\(vsync)",
                                  "-maxplayers_override", "\(maxPlayers)",
-                                 "+map", map, "+exec", "mac_launcher.cfg"]
+                                 "+exec", "mac_launcher.cfg", "+map", map,
+                                 "+exec", "mac_launcher.cfg"]
             process.terminationHandler = { [weak self] finished in
                 try? logHandle.close()
                 DispatchQueue.main.async {

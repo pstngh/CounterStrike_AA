@@ -10339,7 +10339,15 @@ void ServerThinkReplayUploader()
                 else
                 {
                     //Sometimes we don't want the new match the allow players to pick teams, such as in the case of a vote to scramble or swap teams.
-                    if ( m_bPickNewTeamsOnReset )
+                    bool bPickNewTeams = m_bPickNewTeamsOnReset;
+#if defined( USE_MAC_PRESET )
+                    // The local host only auto-joins CT when a map loads, and the preset
+                    // hides the team menu, so a host cleared to unassigned here could never
+                    // rejoin. Keep everyone's team through a match-end restart instead.
+                    if ( !engine->IsDedicatedServer() )
+                        bPickNewTeams = false;
+#endif
+                    if ( bPickNewTeams )
                     {
                         // Clear the players to unassigned teams.
                         for ( int clientIndex = 1; clientIndex <= gpGlobals->maxClients; clientIndex++ )
@@ -10361,9 +10369,13 @@ void ServerThinkReplayUploader()
 
                     // Send an event that clients can key off of to update their UI state.
                     IGameEvent *restartEvent = gameeventmanager->CreateEvent( "cs_match_end_restart" );
-                    if( m_bPickNewTeamsOnReset  && restartEvent )
+                    if( bPickNewTeams  && restartEvent )
                     {
                         gameeventmanager->FireEvent( restartEvent );
+                    }
+                    else if ( restartEvent )
+                    {
+                        gameeventmanager->FreeEvent( restartEvent );
                     }
 
                     m_bPickNewTeamsOnReset = true;
@@ -17820,12 +17832,26 @@ void CCSGameRules::InitializeGameTypeAndMode( void )
 #if defined( USE_MAC_PRESET ) && !defined( CLIENT_DLL )
 	if ( !engine->IsDedicatedServer() )
 	{
-		// Apply these after the deathmatch and map cfgs have executed.
+		// Apply the local instant-start preset after the deathmatch and map
+		// configs so it also governs the first spawn on a freshly loaded map.
 		mp_teammates_are_enemies.SetValue( 1 );
 		mp_respawn_on_death_t.SetValue( 1 );
 		mp_respawn_on_death_ct.SetValue( 1 );
 		mp_ct_default_secondary.SetValue( "weapon_usp_silencer" );
 		mp_t_default_secondary.SetValue( "weapon_usp_silencer" );
+		mp_force_assign_teams.SetValue( 1 );
+		mp_humanteam.SetValue( "CT" );
+		mp_do_warmup_period.SetValue( 0 );
+		mp_do_warmup_offine.SetValue( 0 );
+		mp_warmup_pausetimer.SetValue( 0 );
+		mp_freezetime.SetValue( 0 );
+		mp_round_restart_delay.SetValue( 0 );
+		mp_respawn_immunitytime.SetValue( 0 );
+		mp_spawnprotectiontime.SetValue( 0 );
+		// Local matches never end. Rounds ignore their timer and eliminations,
+		// so no round, time or frag limit can end the match and restart the map.
+		mp_ignore_round_win_conditions.SetValue( 1 );
+		fraglimit.SetValue( 0 );
 	}
 	mp_give_player_c4.SetValue( 0 );
 #endif

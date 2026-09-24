@@ -736,10 +736,25 @@ void CCSWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName )
 	m_weaponId = WeaponIdFromString( szWeaponName );
 
 #if defined( USE_MAC_PRESET )
-	// The local Mac loadout can hold a rifle plus an AWP. Give the AWP
-	// its own selection position so the scroll wheel can reach both.
-	if ( m_weaponId == WEAPON_AWP )
+	// Keep every rifle in the fixed local loadout reachable by number key and
+	// scroll wheel even though they share the primary-weapon slot.
+	switch ( m_weaponId )
+	{
+	case WEAPON_M4A1:
+		iPosition = 0;
+		break;
+	case WEAPON_AK47:
 		iPosition = 1;
+		break;
+	case WEAPON_AUG:
+		iPosition = 2;
+		break;
+	case WEAPON_AWP:
+		iPosition = 3;
+		break;
+	default:
+		break;
+	}
 #endif
 
 	m_flMaxSpeed[0] = ( float )pKeyValuesData->GetInt( "MaxPlayerSpeed", 1 );
@@ -1449,5 +1464,4 @@ void GenerateWeaponRecoilPatternForItemDefinition( item_definition_index_t idx )
 {
 	g_WeaponRecoilData.GenerateRecoilPatternForItemDefinition( idx );
 }
-
 

@@ -131,7 +131,7 @@ camera-only sniper kick: CTs use the Allied Springfield profile and Ts use the
 Axis scoped Kar98 profile. Enemy damage also applies OpenMoHAA's directional
 pitch, yaw, and roll kick with its original damage scaling and decay timing.
 
-For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. The AWP is an extra primary weapon and has a separate scroll-wheel position. While alive, the host can open the buy menu and buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. Ordinary inventory limits still apply to individual items. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
+For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. Timed respawn immunity is disabled, so bots are vulnerable as soon as they spawn. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S, AK-47, AUG and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. Each fixed primary weapon has a separate scroll-wheel position. While alive, the host can open the buy menu and buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. The local host can carry the fixed primary weapons together; ordinary inventory limits still apply to other players. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
 
 The preset changes shared client and server code, including the player network
 table, so a preset client only plays correctly on a listen server built from
@@ -140,10 +140,15 @@ the same source with the same setting.
 The AWP uses its native Asiimov paint kit, and the AK-47 uses its official
 model-specific Asiimov texture and paint kit when installed from the acquired
 content. The M4A1-S uses its native Mecha Industries finish and the USP-S uses
-its native Cyrex finish. Chickens are suppressed on local maps, and the warmup
-period is disabled by default. Once a map finishes loading,
-the team menu appears without a Continue button and stays open until a team is
-chosen; choosing CT or T switches teams immediately and spawns the player.
+its native Cyrex finish. Chickens are suppressed on local maps. Warmup, the
+round-start freeze countdown, the round-restart delay, and timed spawn immunity
+are disabled. The loading screen's placeholder text is hidden. Once a map
+finishes loading, the local player joins CT and spawns automatically without
+opening the team menu. Bots may join and spawn before the local player.
+Local matches never end: rounds ignore their timer, and the HUD clock counts
+up how long the round has run. If a match does end, for example after
+`mp_ignore_round_win_conditions 0`, and the map cycle has no other installed
+map, the match restarts on the same map and every player keeps their team.
 
 Deathmatch's automatic random buy and automatic rebuy are disabled so they
 cannot replace the fixed spawn loadout after it is granted.

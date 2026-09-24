@@ -2034,6 +2034,8 @@ void CCSPlayer::GiveDefaultItems()
 		{
 			GiveNamedItem( "weapon_usp_silencer" );
 			GiveNamedItem( "weapon_m4a1_silencer" );
+			GiveNamedItem( "weapon_ak47" );
+			GiveNamedItem( "weapon_aug" );
 		}
 		else
 		{
@@ -9228,11 +9230,15 @@ bool CCSPlayer::ClientCommand( const CCommand &args )
 
 #if defined( USE_MAC_PRESET )
 			if ( !engine->IsDedicatedServer() )
-				ResetForceTeamThink(); // leave local team choice open until the player selects one
+				ResetForceTeamThink();
 			else
 #endif
 				SetContextThink( &CBasePlayer::PlayerForceTeamThink, gpGlobals->curtime + 0.5f, CS_FORCE_TEAM_THINK_CONTEXT );
 			int nAutoJoinTeam = 0;
+#if defined( USE_MAC_PRESET )
+			if ( IsLocalListenServerHost() )
+				nAutoJoinTeam = TEAM_CT;
+#endif
 			if ( CSGameRules() && CSGameRules()->IsPlayingTraining() )
 				nAutoJoinTeam = TEAM_CT;
 			if ( !IsBot() && CSGameRules()->IsPlayingCoopMission() )
@@ -11346,15 +11352,14 @@ void CCSPlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 #if defined( USE_MAC_PRESET )
 			if ( pCSWeapon->GetSlot() == WEAPON_SLOT_RIFLE && IsLocalListenServerHost() )
 			{
-				// Keep one AWP plus one other primary weapon in the local
-				// Mac loadout. Replacing either category drops only that one.
-				const bool bIncomingAwp = pCSWeapon->GetCSWeaponID() == WEAPON_AWP;
+				// The local Mac loadout deliberately contains several rifles.
+				// Replace only another copy of the incoming weapon.
 				pDropWeapon = NULL;
 				for ( int i = 0; i < MAX_WEAPONS; ++i )
 				{
 					CWeaponCSBase *pOwnedWeapon = dynamic_cast<CWeaponCSBase*>( GetWeapon( i ) );
 					if ( pOwnedWeapon && pOwnedWeapon->GetSlot() == WEAPON_SLOT_RIFLE &&
-						 ( pOwnedWeapon->GetCSWeaponID() == WEAPON_AWP ) == bIncomingAwp )
+						 pOwnedWeapon->GetCSWeaponID() == pCSWeapon->GetCSWeaponID() )
 					{
 						pDropWeapon = pOwnedWeapon;
 						break;

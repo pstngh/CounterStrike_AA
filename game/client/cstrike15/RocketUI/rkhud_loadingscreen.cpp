@@ -40,8 +40,10 @@ void RocketLoadingScreenDocument::LoadDialog()
             /* Exit */
         }
 #if defined( USE_MAC_PRESET )
-        if( Rml::Element *continueButton = m_pInstance->GetElementById( "continue" ) )
-            continueButton->SetProperty( "display", "none" );
+        // The bundled layout contains placeholder copy and a Continue button.
+        // Keep the loading backdrop, but do not paint either for the Mac preset.
+        if( Rml::Element *center = m_pInstance->GetElementById( "center" ) )
+            center->SetProperty( "display", "none" );
 #else
         m_pInstance->AddEventListener( Rml::EventId::Mousedown, &loadingScreenClickListener );
 #endif
@@ -95,7 +97,16 @@ void RocketLoadingScreenDocument::ShowPanel(bool bShow, bool immediate)
         if( m_bVisible )
         {
             engine->ClientCmd_Unrestricted( "joingame" );
+#if defined( USE_MAC_PRESET )
+            // Local launcher games assign the player to CT automatically. Do not
+            // put a redundant team-selection screen in front of the spawned player.
+            if( engine->IsClientLocalToActiveServer() )
+                RocketTeamMenuDocument::ShowPanel( false );
+            else
+                RocketTeamMenuDocument::ShowPanel( true );
+#else
             RocketTeamMenuDocument::ShowPanel( true );
+#endif
         }
     }
 

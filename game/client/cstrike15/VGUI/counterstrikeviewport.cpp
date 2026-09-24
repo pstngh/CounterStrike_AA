@@ -95,6 +95,11 @@ void PrintBuyTimeOverMessage( void )
 
 CON_COMMAND_F( teammenu, "Show team selection window", FCVAR_SERVER_CAN_EXECUTE )
 {
+#if defined( USE_MAC_PRESET )
+	if ( engine->IsClientLocalToActiveServer() )
+		return;
+#endif
+
 	C_CSPlayer *pPlayer = C_CSPlayer::GetLocalCSPlayer();
 	
 	if( pPlayer && pPlayer->CanShowTeamMenu() )
@@ -377,7 +382,11 @@ void CounterStrikeViewport::UpdateAllPanels( void )
 		}
 		else if ( pCSPlayer->GetObserverMode() != OBS_MODE_NONE )
 		{
-			if ( pCSPlayer->State_Get() != STATE_PICKINGTEAM && ( pCSPlayer->GetTeamNumber() == TEAM_UNASSIGNED ) && !pCSPlayer->IsHLTV() )
+			if (
+#if defined( USE_MAC_PRESET )
+				 !engine->IsClientLocalToActiveServer() &&
+#endif
+				 pCSPlayer->State_Get() != STATE_PICKINGTEAM && ( pCSPlayer->GetTeamNumber() == TEAM_UNASSIGNED ) && !pCSPlayer->IsHLTV() )
 			{
 				// not a member of a team and not a spectator. show the team select screen.
 				if (
