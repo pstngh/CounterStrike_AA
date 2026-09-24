@@ -2549,10 +2549,18 @@ ConVar weapon_recoil_view_punch_extra( "weapon_recoil_view_punch_extra", "0.055"
 
 void CCSPlayer::KickBack( float fAngle, float fMagnitude )
 {
+#if defined( USE_MAC_PRESET )
+	// Give each shot a small impulse instead of winding up recoil velocity
+	// over the opening burst. The cap stays below the stock linear recenter
+	// speed, so rapid fire cannot build the initial upward climb.
+	fMagnitude = clamp( fMagnitude * 0.25f, 0.0f, 8.0f );
+#endif
 	QAngle angleVelocity(0,0,0);
 	angleVelocity[YAW] = -sinf(DEG2RAD(fAngle)) * fMagnitude;
 	angleVelocity[PITCH] = -cosf(DEG2RAD(fAngle)) * fMagnitude;
+#if !defined( USE_MAC_PRESET )
 	angleVelocity += m_Local.m_aimPunchAngleVel.Get();
+#endif
 	SetAimPunchAngleVelocity( angleVelocity );
 
 	// this bit gives additional punch to the view (screen shake) to make the kick back a bit more visceral

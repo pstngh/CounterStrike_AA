@@ -134,14 +134,19 @@ running, jumping, climbing, or spraying. Shots retain their normal random
 first-shot spread. Automatic-weapon recoil remains visible and affects aim,
 but each shot samples a different recoil table entry instead of following a
 fixed spray sequence. The view tracks recoil so the crosshair remains centered
-on the recoil-adjusted shot direction. The AWP instead uses OpenMoHAA's
+on the recoil-adjusted shot direction. Guns using aim recoil apply a small
+per-shot impulse at 25% strength, capped at 8 degrees/second. Each shot
+replaces the previous recoil velocity instead of accumulating it, eliminating
+the steep opening climb during sustained fire. This applies to automatic,
+burst, and single-shot weapons on both the client and server; stock firing
+animations and weapon bob are preserved. The AWP instead uses OpenMoHAA's
 camera-only sniper kick: CTs use the Allied Springfield profile and Ts use the
 Axis scoped Kar98 profile. `cl_viewkick_scale` sets its camera strength
 (default 0.25, 75% less than the original kick). Enemy damage applies
 OpenMoHAA's directional pitch, yaw, and roll response at 10% of its original
 camera strength (`cl_damagekick_scale 0.1`, a 90% reduction). Both settings
 allow 0–1: 0 disables that camera effect, and 1 restores its original strength.
-The original recenter and decay timing, aim recoil, weapon bob, and lean
+The original camera-kick recenter and decay timing, weapon bob, and lean
 framing are preserved.
 
 For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. Timed respawn immunity is disabled, so bots are vulnerable as soon as they spawn. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S, AK-47, AUG and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. Each fixed primary weapon has a separate scroll-wheel position. While alive, the host can open the buy menu and buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. The local host can carry the fixed primary weapons together; ordinary inventory limits still apply to other players. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
