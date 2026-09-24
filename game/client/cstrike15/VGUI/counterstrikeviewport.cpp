@@ -95,11 +95,6 @@ void PrintBuyTimeOverMessage( void )
 
 CON_COMMAND_F( teammenu, "Show team selection window", FCVAR_SERVER_CAN_EXECUTE )
 {
-#if defined( USE_MAC_PRESET )
-	if ( engine->IsClientLocalToActiveServer() )
-		return;
-#endif
-
 	C_CSPlayer *pPlayer = C_CSPlayer::GetLocalCSPlayer();
 	
 	if( pPlayer && pPlayer->CanShowTeamMenu() )

@@ -17846,8 +17846,10 @@ void CCSGameRules::InitializeGameTypeAndMode( void )
 		mp_respawn_on_death_ct.SetValue( 1 );
 		mp_ct_default_secondary.SetValue( "weapon_usp_silencer" );
 		mp_t_default_secondary.SetValue( "weapon_usp_silencer" );
-		mp_force_assign_teams.SetValue( 1 );
-		mp_humanteam.SetValue( "CT" );
+		// The local host is joined to CT once by the joingame handler. Keep later
+		// manual team changes available through the pause menu.
+		mp_force_assign_teams.SetValue( 0 );
+		mp_humanteam.SetValue( "any" );
 		mp_do_warmup_period.SetValue( 0 );
 		mp_do_warmup_offine.SetValue( 0 );
 		mp_warmup_pausetimer.SetValue( 0 );

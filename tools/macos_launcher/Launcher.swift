@@ -952,8 +952,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         mp_autoteambalance 0
         mp_limitteams 0
         mp_forcecamera 0
-        mp_force_assign_teams 1
-        mp_humanteam CT
         mp_do_warmup_period 0
         mp_do_warmup_offine 0
         mp_warmup_pausetimer 0

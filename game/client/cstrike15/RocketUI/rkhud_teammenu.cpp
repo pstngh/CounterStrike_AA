@@ -143,13 +143,6 @@ void RocketTeamMenuDocument::UnloadDialog()
 
 void RocketTeamMenuDocument::ShowPanel(bool bShow, bool immediate)
 {
-#if defined( USE_MAC_PRESET )
-    // The local host is assigned to CT by the server-side preset. State updates
-    // can briefly request this panel before that assignment reaches the client.
-    if( bShow && engine->IsClientLocalToActiveServer() )
-        bShow = false;
-#endif
-
     // oh yeah buddy this'll get called before the loading sometimes
     // so if it does, load it for the caller.
     if( bShow )
