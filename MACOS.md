@@ -134,10 +134,10 @@ running, jumping, climbing, or spraying. Shots retain their normal random
 first-shot spread. Automatic-weapon recoil remains visible and affects aim,
 but each shot samples a different recoil table entry instead of following a
 fixed spray sequence. The view tracks recoil so the crosshair remains centered
-on the recoil-adjusted shot direction. Guns using aim recoil apply a small
-per-shot impulse at 25% strength, capped at 8 degrees/second. Each shot
-replaces the previous recoil velocity instead of accumulating it, eliminating
-the steep opening climb during sustained fire. This applies to automatic,
+on the recoil-adjusted shot direction. Guns using aim recoil retain each
+shot's original impulse and 75% of the previous recoil velocity. The combined
+velocity is capped at 32 degrees/second, preserving noticeable kick and spray
+movement while softening the opening climb. This applies to automatic,
 burst, and single-shot weapons on both the client and server; stock firing
 animations and weapon bob are preserved. The AWP instead uses OpenMoHAA's
 camera-only sniper kick: CTs use the Allied Springfield profile and Ts use the
