@@ -6409,6 +6409,14 @@ static bool Helper_CheckFieldAppliesToTeam( char const *szField, int nTeam )
 		if ( m_bLoadingRoundBackupData )
 			return false;
 
+		float flGameCommencingDelay = 0.5f;
+#if defined( USE_MAC_PRESET )
+		// A local preset game has no staging period. Preserve the normal
+		// Game_Commencing transition, but finish it on the next server tick.
+		if ( !engine->IsDedicatedServer() )
+			flGameCommencingDelay = TICK_INTERVAL;
+#endif
+
 		// Run this check differently in queue matchmaking mode
 		if ( IsQueuedMatchmaking() )
 		{
@@ -6418,7 +6426,7 @@ static bool Helper_CheckFieldAppliesToTeam( char const *szField, int nTeam )
 				m_bFreezePeriod  = false; //Make sure we are not on the FreezePeriod.
 				m_bCompleteReset = true;
 
-				TerminateRound( 0.5f, Game_Commencing );
+				TerminateRound( flGameCommencingDelay, Game_Commencing );
 				m_bFirstConnected = true;
 				return true;
 			}
@@ -6445,7 +6453,7 @@ static bool Helper_CheckFieldAppliesToTeam( char const *szField, int nTeam )
             m_bFreezePeriod  = false; //Make sure we are not on the FreezePeriod.
             m_bCompleteReset = true;
 
-            TerminateRound( 0.5f, Game_Commencing );
+            TerminateRound( flGameCommencingDelay, Game_Commencing );
             m_bFirstConnected = true;
             return true;
         }
@@ -13743,7 +13751,14 @@ void ServerThinkReplayUploader()
 
 		if ( iReason == Game_Commencing )
 		{
-			m_bWarmupPeriod = true;
+#if defined( USE_MAC_PRESET )
+			// Local preset games have no staging period. Do not let the normal
+			// Game_Commencing transition turn warmup back on after map load.
+			if ( !engine->IsDedicatedServer() )
+				m_bWarmupPeriod = false;
+			else
+#endif
+				m_bWarmupPeriod = true;
 		}
     }
 
