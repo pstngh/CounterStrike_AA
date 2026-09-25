@@ -107,6 +107,14 @@ Use `cg_drawviewmodel 0` to hide the first-person weapon and hands, `cg_drawview
 
 Left Shift leans left, Space leans right, and F jumps. Lean uses OpenMoHAA's
 Allied Assault multiplayer timing, 40-degree limit, camera pivot, and roll.
+The weapon and hands follow that camera with a small additional drop. The
+original four-unit drop cropped too much of the CS:GO rig at its 60-degree
+weapon FOV, so the default drop is now 1 unit. `cl_viewmodel_lean_lower`
+controls the drop at full lean: 0 disables it, 1 is the default, and 4 restores
+the original amount. The drop follows the existing smooth lean transition.
+No extra sideways movement or weapon tilt is applied. CS:GO's stock bob,
+sway, running pose, and landing dip are unchanged, as are lean camera movement,
+aim, collision, and FOV.
 Left or right Control toggles crouch; C toggles walk.
 W/S and A/D use nullbind-style SOCD: the most recently pressed direction wins
 while both are held, and releasing it resumes the other held direction.
@@ -126,10 +134,20 @@ running, jumping, climbing, or spraying. Shots retain their normal random
 first-shot spread. Automatic-weapon recoil remains visible and affects aim,
 but each shot samples a different recoil table entry instead of following a
 fixed spray sequence. The view tracks recoil so the crosshair remains centered
-on the recoil-adjusted shot direction. The AWP instead uses OpenMoHAA's
+on the recoil-adjusted shot direction. Guns using aim recoil retain each
+shot's original impulse and 75% of the previous recoil velocity. The combined
+velocity is capped at 32 degrees/second, preserving noticeable kick and spray
+movement while softening the opening climb. This applies to automatic,
+burst, and single-shot weapons on both the client and server; stock firing
+animations and weapon bob are preserved. The AWP instead uses OpenMoHAA's
 camera-only sniper kick: CTs use the Allied Springfield profile and Ts use the
-Axis scoped Kar98 profile. Enemy damage also applies OpenMoHAA's directional
-pitch, yaw, and roll kick with its original damage scaling and decay timing.
+Axis scoped Kar98 profile. `cl_viewkick_scale` sets its camera strength
+(default 0.25, 75% less than the original kick). Enemy damage applies
+OpenMoHAA's directional pitch, yaw, and roll response at 10% of its original
+camera strength (`cl_damagekick_scale 0.1`, a 90% reduction). Both settings
+allow 0–1: 0 disables that camera effect, and 1 restores its original strength.
+The original camera-kick recenter and decay timing, weapon bob, and lean
+framing are preserved.
 
 For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. Timed respawn immunity is disabled, so bots are vulnerable as soon as they spawn. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S, AK-47, AUG and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. Each fixed primary weapon has a separate scroll-wheel position. While alive, the host can open the buy menu and buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. The local host can carry the fixed primary weapons together; ordinary inventory limits still apply to other players. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
 

@@ -4239,6 +4239,15 @@ void C_CSPlayer::ThirdPersonSwitch( bool bThirdperson )
 	}
 }
 
+#if defined( USE_MAC_PRESET )
+static ConVar cl_viewkick_scale( "cl_viewkick_scale", "0.25", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
+	"Scale the OpenMoHAA AWP camera kick. 0 disables it; 1 restores its original strength. Does not change weapon bob or aim recoil.",
+	true, 0.0f, true, 1.0f );
+static ConVar cl_damagekick_scale( "cl_damagekick_scale", "0.1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
+	"Scale the OpenMoHAA damage camera kick. 0 disables it; 1 restores its original strength.",
+	true, 0.0f, true, 1.0f );
+#endif
+
 void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov )
 {
 	BaseClass::CalcView( eyeOrigin, eyeAngles, zNear, zFar, fov );
@@ -4262,7 +4271,13 @@ void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, f
 
 #if defined( USE_MAC_PRESET )
 	if ( IsLocalPlayer() && IsAlive() && !::input->CAM_IsThirdPerson() )
-		eyeAngles += m_angOpenMoHAAWeaponKick.Get() + m_angOpenMoHAADamageKick.Get();
+	{
+		// Keep OpenMoHAA's directional response and recenter curves, but make
+		// their rendered camera movement gentler. Scaling here leaves the
+		// predicted kick state, aim recoil and stock weapon bob unchanged.
+		eyeAngles += m_angOpenMoHAAWeaponKick.Get() * cl_viewkick_scale.GetFloat()
+			+ m_angOpenMoHAADamageKick.Get() * cl_damagekick_scale.GetFloat();
+	}
 
 	if ( IsLocalPlayer() && IsAlive() && !::input->CAM_IsThirdPerson() && m_flLeanAngle != 0.0f )
 	{
@@ -4291,9 +4306,12 @@ void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, f
 }
 
 #if defined( USE_MAC_PRESET )
+static ConVar cl_viewmodel_lean_lower( "cl_viewmodel_lean_lower", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
+	"Additional weapon lowering at full lean. 0 disables lowering; 4 uses the original drop. Does not change weapon bob.",
+	true, 0.0f, true, 4.0f );
 void C_CSPlayer::CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAngles )
 {
-	if ( m_flLeanAngle == 0.0f || !IsAlive() || ::input->CAM_IsThirdPerson() )
+	if ( !IsLocalPlayer() || m_flLeanAngle == 0.0f || !IsAlive() || ::input->CAM_IsThirdPerson() )
 	{
 		BaseClass::CalcViewModelView( eyeOrigin, eyeAngles );
 		return;
@@ -4301,9 +4319,13 @@ void C_CSPlayer::CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAn
 
 	Vector up;
 	AngleVectors( eyeAngles, NULL, NULL, &up );
-	// CalcViewModelView receives the camera's already leaned origin and angles.
-	// AA additionally lowers its viewmodel as the lean grows.
-	BaseClass::CalcViewModelView( eyeOrigin - up * ( fabsf( m_flLeanAngle ) * 0.1f ), eyeAngles );
+	// Follow the camera's already collision-resolved lean once. OpenMoHAA's
+	// vm_lean_lower drops its own rig by 4 units at full lean; that cuts too much
+	// of CS:GO's hands out of its tighter 60-degree viewmodel projection.
+	// Keep the original camera-relative position and angles apart from the
+	// smaller drop. Let CS:GO's stock bob, sway, running pose and landing dip run.
+	const float leanFraction = clamp( fabsf( m_flLeanAngle ) / 40.0f, 0.0f, 1.0f );
+	BaseClass::CalcViewModelView( eyeOrigin - up * ( leanFraction * cl_viewmodel_lean_lower.GetFloat() ), eyeAngles );
 }
 #endif
 

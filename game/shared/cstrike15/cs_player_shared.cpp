@@ -2552,7 +2552,17 @@ void CCSPlayer::KickBack( float fAngle, float fMagnitude )
 	QAngle angleVelocity(0,0,0);
 	angleVelocity[YAW] = -sinf(DEG2RAD(fAngle)) * fMagnitude;
 	angleVelocity[PITCH] = -cosf(DEG2RAD(fAngle)) * fMagnitude;
+#if defined( USE_MAC_PRESET )
+	// Preserve each shot's kick and most of the carry between shots. Dampen
+	// and cap the combined velocity to soften the opening climb while
+	// retaining visible recoil and recovery throughout a spray.
+	angleVelocity += m_Local.m_aimPunchAngleVel.Get() * 0.75f;
+	const float recoilSpeed = angleVelocity.Length();
+	if ( recoilSpeed > 32.0f )
+		angleVelocity *= 32.0f / recoilSpeed;
+#else
 	angleVelocity += m_Local.m_aimPunchAngleVel.Get();
+#endif
 	SetAimPunchAngleVelocity( angleVelocity );
 
 	// this bit gives additional punch to the view (screen shake) to make the kick back a bit more visceral
