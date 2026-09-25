@@ -307,6 +307,20 @@ void CCSBot::Update( void )
 	if (cv_bot_stop.GetBool())
 		return;
 
+	if ( UseMacBotPreset() )
+	{
+		StopWaiting();
+		Run();
+		// Bots still reload, but cannot run their primary dry and spend the
+		// rest of a long life fighting with the backup pistol.
+		if ( CBaseCombatWeapon *primary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
+		{
+			primary->SetReserveAmmoCount( AMMO_POSITION_PRIMARY, primary->GetReserveAmmoMax( AMMO_POSITION_PRIMARY ) );
+			if ( GetActiveWeapon() != primary )
+				EquipBestWeapon( MUST_EQUIP );
+		}
+	}
+
 	// check if we are stuck
 	StuckCheck();
 
@@ -851,6 +865,14 @@ void CCSBot::Update( void )
 		SNPROF("9b");
 
 
+	if ( UseMacBotPreset() && !IsAttacking() && !cv_bot_zombie.GetBool() &&
+		( IsBuying() || IsHiding() || IsFollowing() || m_state == &m_idleState ) &&
+		( GetLastKnownArea() || StayOnNavMesh() ) )
+	{
+		StopFollowing();
+		Hunt();
+	}
+
 	if (m_isOpeningDoor)
 	{
 
@@ -890,7 +912,7 @@ void CCSBot::Update( void )
 	}
 
 	// don't move while reloading unless we see an enemy
-	if (IsReloading() && !m_isEnemyVisible)
+	if (IsReloading() && !m_isEnemyVisible && !UseMacBotPreset())
 	{
 		SNPROF("do wait behavior2");
 		ResetStuckMonitor();

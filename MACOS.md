@@ -173,6 +173,17 @@ team.
 Deathmatch's automatic random buy and automatic rebuy are disabled so they
 cannot replace the fixed spawn loadout after it is granted.
 
+In local classic and deathmatch games, bots spawn with one randomly selected
+AK-47, M4A1-S, or AWP, plus a backup USP-S and vest armor. They keep using their
+primary even at close range, with replenished reserve ammo and normal reloads.
+Bots keep hunting instead of buying, camping, or holding a position, and move
+while aiming, scoping, and reloading. AWP bots can fire while moving with the
+preset's existing movement accuracy. Movement preserves navigation, crouching
+through low passages, and ladder climbing; fallback sidesteps check for walls
+and drops. Collisions can still briefly interrupt movement. Explicit bot debug
+stops and freeze controls remain available. This behavior does not apply to
+dedicated servers, cooperative/training modes, or builds without the preset.
+
 ## Status
 
 The port is experimental. On an Apple Silicon Mac, the native client has loaded `de_dust2`, shown the RocketUI team menu, joined a local match, and run combat with bots without Steam. Some legacy assets and features are still incomplete. This client build does not support headless map loading; without a display, SDL/OpenGL initialization fails.

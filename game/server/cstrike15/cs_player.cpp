@@ -2019,6 +2019,26 @@ void CCSPlayer::GiveDefaultItems()
 	const char *pchTeamKnifeName = GetTeamNumber() == TEAM_TERRORIST ? "weapon_knife_t" : "weapon_knife";
 
 #if defined( USE_MAC_PRESET )
+	if ( IsBot() && static_cast<CCSBot *>( this )->UseMacBotPreset() )
+	{
+		// Random buying/rebuying is disabled by the preset. Supply a primary on
+		// every spawn, including the first deathmatch spawn outside a buy zone.
+		while ( CBaseCombatWeapon *pOldPrimary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
+			DestroyWeapon( pOldPrimary );
+		while ( CBaseCombatWeapon *pOldPistol = Weapon_GetSlot( WEAPON_SLOT_PISTOL ) )
+			DestroyWeapon( pOldPistol );
+		GiveNamedItem( "weapon_usp_silencer" );
+		GiveNamedItem( "item_kevlar" );
+		const char *primaries[] = { "weapon_ak47", "weapon_m4a1_silencer", "weapon_awp" };
+		GiveNamedItem( primaries[ RandomInt( 0, ARRAYSIZE( primaries ) - 1 ) ] );
+		if ( CBaseCombatWeapon *primary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
+		{
+			primary->GiveReserveAmmo( AMMO_POSITION_PRIMARY, primary->GetReserveAmmoMax( AMMO_POSITION_PRIMARY ) );
+			Weapon_Switch( primary );
+		}
+		m_bPickedUpWeapon = false;
+		return;
+	}
 	if ( IsLocalListenServerHost() &&
 		 ( CSGameRules()->IsPlayingClassic() || CSGameRules()->IsPlayingGunGameDeathmatch() ) &&
 		 ( GetTeamNumber() == TEAM_CT || GetTeamNumber() == TEAM_TERRORIST ) )

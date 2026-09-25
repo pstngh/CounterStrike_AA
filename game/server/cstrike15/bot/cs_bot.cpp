@@ -1138,8 +1138,20 @@ const char *CCSBot::GetMoraleName( void ) const
 
 //--------------------------------------------------------------------------------------------------------------
 /**
- * Fill in a CUserCmd with our data
+ * Limit the run-and-gun preset to local classic and deathmatch bots.
  */
+bool CCSBot::UseMacBotPreset( void ) const
+{
+#if defined( USE_MAC_PRESET )
+	return !engine->IsDedicatedServer() && CSGameRules() &&
+		( CSGameRules()->IsPlayingClassic() || CSGameRules()->IsPlayingGunGameDeathmatch() ) &&
+		( GetTeamNumber() == TEAM_CT || GetTeamNumber() == TEAM_TERRORIST );
+#else
+	return false;
+#endif
+}
+
+// Fill in a CUserCmd with our data.
 void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwardmove, float sidemove, float upmove, int buttons, byte impulse )
 {
 	Q_memset( &cmd, 0, sizeof( cmd ) );
@@ -1151,6 +1163,63 @@ void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwar
 			buttons &= ~IN_SPEED;
 		}
 
+		if ( UseMacBotPreset() && IsAlive() && State_Get() == STATE_ACTIVE &&
+			!cv_bot_stop.GetBool() && !cv_bot_zombie.GetBool() &&
+			!IsEFlagSet( EFL_BOT_FROZEN ) && !CSGameRules()->IsFreezePeriod() &&
+			TheNavMesh->IsLoaded() && !TheNavMesh->IsGenerating() &&
+			GetMoveType() == MOVETYPE_WALK && !IsUsingLadder() )
+		{
+			buttons &= ~IN_SPEED;
+			// Keep the crouch required by ducts, but never crouch just to hold an angle.
+			if ( !GetLastKnownArea() || !( GetLastKnownArea()->GetAttributes() & NAV_MESH_CROUCH ) )
+				buttons &= ~IN_DUCK;
+
+			// Keep navigation's movement. Fill pauses from aiming, scoping, reloading,
+			// waiting, and path changes with a sidestep, including on non-AI ticks.
+			if ( ( fabsf( forwardmove ) + fabsf( sidemove ) < 1.0f || m_isStuck ||
+				GetAbsVelocity().AsVector2D().IsLengthLessThan( 10.0f ) ) &&
+				( GetFlags() & FL_ONGROUND ) )
+			{
+				Vector forward, right;
+				AngleVectors( QAngle( 0, viewangles.y, 0 ), &forward, &right, NULL );
+				const float side = ( ( (int)( gpGlobals->curtime / 1.1f ) + entindex() ) & 1 ) ? 1.0f : -1.0f;
+				const Vector2D directions[] = {
+					Vector2D( 0, side ), Vector2D( 0, -side ),
+					Vector2D( 1, 0 ), Vector2D( -1, 0 ),
+					Vector2D( 0.7071f, side * 0.7071f ), Vector2D( 0.7071f, -side * 0.7071f ),
+					Vector2D( -0.7071f, side * 0.7071f ), Vector2D( -0.7071f, -side * 0.7071f )
+				};
+
+				for ( int i = 0; i < ARRAYSIZE( directions ); ++i )
+				{
+					const Vector goal = GetAbsOrigin() + 40.0f *
+						( directions[i].x * forward + directions[i].y * right );
+					trace_t trace;
+					const Vector step( 0, 0, StepHeight );
+					Vector mins = WorldAlignMins();
+					mins.z += StepHeight;
+					UTIL_TraceHull( GetAbsOrigin(), goal,
+						mins, WorldAlignMaxs(), MASK_PLAYERSOLID,
+						this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
+					if ( trace.startsolid || trace.fraction < 1.0f )
+						continue;
+
+					float ground;
+					if ( !GetSimpleGroundHeightWithFloor( goal + step, &ground ) ||
+						fabsf( ground - GetAbsOrigin().z ) > StepHeight )
+						continue;
+
+					forwardmove = directions[i].x * GetMoveSpeed();
+					sidemove = directions[i].y * GetMoveSpeed();
+					buttons &= ~( IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT );
+					if ( forwardmove > 0 ) buttons |= IN_FORWARD;
+					if ( forwardmove < 0 ) buttons |= IN_BACK;
+					if ( sidemove > 0 ) buttons |= IN_MOVERIGHT;
+					if ( sidemove < 0 ) buttons |= IN_MOVELEFT;
+					break;
+				}
+			}
+		}
 		cmd.command_number = gpGlobals->tickcount;
 		cmd.forwardmove = forwardmove;
 		cmd.sidemove = sidemove;

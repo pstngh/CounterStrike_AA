@@ -37,8 +37,9 @@ void CCSBot::FireWeaponAtEnemy( void )
 
 	if (IsUsingSniperRifle())
 	{
-		// if we're using a sniper rifle, don't fire until we are standing still, are zoomed in, and not rapidly moving our view
-		if (!IsNotMoving() || IsWaitingForZoom() || !HasViewBeenSteady( GetProfile()->GetReactionTime() ) )
+		// The Mac preset already removes movement inaccuracy. Keep zoom and
+		// aim checks, but let its constantly moving snipers actually fire.
+		if ((!UseMacBotPreset() && !IsNotMoving()) || IsWaitingForZoom() || !HasViewBeenSteady( GetProfile()->GetReactionTime() ) )
 		{
 			return;
 		}
@@ -589,6 +590,9 @@ void CCSBot::EquipBestWeapon( bool mustEquip )
  */
 void CCSBot::EquipPistol( void )
 {
+	if ( UseMacBotPreset() && !IsPrimaryWeaponEmpty() )
+		return;
+
 	// throttle how often equipping is allowed
 	if (m_equipTimer.GetElapsedTime() < minEquipInterval)
 		return;
@@ -1249,7 +1253,7 @@ void CCSBot::ReloadCheck( void )
 	if (IsActiveWeaponClipEmpty())
 	{
 		// high-skill players switch to pistol instead of reloading during combat
-		if (GetProfile()->GetSkill() > 0.5f && IsAttacking())
+		if (!UseMacBotPreset() && GetProfile()->GetSkill() > 0.5f && IsAttacking())
 		{
 			if (!GetActiveCSWeapon()->IsPistol() && !IsPistolEmpty())
 			{
