@@ -799,7 +799,7 @@ int BotProfileManager::FindVoiceBankIndex( const char *filename )
 /**
  * Return random unused profile that matches the given difficulty level
  */
-const BotProfile *BotProfileManager::GetRandomProfile( BotDifficultyType difficulty, int team, CSWeaponType weaponType, bool forceMatchHighestDifficulty ) const
+const BotProfile *BotProfileManager::GetRandomProfile( BotDifficultyType difficulty, int team, CSWeaponType weaponType, bool forceMatchHighestDifficulty, bool allowUsedProfiles ) const
 {
 	// count up valid profiles
 	CUtlVector< const BotProfile * > profiles;
@@ -821,8 +821,8 @@ const BotProfile *BotProfileManager::GetRandomProfile( BotDifficultyType difficu
 				continue;
 		}
 
-		// Prevent duplicate names
-		if ( UTIL_IsNameTaken( profile->GetName() ) )
+		// Normally prevent duplicate names.
+		if ( !allowUsedProfiles && UTIL_IsNameTaken( profile->GetName() ) )
 			continue;
 
 		// Match team choice

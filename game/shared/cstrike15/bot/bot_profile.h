@@ -390,7 +390,7 @@ public:
 
 	const BotProfileList *GetProfileList( void ) const		{ return &m_profileList; }		///< return list of all profiles
 
-	const BotProfile *GetRandomProfile( BotDifficultyType difficulty, int team, CSWeaponType weaponType, bool forceMatchHighestDifficulty = false ) const;			///< return random unused profile that matches the given difficulty level
+	const BotProfile *GetRandomProfile( BotDifficultyType difficulty, int team, CSWeaponType weaponType, bool forceMatchHighestDifficulty = false, bool allowUsedProfiles = false ) const;			///< return a matching profile, normally excluding names already in use
 
 	const char * GetCustomSkin( int index );				///< Returns custom skin name at a particular index
 	const char * GetCustomSkinModelname( int index );		///< Returns custom skin modelname at a particular index
