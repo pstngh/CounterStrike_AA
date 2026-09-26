@@ -97,6 +97,15 @@ loads. Game output goes to `launcher-game.log`. If the game crashes, macOS
 writes a report in `~/Library/Logs/DiagnosticReports`. The launcher keeps the
 original gameplay bindings and free-for-all defaults.
 
+The bot selector supports 0–28 bots, excluding you from the count. The launcher
+reserves enough slots for both teams and reapplies its settings after the mode
+and map configs load, including on map changes. This prevents the deathmatch
+defaults from replacing the requested count and difficulty. Local deathmatch
+reuses matching bot personalities when all names at a difficulty are in use;
+additional bots receive numbered names.
+Use `status` in the developer console to check the actual connected bot count.
+Update both the launcher and `server.dylib` when installing this change.
+
 ## Mac gameplay preset
 
 These gameplay changes are compiled in when `USE_MAC_PRESET` is ON, the default on macOS.

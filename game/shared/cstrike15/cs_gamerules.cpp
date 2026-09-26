@@ -17839,6 +17839,14 @@ void CCSGameRules::InitializeGameTypeAndMode( void )
 #if defined( USE_MAC_PRESET ) && !defined( CLIENT_DLL )
 	if ( !engine->IsDedicatedServer() )
 	{
+		// Startup +exec commands run before the mode/map configs reset bot settings.
+		// Reapply the launcher choices here on every map, before the local preset.
+		if ( CommandLine()->FindParm( "-mac_launcher" ) )
+		{
+			engine->ServerCommand( "exec mac_launcher.cfg\n" );
+			engine->ServerExecute();
+		}
+
 		// Apply the local instant-start preset after the deathmatch and map
 		// configs so it also governs the first spawn on a freshly loaded map.
 		mp_teammates_are_enemies.SetValue( 1 );

@@ -198,6 +198,7 @@ private final class CrosshairPreviewView: NSView {
 
 @main
 final class LauncherApp: NSObject, NSApplicationDelegate {
+    private let maximumBotCount = 28
     private let defaults = UserDefaults.standard
     private let mapPopup = NSPopUpButton()
     private let botCountPopup = NSPopUpButton()
@@ -274,8 +275,9 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     private func buildMenus() {
-        for count in 0...20 {
-            botCountPopup.addItem(withTitle: count == 0 ? "0 (solo)" : "\(count)")
+        for count in 0...maximumBotCount {
+            let title = count == 0 ? "0 (solo)" : "\(count)"
+            botCountPopup.addItem(withTitle: title)
         }
         difficultyPopup.addItems(withTitles: ["Easy", "Normal", "Hard", "Expert"])
         qualityPopup.addItems(withTitles: ["Custom", "Low", "Medium", "High", "Very High"])
@@ -385,7 +387,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
 
     private func restoreSettings() {
         let botCount = defaults.object(forKey: "botCount") == nil ? 8 : defaults.integer(forKey: "botCount")
-        botCountPopup.selectItem(at: min(max(botCount, 0), 20))
+        botCountPopup.selectItem(at: min(max(botCount, 0), maximumBotCount))
         let difficulty = defaults.object(forKey: "difficulty") == nil ? 1 : defaults.integer(forKey: "difficulty")
         difficultyPopup.selectItem(at: min(max(difficulty, 0), 3))
 
@@ -468,7 +470,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(sectionLabel("Match"))
         stack.addArrangedSubview(row("Map", control: mapPopup))
         stack.addArrangedSubview(row("Bots", control: botCountPopup))
-        botCountPopup.toolTip = "The launcher reserves enough player slots for exactly this many bots plus you."
+        botCountPopup.toolTip = "Total bots, excluding you. Up to \(maximumBotCount) bots."
         stack.addArrangedSubview(row("Bot difficulty", control: difficultyPopup))
         stack.addArrangedSubview(row("Resolution", control: resolutionPopup))
         stack.addArrangedSubview(row("Display", control: fullscreenCheckbox))
@@ -1009,14 +1011,13 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             process.currentDirectoryURL = gameRoot
             process.standardOutput = logHandle
             process.standardError = logHandle
-            process.arguments = ["-arm64", game.path, "-insecure", "-novid",
+            process.arguments = ["-arm64", game.path, "-insecure", "-novid", "-mac_launcher",
                                  fullscreenCheckbox.state == .on ? "-fullscreen" : "-windowed",
                                  "-w", "\(resolution.width)", "-h", "\(resolution.height)",
                                  "-mat_antialias", "\(antialiasing)", "-mat_aaquality", "0",
                                  "-mat_vsync", "\(vsync)",
                                  "-maxplayers_override", "\(maxPlayers)",
-                                 "+exec", "mac_launcher.cfg", "+map", map,
-                                 "+exec", "mac_launcher.cfg"]
+                                 "+exec", "mac_launcher.cfg", "+map", map]
             process.terminationHandler = { [weak self] finished in
                 try? logHandle.close()
                 DispatchQueue.main.async {

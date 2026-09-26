@@ -1186,6 +1186,14 @@ bool CCSBotManager::BotAddCommand( int team, bool isFromConsole, const char *pro
 		if ( !profile )
 			profile = TheBotProfiles->GetRandomProfile( difficulty, team, weaponType );
 
+#if defined( USE_MAC_PRESET )
+		// Local deathmatch can have more bots than the database has unique names
+		// at one difficulty. Reuse matching personalities only after exhausting
+		// unused ones; the engine gives duplicate names a numeric prefix.
+		if ( !profile && !engine->IsDedicatedServer() && CSGameRules()->IsPlayingGunGameDeathmatch() )
+			profile = TheBotProfiles->GetRandomProfile( difficulty, team, weaponType, false, true );
+#endif
+
 		if (profile == NULL)
 		{
 			if ( isFromConsole )
