@@ -165,7 +165,7 @@ void Cbuf_Clear( ECommandTarget_t eTarget );
 // as new commands are generated from the console or keybindings,
 // the text is added to the end of the command buffer.
 //-----------------------------------------------------------------------------
-void Cbuf_AddText ( ECommandTarget_t eTarget, const char *text, cmd_source_t source = kCommandSrcCode, int nTickDelay = 0 );
+void Cbuf_AddText ( ECommandTarget_t eTarget, const char *text, cmd_source_t source = kCommandSrcCode, int nTickDelay = 0, int *pnTickDelayAfter = NULL );
 
 
 //-----------------------------------------------------------------------------
@@ -173,7 +173,7 @@ void Cbuf_AddText ( ECommandTarget_t eTarget, const char *text, cmd_source_t sou
 // inserted at the beginning of the buffer, before any remaining unexecuted
 // commands.
 //-----------------------------------------------------------------------------
-void Cbuf_InsertText( ECommandTarget_t eTarget, const char *text, cmd_source_t source = kCommandSrcCode, int nTickDelay = 0 );
+void Cbuf_InsertText( ECommandTarget_t eTarget, const char *text, cmd_source_t source = kCommandSrcCode, int nTickDelay = 0, int *pnTickDelayAfter = NULL );
 
 
 // These allow you to create blocks in the command stream where certain rules apply.

@@ -36,6 +36,7 @@ CCommandBuffer::CCommandBuffer( ) : m_Commands( 32, 32 )
 	m_nLastTickToProcess = -1;
 	m_nArgSBufferSize = 0;
 	m_bIsProcessingCommands = false;
+	m_bWaitEnabled = true;
 	m_nMaxArgSBufferLength = ARGS_BUFFER_LENGTH;
 }
 
@@ -207,7 +208,7 @@ void CCommandBuffer::GetNextCommandLength( const char *pText, int nMaxLen, int *
 //-----------------------------------------------------------------------------
 // Add text to command buffer, return false if it couldn't owing to overflow
 //-----------------------------------------------------------------------------
-bool CCommandBuffer::AddText( const char *pText, cmd_source_t cmdSource, int nTickDelay )
+bool CCommandBuffer::AddText( const char *pText, cmd_source_t cmdSource, int nTickDelay, int *pnTickDelayAfter )
 {
 	Assert( nTickDelay >= 0 );
 
@@ -244,6 +245,10 @@ bool CCommandBuffer::AddText( const char *pText, cmd_source_t cmdSource, int nTi
 			return false;
 	}
 
+	if ( pnTickDelayAfter )
+	{
+		*pnTickDelayAfter = nTick - m_nCurrentTick;
+	}
 	return true;
 }
 

@@ -48,7 +48,9 @@ public:
 	~CCommandBuffer();
 
     // Inserts text into the command buffer
-	bool AddText( const char *pText, cmd_source_t cmdSource = kCommandSrcUserInput, int nTickDelay = 0 );
+	// pnTickDelayAfter, if given, receives the delay that follows the text,
+	// including any 'wait' commands inside it.
+	bool AddText( const char *pText, cmd_source_t cmdSource = kCommandSrcUserInput, int nTickDelay = 0, int *pnTickDelayAfter = NULL );
 
 	// Used to iterate over all commands appropriate for the current time
 	void BeginProcessingCommands( int nDeltaTicks );

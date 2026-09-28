@@ -61,6 +61,9 @@ struct cmdalias_t
 static cmdalias_t	*cmd_alias = NULL;
 
 static CCommandBuffer s_CommandBuffer[ CBUF_COUNT ];
+
+// Whitelisted execs run every command immediately so none escapes the whitelist.
+static int s_nWaitSuppressDepth = 0;
 static CThreadFastMutex s_CommandBufferMutex;
 CUtlStringList m_WhitelistedConvars;
 #define LOCK_COMMAND_BUFFER() AUTO_LOCK(s_CommandBufferMutex)
@@ -182,10 +185,12 @@ void Cbuf_Clear( ECommandTarget_t eTarget )
 //-----------------------------------------------------------------------------
 // Adds command text at the end of the buffer
 //-----------------------------------------------------------------------------
-void Cbuf_AddText( ECommandTarget_t eTarget, const char *pText, cmd_source_t cmdSource, int nTickDelay )
+void Cbuf_AddText( ECommandTarget_t eTarget, const char *pText, cmd_source_t cmdSource, int nTickDelay, int *pnTickDelayAfter )
 {
 	LOCK_COMMAND_BUFFER();
-	if ( !s_CommandBuffer[ eTarget ].AddText( pText, cmdSource, nTickDelay ) )
+	// Servers can disallow 'wait' on their clients through the replicated convar.
+	s_CommandBuffer[ eTarget ].SetWaitEnabled( sv_allow_wait_command.GetBool() && s_nWaitSuppressDepth == 0 );
+	if ( !s_CommandBuffer[ eTarget ].AddText( pText, cmdSource, nTickDelay, pnTickDelayAfter ) )
 	{
 		ConMsg( "Cbuf_AddText: buffer overflow\n" );
 	}
@@ -195,7 +200,7 @@ void Cbuf_AddText( ECommandTarget_t eTarget, const char *pText, cmd_source_t cmd
 //-----------------------------------------------------------------------------
 // Adds command text at the beginning of the buffer
 //-----------------------------------------------------------------------------
-void Cbuf_InsertText( ECommandTarget_t eTarget, const char *pText, cmd_source_t cmdSource, int nTickDelay )
+void Cbuf_InsertText( ECommandTarget_t eTarget, const char *pText, cmd_source_t cmdSource, int nTickDelay, int *pnTickDelayAfter )
 {
 	LOCK_COMMAND_BUFFER();
 	// NOTE: This operation is only allowed when the command buffer
@@ -203,7 +208,7 @@ void Cbuf_InsertText( ECommandTarget_t eTarget, const char *pText, cmd_source_t 
 	// it's safe to eliminate Cbuf_InsertText altogether.
 	// Otherwise, I have to add a feature to CCommandBuffer
 	Assert( s_CommandBuffer[ eTarget ].IsProcessingCommands() );
-	Cbuf_AddText( eTarget, pText, cmdSource, nTickDelay );
+	Cbuf_AddText( eTarget, pText, cmdSource, nTickDelay, pnTickDelayAfter );
 }
 
 bool Cbuf_IsProcessingCommands( ECommandTarget_t eTarget )
@@ -600,9 +605,16 @@ void _Cmd_Exec_f( const CCommand &args, bool bOnlyIfExists, bool bUseWhitelist =
 	// check to make sure we're not going to overflow the cmd_text buffer
 	int hCommand = rCommandBuffer.GetNextCommandHandle();
 
+	if ( bUseWhitelist )
+	{
+		++s_nWaitSuppressDepth;
+	}
+
 	KeyValues *pKV_wl = new KeyValues( "convars" );
 
-	// Execute each command immediately
+	// Execute each command immediately. A 'wait' delays the rest of the file,
+	// as if the whole file had been queued at once.
+	int nTickDelay = 0;
 	const char *pszDataPtr = f;
 	while( pszDataPtr )
 	{
@@ -613,30 +625,31 @@ void _Cmd_Exec_f( const CCommand &args, bool bOnlyIfExists, bool bUseWhitelist =
 		if ( Q_strlen( com_token ) <= 0 )
 			continue;
 
-		Cbuf_InsertText( eTarget, com_token, args.Source() );
+		Cbuf_InsertText( eTarget, com_token, args.Source(), nTickDelay, &nTickDelay );
 
-		// Execute all commands provoked by the current line read from the file
+		// Execute all commands provoked by the current line read from the file.
+		// Commands behind a 'wait' stay queued for a later frame.
 		while ( rCommandBuffer.GetNextCommandHandle() != hCommand )
 		{
 			CCommand execCommand;
 
-			if( rCommandBuffer.DequeueNextCommand( &execCommand ) )
-			{
-				bool bFoundConvar = true;
-				if ( bUseWhitelist )
-				{
-					bFoundConvar = IsWhiteListedCmd( *execCommand.ArgV() );
-				}
-
-				if ( bFoundConvar )
-					Cbuf_ExecuteCommand( eTarget, execCommand );
-			}
-			else
-			{
-				Assert( 0 );
+			if ( !rCommandBuffer.DequeueNextCommand( &execCommand ) )
 				break;
+
+			bool bFoundConvar = true;
+			if ( bUseWhitelist )
+			{
+				bFoundConvar = IsWhiteListedCmd( *execCommand.ArgV() );
 			}
+
+			if ( bFoundConvar )
+				Cbuf_ExecuteCommand( eTarget, execCommand );
 		}
+	}
+
+	if ( bUseWhitelist )
+	{
+		--s_nWaitSuppressDepth;
 	}
 
 	if ( pKV_wl )

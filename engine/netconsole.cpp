@@ -197,19 +197,27 @@ void CNetConsoleMgr::RunFrame( void )
 		}
 
 		// find out how much we have to read
-		unsigned long readLen;
+#ifdef _WIN32
+		u_long readLen = 0;
+#else
+		// POSIX FIONREAD stores an int. An unsigned long would keep stack
+		// garbage in its upper bytes on 64-bit targets.
+		int readLen = 0;
+#endif
 		ioctlsocket( hSocket, FIONREAD, &readLen );
 		while( readLen > 0  )
 		{
 			char recvBuf[256];
-			int recvLen = recv( hSocket, recvBuf , MIN( sizeof( recvBuf ) , readLen ), 0 );
+			int recvLen = recv( hSocket, recvBuf , MIN( sizeof( recvBuf ) , (size_t)readLen ), 0 );
 			if ( recvLen == 0 ) // socket was closed
 			{
 				CloseConnection( i );
 				break;
 			}
 				
-			if ( recvLen < 0 && !SocketWouldBlock() )
+			// Stop on errors and when nothing is left to read; a negative
+			// length must never reach HandleInputChars.
+			if ( recvLen < 0 )
 			{
 				break;
 			}
@@ -224,7 +232,7 @@ void CNetConsoleMgr::RunFrame( void )
 
 void CNetConsoleMgr::HandleInputChars( char const *pIn, int recvLen, CConnectedNetConsoleData *pData )
 {
-	while( recvLen )
+	while( recvLen > 0 )
 	{
 		switch( *pIn )
 		{
