@@ -643,6 +643,9 @@ CCSPlayer::CCSPlayer()
 	m_flLeanAngle = 0.0f;
 	m_angOpenMoHAAWeaponKick.Init();
 	m_angOpenMoHAADamageKick.Init();
+	m_vecAALeanFreeHeadPos.Init();
+	m_bAALeanYawOverride = false;
+	m_flAALeanYawOverride = 0.0f;
 #endif
 	m_PlayerAnimState = CreatePlayerAnimState( this, this, LEGANIM_9WAY, true );
 	m_PlayerAnimStateCSGO = CreateCSGOPlayerAnimstate( this );
@@ -1339,6 +1342,17 @@ void CCSPlayer::SetCSSpawnLocation( Vector position, QAngle angle )
 	m_storedSpawnPosition = position;
 	m_storedSpawnAngle = angle;
 }
+
+#if defined( USE_MAC_PRESET )
+void CCSPlayer::SetupBones( matrix3x4a_t *pBoneToWorld, int boneMask )
+{
+	BaseClass::SetupBones( pBoneToWorld, boneMask );
+
+	// Lean the server's hitboxes with the body that clients draw.
+	CS_ApplyAABodyLean( GetModelPtr(), pBoneToWorld, boneMask, m_flLeanAngle,
+		m_bAALeanYawOverride ? m_flAALeanYawOverride : EyeAngles()[YAW], &m_vecAALeanFreeHeadPos );
+}
+#endif
 
 void CCSPlayer::Spawn()
 {

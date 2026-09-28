@@ -637,7 +637,12 @@ const Vector &CCSBot::GetPartPosition( CCSPlayer *player, VisiblePartType part )
  */
 void CCSBot::UpdateLookAt( void )
 {
+#if defined( USE_MAC_PRESET )
+	// A leaning bot fires from its leaned eye, so aim from there too.
+	Vector to = m_lookAtSpot - ( m_flLeanAngle != 0.0f ? Weapon_ShootPosition() : EyePositionConst() );
+#else
 	Vector to = m_lookAtSpot - EyePositionConst();
+#endif
 
 	QAngle idealAngle;
 	VectorAngles( to, idealAngle );

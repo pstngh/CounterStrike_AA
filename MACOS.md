@@ -124,6 +124,11 @@ the original amount. The drop follows the existing smooth lean transition.
 No extra sideways movement or weapon tilt is applied. CS:GO's stock bob,
 sway, running pose, and landing dip are unchanged, as are lean camera movement,
 aim, collision, and FOV.
+Other players see the lean as Allied Assault draws it in third person: the hips
+roll 0.8 of the lean angle, the chest and shoulders the full angle, and the head
+0.6, while both feet stay where the animation plants them. Server hitboxes and
+lag compensation follow the same pose. CS:GO's acceleration lean, which tipped
+bodies into speed changes, is disabled so bodies lean only with the lean input.
 Left or right Control toggles crouch; C toggles walk.
 W/S and A/D use nullbind-style SOCD: the most recently pressed direction wins
 while both are held, and releasing it resumes the other held direction.
@@ -189,7 +194,10 @@ Bots keep hunting instead of buying, camping, or holding a position, and move
 while aiming, scoping, and reloading. AWP bots can fire while moving with the
 preset's existing movement accuracy. Movement preserves navigation, crouching
 through low passages, and ladder climbing; fallback sidesteps check for walls
-and drops. Collisions can still briefly interrupt movement. Explicit bot debug
+and drops. Collisions can still briefly interrupt movement. Bots lean toward
+whichever side they strafe, as Allied Assault players do, and aim from the
+leaned eye their shots leave from; `bot_strafe_lean 0` turns the bot lean off
+(default 1). Explicit bot debug
 stops and freeze controls remain available. This behavior does not apply to
 dedicated servers, cooperative/training modes, or builds without the preset.
 

@@ -408,6 +408,11 @@ void CCSGOPlayerAnimState::ModifyEyePosition( Vector& vecInputEyePos )
 		Vector vecHeadPos;
 		QAngle temp;
 		m_pPlayer->GetBonePosition( nHeadBone, vecHeadPos, temp );
+#if defined( USE_MAC_PRESET )
+		// The eye lean is added separately; clamp against the head before the body lean.
+		if ( m_pPlayer->GetAABodyLeanAngle() != 0.0f )
+			vecHeadPos = m_pPlayer->m_vecAALeanFreeHeadPos;
+#endif
 		vecHeadPos.z += 1.7f;
 
 #ifdef CLIENT_DLL
@@ -852,6 +857,10 @@ void CCSGOPlayerAnimState::SetUpLean( void )
 	
 	m_flAccelerationWeight = clamp( (m_vecAcceleration.Length() / CS_PLAYER_SPEED_RUN) * m_flSpeedAsPortionOfRunTopSpeed, 0, 1 );
 	m_flAccelerationWeight *= (1.0f - m_flLadderWeight);
+#if defined( USE_MAC_PRESET )
+	// Allied Assault has no acceleration lean; the body only leans with the lean keys.
+	m_flAccelerationWeight = 0.0f;
+#endif
 
 	m_tPoseParamMappings[ PLAYER_POSE_PARAM_LEAN_YAW ].SetValue( m_pPlayer, AngleNormalize( m_flFootYaw - temp[YAW] ) );
 

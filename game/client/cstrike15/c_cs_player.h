@@ -701,6 +701,13 @@ public:
 	CNetworkVar( float, m_flLeanAngle );
 	CNetworkQAngle( m_angOpenMoHAAWeaponKick );
 	CNetworkQAngle( m_angOpenMoHAADamageKick );
+	// head_0 as built before the body lean, for the camera height clamp.
+	Vector m_vecAALeanFreeHeadPos;
+	// Networked lean for other players' bodies, interpolated between updates.
+	// The local player keeps using the predicted m_flLeanAngle.
+	float m_flAALeanAngleVisual;
+	CInterpolatedVar< float > m_iv_flAALeanAngleVisual;
+	float GetAABodyLeanAngle() const { return IsLocalPlayer() ? m_flLeanAngle : m_flAALeanAngleVisual; }
 #endif
 	CNetworkVar( int, m_iDirection );	// The current lateral kicking direction; 1 = right,  0 = left
 	CNetworkVar( int, m_iShotsFired );	// number of shots fired recently

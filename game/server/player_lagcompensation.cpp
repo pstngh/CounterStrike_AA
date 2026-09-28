@@ -15,6 +15,9 @@
 #include "BaseAnimatingOverlay.h"
 #include "tier0/vprof.h"
 #include "collisionutils.h"
+#if defined( USE_MAC_PRESET )
+#include "cs_player.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -625,6 +628,24 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 			}
 		}
 
+#if defined( USE_MAC_PRESET )
+		if ( entity->IsPlayer() )
+		{
+			CCSPlayer *pCSPlayer = ToCSPlayer( entity );
+			restore->m_flAALeanAngle = pCSPlayer->m_flLeanAngle;
+			float flLean = record->m_flAALeanAngle;
+			float flYaw = record->m_flAALeanYaw;
+			if ( frac > 0.0f && prevRecord )
+			{
+				flLean = Lerp( frac, record->m_flAALeanAngle, prevRecord->m_flAALeanAngle );
+				flYaw = record->m_flAALeanYaw + AngleDiff( prevRecord->m_flAALeanYaw, record->m_flAALeanYaw ) * frac;
+			}
+			pCSPlayer->m_flLeanAngle = flLean;
+			pCSPlayer->m_bAALeanYawOverride = true;
+			pCSPlayer->m_flAALeanYawOverride = flYaw;
+		}
+#endif
+
 		//indicate lag-compensated entities with a green box
 		if( sv_showlagcompensation.GetInt() == 1 && entity->GetBaseAnimating() )
 			debugoverlay->AddBoxOverlay( entity->WorldSpaceCenter(), Vector(-3,-3,-3), Vector(3,3,3), QAngle(0,0,0), 0,255,0,255, sv_showlagcompensation_duration.GetFloat() * 0.125f );
@@ -771,6 +792,15 @@ void CLagCompensationManager::RecordDataIntoTrack( CBaseEntity *entity, LagRecor
 				record.m_flPoseParameters[i] = pAnimating->GetPoseParameter(i);
 			}
 		}
+
+#if defined( USE_MAC_PRESET )
+		if ( entity->IsPlayer() )
+		{
+			CCSPlayer *pCSPlayer = ToCSPlayer( entity );
+			record.m_flAALeanAngle = pCSPlayer->m_flLeanAngle;
+			record.m_flAALeanYaw = pCSPlayer->EyeAngles()[YAW];
+		}
+#endif
 	}
 }
 void CLagCompensationManager::RestoreEntityFromRecords( CBaseEntity *entity, LagRecord *restore, LagRecord *change, bool wantsAnims )
@@ -851,6 +881,17 @@ void CLagCompensationManager::RestoreEntityFromRecords( CBaseEntity *entity, Lag
 					pAnimating->SetPoseParameter( i, restore->m_flPoseParameters[i] );
 				}
 			}
+
+#if defined( USE_MAC_PRESET )
+			if ( entity->IsPlayer() )
+			{
+				CCSPlayer *pCSPlayer = ToCSPlayer( entity );
+				pCSPlayer->m_flLeanAngle = restore->m_flAALeanAngle;
+				pCSPlayer->m_bAALeanYawOverride = false;
+				// Drop the rewound bones; the lean alone does not move the entity.
+				pAnimating->InvalidateBoneCache();
+			}
+#endif
 		}
 	}
 

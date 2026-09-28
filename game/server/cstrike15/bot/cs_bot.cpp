@@ -1220,6 +1220,19 @@ void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwar
 				}
 			}
 		}
+
+#if defined( USE_MAC_PRESET )
+		if ( UseMacBotPreset() && cv_bot_strafe_lean.GetBool() )
+		{
+			// Lean toward whichever side the bot is strafing, as Allied Assault
+			// players do. Movement code drops the lean on ladders and at death.
+			buttons &= ~( IN_ALT1 | IN_ALT2 );
+			if ( sidemove < 0 )
+				buttons |= IN_ALT1;
+			else if ( sidemove > 0 )
+				buttons |= IN_ALT2;
+		}
+#endif
 		cmd.command_number = gpGlobals->tickcount;
 		cmd.forwardmove = forwardmove;
 		cmd.sidemove = sidemove;

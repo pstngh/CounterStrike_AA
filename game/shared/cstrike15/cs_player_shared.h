@@ -2,10 +2,16 @@
 #define CS_PLAYER_SHARED_H
 
 #if defined( USE_MAC_PRESET )
+class CStudioHdr;
+
 // Allied Assault multiplayer lean, shared by client prediction and server movement.
 float CS_AdvanceAALean( float leanAngle, int buttons, float frameTime );
 Vector CS_AALeanEyeOffset( const QAngle &viewAngles, float leanAngle );
 Vector CS_AALeanTraceEye( CBaseEntity *player, const Vector &start, const Vector &desired );
+// Allied Assault third-person lean: rolls the hips, spine and head of built bones
+// and keeps the feet planted. Stores the head position from before the lean.
+void CS_ApplyAABodyLean( const CStudioHdr *pHdr, matrix3x4a_t *pBoneToWorld, int boneMask,
+	float leanAngle, float eyeYaw, Vector *pUnleanedHeadPos );
 
 // Allied Assault deathmatch speed cap for a weapon carried by the local listen-server host.
 float CS_AAWeaponMaxSpeed( int weaponId );

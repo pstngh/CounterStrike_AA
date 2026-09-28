@@ -50,6 +50,9 @@ extern ConVar cv_bot_dont_shoot;
 extern ConVar cv_bot_eco_limit;
 extern ConVar cv_bot_auto_follow;
 extern ConVar cv_bot_flipout;
+#if defined( USE_MAC_PRESET )
+extern ConVar cv_bot_strafe_lean;
+#endif
 #if CS_CONTROLLABLE_BOTS_ENABLED
 extern ConVar cv_bot_controllable;
 #endif

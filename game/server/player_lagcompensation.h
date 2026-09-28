@@ -75,6 +75,10 @@ public:
 		{
 			m_flPoseParameters[i] = src.m_flPoseParameters[i];
 		}
+#if defined( USE_MAC_PRESET )
+		m_flAALeanAngle = src.m_flAALeanAngle;
+		m_flAALeanYaw = src.m_flAALeanYaw;
+#endif
 	}
 
 	void Clear()
@@ -96,6 +100,10 @@ public:
 		{
 			m_flPoseParameters[i] = 0;
 		}
+#if defined( USE_MAC_PRESET )
+		m_flAALeanAngle = 0;
+		m_flAALeanYaw = 0;
+#endif
 	}
 
 	// Did player die this frame
@@ -115,6 +123,12 @@ public:
 	float					m_masterCycle;
 
 	float					m_flPoseParameters[MAXSTUDIOPOSEPARAM];
+
+#if defined( USE_MAC_PRESET )
+	// Allied Assault body lean and the eye yaw it rolls around.
+	float					m_flAALeanAngle;
+	float					m_flAALeanYaw;
+#endif
 };
 
 typedef CUtlFixedLinkedList< LagRecord > LagRecordList;

@@ -1030,6 +1030,13 @@ public:
 	CNetworkVar( float, m_flLeanAngle );
 	CNetworkQAngle( m_angOpenMoHAAWeaponKick );
 	CNetworkQAngle( m_angOpenMoHAADamageKick );
+	// head_0 as built before the body lean, for the camera height clamp.
+	Vector m_vecAALeanFreeHeadPos;
+	// Lag compensation rewinds the eye yaw that orients the body lean.
+	bool m_bAALeanYawOverride;
+	float m_flAALeanYawOverride;
+	float GetAABodyLeanAngle() const { return m_flLeanAngle; }
+	virtual void SetupBones( matrix3x4a_t *pBoneToWorld, int boneMask );
 #endif
 	CNetworkVar( int, m_iDirection );	// The current lateral kicking direction; 1 = right,  0 = left
 	CNetworkVar( int, m_iShotsFired );	// number of shots fired recently (seems inconsistent, based on specific weapons incrementing this value)

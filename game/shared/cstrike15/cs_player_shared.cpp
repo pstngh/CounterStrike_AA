@@ -10,6 +10,7 @@
 #include "cs_gamerules.h"
 #include "weapon_c4.h"
 #include "in_buttons.h"
+#include "bone_setup.h"
 #include "datacache/imdlcache.h"
 #include "GameStats.h"
 
@@ -265,6 +266,144 @@ Vector CS_AALeanTraceEye( CBaseEntity *player, const Vector &start, const Vector
 		Vector( desired.x, desired.y, heightTrace.endpos.z ), mins, maxs,
 		MASK_PLAYERSOLID, player, COLLISION_GROUP_NONE, &lateralTrace );
 	return lateralTrace.endpos;
+}
+
+static bool CS_AALeanBoneReady( const CStudioHdr *pHdr, int bone, int boneMask )
+{
+	return bone >= 0 && ( pHdr->boneFlags( bone ) & boneMask ) != 0;
+}
+
+void CS_ApplyAABodyLean( const CStudioHdr *pHdr, matrix3x4a_t *pBoneToWorld, int boneMask,
+	float leanAngle, float eyeYaw, Vector *pUnleanedHeadPos )
+{
+	if ( !pHdr || !pBoneToWorld )
+		return;
+
+	const int headBone = Studio_BoneIndexByName( pHdr, "head_0" );
+	if ( pUnleanedHeadPos && CS_AALeanBoneReady( pHdr, headBone, boneMask ) )
+		*pUnleanedHeadPos = pBoneToWorld[headBone].GetOrigin();
+
+	if ( leanAngle == 0.0f || !CS_AALeanBoneReady( pHdr, Studio_BoneIndexByName( pHdr, "pelvis" ), boneMask ) )
+		return;
+
+	// OpenMoHAA's PmoveAdjustAngleSettings rolls four bone controllers by fixed
+	// fractions of the lean. Each roll turns the bone about its own origin in
+	// model space and carries its children, so the hips end at 0.8, the chest
+	// at 1.02, the shoulders at 1.0 and the head at 0.6 of the lean. Bip01
+	// Spine1 and Spine2 map to spine_2 and spine_3, which hold the clavicles in
+	// both skeletons. Only the roll is used: CS:GO's aim layers already pitch
+	// the upper body.
+	static const struct { const char *bone; float scale; } s_controllers[] =
+	{
+		{ "pelvis", 0.8f },
+		{ "spine_2", 0.2f * 1.1f },
+		{ "spine_3", 0.2f * -0.1f },
+		{ "head_0", 0.6f - 1.0f },
+	};
+	static const char *const s_legBones[2][3] =
+	{
+		{ "leg_upper_L", "leg_lower_L", "ankle_L" },
+		{ "leg_upper_R", "leg_lower_R", "ankle_R" },
+	};
+
+	const int numBones = pHdr->numbones();
+	Vector forward;
+	AngleVectors( QAngle( 0.0f, eyeYaw, 0.0f ), &forward );
+
+	// MOHAA's legs are IK chains whose feet keep their animated placement, so
+	// record each foot and the animated knee bend before the hips move.
+	int legs[2][3];
+	bool legReady[2];
+	matrix3x4a_t plantedAnkle[2];
+	Vector kneeDir[2];
+	for ( int leg = 0; leg < 2; ++leg )
+	{
+		legReady[leg] = true;
+		for ( int link = 0; link < 3; ++link )
+		{
+			legs[leg][link] = Studio_BoneIndexByName( pHdr, s_legBones[leg][link] );
+			legReady[leg] = legReady[leg] && CS_AALeanBoneReady( pHdr, legs[leg][link], boneMask );
+		}
+		if ( !legReady[leg] )
+			continue;
+
+		const Vector thigh = pBoneToWorld[legs[leg][0]].GetOrigin();
+		const Vector thighToKnee = pBoneToWorld[legs[leg][1]].GetOrigin() - thigh;
+		const Vector thighToAnkle = pBoneToWorld[legs[leg][2]].GetOrigin() - thigh;
+		plantedAnkle[leg] = pBoneToWorld[legs[leg][2]];
+		const float legLengthSqr = thighToAnkle.LengthSqr();
+		kneeDir[leg] = legLengthSqr > 0.001f ?
+			thighToKnee - thighToAnkle * ( DotProduct( thighToKnee, thighToAnkle ) / legLengthSqr ) : vec3_origin;
+		if ( kneeDir[leg].NormalizeInPlace() < 0.001f )
+			kneeDir[leg] = forward;
+	}
+
+	bool inSubtree[MAXSTUDIOBONES];
+	for ( int c = 0; c < ARRAYSIZE( s_controllers ); ++c )
+	{
+		const int root = Studio_BoneIndexByName( pHdr, s_controllers[c].bone );
+		if ( !CS_AALeanBoneReady( pHdr, root, boneMask ) )
+			continue;
+
+		// Roll about the eye-yaw forward axis through the bone: p' = R( p - o ) + o.
+		matrix3x4_t roll;
+		MatrixBuildRotationAboutAxis( forward, leanAngle * s_controllers[c].scale, roll );
+		const Vector pivot = pBoneToWorld[root].GetOrigin();
+		Vector rotatedPivot;
+		VectorRotate( pivot, roll, rotatedPivot );
+		roll.SetOrigin( pivot - rotatedPivot );
+
+		// Studio models list parents before children.
+		for ( int i = root; i < numBones; ++i )
+		{
+			const int parent = pHdr->boneParent( i );
+			inSubtree[i] = i == root || ( parent >= root && inSubtree[parent] );
+			if ( !inSubtree[i] || !CS_AALeanBoneReady( pHdr, i, boneMask ) )
+				continue;
+
+			matrix3x4a_t rolled;
+			ConcatTransforms( roll, pBoneToWorld[i], rolled );
+			pBoneToWorld[i] = rolled;
+		}
+	}
+
+	bool inLeg[MAXSTUDIOBONES];
+	matrix3x4_t localToParent[MAXSTUDIOBONES];
+	for ( int leg = 0; leg < 2; ++leg )
+	{
+		if ( !legReady[leg] )
+			continue;
+
+		const int thigh = legs[leg][0];
+		const int knee = legs[leg][1];
+		const int ankle = legs[leg][2];
+
+		// Keep twist, toe and lock bones attached to the chain the solver moves.
+		for ( int i = thigh + 1; i < numBones; ++i )
+		{
+			const int parent = pHdr->boneParent( i );
+			inLeg[i] = parent == thigh || ( parent > thigh && inLeg[parent] );
+			if ( inLeg[i] && i != knee && i != ankle && CS_AALeanBoneReady( pHdr, i, boneMask ) )
+				ConcatTransforms( pBoneToWorld[parent].InverseTR(), pBoneToWorld[i], localToParent[i] );
+		}
+
+		Vector target = plantedAnkle[leg].GetOrigin();
+		Vector kneePos = pBoneToWorld[knee].GetOrigin();
+		Vector bendDir = kneeDir[leg];
+		if ( Studio_SolveIK( thigh, knee, ankle, target, kneePos, bendDir, pBoneToWorld ) )
+		{
+			// The solver only places the foot; keep its animated orientation too.
+			const Vector solvedAnkle = pBoneToWorld[ankle].GetOrigin();
+			pBoneToWorld[ankle] = plantedAnkle[leg];
+			pBoneToWorld[ankle].SetOrigin( solvedAnkle );
+		}
+
+		for ( int i = thigh + 1; i < numBones; ++i )
+		{
+			if ( inLeg[i] && i != knee && i != ankle && CS_AALeanBoneReady( pHdr, i, boneMask ) )
+				ConcatTransforms( pBoneToWorld[pHdr->boneParent( i )], localToParent[i], pBoneToWorld[i] );
+		}
+	}
 }
 
 float CS_AAWeaponMaxSpeed( int weaponId )

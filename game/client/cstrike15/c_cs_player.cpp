@@ -1369,6 +1369,15 @@ void C_CSPlayer::UpdateFlashBangEffect( void )
 }
 
 
+#if defined( USE_MAC_PRESET )
+void RecvProxy_LeanAngle( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	RecvProxy_FloatToFloat( pData, pStruct, pOut );
+	// Feed the interpolated copy that other players' bodies use.
+	static_cast< C_CSPlayer * >( pStruct )->m_flAALeanAngleVisual = pData->m_Value.m_Float;
+}
+#endif
+
 void RecvProxy_HasDefuser( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	C_CSPlayer *pPlayerData = (C_CSPlayer * )pStruct;
@@ -1503,7 +1512,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_CSPlayer, DT_CSPlayer, CCSPlayer )
 	RecvPropFloat( RECVINFO( m_angEyeAngles[0] ) ),
 	RecvPropFloat( RECVINFO( m_angEyeAngles[1] ) ),
 #if defined( USE_MAC_PRESET )
-	RecvPropFloat( RECVINFO( m_flLeanAngle ) ),
+	RecvPropFloat( RECVINFO( m_flLeanAngle ), 0, RecvProxy_LeanAngle ),
 #endif
 
 	RecvPropInt( RECVINFO( m_iAddonBits ) ),
@@ -1633,6 +1642,9 @@ bool C_CSPlayer::s_bPlayingFreezeCamSound = false;
 
 C_CSPlayer::C_CSPlayer() : 
 	m_iv_angEyeAngles( "C_CSPlayer::m_iv_angEyeAngles" ),
+#if defined( USE_MAC_PRESET )
+	m_iv_flAALeanAngleVisual( "C_CSPlayer::m_iv_flAALeanAngleVisual" ),
+#endif
 	m_GlowObject( this, Vector( 1.0f, 1.0f, 1.0f ), 0.0f, false, false ),
 	m_bIsSpecFollowingGrenade( false )
 {
@@ -1656,6 +1668,11 @@ C_CSPlayer::C_CSPlayer() :
 	m_angEyeAngles.Init();
 
 	AddVar( &m_angEyeAngles, &m_iv_angEyeAngles, LATCH_SIMULATION_VAR );
+#if defined( USE_MAC_PRESET )
+	m_vecAALeanFreeHeadPos.Init();
+	m_flAALeanAngleVisual = 0.0f;
+	AddVar( &m_flAALeanAngleVisual, &m_iv_flAALeanAngleVisual, LATCH_SIMULATION_VAR );
+#endif
 
 	// Remove interpolation of variables we have excluded from send table
 	// HACK: m_angRotation is private in C_BaseEntity but it's accessible via GetLocalAngles()
@@ -6822,6 +6839,13 @@ void C_CSPlayer::BuildTransformations( CStudioHdr *pHdr, BoneVector *pos, BoneQu
 {
 	// First, setup our model's transformations like normal.
 	BaseClass::BuildTransformations( pHdr, pos, q, cameraTransform, boneMask, boneComputed );
+
+#if defined( USE_MAC_PRESET )
+	// Lean every bone build, including attachment-only ones, so the weapon,
+	// muzzle and hitboxes follow the body.
+	CS_ApplyAABodyLean( pHdr, m_BoneAccessor.GetBoneArrayForWrite(), boneMask,
+		GetAABodyLeanAngle(), EyeAngles()[YAW], &m_vecAALeanFreeHeadPos );
+#endif
 
 	if ( !m_bUseNewAnimstate || !m_PlayerAnimStateCSGO )
 		return;

@@ -90,6 +90,9 @@ ConVar cv_bot_dont_shoot( "bot_dont_shoot", "0", FCVAR_REPLICATED | FCVAR_RELEAS
 ConVar cv_bot_eco_limit( "bot_eco_limit", "2000", FCVAR_REPLICATED, "If nonzero, bots will not buy if their money falls below this amount." );
 ConVar cv_bot_auto_follow( "bot_auto_follow", "0", FCVAR_REPLICATED, "If nonzero, bots with high co-op may automatically follow a nearby human player." );
 ConVar cv_bot_flipout( "bot_flipout", "0", FCVAR_REPLICATED, "If nonzero, bots use no CPU for AI. Instead, they run around randomly." );
+#if defined( USE_MAC_PRESET )
+ConVar cv_bot_strafe_lean( "bot_strafe_lean", "1", FCVAR_REPLICATED | FCVAR_RELEASE, "If nonzero, bots lean toward the side they strafe, as Allied Assault players do." );
+#endif
 #if CS_CONTROLLABLE_BOTS_ENABLED
 ConVar cv_bot_controllable( "bot_controllable", "1", FCVAR_REPLICATED, "Determines whether bots can be controlled by players" );
 #endif
