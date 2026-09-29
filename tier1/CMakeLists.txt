@@ -1,9 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	TIER1.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(tier1_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -14,10 +8,6 @@ include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
 add_definitions(-DTIER1_STATIC_LIB)
-
-if( WINDOWS )
-    #		$AdditionalDependencies			"$BASE Rpcrt4.lib"
-endif()
 
 if( LINUXALL )
     target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
@@ -50,17 +40,12 @@ target_sources(${OUTLIBNAME} PRIVATE "memstack.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "NetAdr.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "splitstring.cpp")
 
-if( WINDOWS OR X360 )
-    target_sources(${OUTLIBNAME} PRIVATE "processor_detect.cpp")
-    #					$EnableC++Exceptions	"Yes (/EHsc)" [!$X360]
-endif()
-
 if( OSXALL )
     target_sources(${OUTLIBNAME} PRIVATE "processor_detect_arm64.cpp")
-elseif( POSIX )
+else()
     target_sources(${OUTLIBNAME} PRIVATE "processor_detect_linux.cpp")
 endif()
-if( LINUXALL OR PS3 )
+if( LINUXALL )
     target_sources(${OUTLIBNAME} PRIVATE "qsort_s.cpp")
 endif()
 

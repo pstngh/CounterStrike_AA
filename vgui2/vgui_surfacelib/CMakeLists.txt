@@ -1,9 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	VGUI_SURFACELIB.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(vgui_surfacelib_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -27,9 +21,6 @@ target_sources(${OUTLIBNAME} PRIVATE "FontEffects.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "FontEffects.h")
 target_sources(${OUTLIBNAME} PRIVATE "fonttexturecache.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "texturedictionary.cpp")
-#$File	"Win32Font.cpp"			[$WINDOWS]
-#$File	"Win32Font_x360.cpp"	[$X360]
-#$File	"ps3font.cpp"			[$PS3]
 if( OSXALL )
     target_sources(${OUTLIBNAME} PRIVATE "osxfont.cpp")
 endif()

@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	MATSYS_CONTROLS.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(matsys_controls_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -40,7 +35,3 @@ target_sources(${OUTLIBNAME} PRIVATE "vmtpreviewpanel.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "vtfpicker.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "vtfpreviewpanel.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "vmtpanel.cpp")
-
-if( WINDOWS )
-    #		$Lib	bitmap
-endif()

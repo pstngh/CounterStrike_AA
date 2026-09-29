@@ -1,13 +1,6 @@
-#//-----------------------------------------------------------------------------
-#//	SHADERLIB.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(shaderlib_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
-set(SHADERLIBDIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_MODULE_PATH ${SRCDIR}/cmake)
 set(OUTLIBNAME "shaderlib_client")
 

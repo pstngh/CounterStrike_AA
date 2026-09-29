@@ -17,14 +17,12 @@ include_directories(${SRCDIR}/ivp/ivp_controller)
 include_directories(${SRCDIR}/ivp/ivp_surface_manager)
 include_directories(${SRCDIR}/ivp/ivp_intern)
 
-if( POSIX )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
-    #TODO: pretty sure the valve guy made a typo here, it's supposed to be HAVOK_MOPP
-    add_definitions(-D_LIB -DIVP_VERSION_SDK -DHAVANA_CONSTRAINTS -DHAVOK_MOOP)
-    if(LINUXALL)
-        target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
-        add_definitions(-DLINUX)
-    endif()
+target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
+#TODO: pretty sure the valve guy made a typo here, it's supposed to be HAVOK_MOPP
+add_definitions(-D_LIB -DIVP_VERSION_SDK -DHAVANA_CONSTRAINTS -DHAVOK_MOOP)
+if(LINUXALL)
+    target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
+    add_definitions(-DLINUX)
 endif()
 
 #IVP_PHYSICS_SRC_DIR

@@ -1,7 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	localize.dll project script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(localize_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")

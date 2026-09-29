@@ -1,9 +1,3 @@
-#//--------------------------------------------------------------------------------
-#//	PARTICLES.VPC
-#//
-#//  full particles.lib for the client.
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(particles_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -27,8 +21,3 @@ target_sources(${OUTLIBNAME} PRIVATE "builtin_particle_render_ops.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "particle_snapshot.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "particle_sort.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "particles.cpp")
-
-#	$Folder "Link Libraries" [$WINDOWS||$X360]
-#	{
-#		$Lib "bitmap"
-#	}

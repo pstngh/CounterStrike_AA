@@ -5,7 +5,6 @@ set(SRCDIR "${CMAKE_CURRENT_SOURCE_DIR}/../")
 set(CMAKE_MODULE_PATH ${SRCDIR}/cmake)
 set(OUTBINDIR ${SRCDIR}/../game/bin)
 set(OUTBINNAME "rocketui_client")
-#set(DONT_DOWNGRADE_ABI "1")
 
 #dont need to build this when building dedicated server
 if( DEDICATED )
@@ -25,16 +24,12 @@ target_sources(${OUTBINNAME} PRIVATE rocketfilesystem.cpp)
 target_sources(${OUTBINNAME} PRIVATE customelements/KisakConvarSetting.cpp)
 target_sources(${OUTBINNAME} PRIVATE customelements/KisakURL.cpp)
 
-if( POSIX )
-    #OpenGL rendering imp
-    target_sources(${OUTBINNAME} PRIVATE rocketrenderGL.cpp)
-    if( APPLE )
-        target_link_libraries(${OUTBINNAME} "${SDL2_LIBRARY}")
-    else()
-        target_link_libraries(${OUTBINNAME} SDL2)
-    endif()
+#OpenGL rendering imp
+target_sources(${OUTBINNAME} PRIVATE rocketrenderGL.cpp)
+if( APPLE )
+    target_link_libraries(${OUTBINNAME} "${SDL2_LIBRARY}")
 else()
-    message(FATAL_ERROR "not implemented for windows")
+    target_link_libraries(${OUTBINNAME} SDL2)
 endif()
 
 #target_link_libraries(${OUTBINNAME} ${SRCDIR}/thirdparty/RmlUi/build/libRmlCore.so)

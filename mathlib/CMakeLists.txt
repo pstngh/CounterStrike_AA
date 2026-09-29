@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	MATHLIB.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(mathlib_libraries)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -44,9 +39,7 @@ target_sources(${OUTLIBNAME} PRIVATE "vmatrix.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "almostequal.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "simplex.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "eigen.cpp")
-if( NOT OSX32 )
-    target_sources(${OUTLIBNAME} PRIVATE "box_buoyancy.cpp") #[!$OSX32] // doesn't compile in debug under GCC 4.2.X)
-endif()
+target_sources(${OUTLIBNAME} PRIVATE "box_buoyancy.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "camera.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "planefit.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "polygon.cpp")
@@ -54,8 +47,6 @@ target_sources(${OUTLIBNAME} PRIVATE "volumeculler.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "transform.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "sphere.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "capsule.cpp")
-
-
 
 ## Build the extended mathlib ##
 set(OUTLIBNAME "mathlib_extended_client")

@@ -1,9 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	SCALEFORMUI.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 #DUMMY VERSION FOR CLION - WILL NOT BUILD! MISSING SCALEFORM SDK.
 project(scaleformui_client)
 cmake_minimum_required(VERSION 3.16)

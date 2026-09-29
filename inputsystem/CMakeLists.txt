@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	INPUTSYSTEM.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 #dont build this on dedicated build
 if( DEDICATED )
@@ -27,9 +22,6 @@ endif()
 target_sources(${OUTBINNAME} PRIVATE "inputstacksystem.cpp")
 target_sources(${OUTBINNAME} PRIVATE "inputsystem.cpp")
 target_sources(${OUTBINNAME} PRIVATE "inputsystem.h")
-if( NOT POSIX )
-    #$File	"joystick.cpp"			[!$POSIX]
-endif()
 if( OSXALL )
     target_sources(${OUTBINNAME} PRIVATE "joystick_osx.cpp")
 endif()
@@ -39,9 +31,6 @@ endif()
 target_sources(${OUTBINNAME} PRIVATE "steamcontroller.cpp")
 target_sources(${OUTBINNAME} PRIVATE "key_translation.cpp")
 target_sources(${OUTBINNAME} PRIVATE "key_translation.h")
-if( NOT POSIX )
-    #$File	"xcontroller.cpp"		[!$POSIX]
-endif()
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/common/platforminputdevice.cpp")
 
 target_link_libraries(${OUTBINNAME} tier2_client mathlib_client)

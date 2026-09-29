@@ -1,9 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	UNITLIB.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(unitlib_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")

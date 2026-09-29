@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	VGUI_DLL.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(vgui2_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -17,7 +12,6 @@ if( LINUXALL )
     include_directories(/usr/include/freetype2)
 endif()
 include_directories(${SRCDIR}/thirdparty)
-#$PreprocessorDefinitions		"$BASE;DONT_PROTECT_FILEIO_FUNCTIONS"
 
 if( LINUXALL )
     target_link_libraries(${OUTBINNAME} SDL2)
@@ -30,10 +24,7 @@ target_sources(${OUTBINNAME} PRIVATE "ImageBorder.cpp")
 target_sources(${OUTBINNAME} PRIVATE "fileimage.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/filesystem_helpers.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/filesystem_init.cpp")
-if( WINDOWS )
-    #$File	"htmlwindow.cpp"				[$WINDOWS]
-endif()
-if( WINDOWS OR X360 OR PS3 OR LINUXALL )
+if( LINUXALL )
     target_sources(${OUTBINNAME} PRIVATE "InputWin32.cpp")
 endif()
 if( OSXALL )
@@ -43,15 +34,7 @@ target_sources(${OUTBINNAME} PRIVATE "MemoryBitmap.cpp")
 target_sources(${OUTBINNAME} PRIVATE "Memorybitmap.h")
 target_sources(${OUTBINNAME} PRIVATE "MessageListener.cpp")
 target_sources(${OUTBINNAME} PRIVATE "Scheme.cpp")
-if( WINDOWS )
-    #$File	"Surface.cpp"					[$WINDOWS]
-endif()
-if( WINDOWS OR X360 OR PS3 )
-    #$File	"System.cpp"					[$WINDOWS||$X360||$PS3]
-endif()
-if( POSIX )
-    target_sources(${OUTBINNAME} PRIVATE "system_posix.cpp" )
-endif()
+target_sources(${OUTBINNAME} PRIVATE "system_posix.cpp" )
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/UnicodeFileHelpers.cpp")
 target_sources(${OUTBINNAME} PRIVATE "vgui.cpp")
 target_sources(${OUTBINNAME} PRIVATE "vgui_internal.cpp")

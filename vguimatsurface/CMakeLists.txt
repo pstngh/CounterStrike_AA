@@ -1,9 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	VGUIMATSURFACE.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.16)
 project(vguimatsurface_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -32,10 +26,6 @@ target_sources(${OUTBINNAME} PRIVATE "MatSystemSurface.cpp")
 #File from mathlib.. fuck it, this single file won't link for some reason. It is a very simple file, so i'm duplicating it here.
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/mathlib/halton.cpp")
 
-if( WINDOWS )
-    #$File	"memorybitmap.cpp"						[$WINDOWS]
-    #$File	"$SRCDIR\vgui2\src\htmlwindow.cpp"		[$WINDOWS]
-endif()
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/vgui2/src/vgui_key_translation.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/vgui_controls/vgui_controls.cpp")
 

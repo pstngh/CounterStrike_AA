@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	VPHYSICS.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(kisakvphysics_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -54,10 +49,5 @@ target_sources(${OUTBINNAME} PRIVATE "vcollide_parse.cpp")
 target_sources(${OUTBINNAME} PRIVATE "vphysics_saverestore.cpp")
 
 #Linker
-#		$Lib "$LIBCOMMON/havana_constraints"
-#		$Lib "$LIBCOMMON/hk_base"
-#		$Lib "$LIBCOMMON/hk_math"
-#		$Lib "$LIBCOMMON/ivp_compactbuilder"
-#		$Lib "$LIBCOMMON/ivp_physics"
 target_link_libraries(${OUTBINNAME} havana_constraints hk_base hk_math ivp_compactbuilder ivp_physics)
 target_link_libraries(${OUTBINNAME} mathlib_client tier2_client libvstdlib_client)

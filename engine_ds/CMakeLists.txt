@@ -1,13 +1,7 @@
-#//-----------------------------------------------------------------------------
-#//	ENGINE.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 # Possible Arguments used:
 # -DUSE_VALVE_HRTF
 cmake_minimum_required(VERSION 3.16)
 project(engine_client)
-set(EPROJ "engine_ds")
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
 set(ESRCDIR "${SRCDIR}/engine")
 

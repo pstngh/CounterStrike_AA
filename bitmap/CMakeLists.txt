@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	BITMAP.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(bitmap_libraries)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -31,4 +26,3 @@ target_sources(${OUTLIBNAME} PRIVATE "resample.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "tgaloader.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "texturepacker.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "tgawriter.cpp")
-

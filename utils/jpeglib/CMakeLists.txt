@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	JPEGLIB.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(jpeglib_client C) #set as C proj
 set(SRCDIR "${CMAKE_SOURCE_DIR}")
@@ -15,12 +10,7 @@ include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 include_directories(${SRCDIR}/public/jpeglib)
 add_definitions(-DSTRICT)
 
-if( POSIX )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-if( NOT LINUXALL )
-#$CompileAs							"Compile as C Code (/TC)" [!$LINUXALL]
-endif()
+target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
 
 target_sources(${OUTLIBNAME} PRIVATE "jaricom.c")
 target_sources(${OUTLIBNAME} PRIVATE "jcapimin.c")

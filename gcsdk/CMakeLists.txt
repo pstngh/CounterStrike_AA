@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	GCSDK.VPC
-#//
-#//	Project Script for the Game Coordinator SDK
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(kisak_gcsdk_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")

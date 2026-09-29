@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	LAUNCHER_MAIN.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 #dont build this on dedicated build
 if( DEDICATED )
@@ -15,16 +10,8 @@ set(OUTBINDIR "${SRCDIR}/../game")
 
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 
-if( WIN32 )
-    set(OUTBINNAME "csgo")
-elseif( WIN64 )
-    set(OUTBINNAME "csgo_win64")
-elseif( OSX32 )
-    set(OUTBINNAME "csgo_osx")
-elseif( OSX64 )
+if( OSX64 )
     set(OUTBINNAME "csgo_osx64")
-elseif( LINUX32 )
-    set(OUTBINNAME "csgo_linux")
 elseif( LINUX64 )
     set(OUTBINNAME "csgo_linux64")
 endif()

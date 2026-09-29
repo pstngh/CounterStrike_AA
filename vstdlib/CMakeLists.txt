@@ -15,21 +15,12 @@ if( LINUXALL )
 endif()
 
 target_sources(${OUTBINNAME} PRIVATE "concommandhash.h")
-if( NOT X360 )
-    target_sources(${OUTBINNAME} PRIVATE "coroutine.cpp")
-endif()
+target_sources(${OUTBINNAME} PRIVATE "coroutine.cpp")
 target_sources(${OUTBINNAME} PRIVATE "cvar.cpp")
 target_sources(${OUTBINNAME} PRIVATE "jobthread.cpp")
 target_sources(${OUTBINNAME} PRIVATE "keyvaluessystem.cpp")
-if( WINDOWS )
-    #$File	"processutils.cpp"			[$WINDOWS]
-endif()
 target_sources(${OUTBINNAME} PRIVATE "random.cpp")
 target_sources(${OUTBINNAME} PRIVATE "vcover.cpp")
 target_sources(${OUTBINNAME} PRIVATE "eventsystem.cpp")
-if( PS3 )
-    #$File	"prx.cpp"					[$PS3]
-    #$File	"prxexport.cpp"		[$PS3]
-endif()
 target_sources(${OUTBINNAME} PRIVATE "vstrtools.cpp")
 target_sources(${OUTBINNAME} PRIVATE "vstdlib_strtools.cpp")

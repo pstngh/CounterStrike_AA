@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	DMXLOADER.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 project(dmxloader_client)
 set(SRCDIR "${CMAKE_SOURCE_DIR}")

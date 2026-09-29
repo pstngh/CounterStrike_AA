@@ -1,8 +1,3 @@
-#//-----------------------------------------------------------------------------
-#//	LAUNCHER.VPC
-#//
-#//	Project Script
-#//-----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16)
 #dont build this on dedicated build
 if( DEDICATED )
@@ -57,6 +52,4 @@ target_sources(${OUTBINNAME} PRIVATE "reslistgenerator.cpp")
 
 target_link_libraries(${OUTBINNAME} appframework_client tier1_client tier2_client tier3_client interfaces_client )
 target_link_libraries(${OUTBINNAME} ${STEAM_API_LIBRARY}) # Link to proprietary steamapi
-if( NOT IS_LIB_PROJECT AND GL )
-    target_link_libraries(${OUTBINNAME} libtogl_client) # Link to precompiled togl
-endif()
+target_link_libraries(${OUTBINNAME} libtogl_client) # Link to precompiled togl

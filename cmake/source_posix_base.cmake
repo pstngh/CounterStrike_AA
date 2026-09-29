@@ -1,11 +1,5 @@
 include("${CMAKE_MODULE_PATH}/common_functions.cmake")
 
-########source_lowest_base########
-if(STATIC_LINK)
-    add_definitions(-DBASE -DSTATIC_LINK)
-endif()
-##################################
-
 MacroRequired(SRCDIR)
 MacroRequired(_DLL_EXT)
 
@@ -56,7 +50,6 @@ else()
     endif()
 endif()
 
-#$Compiler
 include_directories("${SRCDIR}/common")
 include_directories("${SRCDIR}/public")
 include_directories("${SRCDIR}/public/tier0")
@@ -81,18 +74,12 @@ if(LINUXALL)
     endif()
 
     #add_definitions(-D_LINUX -DLINUX)
-    if( DONT_DOWNGRADE_ABI )
-        message(STATUS "KEEPING CXX11 ABI FOR PROJECT")
-    else()
-        #message(STATUS "DOWNGRADING CXX11 ABI")
-        #disable cpp11 ABI so libraries <gcc 5 will work
-        add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-    endif()
+    #message(STATUS "DOWNGRADING CXX11 ABI")
+    #disable cpp11 ABI so libraries <gcc 5 will work
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
-if(POSIX)
-    set(CMAKE_CXX_VISIBILITY_PRESET hidden) #$SymbolVisibility	"hidden"
-    add_definitions(-DPOSIX -D_POSIX)
-endif()
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+add_definitions(-DPOSIX -D_POSIX)
 if(OSX64)
     add_definitions(-DPLATFORM_64BITS)
 endif()
@@ -100,8 +87,6 @@ endif()
 if(NOT IS_LIB_PROJECT)
     #set(ConfigurationType "Application (.exe)") #not used
 
-    #$Linker
-    #$Folder	"Link Libraries"
     if( NOSTINKYLINKIES )
         message(STATUS "skipping stinky linkie")
     else()

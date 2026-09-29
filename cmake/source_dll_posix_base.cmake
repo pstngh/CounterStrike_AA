@@ -13,8 +13,6 @@ endif()
 #Target
 add_library(${OUTBINNAME} SHARED)
 
-#		$GameOutputFile					"$OUTBINDIR/$OUTBINNAME$OUTDLLEXT"
-#		$OutputFile					"$(OBJ_DIR)/$OUTBINNAME$OUTDLLEXT"
 set_target_properties(${OUTBINNAME} PROPERTIES OUTPUT_NAME "${OUTBINNAME}")
 set_target_properties(${OUTBINNAME} PROPERTIES SUFFIX "${OUTDLLEXT}")
 set_target_properties(${OUTBINNAME} PROPERTIES PREFIX "")

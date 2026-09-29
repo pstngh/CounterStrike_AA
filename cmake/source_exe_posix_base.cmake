@@ -5,8 +5,6 @@ MacroRequired(SRCDIR)
 MacroRequired(OUTBINNAME)
 MacroRequired(OUTBINDIR)
 
-set( IS_LIB_PROJECT "1")
-
 add_definitions( -DEXENAME=${OUTBINNAME} )
 
 add_executable(${OUTBINNAME})
@@ -47,8 +45,5 @@ if( LINUXALL AND NOT DEDICATED )
         else()
             target_link_libraries(${OUTBINNAME} tcmalloc_minimal)
         endif()
-    else()
-        #$ImpLibExternal	"$SRCDIR/thirdparty/gperftools-2.0/.libs/tcmalloc_minimal" [$LINUX32]
-        message(FATAL_ERROR "linux32 not supported in cmake")
     endif()
 endif()
