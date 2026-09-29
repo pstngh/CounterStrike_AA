@@ -202,9 +202,9 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     // Custom is derived from the saved individual settings, which remain authoritative.
     private let qualityPresets = [
         [0, 0, 0, 0, 0], // Low
-        [1, 1, 0, 1, 1], // Medium
-        [2, 3, 2, 2, 1], // High
-        [3, 5, 2, 3, 1], // Very High
+        [1, 0, 0, 1, 1], // Medium
+        [2, 2, 2, 2, 1], // High
+        [3, 4, 2, 3, 1], // Very High
     ]
     private let texturePopup = NSPopUpButton()
     private let filteringPopup = NSPopUpButton()
@@ -271,7 +271,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         difficultyPopup.addItems(withTitles: ["Easy", "Normal", "Hard", "Expert"])
         qualityPopup.addItems(withTitles: ["Custom", "Low", "Medium", "High", "Very High"])
         texturePopup.addItems(withTitles: ["Low", "Medium", "High", "Very High"])
-        filteringPopup.addItems(withTitles: ["Bilinear", "Trilinear", "Anisotropic 2×", "Anisotropic 4×", "Anisotropic 8×", "Anisotropic 16×"])
+        filteringPopup.addItems(withTitles: ["Trilinear", "Anisotropic 2×", "Anisotropic 4×", "Anisotropic 8×", "Anisotropic 16×"])
         antialiasingPopup.addItems(withTitles: ["Off", "2× MSAA", "4× MSAA"])
         shadowsPopup.addItems(withTitles: ["Off", "Low", "Medium", "High"])
         shadersPopup.addItems(withTitles: ["Low", "High"])
@@ -383,7 +383,13 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         resolutionPopup.selectItem(at: resolutionIndex)
         fullscreenCheckbox.state = defaults.bool(forKey: "fullscreen") ? .on : .off
         texturePopup.selectItem(at: storedInteger("textureDetail", defaultValue: 2, range: 0...3))
-        filteringPopup.selectItem(at: storedInteger("textureFiltering", defaultValue: 1, range: 0...5))
+        // Older launchers saved "textureFiltering" with a Bilinear entry at 0,
+        // which the engine already rendered as trilinear.
+        if defaults.object(forKey: "textureFilteringMode") != nil {
+            filteringPopup.selectItem(at: storedInteger("textureFilteringMode", defaultValue: 0, range: 0...4))
+        } else {
+            filteringPopup.selectItem(at: max(storedInteger("textureFiltering", defaultValue: 1, range: 0...5) - 1, 0))
+        }
         antialiasingPopup.selectItem(at: storedInteger("antialiasing", defaultValue: 0, range: 0...2))
         shadowsPopup.selectItem(at: storedInteger("shadows", defaultValue: 1, range: 0...3))
         shadersPopup.selectItem(at: storedInteger("shaderDetail", defaultValue: 1, range: 0...1))
@@ -863,7 +869,8 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(resolutions[resolutionPopup.indexOfSelectedItem].key, forKey: "resolution")
         defaults.set(fullscreenCheckbox.state == .on, forKey: "fullscreen")
         defaults.set(texturePopup.indexOfSelectedItem, forKey: "textureDetail")
-        defaults.set(filteringPopup.indexOfSelectedItem, forKey: "textureFiltering")
+        defaults.set(filteringPopup.indexOfSelectedItem, forKey: "textureFilteringMode")
+        defaults.removeObject(forKey: "textureFiltering")
         defaults.set(antialiasingPopup.indexOfSelectedItem, forKey: "antialiasing")
         defaults.set(shadowsPopup.indexOfSelectedItem, forKey: "shadows")
         defaults.set(shadersPopup.indexOfSelectedItem, forKey: "shaderDetail")
@@ -913,7 +920,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         let crosshairAlpha = Int((Double(crosshair.opacity) * 255 / 100).rounded())
         let texturePicmip = [2, 1, 0, -1][texturePopup.indexOfSelectedItem]
         let filtering = filteringPopup.indexOfSelectedItem
-        let anisotropy = [1, 1, 2, 4, 8, 16][filtering]
+        let anisotropy = [1, 2, 4, 8, 16][filtering]
         let antialiasing = [0, 2, 4][antialiasingPopup.indexOfSelectedItem]
         let shadows = shadowsPopup.indexOfSelectedItem
         let vsync = vsyncCheckbox.state == .on ? 1 : 0
