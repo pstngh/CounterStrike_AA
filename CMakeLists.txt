@@ -1,22 +1,6 @@
 # Kisak-Strike: Gentoo Offensive
 # Main CMake File
 
-# List of targets from VPC
-#                        Dmserializers*         Matchmaking_DS_CSGO*   ServerBrowser*         tier3*
-#                        Dmxloader*             materialsystem*        Server_CSGO*           Unitlib*
-# appframework*          engine*                mathlib*               shaderapiempty*        valve_avi*
-# bitmap*                engine_ds              mathlib_extended*      shaderlib*             vgui2*
-# bitmap_byteswap*       Fgdlib*                matsys_controls*                              vgui_controls*
-# bonesetup*             filesystem_stdio*      meshutils*                                    vguimatsurface*
-# Bzip2*                 inputsystem*           particles*             soundemittersystem*    vgui_surfacelib*
-# choreoobjects*         interfaces*            quickhull*             soundsystem_lowlevel*  videocfg*
-#                        launcher*              Raytrace*              stdshader_dx9*         vpklib*
-#                        launcher_main*                                studiorender*          vscript*
-#                        localize*                                                            vstdlib*
-# Client_CSGO*           matchmakingbase*       resourcefile*          tier0*                 vtf*
-# datacache*             matchmakingbase_ds*    responserules_runtime* tier1*
-# Dedicated*             Matchmaking_CSGO*      SceneFileCache*        tier2*
-
 cmake_minimum_required(VERSION 3.16)
 project(KisakStrike)
 
@@ -65,7 +49,6 @@ endif()
 add_subdirectory(appframework)
 add_subdirectory(external/crypto++-5.61)
 add_subdirectory(interfaces)
-add_subdirectory(fgdlib)
 add_subdirectory(gcsdk)
 add_subdirectory(tier0)
 add_subdirectory(tier1)
@@ -86,23 +69,22 @@ if(APPLE)
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
     # We use sustem gperftools-2.5 on OS Elbrus
 else()
-    add_subdirectory(thirdparty/gperftools-2.8.1) #We include this version instead of distro-pkg because there is a false positive in ASAN
+    add_subdirectory(thirdparty/gperftools-2.8.1 EXCLUDE_FROM_ALL) #We include this version instead of distro-pkg because there is a false positive in ASAN
 endif()
-add_subdirectory(thirdparty/protobuf-2.5.0/cmake)
+# Only build the vendored targets the engine links (tcmalloc_minimal, libprotobuf, protoc).
+add_subdirectory(thirdparty/protobuf-2.5.0/cmake EXCLUDE_FROM_ALL)
 add_subdirectory(utils/bzip2)
 add_subdirectory(utils/jpeglib)
-add_subdirectory(unitlib)
 add_subdirectory(videocfg)
 add_subdirectory(vtf)
 
 add_subdirectory(avi)
-add_subdirectory(bitmap) #also does bitmap_byteswap
+add_subdirectory(bitmap)
 add_subdirectory(bonesetup)
 add_subdirectory(choreoobjects)
 add_subdirectory(datacache)
 add_subdirectory(dedicated)
 add_subdirectory(dedicated_main)
-add_subdirectory(dmserializers)
 add_subdirectory(dmxloader)
 add_subdirectory(engine)
 add_subdirectory(engine_ds)
@@ -144,7 +126,6 @@ endif()
 
 #Frankenstein physics lib sewn together from 3 different leaks by mad scientist lwss
 if( USE_KISAK_PHYSICS )
-    add_definitions(-DUSE_KISAK_PHYSICS)
     message("Using Open-Source Kisakstrike Physics rebuild!\n")
     add_subdirectory(ivp/havana/havok/hk_base)
     add_subdirectory(ivp/havana/havok/hk_math)
@@ -154,7 +135,6 @@ if( USE_KISAK_PHYSICS )
     add_subdirectory(vphysics)
 #Experimental open source Bullet Physics
 elseif( USE_BULLET_PHYSICS )
-    add_definitions(-DUSE_BULLET_PHYSICS)
     #lwss: threading is experimental
     if( USE_BULLET_PHYSICS_THREADED )
         add_definitions(-DBT_THREADSAFE -DBT_USE_OPENMP)
