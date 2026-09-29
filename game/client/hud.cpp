@@ -139,12 +139,15 @@ void CHudElement::InitCHudElementAfterConstruction( const char* pElementName )
 #if defined( USE_MAC_PRESET )
 	// Keep the in-game presentation crosshair-only. Weapon selection must
 	// remain active for invnext/invprev even though its CS:GO paint is empty.
-	// The sniper scope is part of aiming; the buy menu is opened explicitly.
+	// The sniper scope is part of aiming; the buy menu and chat are opened
+	// explicitly. Chat draws only while typing, and it captures the keyboard
+	// then, so hiding it would swallow keys into an invisible input box.
 	m_bMacPresetDrawn = pElementName &&
 		( !V_strcmp( pElementName, "CHudWeapon" ) ||
 		  !V_strcmp( pElementName, "CHudWeaponSelection" ) ||
 		  !V_strcmp( pElementName, "CHudScope" ) ||
-		  !V_strcmp( pElementName, "RkHudBuyMenu" ) );
+		  !V_strcmp( pElementName, "RkHudBuyMenu" ) ||
+		  !V_strcmp( pElementName, "RkHudChat" ) );
 #endif
 	m_nSplitScreenPlayerSlot = -1;
 	SetNeedsRemove( false );
