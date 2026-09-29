@@ -153,9 +153,12 @@ kbutton_t	in_moveleft;
 kbutton_t	in_moveright;
 
 // Nullbind-style SOCD: the most recently pressed key wins while both
-// opposite movement keys are physically held.
+// opposite movement or lean keys are physically held.
 static int s_lastForwardBackPressed[ MAX_SPLITSCREEN_PLAYERS ];
 static int s_lastLeftRightPressed[ MAX_SPLITSCREEN_PLAYERS ];
+#if defined( USE_MAC_PRESET )
+static int s_lastLeanPressed[ MAX_SPLITSCREEN_PLAYERS ];
+#endif
 // Display the netgraph
 kbutton_t	in_graph;  
 kbutton_t	in_joyspeed;		// auto-speed key from the joystick (only works for player movement, not vehicles)
@@ -691,9 +694,25 @@ void IN_WalkUp( const CCommand &args ) {KeyUp(&in_walk, args[1] );}
 
 void IN_ReloadDown( const CCommand &args ) {KeyDown(&in_reload, args[1] );}
 void IN_ReloadUp( const CCommand &args ) {KeyUp(&in_reload, args[1] );}
-void IN_Alt1Down( const CCommand &args ) {KeyDown(&in_alt1, args[1] );}
+void IN_Alt1Down( const CCommand &args )
+{
+#if defined( USE_MAC_PRESET )
+	// +alt1 is also +leanleft.
+	SOCDKeyDown( &in_alt1, args[1], s_lastLeanPressed, -1 );
+#else
+	KeyDown( &in_alt1, args[1] );
+#endif
+}
 void IN_Alt1Up( const CCommand &args ) {KeyUp(&in_alt1, args[1] );}
-void IN_Alt2Down( const CCommand &args ) {KeyDown(&in_alt2, args[1] );}
+void IN_Alt2Down( const CCommand &args )
+{
+#if defined( USE_MAC_PRESET )
+	// +alt2 is also +leanright.
+	SOCDKeyDown( &in_alt2, args[1], s_lastLeanPressed, 1 );
+#else
+	KeyDown( &in_alt2, args[1] );
+#endif
+}
 void IN_Alt2Up( const CCommand &args ) {KeyUp(&in_alt2, args[1] );}
 void IN_GraphDown( const CCommand &args ) {KeyDown(&in_graph, args[1] );}
 void IN_GraphUp( const CCommand &args ) {KeyUp(&in_graph, args[1] );}
@@ -1804,6 +1823,17 @@ CUserCmd *CInput::GetUserCmd( int nSlot, int sequence_number )
 //			reset - 
 // Output : static void
 //-----------------------------------------------------------------------------
+#if defined( USE_MAC_PRESET )
+// While both opposite keys are held, send only the most recently pressed one
+// to prediction and the server.
+static void SOCDResolveButtonBits( int nSlot, int &bits, kbutton_t *positive, int positiveBit,
+	kbutton_t *negative, int negativeBit, int lastPressed )
+{
+	if ( ( positive->GetPerUser( nSlot ).state & 1 ) && ( negative->GetPerUser( nSlot ).state & 1 ) )
+		bits &= ~( lastPressed > 0 ? negativeBit : lastPressed < 0 ? positiveBit : positiveBit | negativeBit );
+}
+#endif
+
 static void CalcButtonBits( int nSlot, int& bits, int in_button, int in_ignore, kbutton_t *button, bool reset )
 {
 	kbutton_t::Split_t *pButtonState = &button->GetPerUser( nSlot );
@@ -1859,18 +1889,16 @@ int CInput::GetButtonBits( bool bResetState )
 	CalcButtonBits( nSlot, bits, IN_MOVELEFT, ignore, &in_moveleft, bResetState );
 	CalcButtonBits( nSlot, bits, IN_MOVERIGHT, ignore, &in_moveright, bResetState );
 #if defined( USE_MAC_PRESET )
-	// Send only the winning direction to prediction and the server.
-	if ( ( in_forward.GetPerUser( nSlot ).state & 1 ) && ( in_back.GetPerUser( nSlot ).state & 1 ) )
-		bits &= ~( s_lastForwardBackPressed[ nSlot ] > 0 ? IN_BACK :
-			s_lastForwardBackPressed[ nSlot ] < 0 ? IN_FORWARD : IN_FORWARD | IN_BACK );
-	if ( ( in_moveleft.GetPerUser( nSlot ).state & 1 ) && ( in_moveright.GetPerUser( nSlot ).state & 1 ) )
-		bits &= ~( s_lastLeftRightPressed[ nSlot ] > 0 ? IN_MOVELEFT :
-			s_lastLeftRightPressed[ nSlot ] < 0 ? IN_MOVERIGHT : IN_MOVELEFT | IN_MOVERIGHT );
+	SOCDResolveButtonBits( nSlot, bits, &in_forward, IN_FORWARD, &in_back, IN_BACK, s_lastForwardBackPressed[ nSlot ] );
+	SOCDResolveButtonBits( nSlot, bits, &in_moveright, IN_MOVERIGHT, &in_moveleft, IN_MOVELEFT, s_lastLeftRightPressed[ nSlot ] );
 #endif
 	CalcButtonBits( nSlot, bits, IN_ATTACK2, ignore, &in_attack2, bResetState );
 	CalcButtonBits( nSlot, bits, IN_RELOAD, ignore, &in_reload, bResetState );
 	CalcButtonBits( nSlot, bits, IN_ALT1, ignore, &in_alt1, bResetState );
 	CalcButtonBits( nSlot, bits, IN_ALT2, ignore, &in_alt2, bResetState );
+#if defined( USE_MAC_PRESET )
+	SOCDResolveButtonBits( nSlot, bits, &in_alt2, IN_ALT2, &in_alt1, IN_ALT1, s_lastLeanPressed[ nSlot ] );
+#endif
 	CalcButtonBits( nSlot, bits, IN_SCORE, ignore, &in_score, bResetState );
 	CalcButtonBits( nSlot, bits, IN_ZOOM, ignore, &in_zoom, bResetState );
 	CalcButtonBits( nSlot, bits, IN_GRENADE1, ignore, &in_grenade1, bResetState );
