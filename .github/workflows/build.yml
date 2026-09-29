@@ -24,6 +24,21 @@ defaults:
   run:
     shell: bash
 
+env:
+  # Release builds without debug info: CI would only strip it again. The
+  # default CPU target (x86-64-v2 / apple-m1) keeps the binaries portable.
+  CMAKE_ARGS: >-
+    -G Ninja
+    -DCMAKE_BUILD_TYPE=Release
+    -DRELEASE_DEBUG_INFO=OFF
+    -DUSE_KISAK_PHYSICS=ON
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_NOHASHDIR: 'true'
+  CCACHE_MAXSIZE: 2G
+
 jobs:
   linux-x64:
     name: Linux x64
@@ -40,30 +55,31 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build \
-            libsdl2-dev libsdl2-mixer-dev libgoogle-perftools-dev libopenal-dev \
-            libcurl4-openssl-dev libcurlpp-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev
+            build-essential cmake ninja-build ccache \
+            libsdl2-dev libsdl2-mixer-dev libopenal-dev \
+            libcurl4-openssl-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev
+
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-linux-x64-${{ github.sha }}
+          restore-keys: ccache-linux-x64-
 
       - name: Configure
-        run: |
-          cmake -S src -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DDEDICATED=OFF \
-            -DUSE_KISAK_PHYSICS=ON \
-            -DUSE_ROCKETUI=ON \
-            -DUSE_SCALEFORM=OFF
+        run: cmake -S src -B build $CMAKE_ARGS
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build && ccache --show-stats
 
-      # Linux release builds keep -g3 debug info, over 1 GB in total.
-      - name: Strip debug info
-        run: find game -type f -exec strip --strip-debug {} +
+      # A tarball keeps the executable bits that artifact zips drop.
+      - name: Package
+        run: tar -C game -czf csgo-linux-x64.tar.gz .
 
       - uses: actions/upload-artifact@v4
         with:
           name: csgo-linux-x64
-          path: game/
+          path: csgo-linux-x64.tar.gz
+          compression-level: 0
           if-no-files-found: error
 
   macos-arm64:
@@ -81,23 +97,37 @@ jobs:
           # The toolchain file calls the Command Line Tools directly.
           test -x /Library/Developer/CommandLineTools/usr/bin/clang++
           test -d /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
-          brew install ninja sdl2-compat
+          brew install ninja sdl2-compat ccache
+
+      # tools/install_macos_launcher.sh compiles the launcher on the user's Mac;
+      # type-check it here so a broken launcher fails CI instead.
+      - name: Type-check the launcher
+        run: |
+          /Library/Developer/CommandLineTools/usr/bin/swiftc -swift-version 5 -parse-as-library -typecheck \
+            -target arm64-apple-macosx12.0 -sdk /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk \
+            src/tools/macos_launcher/Launcher.swift
+
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-arm64-${{ github.sha }}
+          restore-keys: ccache-macos-arm64-
 
       - name: Configure
         run: |
-          cmake -S src -B build -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/macos-arm64.cmake" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DDEDICATED=OFF \
-            -DUSE_KISAK_PHYSICS=ON \
-            -DUSE_ROCKETUI=ON \
-            -DUSE_SCALEFORM=OFF
+          cmake -S src -B build $CMAKE_ARGS \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/macos-arm64.cmake"
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build && ccache --show-stats
+
+      # A tarball keeps the executable bits that artifact zips drop.
+      - name: Package
+        run: tar -C game -czf csgo-macos-arm64.tar.gz .
 
       - uses: actions/upload-artifact@v4
         with:
           name: csgo-macos-arm64
-          path: game/
+          path: csgo-macos-arm64.tar.gz
+          compression-level: 0
           if-no-files-found: error
