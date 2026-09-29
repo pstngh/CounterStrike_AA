@@ -26,6 +26,21 @@ option(USE_MAC_PRESET "Build the Mac gameplay preset instead of stock CS:GO game
 
 
 
+# Code generation
+# The default CPU target runs on any x86-64 CPU from 2009 on (x86-64-v2) or any
+# Apple Silicon Mac, so the binaries work on machines other than the build host.
+# Set -DKISAK_ARCH_FLAGS=-march=native to tune a build for this machine only.
+if(APPLE)
+    set(KISAK_ARCH_FLAGS_DEFAULT "-mcpu=apple-m1")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+    set(KISAK_ARCH_FLAGS_DEFAULT "-march=x86-64-v2")
+else()
+    set(KISAK_ARCH_FLAGS_DEFAULT "-march=native")
+endif()
+set(KISAK_ARCH_FLAGS "${KISAK_ARCH_FLAGS_DEFAULT}" CACHE STRING "CPU target flags for every Kisak-Strike module")
+separate_arguments(KISAK_ARCH_FLAGS_LIST UNIX_COMMAND "${KISAK_ARCH_FLAGS}")
+option(RELEASE_DEBUG_INFO "Keep debug info in Release builds for symbolized crash backtraces" ON)
+
 # Kisak-Strike Developer Options
 # (Gamer Tip: use gdb command `b __asan::ReportGenericError` to break on ASAN errors)
 option(USE_ASAN "Enable the Address Sanitizer GCC plugin, used for finding memory errors/bugs" OFF)

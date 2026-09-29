@@ -25,16 +25,18 @@ if(UNIX AND NOT APPLE)
 	message(STATUS "Downgrading CXX11 ABI for kisakstrike!")
 	if(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
 		# O3 on mcst-lcc approximately equal to O2 at gcc X86/ARM
-		add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O3 -march=native -fpermissive -fpic -Wno-narrowing)
+		add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O3 -fpermissive -fpic -Wno-narrowing)
 		# -mstackrealign option is X86 specific and not supported by mcst-lcc
 		# see https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
 	else()
-		add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -march=native -fpermissive -fpic -Wno-narrowing)
+		add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -fpermissive -fpic -Wno-narrowing)
 		# VALVE: when steamclient.so is launched from Python the stack is not 16-byte aligned and gcc assumes
 		# that it will be, causing crashes when writing to SSE local variables.
 		add_definitions( -mstackrealign)
 	endif()
 endif()
+# Target the same CPU as the rest of the engine instead of crypto++'s -march=native.
+add_compile_options(${KISAK_ARCH_FLAGS_LIST})
 
 set(cryptopp_VERSION_MAJOR 5)
 set(cryptopp_VERSION_MINOR 7)
@@ -64,6 +66,7 @@ option(DISABLE_SSSE3 "Disable SSSE3" OFF)
 option(DISABLE_SSSE4 "Disable SSSE4" OFF)
 option(DISABLE_AESNI "Disable AES-NI" OFF)
 option(DISABLE_CXXFLAGS_OPTIMIZATIONS "Disable CXXFLAGS optimizations" OFF)
+set(DISABLE_CXXFLAGS_OPTIMIZATIONS ON) # Kisak-Strike sets the CPU target above.
 set(CRYPTOPP_DATA_DIR "" CACHE PATH "Crypto++ test data directory")
 
 #============================================================================

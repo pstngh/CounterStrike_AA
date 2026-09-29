@@ -7,10 +7,11 @@ if(UNIX AND NOT APPLE)
   message(STATUS "Downgrading CXX11 ABI for kisakstrike!")
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
     # O3 on mcst-lcc approximately equal to O2 at gcc X86/ARM
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O3 -march=native)
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O3)
   else()
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -march=native)
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O2)
   endif()
+  add_compile_options(${KISAK_ARCH_FLAGS_LIST})
 endif()
 
 
