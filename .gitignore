@@ -33,7 +33,6 @@ cmake-dev-test/*
 !cmake-build/placeholder.txt
 cmake-build-*/*
 rocketui/cmake-build-*/*
-scaleformui/cmake-build-*/*
 vphysics_bullet/cmake-build-*/*
 
 #Ignore rebuilt static libs

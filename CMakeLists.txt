@@ -116,9 +116,9 @@ add_subdirectory(matchmaking) #Does all 4 matchmaking projects
 add_subdirectory(launcher)
 add_subdirectory(launcher_main) #The actual executable that just dlopen's launcher
 
-if( USE_SCALEFORM )
-    add_subdirectory(scaleformui) #DUMMY cmake project so CLion can do analysis
-elseif( USE_ROCKETUI )
+# USE_SCALEFORM compiles the Scaleform HUD into game/client instead, which
+# loads Valve's prebuilt scaleformui_client.so at runtime.
+if( USE_ROCKETUI AND NOT USE_SCALEFORM )
     #Custom Kisak-Strike UI powered by RmlUI
     add_subdirectory(thirdparty/RmlUi)
     add_subdirectory(rocketui)
