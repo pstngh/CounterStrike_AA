@@ -66,7 +66,7 @@ Linux Binaries: Depot ID: 734 4197642562793798650
 * Copy over *only needed* files from the 734 linux binary depot (manifest: 4197642562793798650)
     * ./bin/map_publish/* - (FOLDER which seems to contain some vgui assets)
     * ./csgo.sh
-    * [OPTIONAL]./game/bin/linux64/libphonon3d.so -- If you want HRTF 3D sound
+    * [OPTIONAL]./game/bin/linux64/libphonon3d.so -- If you want HRTF 3D sound. Copy it before configuring with `-DUSE_VALVE_HRTF=ON`, which links against it.
     * [OPTIONAL]./game/bin/linux64/vphysics_client.so -- If you want Valve-Original physics engine. (It runs a bit better than the rebuild, but is closed-source)
     * [OPTIONAL]./game/bin/linux64/scaleformui_client.so -- If you want the ScaleformUI for some reason.
 

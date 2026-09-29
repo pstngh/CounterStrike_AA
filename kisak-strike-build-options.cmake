@@ -19,6 +19,9 @@ option(USE_BULLET_PHYSICS "Use Open Source Bullet3 Physics Engine(zlib)" OFF)
 option(USE_BULLET_PHYSICS_THREADED "Use Multi-Threading for the Bullet Physics Engine. Use convar 'bt_threadcount' to set." OFF)
 # 3rd option is to have both of these OFF, the closed source blob from Valve will be used instead.
 
+# Audio Options
+option(USE_VALVE_HRTF "Linux only: link Valve's proprietary Steam Audio HRTF library. Copy libphonon3d.so from Valve's Linux binaries depot to ../game/bin/linux64 first" OFF)
+
 # Gameplay Options
 # The Mac gameplay preset (fixed loadouts, Allied Assault movement, local-host perks) is described in MACOS.md.
 option(USE_MAC_PRESET "Build the Mac gameplay preset instead of stock CS:GO gameplay" ${APPLE})
