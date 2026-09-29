@@ -27,7 +27,7 @@ SDL2 SDL2_mixer tcmalloc_minimal rt openal curl ssl z crypto dl pthread fontconf
 
 #### Ubuntu 
 ```
-sudo apt install git build-essential cmake libsdl2-mixer-dev libsdl2-dev libgoogle-perftools-dev libopenal-dev libcurlpp-dev libssl-dev libfontconfig1-dev libcurl4-openssl-dev net-tools
+sudo apt install git build-essential cmake ninja-build libsdl2-mixer-dev libsdl2-dev libopenal-dev libssl-dev libfontconfig1-dev libcurl4-openssl-dev libglu1-mesa-dev net-tools
 ```
 #### Fedora
 ```
@@ -52,6 +52,7 @@ cd ./cmake-build
 cmake .. <VARIOUS OPTIONS HERE>
 make -j<NUM_THREADS>
 ```
+CI builds with `-DUSE_KISAK_PHYSICS=ON`. Release binaries target `-march=x86-64-v2` so they run on CPUs other than the build host; add `-DKISAK_ARCH_FLAGS=-march=native` to tune for your own machine, or `-DRELEASE_DEBUG_INFO=OFF` to leave out the debug info that Release builds otherwise keep.
 ## POSTBUILD - Acquire Original Game Files
 Use Depot Downloader( https://github.com/SteamRE/DepotDownloader ) with your steam account. The depotdownloader built-into Steam was broken earlier this year and this is the only option currently.
 ```

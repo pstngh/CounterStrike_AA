@@ -42,7 +42,9 @@ cmake --build ../build-macos-arm64
 
 The build compiles the [Mac gameplay preset](#mac-gameplay-preset) by default. Add `-DUSE_MAC_PRESET=OFF` for stock CS:GO gameplay; Linux builds default to OFF.
 
-The build compiles an offline Steam API shim from source into `bin/osx64`, where the game modules find it through their rpath. The Steam desktop client and its `libsteam_api.dylib` are not required for this standalone build. Builds made before this change also copied the shim to `csgo/bin/osx64/libsteam_offline.dylib`; that copy is no longer needed and can be deleted.
+The binaries target `-mcpu=apple-m1`, so they run on every Apple Silicon Mac. Add `-DKISAK_ARCH_FLAGS=-march=native` to tune a build for your own Mac instead, or `-DRELEASE_DEBUG_INFO=OFF` to leave out debug info.
+
+The build compiles an offline Steam API shim from source into `bin/osx64`, where the game modules find it through their rpath. The Steam desktop client and its `libsteam_api.dylib` are not required for this standalone build.
 
 The port vendors the MIT-licensed [sse2neon](https://github.com/DLTcollab/sse2neon) compatibility headers used to translate Source's SSE intrinsics to ARM NEON.
 
@@ -104,13 +106,12 @@ defaults from replacing the requested count and difficulty. Local deathmatch
 reuses matching bot personalities when all names at a difficulty are in use;
 additional bots receive numbered names.
 Use `status` in the developer console to check the actual connected bot count.
-Update both the launcher and `server.dylib` when installing this change.
 
 ## Mac gameplay preset
 
 These gameplay changes are compiled in when `USE_MAC_PRESET` is ON, the default on macOS.
 
-Backtick opens the developer console. The preset locks the normal world FOV to 80, the saved Desktop-preset weapon viewmodel FOV of 60, mouse sensitivity to 1.029863, and `m_pitch` to 0.018. The persistent in-game HUD is crosshair-only; the sniper scope overlay and deliberately opened buy/team menus remain available. On-screen gameplay hints, objective lessons, and local weapon-drop messages are disabled. Every weapon uses the native CS:GO crosshair, including unscoped sniper rifles; configure it with the `cl_crosshair*` console variables. The AWP uses Allied Assault's 20-degree sniper FOV, one-step right-click toggle, immediate FOV change, and a circular Allied Assault-style scope mask. The scroll wheel cycles weapons without showing a selection HUD.
+Backtick opens the developer console. The preset locks the normal world FOV to 80, the saved Desktop-preset weapon viewmodel FOV of 60, mouse sensitivity to 1.029863, and `m_pitch` to 0.018. The persistent in-game HUD is crosshair-only; the sniper scope overlay and deliberately opened buy/team menus remain available. On-screen gameplay hints, objective lessons, and local weapon-drop messages are disabled. Every weapon uses the native CS:GO crosshair, including unscoped sniper rifles; configure it in the launcher or with the `cl_crosshair*` console variables. When the game is started from the launcher, its crosshair settings are reapplied on every map load. The AWP uses Allied Assault's 20-degree sniper FOV, one-step right-click toggle, immediate FOV change, and a circular Allied Assault-style scope mask. The scroll wheel cycles weapons without showing a selection HUD.
 
 Use `cg_drawviewmodel 0` to hide the first-person weapon and hands, `cg_drawviewmodel 1` to show only the weapon, or `cg_drawviewmodel 2` for the normal weapon-and-hands view. K cycles through all three values. The default is 2, and the setting is saved. K replaces the previous voice-record binding.
 
