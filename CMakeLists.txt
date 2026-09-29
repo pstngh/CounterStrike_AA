@@ -78,15 +78,7 @@ add_subdirectory(vgui2/vgui_controls)
 add_subdirectory(vgui2/vgui_surfacelib)
 add_subdirectory(soundsystem/lowlevel)
 add_subdirectory(thirdparty/quickhull)
-if(APPLE)
-    # tcmalloc is only linked by the Linux launchers. Its bundled autotools
-    # source does not configure on current macOS SDKs.
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
-    # We use sustem gperftools-2.5 on OS Elbrus
-else()
-    add_subdirectory(thirdparty/gperftools-2.8.1 EXCLUDE_FROM_ALL) #We include this version instead of distro-pkg because there is a false positive in ASAN
-endif()
-# Only build the vendored targets the engine links (tcmalloc_minimal, libprotobuf, protoc).
+# Only build the vendored targets the engine links (libprotobuf, protoc).
 add_subdirectory(thirdparty/protobuf-2.5.0/cmake EXCLUDE_FROM_ALL)
 add_subdirectory(utils/bzip2)
 add_subdirectory(utils/jpeglib)

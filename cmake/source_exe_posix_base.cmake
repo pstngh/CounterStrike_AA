@@ -21,29 +21,8 @@ set_target_properties( ${OUTBINNAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${OUTBINDIR}"
         )
 
-if( LINUXALL AND NOT DEDICATED )
-    #// In order to get the Valve standard allocator memory alignment (16-byte
-    #// alignment for objects that are a multiple of 16 bytes) we use tcmalloc.
-    #// Using -l will ask the linker to use it, but if there are no references
-    #// to malloc/free then it may not actually use it. Wrapping the flag in the
-    #// as-needed controls forces it to be pulled in (from libtcmalloc_minimal.so).
-    target_compile_options(${OUTBINNAME} PRIVATE "-Wl,--no-as-needed -ltcmalloc_minimal -Wl,--as-needed")
-endif()
-
 if( NOSKELETONBASE )
     message(STATUS "Not including Skeleton base.")
 else()
     target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/tier0/memoverride.cpp")
-endif()
-
-if( LINUXALL AND NOT DEDICATED )
-    if( LINUX64 )
-        #target_link_libraries(${OUTBINNAME} "${SRCDIR}/thirdparty/gperftools-2.0/.libs/x86_64/libtcmalloc_minimal.so")# [$LINUX64]
-        #SWITCH BACK to a new version in /thirdparty. Unfortunately ASAN detects a false positive in this library and we need to edit the source.
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
-            target_link_libraries(${OUTBINNAME} "/usr/lib/libtcmalloc_minimal.so.4.3.0") # use sustem gperftools-2.5 on OS Elbrus
-        else()
-            target_link_libraries(${OUTBINNAME} tcmalloc_minimal)
-        endif()
-    endif()
 endif()
