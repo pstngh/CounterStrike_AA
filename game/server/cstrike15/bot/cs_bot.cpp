@@ -1140,16 +1140,14 @@ const char *CCSBot::GetMoraleName( void ) const
 /**
  * Limit the run-and-gun preset to local classic and deathmatch bots.
  */
+#if defined( USE_MAC_PRESET )
 bool CCSBot::UseMacBotPreset( void ) const
 {
-#if defined( USE_MAC_PRESET )
 	return !engine->IsDedicatedServer() && CSGameRules() &&
 		( CSGameRules()->IsPlayingClassic() || CSGameRules()->IsPlayingGunGameDeathmatch() ) &&
 		( GetTeamNumber() == TEAM_CT || GetTeamNumber() == TEAM_TERRORIST );
-#else
-	return false;
-#endif
 }
+#endif
 
 // Fill in a CUserCmd with our data.
 void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwardmove, float sidemove, float upmove, int buttons, byte impulse )
@@ -1163,7 +1161,8 @@ void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwar
 			buttons &= ~IN_SPEED;
 		}
 
-		if ( UseMacBotPreset() && IsAlive() && State_Get() == STATE_ACTIVE &&
+		const bool bMacPreset = UseMacBotPreset();
+		if ( bMacPreset && IsAlive() && State_Get() == STATE_ACTIVE &&
 			!cv_bot_stop.GetBool() && !cv_bot_zombie.GetBool() &&
 			!IsEFlagSet( EFL_BOT_FROZEN ) && !CSGameRules()->IsFreezePeriod() &&
 			TheNavMesh->IsLoaded() && !TheNavMesh->IsGenerating() &&
@@ -1189,15 +1188,15 @@ void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwar
 					Vector2D( 0.7071f, side * 0.7071f ), Vector2D( 0.7071f, -side * 0.7071f ),
 					Vector2D( -0.7071f, side * 0.7071f ), Vector2D( -0.7071f, -side * 0.7071f )
 				};
+				const Vector step( 0, 0, StepHeight );
+				Vector mins = WorldAlignMins();
+				mins.z += StepHeight;
 
 				for ( int i = 0; i < ARRAYSIZE( directions ); ++i )
 				{
 					const Vector goal = GetAbsOrigin() + 40.0f *
 						( directions[i].x * forward + directions[i].y * right );
 					trace_t trace;
-					const Vector step( 0, 0, StepHeight );
-					Vector mins = WorldAlignMins();
-					mins.z += StepHeight;
 					UTIL_TraceHull( GetAbsOrigin(), goal,
 						mins, WorldAlignMaxs(), MASK_PLAYERSOLID,
 						this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
@@ -1222,7 +1221,7 @@ void CCSBot::BuildUserCmd( CUserCmd& cmd, const QAngle& viewangles, float forwar
 		}
 
 #if defined( USE_MAC_PRESET )
-		if ( UseMacBotPreset() && cv_bot_strafe_lean.GetBool() )
+		if ( bMacPreset && cv_bot_strafe_lean.GetBool() )
 		{
 			// Lean toward whichever side the bot is strafing, as Allied Assault
 			// players do. Movement code drops the lean on ladders and at death.

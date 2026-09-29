@@ -58,14 +58,14 @@ ConVar lookstrafe( "lookstrafe", "0", FCVAR_ARCHIVE );
 #define MAX_LINEAR_SPEED "450"
 #endif
 
-#if defined( USE_MAC_PRESET ) && !defined( PORTAL2 )
+#if defined( USE_MAC_PRESET )
 // AA applies 0.85 strafe and 0.8 backward input multipliers.
 ConVar cl_sidespeed( "cl_sidespeed", "382.5", FCVAR_CHEAT );
 #else
 ConVar cl_sidespeed( "cl_sidespeed", MAX_LINEAR_SPEED, FCVAR_CHEAT );
 #endif
 ConVar cl_forwardspeed( "cl_forwardspeed", MAX_LINEAR_SPEED, FCVAR_CHEAT );
-#if defined( USE_MAC_PRESET ) && !defined( PORTAL2 )
+#if defined( USE_MAC_PRESET )
 ConVar cl_backspeed( "cl_backspeed", "360", FCVAR_CHEAT );
 #else
 ConVar cl_backspeed( "cl_backspeed", MAX_LINEAR_SPEED, FCVAR_CHEAT );
@@ -2051,7 +2051,7 @@ static ConCommand startalt1("+alt1", IN_Alt1Down);
 static ConCommand endalt1("-alt1", IN_Alt1Up);
 static ConCommand startalt2("+alt2", IN_Alt2Down);
 static ConCommand endalt2("-alt2", IN_Alt2Up);
-#if defined( USE_MAC_PRESET ) && defined( CSTRIKE15 )
+#if defined( USE_MAC_PRESET )
 static ConCommand startleanleft("+leanleft", IN_Alt1Down);
 static ConCommand endleanleft("-leanleft", IN_Alt1Up);
 static ConCommand startleanright("+leanright", IN_Alt2Down);

@@ -109,7 +109,7 @@ static ConVar v_centerspeed( "v_centerspeed","500" );
 
 // 54 degrees approximates a 35mm camera - we determined that this makes the viewmodels
 // and motions look the most natural.
-#if defined( USE_MAC_PRESET ) && defined( CSTRIKE15 )
+#if defined( USE_MAC_PRESET )
 static void KeepMacViewmodelFov( IConVar *pVar, const char *, float )
 {
 	ConVarRef var( pVar );

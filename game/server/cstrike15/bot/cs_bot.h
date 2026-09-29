@@ -479,7 +479,11 @@ public:
 	virtual void AvoidPlayers( CUserCmd *pCmd );				///< some game types allow players to pass through each other, this method pushes them apart
 	virtual float GetMoveSpeed( void );							///< returns current movement speed (for walk/run)
 
+#if defined( USE_MAC_PRESET )
 	bool UseMacBotPreset( void ) const;					///< local classic/deathmatch run-and-gun behavior
+#else
+	bool UseMacBotPreset( void ) const { return false; }
+#endif
 
 	virtual void Walk( void );
 	virtual bool Jump( bool mustJump = false );					///< returns true if jump was started

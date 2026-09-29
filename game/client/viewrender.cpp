@@ -114,7 +114,7 @@ static ConVar r_drawtranslucentworld( "r_drawtranslucentworld", "1", FCVAR_CHEAT
 static ConVar r_3dsky( "r_3dsky","1", 0, "Enable the rendering of 3d sky boxes" );
 static ConVar r_skybox( "r_skybox","1", FCVAR_CHEAT, "Enable the rendering of sky boxes" );
 ConVar r_drawviewmodel( "r_drawviewmodel","1", FCVAR_CHEAT );
-#if defined( USE_MAC_PRESET ) && defined( CSTRIKE15 )
+#if defined( USE_MAC_PRESET )
 static void ValidateMacDrawViewmodel( IConVar *pVar, const char *, float )
 {
 	ConVarRef var( pVar );
@@ -1408,7 +1408,7 @@ bool CViewRender::ShouldDrawViewModel( bool bDrawViewmodel )
 	if ( !r_drawviewmodel.GetBool() )
 		return false;
 
-#if defined( USE_MAC_PRESET ) && defined( CSTRIKE15 )
+#if defined( USE_MAC_PRESET )
 	if ( cg_drawviewmodel.GetInt() == 0 )
 		return false;
 #endif

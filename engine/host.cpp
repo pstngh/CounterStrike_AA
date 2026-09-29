@@ -2073,7 +2073,6 @@ void Host_ReadConfiguration( const int iController, const bool readDefault )
 #if defined( USE_MAC_PRESET )
 	// Keep the physical backtick key available even after an old config is loaded.
 	Key_SetBinding( KEY_BACKQUOTE, "toggleconsole" );
-#if defined( CSTRIKE15 )
 	// Cycle all three first-person viewmodel modes with K.
 	Key_SetBinding( KEY_K, "incrementvar cg_drawviewmodel 0 2 1" );
 	Key_SetBinding( KEY_LSHIFT, "+leanleft" );
@@ -2099,7 +2098,6 @@ void Host_ReadConfiguration( const int iController, const bool readDefault )
 	ConVarRef autoHelp( "cl_autohelp" );
 	if ( autoHelp.IsValid() )
 		autoHelp.SetValue( 0 );
-#endif
 #else
 	if (NULL == Key_NameForBinding("toggleconsole"))
 	{

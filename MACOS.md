@@ -143,7 +143,8 @@ All grenade types, including flashbangs, and all knives are unavailable: they
 cannot be bought, granted, picked up, or spawned on maps. C4 cannot be granted
 or picked up, and bomb sites do not become objectives. Local matches start in
 free-for-all deathmatch, with respawns enabled and every player a valid target.
-Set `mp_teammates_are_enemies 0` in the console for team deathmatch. Weapon
+Set `mp_teammates_are_enemies 0` in the console for team deathmatch; the preset
+sets it back to 1 on every map load. Weapon
 inaccuracy uses each weapon's first-shot standing or crouching baseline while
 running, jumping, climbing, or spraying. Shots retain their normal random
 first-shot spread. Automatic-weapon recoil remains visible and affects aim,

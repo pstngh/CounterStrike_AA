@@ -3096,9 +3096,8 @@ void CWeaponCSBase::Spawn()
 	BaseClass::Spawn();
 
 #if defined( USE_MAC_PRESET ) && !defined( CLIENT_DLL )
-	// Remove grenades, knives and C4 placed by maps or spawned directly by scripts.
-	if ( GetWeaponType() == WEAPONTYPE_GRENADE || GetCSWeaponID() == WEAPON_C4 ||
-		( GetWeaponType() == WEAPONTYPE_KNIFE && GetCSWeaponID() != WEAPON_TASER ) )
+	// Also remove prohibited weapons placed by maps or spawned directly by scripts.
+	if ( CS_MacPresetProhibitsWeapon( GetWeaponType(), GetCSWeaponID() ) )
 	{
 		UTIL_Remove( this );
 		return;
@@ -3754,20 +3753,15 @@ void CWeaponCSBase::UpdateAccuracyPenalty( )
 	if ( !pPlayer )
 		return;
 
+#if defined( USE_MAC_PRESET )
+	// The preset's GetInaccuracy uses only fresh-shot accuracy and never reads
+	// the accumulated penalty, so keep it at zero rather than computing and
+	// networking a decaying value every tick.
+	m_fAccuracyPenalty = 0.0f;
+#else
 	const CCSWeaponInfo& weaponInfo = GetCSWpnData( );
 
 	float fNewPenalty = 0.0f;
-#if defined( USE_MAC_PRESET )
-	// Use the same base inaccuracy while moving, airborne, or on a ladder.
-	if ( FBitSet( pPlayer->GetFlags( ), FL_DUCKING ) && pPlayer->GetGroundEntity() != nullptr )
-	{
-		fNewPenalty += weaponInfo.GetInaccuracyCrouch( GetEconItemView( ), m_weaponMode );
-	}
-	else
-	{
-		fNewPenalty += weaponInfo.GetInaccuracyStand( GetEconItemView( ), m_weaponMode );
-	}
-#else
 
 	// Adding movement penalty here results in a penalty that persists and requires decay to eliminate.
 #if MOVEMENT_ACCURACY_DECAYED
@@ -3799,7 +3793,6 @@ void CWeaponCSBase::UpdateAccuracyPenalty( )
 	{
 		fNewPenalty += weaponInfo.GetInaccuracyStand( GetEconItemView( ), m_weaponMode );
 	}
-#endif
 
 	if ( m_bInReload )
 	{
@@ -3816,6 +3809,7 @@ void CWeaponCSBase::UpdateAccuracyPenalty( )
 
 		m_fAccuracyPenalty = Lerp( expf( TICK_INTERVAL * -fDecayFactor ), fNewPenalty, ( float ) m_fAccuracyPenalty );
 	}
+#endif
 
 
 #define WEAPON_RECOIL_DECAY_THRESHOLD 1.10	

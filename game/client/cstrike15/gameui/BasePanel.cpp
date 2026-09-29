@@ -1254,7 +1254,8 @@ void CBaseModPanel::OnLevelLoadingFinished()
 		GetViewPortInterface()->UpdateAllPanels();
 	}
 #if defined( INCLUDE_ROCKETUI ) && defined( USE_MAC_PRESET )
-	// Opening the team menu here removes the extra Continue click after a map loads.
+	// Close the loading screen as soon as the map is loaded instead of waiting
+	// for a Continue click; the local player then joins CT automatically.
 	RocketLoadingScreenDocument::ShowPanel( false );
 #endif
 }

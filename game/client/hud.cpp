@@ -136,6 +136,16 @@ void CHudElement::InitCHudElementAfterConstruction( const char* pElementName )
 	m_bActive = false;
 	m_iHiddenBits = 0;
 	m_pElementName = pElementName;
+#if defined( USE_MAC_PRESET )
+	// Keep the in-game presentation crosshair-only. Weapon selection must
+	// remain active for invnext/invprev even though its CS:GO paint is empty.
+	// The sniper scope is part of aiming; the buy menu is opened explicitly.
+	m_bMacPresetDrawn = pElementName &&
+		( !V_strcmp( pElementName, "CHudWeapon" ) ||
+		  !V_strcmp( pElementName, "CHudWeaponSelection" ) ||
+		  !V_strcmp( pElementName, "CHudScope" ) ||
+		  !V_strcmp( pElementName, "RkHudBuyMenu" ) );
+#endif
 	m_nSplitScreenPlayerSlot = -1;
 	SetNeedsRemove( false );
 	m_bIsParentedToClientDLLRootPanel = false;
@@ -212,14 +222,8 @@ bool CHudElement::GetIgnoreGlobalHudDisable( void )
 //-----------------------------------------------------------------------------
 bool CHudElement::ShouldDraw( void )
 {
-#if defined( USE_MAC_PRESET ) && defined( CSTRIKE15 )
-	// Keep the in-game presentation crosshair-only. Weapon selection must
-	// remain active for invnext/invprev even though its CS:GO paint is empty.
-	// The sniper scope is part of aiming; the buy menu is opened explicitly.
-	if ( V_strcmp( GetName(), "CHudWeapon" ) &&
-		 V_strcmp( GetName(), "CHudWeaponSelection" ) &&
-		 V_strcmp( GetName(), "CHudScope" ) &&
-		 V_strcmp( GetName(), "RkHudBuyMenu" ) )
+#if defined( USE_MAC_PRESET )
+	if ( !m_bMacPresetDrawn )
 		return false;
 #endif
 	bool bShouldDraw = m_pHud && !m_pHud->IsHidden( m_iHiddenBits );

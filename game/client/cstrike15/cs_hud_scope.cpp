@@ -281,16 +281,6 @@ void CHudScope::Paint( void )
 		// (since this is a framerate-dependent approach function).
 		m_fLineSpreadDistance = RemapValClamped( gpGlobals->frametime * 140.0f, 0.0f, 1.0f, m_fLineSpreadDistance, fRawSpreadDistance );
 
-#if defined( USE_MAC_PRESET )
-		// Keep the AWP scope glass and reticle crisp while moving. Accuracy
-		// still affects the shot; only the visual blur is suppressed.
-		if ( pWeapon->GetCSWeaponID() == WEAPON_AWP )
-		{
-			m_fAnimInset = 0.0f;
-			m_fLineSpreadDistance = 0.0f;
-		}
-#endif
-
 		float flAccuracyFishtail = pWeapon->GetAccuracyFishtail();
 		int offsetX = viewModel->GetBobState().m_flRawLateralBob * (screenTall/14) + flAccuracyFishtail;
 		int offsetY = viewModel->GetBobState().m_flRawVerticalBob * (screenTall/14);

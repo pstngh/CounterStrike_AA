@@ -413,12 +413,19 @@ float CS_AAWeaponMaxSpeed( int weaponId )
 	return weaponId == WEAPON_AWP ? CS_PLAYER_SPEED_RUN * 0.8f : CS_PLAYER_SPEED_RUN;
 }
 
+bool CS_MacPresetProhibitsWeapon( int weaponType, int weaponId )
+{
+	return weaponType == WEAPONTYPE_GRENADE || weaponId == WEAPON_C4 ||
+		( weaponType == WEAPONTYPE_KNIFE && weaponId != WEAPON_TASER );
+}
+
 bool CCSPlayer::IsLocalListenServerHost() const
 {
 #if defined( CLIENT_DLL )
-	return engine->IsClientLocalToActiveServer() && this == C_CSPlayer::GetLocalCSPlayer();
+	return this == C_CSPlayer::GetLocalCSPlayer() && engine->IsClientLocalToActiveServer();
 #else
-	return !engine->IsDedicatedServer() && this == UTIL_GetLocalPlayerOrListenServerHost();
+	// The listen-server host is always player 1.
+	return entindex() == 1 && !engine->IsDedicatedServer();
 #endif
 }
 #endif
@@ -3068,9 +3075,7 @@ AcquireResult::Type CCSPlayer::CanAcquire( CSWeaponID weaponId, AcquireMethod::T
 	if ( pWeaponInfo == NULL )
 		return AcquireResult::InvalidItem;
 #if defined( USE_MAC_PRESET )
-	// Exclude grenades, C4, and knives from buys and pickups for everyone.
-	if ( pWeaponInfo->GetWeaponType( pItem ) == WEAPONTYPE_GRENADE || weaponId == WEAPON_C4 ||
-		( pWeaponInfo->GetWeaponType( pItem ) == WEAPONTYPE_KNIFE && weaponId != WEAPON_TASER ) )
+	if ( CS_MacPresetProhibitsWeapon( pWeaponInfo->GetWeaponType( pItem ), weaponId ) )
 		return AcquireResult::NotAllowedByProhibition;
 #endif
 

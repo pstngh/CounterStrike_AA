@@ -2033,50 +2033,47 @@ void CCSPlayer::GiveDefaultItems()
 	const char *pchTeamKnifeName = GetTeamNumber() == TEAM_TERRORIST ? "weapon_knife_t" : "weapon_knife";
 
 #if defined( USE_MAC_PRESET )
-	if ( IsBot() && static_cast<CCSBot *>( this )->UseMacBotPreset() )
+	const CCSBot *pBot = ToCSBot( this );
+	const bool bMacBotLoadout = pBot && pBot->UseMacBotPreset();
+	if ( bMacBotLoadout || ( IsLocalListenServerHost() &&
+		 ( CSGameRules()->IsPlayingClassic() || CSGameRules()->IsPlayingGunGameDeathmatch() ) &&
+		 ( GetTeamNumber() == TEAM_CT || GetTeamNumber() == TEAM_TERRORIST ) ) )
 	{
-		// Random buying/rebuying is disabled by the preset. Supply a primary on
-		// every spawn, including the first deathmatch spawn outside a buy zone.
+		// Rebuild the guns on every spawn, including rounds in which the
+		// previous pistol and rifle would normally be retained. Random
+		// buying/rebuying is disabled by the preset, so this also supplies
+		// the first deathmatch spawn outside a buy zone.
 		while ( CBaseCombatWeapon *pOldPrimary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
 			DestroyWeapon( pOldPrimary );
 		while ( CBaseCombatWeapon *pOldPistol = Weapon_GetSlot( WEAPON_SLOT_PISTOL ) )
 			DestroyWeapon( pOldPistol );
 		GiveNamedItem( "weapon_usp_silencer" );
-		GiveNamedItem( "item_kevlar" );
-		const char *primaries[] = { "weapon_ak47", "weapon_m4a1_silencer", "weapon_awp" };
-		GiveNamedItem( primaries[ RandomInt( 0, ARRAYSIZE( primaries ) - 1 ) ] );
-		if ( CBaseCombatWeapon *primary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
-		{
-			primary->GiveReserveAmmo( AMMO_POSITION_PRIMARY, primary->GetReserveAmmoMax( AMMO_POSITION_PRIMARY ) );
-			Weapon_Switch( primary );
-		}
-		m_bPickedUpWeapon = false;
-		return;
-	}
-	if ( IsLocalListenServerHost() &&
-		 ( CSGameRules()->IsPlayingClassic() || CSGameRules()->IsPlayingGunGameDeathmatch() ) &&
-		 ( GetTeamNumber() == TEAM_CT || GetTeamNumber() == TEAM_TERRORIST ) )
-	{
-		// Rebuild this player's guns on every spawn, including rounds in
-		// which the previous pistol and rifle would normally be retained.
-		while ( CBaseCombatWeapon *pOldPrimary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
-			DestroyWeapon( pOldPrimary );
-		while ( CBaseCombatWeapon *pOldPistol = Weapon_GetSlot( WEAPON_SLOT_PISTOL ) )
-			DestroyWeapon( pOldPistol );
 
-		if ( GetTeamNumber() == TEAM_CT )
+		if ( bMacBotLoadout )
 		{
-			GiveNamedItem( "weapon_usp_silencer" );
-			GiveNamedItem( "weapon_m4a1_silencer" );
-			GiveNamedItem( "weapon_ak47" );
-			GiveNamedItem( "weapon_aug" );
+			GiveNamedItem( "item_kevlar" );
+			const char *primaries[] = { "weapon_ak47", "weapon_m4a1_silencer", "weapon_awp" };
+			GiveNamedItem( primaries[ RandomInt( 0, ARRAYSIZE( primaries ) - 1 ) ] );
+			if ( CBaseCombatWeapon *primary = Weapon_GetSlot( WEAPON_SLOT_RIFLE ) )
+			{
+				primary->GiveReserveAmmo( AMMO_POSITION_PRIMARY, primary->GetReserveAmmoMax( AMMO_POSITION_PRIMARY ) );
+				Weapon_Switch( primary );
+			}
 		}
 		else
 		{
-			GiveNamedItem( "weapon_usp_silencer" );
-			GiveNamedItem( "weapon_ak47" );
+			if ( GetTeamNumber() == TEAM_CT )
+			{
+				GiveNamedItem( "weapon_m4a1_silencer" );
+				GiveNamedItem( "weapon_ak47" );
+				GiveNamedItem( "weapon_aug" );
+			}
+			else
+			{
+				GiveNamedItem( "weapon_ak47" );
+			}
+			GiveNamedItem( "weapon_awp" );
 		}
-		GiveNamedItem( "weapon_awp" );
 		m_bPickedUpWeapon = false;
 		return;
 	}
@@ -11370,8 +11367,7 @@ void CCSPlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	if ( pCSWeapon )
 	{
 #if defined( USE_MAC_PRESET )
-		if ( pCSWeapon->GetWeaponType() == WEAPONTYPE_GRENADE || pCSWeapon->GetCSWeaponID() == WEAPON_C4 ||
-			( pCSWeapon->GetWeaponType() == WEAPONTYPE_KNIFE && pCSWeapon->GetCSWeaponID() != WEAPON_TASER ) )
+		if ( CS_MacPresetProhibitsWeapon( pCSWeapon->GetWeaponType(), pCSWeapon->GetCSWeaponID() ) )
 		{
 			UTIL_Remove( pCSWeapon );
 			return;
@@ -12711,9 +12707,7 @@ CBaseEntity	*CCSPlayer::GiveNamedItem( const char *pchName, int iSubType /*= 0*/
 	const char *pchItemClass = ( pScriptItem && pScriptItem->IsValid() )
 		? pScriptItem->GetStaticData()->GetItemClass() : pchName;
 	const CCSWeaponInfo *pWeaponInfo = GetWeaponInfo( WeaponIdFromString( pchItemClass ) );
-	if ( pWeaponInfo && ( pWeaponInfo->GetWeaponType( pScriptItem ) == WEAPONTYPE_GRENADE ||
-		pWeaponInfo->m_weaponId == WEAPON_C4 ||
-		( pWeaponInfo->GetWeaponType( pScriptItem ) == WEAPONTYPE_KNIFE && pWeaponInfo->m_weaponId != WEAPON_TASER ) ) )
+	if ( pWeaponInfo && CS_MacPresetProhibitsWeapon( pWeaponInfo->GetWeaponType( pScriptItem ), pWeaponInfo->m_weaponId ) )
 		return NULL;
 #endif
 

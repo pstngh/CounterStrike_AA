@@ -152,6 +152,9 @@ protected:
 
 private:
 	const char					*m_pElementName;
+#if defined( USE_MAC_PRESET )
+	bool						m_bMacPresetDrawn;	// one of the few elements the Mac preset draws
+#endif
 	bool						m_bNeedsRemove;
 	bool						m_bIsParentedToClientDLLRootPanel;
 

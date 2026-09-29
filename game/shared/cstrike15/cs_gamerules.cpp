@@ -10341,9 +10341,9 @@ void ServerThinkReplayUploader()
                     //Sometimes we don't want the new match the allow players to pick teams, such as in the case of a vote to scramble or swap teams.
                     bool bPickNewTeams = m_bPickNewTeamsOnReset;
 #if defined( USE_MAC_PRESET )
-                    // The local host only auto-joins CT when a map loads, and the preset
-                    // hides the team menu, so a host cleared to unassigned here could never
-                    // rejoin. Keep everyone's team through a match-end restart instead.
+                    // The local host auto-joins CT only when a map loads, so a host cleared
+                    // to unassigned here would have to rejoin through the pause menu. Keep
+                    // everyone's team through a match-end restart instead.
                     if ( !engine->IsDedicatedServer() )
                         bPickNewTeams = false;
 #endif
@@ -10368,14 +10368,10 @@ void ServerThinkReplayUploader()
                     g_fGameOver = false;
 
                     // Send an event that clients can key off of to update their UI state.
-                    IGameEvent *restartEvent = gameeventmanager->CreateEvent( "cs_match_end_restart" );
-                    if( bPickNewTeams  && restartEvent )
+                    if ( bPickNewTeams )
                     {
-                        gameeventmanager->FireEvent( restartEvent );
-                    }
-                    else if ( restartEvent )
-                    {
-                        gameeventmanager->FreeEvent( restartEvent );
+                        if ( IGameEvent *restartEvent = gameeventmanager->CreateEvent( "cs_match_end_restart" ) )
+                            gameeventmanager->FireEvent( restartEvent );
                     }
 
                     m_bPickNewTeamsOnReset = true;
