@@ -76,10 +76,12 @@ These belong inside of your `../game/` folder.
 
 
 ## Current Nonfree blobs
-* ${LIBPUBLIC}/libsteam_api.so  - Left for Convenience, can be removed in the future.
+* lib/public/linux64/libsteam_api.so - Linked by the Linux build and copied into `../game/bin/linux64`.
 
 ## Launch
 `./csgo_linux64`
+
+The modules find each other relative to their own location, so the `../game` directory can be moved, or unpacked from the `csgo-linux-x64` tarball that CI builds, and run from anywhere.
 
 
 

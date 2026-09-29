@@ -330,9 +330,10 @@ foreach(library ${LIBRARIES})
 	   VERSION ${PROJECT_VERSION}
 	   SOVERSION ${PROJECT_VERSION_MAJOR}
 	)
-	if(APPLE)
+	# Kisak-Strike: ship the libraries beside the game modules that load them.
+	if(GAME_BIN_DIR)
 		set_target_properties(${NAME} PROPERTIES
-			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../game/bin/osx64")
+			LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
 	endif()
 
 	if (MSVC)

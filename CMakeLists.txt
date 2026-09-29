@@ -17,6 +17,7 @@ if(USE_MAC_PRESET)
 endif()
 
 if(APPLE)
+    set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/osx64")
     if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
         message(FATAL_ERROR "macOS builds support Apple Silicon (arm64) only")
     endif()
@@ -43,7 +44,21 @@ if(APPLE)
     target_compile_definitions(steam_api_offline PRIVATE STEAM_API_EXPORTS GNUC VERSION_SAFE_STEAM_API_INTERFACES)
     set_target_properties(steam_api_offline PROPERTIES
         OUTPUT_NAME steam_offline
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../game/bin/osx64")
+        LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
+else()
+    set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/linux64")
+    # Modules find each other relative to their own location, as the macOS
+    # toolchain does with @loader_path, so the game directory runs wherever it
+    # is copied. Modules in csgo/bin/linux64 reach bin/linux64 three levels up.
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../../../bin/linux64")
+
+    # Ship Valve's Steam API library beside the modules that link it.
+    set(STEAM_API_SOURCE "${CMAKE_SOURCE_DIR}/lib/public/linux64/libsteam_api.so")
+    add_custom_command(OUTPUT "${GAME_BIN_DIR}/libsteam_api.so"
+        COMMAND "${CMAKE_COMMAND}" -E copy "${STEAM_API_SOURCE}" "${GAME_BIN_DIR}/libsteam_api.so"
+        DEPENDS "${STEAM_API_SOURCE}")
+    add_custom_target(steam_api_runtime ALL DEPENDS "${GAME_BIN_DIR}/libsteam_api.so")
 endif()
 
 add_subdirectory(appframework)
@@ -150,6 +165,9 @@ elseif( USE_BULLET_PHYSICS )
     set(BUILD_ENET OFF CACHE BOOL "" FORCE)
     set(BUILD_CLSOCKET OFF CACHE BOOL "" FORCE)
     set(INSTALL_LIBS OFF CACHE BOOL "" FORCE)
+    # RmlUi's BUILD_SHARED_LIBS makes Bullet's libraries shared too; put them
+    # beside the modules so the relative rpaths find them.
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
     set(OpenGL_GL_PREFERENCE LEGACY)
     string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
     if (BUILD_TYPE_UPPER STREQUAL "DEBUG")
