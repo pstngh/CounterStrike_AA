@@ -1,0 +1,103 @@
+# Builds the game client for each supported platform and uploads the
+# resulting game directory (binaries only, no Valve assets) as an artifact.
+#
+# Kisak-Strike writes its runtime binaries to ../game, a sibling of the source
+# tree, so the repository is checked out into src/ and the build lands in
+# game/ inside the workspace.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  linux-x64:
+    name: Linux x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: src
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build \
+            libsdl2-dev libsdl2-mixer-dev libgoogle-perftools-dev libopenal-dev \
+            libcurl4-openssl-dev libcurlpp-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev
+
+      - name: Configure
+        run: |
+          cmake -S src -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DDEDICATED=OFF \
+            -DUSE_KISAK_PHYSICS=ON \
+            -DUSE_ROCKETUI=ON \
+            -DUSE_SCALEFORM=OFF
+
+      - name: Build
+        run: cmake --build build
+
+      # Linux release builds keep -g3 debug info, over 1 GB in total.
+      - name: Strip debug info
+        run: find game -type f -exec strip --strip-debug {} +
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: csgo-linux-x64
+          path: game/
+          if-no-files-found: error
+
+  macos-arm64:
+    name: macOS arm64
+    # Apple Silicon runner; the build refuses Intel Macs.
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: src
+
+      - name: Install dependencies
+        run: |
+          # The toolchain file calls the Command Line Tools directly.
+          test -x /Library/Developer/CommandLineTools/usr/bin/clang++
+          test -d /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+          brew install ninja sdl2-compat
+
+      - name: Configure
+        run: |
+          cmake -S src -B build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/macos-arm64.cmake" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DDEDICATED=OFF \
+            -DUSE_KISAK_PHYSICS=ON \
+            -DUSE_ROCKETUI=ON \
+            -DUSE_SCALEFORM=OFF
+
+      - name: Build
+        run: cmake --build build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: csgo-macos-arm64
+          path: game/
+          if-no-files-found: error
