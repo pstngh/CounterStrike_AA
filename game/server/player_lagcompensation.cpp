@@ -472,6 +472,10 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 					// this deliberately ignores WantsLagCompensationOnEntity.
 					if ( !ld->m_bRestoreEntity )
 					{
+#if defined( USE_MAC_PRESET )
+						CCSPlayer *pBlocker = pHitEntity->IsPlayer() ? ToCSPlayer( pHitEntity ) : NULL;
+						const float flBlockerLean = pBlocker ? pBlocker->m_flLeanAngle : 0.0f;
+#endif
 						// Temp turn this flag on
 						ld->m_bRestoreEntity = true;
 
@@ -479,6 +483,15 @@ bool CLagCompensationManager::BacktrackEntity( CBaseEntity *entity, float flTarg
 
 						// Remove the temp flag
 						ld->m_bRestoreEntity = false;
+#if defined( USE_MAC_PRESET )
+						// FinishLagCompensation skips entities without the flag, so put
+						// the blocker's lean back now instead of leaving it rewound.
+						if ( pBlocker )
+						{
+							pBlocker->m_flLeanAngle = flBlockerLean;
+							pBlocker->m_bAALeanYawOverride = false;
+						}
+#endif
 					}	
 				}
 			}
