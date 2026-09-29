@@ -24,8 +24,6 @@ private struct CrosshairSettings {
     let outline: Bool
     let outlineThickness: Double
     let useWeaponGap: Bool
-    let fixedGap: Double
-    let legacyScale: Int
     let dynamicSplitDistance: Double
     let dynamicInnerAlpha: Double
     let dynamicOuterAlpha: Double
@@ -75,18 +73,11 @@ private final class CrosshairPreviewView: NSView {
                             alpha: 1)
         let center = NSPoint(x: bounds.midX.rounded(), y: bounds.midY.rounded())
         var length = CGFloat(settings.size) * 2.1 * previewScale
-        var thickness = max(0.75, CGFloat(settings.thickness) * 2 * previewScale)
-        let selectedGap = settings.style == 1 ? settings.fixedGap : settings.gap
-        var gap = max(0, (4 + CGFloat(selectedGap) * 1.5) * previewScale)
+        let thickness = max(0.75, CGFloat(settings.thickness) * 2 * previewScale)
+        var gap = max(0, (4 + CGFloat(settings.gap) * 1.5) * previewScale)
 
         if settings.useWeaponGap {
             gap += 2.5 * previewScale
-        }
-        if settings.style <= 1 && settings.legacyScale > 0 {
-            let legacyMultiplier = min(max(768 / CGFloat(settings.legacyScale), 0.25), 3)
-            length *= legacyMultiplier
-            thickness *= legacyMultiplier
-            gap *= legacyMultiplier
         }
 
         let maxRadius = min(bounds.width, bounds.height) * 0.39
@@ -232,8 +223,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     private let crosshairOutlineCheckbox = NSButton(checkboxWithTitle: "Draw black outline", target: nil, action: nil)
     private let crosshairOutlineThicknessField = NSTextField()
     private let crosshairWeaponGapCheckbox = NSButton(checkboxWithTitle: "Adjust gap for equipped weapon", target: nil, action: nil)
-    private let crosshairFixedGapField = NSTextField()
-    private let crosshairLegacyScaleField = NSTextField()
     private let crosshairDynamicSplitDistanceField = NSTextField()
     private let crosshairDynamicInnerAlphaField = NSTextField()
     private let crosshairDynamicOuterAlphaField = NSTextField()
@@ -299,8 +288,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         configureNumericField(crosshairGapField, minimum: -100, maximum: 100, step: 0.5, decimalPlaces: 2)
         configureNumericField(crosshairOpacityField, minimum: 0, maximum: 100, step: 1, decimalPlaces: 0)
         configureNumericField(crosshairOutlineThicknessField, minimum: 0.1, maximum: 3, step: 0.1, decimalPlaces: 2)
-        configureNumericField(crosshairFixedGapField, minimum: -100, maximum: 100, step: 0.5, decimalPlaces: 2)
-        configureNumericField(crosshairLegacyScaleField, minimum: 0, maximum: 5000, step: 1, decimalPlaces: 0)
         configureNumericField(crosshairDynamicSplitDistanceField, minimum: 0, maximum: 100, step: 0.5, decimalPlaces: 2)
         configureNumericField(crosshairDynamicInnerAlphaField, minimum: 0, maximum: 1, step: 0.05, decimalPlaces: 2)
         configureNumericField(crosshairDynamicOuterAlphaField, minimum: 0.3, maximum: 1, step: 0.05, decimalPlaces: 2)
@@ -418,8 +405,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         crosshairOutlineCheckbox.state = storedBool("outline", defaultValue: true) ? .on : .off
         setNumericField(crosshairOutlineThicknessField, value: storedDouble("crosshairOutlineThickness", defaultValue: 1, range: 0.1...3))
         crosshairWeaponGapCheckbox.state = storedBool("crosshairWeaponGap", defaultValue: false) ? .on : .off
-        setNumericField(crosshairFixedGapField, value: storedDouble("crosshairFixedGap", defaultValue: 3, range: -100...100))
-        setNumericField(crosshairLegacyScaleField, value: storedDouble("crosshairLegacyScale", defaultValue: 0, range: 0...5000))
         setNumericField(crosshairDynamicSplitDistanceField, value: storedDouble("crosshairDynamicSplitDistance", defaultValue: 7, range: 0...100))
         setNumericField(crosshairDynamicInnerAlphaField, value: storedDouble("crosshairDynamicInnerAlpha", defaultValue: 1, range: 0...1))
         setNumericField(crosshairDynamicOuterAlphaField, value: storedDouble("crosshairDynamicOuterAlpha", defaultValue: 0.5, range: 0.3...1))
@@ -679,8 +664,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             advancedStack.trailingAnchor.constraint(lessThanOrEqualTo: advancedView.trailingAnchor, constant: -14),
             advancedStack.topAnchor.constraint(equalTo: advancedView.topAnchor, constant: 14),
         ])
-        advancedStack.addArrangedSubview(crosshairRow("Default-style fixed gap", control: numericControl(for: crosshairFixedGapField)))
-        advancedStack.addArrangedSubview(crosshairRow("Legacy scale (deprecated)", control: numericControl(for: crosshairLegacyScaleField)))
         advancedStack.addArrangedSubview(crosshairRow("Split distance (style 2)", control: numericControl(for: crosshairDynamicSplitDistanceField)))
         advancedStack.addArrangedSubview(crosshairRow("Inner alpha (style 2)", control: numericControl(for: crosshairDynamicInnerAlphaField)))
         advancedStack.addArrangedSubview(crosshairRow("Outer alpha (style 2)", control: numericControl(for: crosshairDynamicOuterAlphaField)))
@@ -700,8 +683,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         let allCrosshairControls: [NSControl] = [
             crosshairSizeField, crosshairThicknessField, crosshairGapField, crosshairOpacityField,
             crosshairUseOpacityCheckbox, crosshairDotCheckbox, crosshairOutlineCheckbox,
-            crosshairOutlineThicknessField, crosshairWeaponGapCheckbox, crosshairFixedGapField,
-            crosshairLegacyScaleField, crosshairDynamicSplitDistanceField,
+            crosshairOutlineThicknessField, crosshairWeaponGapCheckbox, crosshairDynamicSplitDistanceField,
             crosshairDynamicInnerAlphaField, crosshairDynamicOuterAlphaField,
             crosshairDynamicSplitRatioField, crosshairSniperWidthField,
             crosshairSniperInaccuracyCheckbox,
@@ -763,8 +745,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         crosshairOutlineCheckbox.state = .on
         setNumericField(crosshairOutlineThicknessField, value: 1)
         crosshairWeaponGapCheckbox.state = .off
-        setNumericField(crosshairFixedGapField, value: 3)
-        setNumericField(crosshairLegacyScaleField, value: 0)
         setNumericField(crosshairDynamicSplitDistanceField, value: 7)
         setNumericField(crosshairDynamicInnerAlphaField, value: 1)
         setNumericField(crosshairDynamicOuterAlphaField, value: 0.5)
@@ -866,8 +846,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             outline: crosshairOutlineCheckbox.state == .on,
             outlineThickness: numericValue(crosshairOutlineThicknessField, defaultValue: 1, range: 0.1...3),
             useWeaponGap: crosshairWeaponGapCheckbox.state == .on,
-            fixedGap: numericValue(crosshairFixedGapField, defaultValue: 3, range: -100...100),
-            legacyScale: Int(numericValue(crosshairLegacyScaleField, defaultValue: 0, range: 0...5000, decimalPlaces: 0)),
             dynamicSplitDistance: numericValue(crosshairDynamicSplitDistanceField, defaultValue: 7, range: 0...100),
             dynamicInnerAlpha: numericValue(crosshairDynamicInnerAlphaField, defaultValue: 1, range: 0...1),
             dynamicOuterAlpha: numericValue(crosshairDynamicOuterAlphaField, defaultValue: 0.5, range: 0.3...1),
@@ -903,8 +881,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(crosshair.outline, forKey: "outline")
         defaults.set(crosshair.outlineThickness, forKey: "crosshairOutlineThickness")
         defaults.set(crosshair.useWeaponGap, forKey: "crosshairWeaponGap")
-        defaults.set(crosshair.fixedGap, forKey: "crosshairFixedGap")
-        defaults.set(crosshair.legacyScale, forKey: "crosshairLegacyScale")
         defaults.set(crosshair.dynamicSplitDistance, forKey: "crosshairDynamicSplitDistance")
         defaults.set(crosshair.dynamicInnerAlpha, forKey: "crosshairDynamicInnerAlpha")
         defaults.set(crosshair.dynamicOuterAlpha, forKey: "crosshairDynamicOuterAlpha")
@@ -978,8 +954,6 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         cl_crosshair_drawoutline \(crosshair.outline ? 1 : 0)
         cl_crosshair_outlinethickness \(commandNumber(crosshair.outlineThickness))
         cl_crosshairgap_useweaponvalue \(crosshair.useWeaponGap ? 1 : 0)
-        cl_fixedcrosshairgap \(commandNumber(crosshair.fixedGap))
-        cl_crosshairscale \(crosshair.legacyScale)
         cl_crosshair_dynamic_splitdist \(commandNumber(crosshair.dynamicSplitDistance))
         cl_crosshair_dynamic_splitalpha_innermod \(commandNumber(crosshair.dynamicInnerAlpha))
         cl_crosshair_dynamic_splitalpha_outermod \(commandNumber(crosshair.dynamicOuterAlpha))
@@ -987,10 +961,8 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         cl_crosshair_sniper_width \(crosshair.sniperWidth)
         cl_crosshair_sniper_show_normal_inaccuracy \(crosshair.sniperShowsInaccuracy ? 1 : 0)
         mat_picmip \(texturePicmip)
-        mat_trilinear \(filtering == 1 ? 1 : 0)
         mat_forceaniso \(anisotropy)
         mat_antialias \(antialiasing)
-        mat_aaquality 0
         r_shadows \(shadows == 0 ? 0 : 1)
         r_shadowrendertotexture \(shadows >= 2 ? 1 : 0)
         r_flashlightdepthtexture \(shadows >= 3 ? 1 : 0)
