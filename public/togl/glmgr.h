@@ -1528,13 +1528,12 @@ class GLMContext
 		FORCEINLINE void SetBufAndVertexAttribPointer( uint nIndex, GLuint nGLName, GLuint stride, GLuint datatype, GLboolean normalized, GLuint nCompCount, const void *pBuf, uint nRevision )
 		{
 			VertexAttribs_t &curAttribs = m_boundVertexAttribs[nIndex];
-			if ( nGLName != m_nBoundGLBuffer[kGLMVertexBuffer] )
-			{
-				m_nBoundGLBuffer[kGLMVertexBuffer] = nGLName;
-				gGL->glBindBufferARB( GL_ARRAY_BUFFER_ARB, nGLName );
-			}
-			else if ( ( curAttribs.m_pPtr == pBuf ) && 
-					  ( curAttribs.m_revision == nRevision ) &&
+			// An attribute keeps the buffer it was specified with, so compare against that
+			// buffer rather than the bound one. Vertex formats that span several streams
+			// used to rebind and respecify every attribute whenever the streams alternated.
+			if ( ( curAttribs.m_nGLName == nGLName ) &&
+				( curAttribs.m_pPtr == pBuf ) &&
+				( curAttribs.m_revision == nRevision ) &&
 				( curAttribs.m_stride == stride ) &&
 				( curAttribs.m_datatype == datatype ) &&
 				( curAttribs.m_normalized == normalized ) &&
@@ -1543,6 +1542,13 @@ class GLMContext
 				return;
 			}
 
+			if ( nGLName != m_nBoundGLBuffer[kGLMVertexBuffer] )
+			{
+				m_nBoundGLBuffer[kGLMVertexBuffer] = nGLName;
+				gGL->glBindBufferARB( GL_ARRAY_BUFFER_ARB, nGLName );
+			}
+
+			curAttribs.m_nGLName = nGLName;
 			curAttribs.m_nCompCount = nCompCount;
 			curAttribs.m_datatype = datatype;
 			curAttribs.m_normalized = normalized;
@@ -1770,6 +1776,7 @@ class GLMContext
 
 		struct VertexAttribs_t
 		{
+			GLuint m_nGLName;
 			GLuint m_nCompCount;
 			GLenum m_datatype;
 			GLboolean m_normalized;
