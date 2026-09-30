@@ -5251,6 +5251,8 @@ HRESULT IDirect3DDevice9::DrawIndexedPrimitive( D3DPRIMITIVETYPE Type, INT BaseV
 	}
 		
 	g_nTotalDrawsOrClears++;
+	g_nToglTotalDraws++;
+	g_nToglTotalPrimitives += primCount;
 
 #if GL_BATCH_PERF_ANALYSIS
 	m_nTotalPrims += primCount;
@@ -5525,6 +5527,8 @@ HRESULT IDirect3DDevice9::DrawIndexedPrimitive( D3DPRIMITIVETYPE Type,INT BaseVe
     }
     
     g_nTotalDrawsOrClears++;
+    g_nToglTotalDraws++;
+    g_nToglTotalPrimitives += primCount;
     
 #if GL_BATCH_PERF_ANALYSIS
     m_nTotalPrims += primCount;

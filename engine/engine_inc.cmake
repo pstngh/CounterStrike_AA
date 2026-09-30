@@ -51,6 +51,20 @@ if( NOT DEDICATED )
     target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/cl_rcon.cpp")
     target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/rpt_engine.cpp")
     target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/cl_steamauth.cpp")
+    target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/perflog.cpp")
+
+    # The performance log names the commit it was built from. Refresh the header
+    # on every build; git_version.cmake rewrites it only when the commit changes.
+    set(PERFLOG_VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/perflog_version.h")
+    add_custom_target(engine_perflog_version
+        COMMAND "${CMAKE_COMMAND}" -DSRC=${SRCDIR} -DOUT=${PERFLOG_VERSION_HEADER}
+                -P "${CMAKE_MODULE_PATH}/git_version.cmake"
+        BYPRODUCTS "${PERFLOG_VERSION_HEADER}"
+        VERBATIM)
+    add_dependencies(${OUTBINNAME} engine_perflog_version)
+    target_include_directories(${OUTBINNAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    # The log reads togl's draw call totals.
+    target_link_libraries(${OUTBINNAME} libtogl_client)
 endif()
 
 target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/clientframe.cpp")

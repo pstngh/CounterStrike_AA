@@ -35,6 +35,7 @@
 #include "vgui_baseui_interface.h"
 #endif
 #include "tier0/etwprof.h"
+#include "perflog.h"
 
 #include "steam/steam_api.h"
 #include "appframework/ilaunchermgr.h"
@@ -406,6 +407,11 @@ void CEngine::Frame( void )
 			pSyncReportConVar->SetValue( reportLevel );
 		}
 	}
+
+#ifndef DEDICATED
+	// Records the last frame's timings, before PreUpdateProfile starts the next one.
+	PerfLog_Frame();
+#endif
 
 #ifdef VPROF_ENABLED
 	PreUpdateProfile( m_flFilteredTime );

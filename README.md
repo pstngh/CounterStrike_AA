@@ -178,6 +178,8 @@ src/tools/install_macos_launcher.sh game
 
 Then open `CSGO Launcher.app` from that directory. [MACOS.md](MACOS.md#native-mac-launcher) describes its settings.
 
+To record performance, enter `perf_log 1` in the console, or turn on Write perf_log.txt in the Mac launcher's Graphics Settings. The game then appends frame timing, where each frame's time goes and the settings that affect it to `perf_log.txt` in the game directory. [MACOS.md](MACOS.md#performance-options) describes the log.
+
 ## Gameplay preset
 
 `USE_MAC_PRESET` compiles in Allied Assault-style rules for local play:

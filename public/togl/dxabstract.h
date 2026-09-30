@@ -27,6 +27,9 @@ inline void Debugger()
 
 TOGL_INTERFACE void toglGetClientRect( VD3DHWND hWnd, RECT *destRect );
 
+// Draw calls and primitives issued since startup; never reset.
+TOGL_INTERFACE void toglGetDrawTotals( uint64 *pDraws, uint64 *pPrimitives );
+
 
 struct TOGL_CLASS IUnknown
 {

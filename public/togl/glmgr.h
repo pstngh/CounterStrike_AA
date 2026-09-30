@@ -46,6 +46,7 @@
 extern void GLMDebugPrintf( const char *pMsg, ... );
 
 extern uint g_nTotalDrawsOrClears, g_nTotalVBLockBytes, g_nTotalIBLockBytes;
+extern uint64 g_nToglTotalDraws, g_nToglTotalPrimitives;
 
 #if GL_TELEMETRY_GPU_ZONES
 struct TelemetryGPUStats_t

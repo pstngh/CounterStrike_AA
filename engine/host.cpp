@@ -104,6 +104,7 @@
 #include "iprediction.h"
 #include "netmessages.h"
 #include "cl_main.h"
+#include "perflog.h"
 #include "hltvserver.h"
 #include "hltvtest.h"
 #include "sys_mainwind.h"
@@ -262,6 +263,11 @@ public:
 		return m_flLastServerTime;
 	}
 
+	const HostFrameSegments_t &GetLastFrameSegments() const
+	{
+		return m_LastSegments;
+	}
+
 private:
 	enum
 	{
@@ -284,6 +290,7 @@ private:
 	double deltas[NUM_FRAME_SEGMENTS];
 
 	float m_flLastServerTime;
+	HostFrameSegments_t m_LastSegments;
 
 	float m_pFrameStartTimeHistory[FRAME_HISTORY_COUNT];
 	float m_pFrameTimeHistory[FRAME_HISTORY_COUNT];
@@ -296,6 +303,11 @@ static CFrameTimer g_HostTimes;
 float Host_GetServerSimulationFrameTime()
 {
 	return g_HostTimes.GetServerSimulationFrameTime();
+}
+
+void Host_GetLastFrameSegments( HostFrameSegments_t &segments )
+{
+	segments = g_HostTimes.GetLastFrameSegments();
 }
 
 
@@ -2209,6 +2221,14 @@ void CFrameTimer::MarkFrame()
 	float fs_exec = (deltas[FRAME_SEGMENT_CMD_EXECUTE])*1000.0;
 
 	m_flLastServerTime = fs_server;
+
+	m_LastSegments.m_flInput = fs_input;
+	m_LastSegments.m_flClient = fs_client;
+	m_LastSegments.m_flServer = fs_server;
+	m_LastSegments.m_flRender = fs_render;
+	m_LastSegments.m_flSound = fs_sound;
+	m_LastSegments.m_flClientDLL = fs_cldll;
+	m_LastSegments.m_flCmdExecute = fs_exec;
 
 	ResetDeltas();
 
@@ -5508,6 +5528,10 @@ void Host_Shutdown(void)
 		return;
 	}
 	shutting_down = true;
+
+#ifndef DEDICATED
+	PerfLog_Shutdown();
+#endif
 	
 	if( g_pDebugInputThread )
 	{

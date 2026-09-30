@@ -107,6 +107,18 @@ renderer the render-thread time includes waiting for the GPU at present.
 In the console, `gl_swap_limit 0` also lets more than one frame queue for
 display, at the cost of input latency.
 
+Write perf_log.txt (`perf_log 1` in the console) appends a performance log to
+`perf_log.txt` in the game directory; Show in Finder reveals it. Each session
+records the build, the Mac and its cores, the GPU and the command line. Frames
+are then grouped into segments, and a new segment starts whenever the map or a
+setting that affects frame time changes, including one changed in the console,
+so a single session can compare several settings. A segment lists its settings,
+a sample line every five seconds (`perf_log_interval`) and a summary: average
+and percentile frame times, where the main thread spends each frame, render
+thread time, draw calls per frame, the likely limit, and a profile of the main
+thread by subsystem and function. The profile costs a little frame time;
+`perf_log_profile 0` leaves it out.
+
 ## Native Mac launcher
 
 Build the launcher app in a playable game directory:

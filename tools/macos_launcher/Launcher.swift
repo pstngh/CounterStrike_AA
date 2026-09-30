@@ -222,6 +222,8 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     private let bufferUploadsPopup = NSPopUpButton()
     private let bufferUploadArguments: [[String]] = [[], ["-gl_enable_static_buffer"], ["-gl_enable_pseudobufs"]]
     private let performanceOverlayCheckbox = NSButton(checkboxWithTitle: "Show frame time breakdown", target: nil, action: nil)
+    private let performanceLogCheckbox = NSButton(checkboxWithTitle: "Write perf_log.txt", target: nil, action: nil)
+    private let showPerformanceLogButton = NSButton(title: "Show in Finder", target: nil, action: nil)
     private let crosshairStylePopup = NSPopUpButton()
     private let crosshairColorWell = NSColorWell()
     private let crosshairSizeField = NSTextField()
@@ -421,6 +423,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         threadedBonesCheckbox.state = storedBool("threadedBoneSetup", defaultValue: false) ? .on : .off
         bufferUploadsPopup.selectItem(at: storedInteger("bufferUploads", defaultValue: 0, range: 0...2))
         performanceOverlayCheckbox.state = storedBool("performanceOverlay", defaultValue: false) ? .on : .off
+        performanceLogCheckbox.state = storedBool("performanceLog", defaultValue: false) ? .on : .off
         crosshairStylePopup.selectItem(at: storedInteger("crosshairStyle", defaultValue: 4, range: 0...5))
         let red = storedInteger("red", defaultValue: 50, range: 0...255)
         let green = storedInteger("green", defaultValue: 250, range: 0...255)
@@ -794,7 +797,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             return
         }
 
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 570),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 610),
                             styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
         panel.title = "Graphics Settings"
         panel.isFloatingPanel = false
@@ -838,7 +841,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             control.target = self
             control.action = #selector(settingsChanged)
         }
-        for checkbox in [multithreadedGLCheckbox, threadedBonesCheckbox, performanceOverlayCheckbox] {
+        for checkbox in [multithreadedGLCheckbox, threadedBonesCheckbox, performanceOverlayCheckbox, performanceLogCheckbox] {
             checkbox.target = self
             checkbox.action = #selector(settingsChanged)
         }
@@ -847,12 +850,27 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(row("Buffer uploads", control: bufferUploadsPopup))
         stack.addArrangedSubview(row("Animation", control: threadedBonesCheckbox))
         stack.addArrangedSubview(row("Overlay", control: performanceOverlayCheckbox))
+        showPerformanceLogButton.target = self
+        showPerformanceLogButton.action = #selector(showPerformanceLog)
+        let logControls = NSStackView(views: [performanceLogCheckbox, showPerformanceLogButton])
+        logControls.orientation = .horizontal
+        logControls.spacing = 12
+        stack.addArrangedSubview(row("Log", control: logControls))
 
         let note = NSTextField(labelWithString: "Changes apply the next time you launch the game.")
         note.textColor = .secondaryLabelColor
         stack.addArrangedSubview(note)
         graphicsWindow = panel
         panel.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func showPerformanceLog() {
+        let logURL = gameRoot.appendingPathComponent("perf_log.txt")
+        guard FileManager.default.fileExists(atPath: logURL.path) else {
+            showError("There is no performance log yet. Turn on Write perf_log.txt, then play a map.")
+            return
+        }
+        NSWorkspace.shared.activateFileViewerSelecting([logURL])
     }
 
     @objc private func graphicsQualityChanged() {
@@ -929,6 +947,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(threadedBonesCheckbox.state == .on, forKey: "threadedBoneSetup")
         defaults.set(bufferUploadsPopup.indexOfSelectedItem, forKey: "bufferUploads")
         defaults.set(performanceOverlayCheckbox.state == .on, forKey: "performanceOverlay")
+        defaults.set(performanceLogCheckbox.state == .on, forKey: "performanceLog")
         defaults.set(crosshair.style, forKey: "crosshairStyle")
         defaults.set(crosshair.red, forKey: "red")
         defaults.set(crosshair.green, forKey: "green")
@@ -1047,6 +1066,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         r_frameratesmoothing \(multithreadedGLCheckbox.state == .on ? 0 : 1)
         cl_threaded_bone_setup \(threadedBonesCheckbox.state == .on ? 1 : 0)
         \(performanceOverlayCheckbox.state == .on ? "cl_showfps 5" : "")
+        perf_log \(performanceLogCheckbox.state == .on ? 1 : 0)
 
         """
         let configURL = gameRoot.appendingPathComponent("csgo/cfg/mac_launcher.cfg")

@@ -37,6 +37,16 @@ ConVar gl_swap_limit( "gl_swap_limit", "1", FCVAR_RELEASE );
 // g_nTotalDrawsOrClears is reset to 0 in Present()
 uint g_nTotalDrawsOrClears, g_nTotalVBLockBytes, g_nTotalIBLockBytes;
 
+// Draw calls and primitives since startup, for the engine's performance log. They are
+// never reset, so a reader on another thread can take the difference between frames.
+uint64 g_nToglTotalDraws, g_nToglTotalPrimitives;
+
+TOGL_INTERFACE void toglGetDrawTotals( uint64 *pDraws, uint64 *pPrimitives )
+{
+	*pDraws = g_nToglTotalDraws;
+	*pPrimitives = g_nToglTotalPrimitives;
+}
+
 #if GL_TELEMETRY_GPU_ZONES
 TelemetryGPUStats_t g_TelemetryGPUStats;
 #endif
