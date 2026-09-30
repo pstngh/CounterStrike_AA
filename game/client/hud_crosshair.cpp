@@ -19,10 +19,6 @@
 #include "c_basehlplayer.h"
 #endif // PORTAL2
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -132,51 +128,9 @@ void CHudCrosshair::Paint( void )
 	if ( !IsCurrentViewAccessAllowed() )
 		return;
 
-#ifdef SIXENSE
-	float x=0, y=0;
-
-	if( g_pSixenseInput->IsEnabled() && C_BasePlayer::GetLocalPlayer() && (C_BasePlayer::GetLocalPlayer()->GetObserverMode()==OBS_MODE_NONE) )
-	{
-		C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
-		if ( player != NULL )
-		{
-
-			// Never autoaim a predicted weapon (for now)
-			Vector	aimVector;
-			AngleVectors( CurrentViewAngles() - g_pSixenseInput->GetViewAngleOffset(), &aimVector );
-
-			// calculate where the bullet would go so we can draw the cross appropriately
-			Vector vecStart = player->Weapon_ShootPosition();
-			Vector vecEnd = player->Weapon_ShootPosition() + aimVector * MAX_TRACE_LENGTH;
-
-
-			trace_t tr;
-			UTIL_TraceLine( vecStart, vecEnd, MASK_SHOT, player, COLLISION_GROUP_NONE, &tr );
-
-			Vector screen;
-			screen.Init();
-			ScreenTransform(tr.endpos, screen);
-
-			x = ScreenWidth() / 2;
-			y = ScreenHeight() / 2;
-
-			x += 0.5 * screen[0] * ScreenWidth() + 0.5;
-			y += 0.5 * screen[1] * ScreenHeight() + 0.5;
-			y = ScreenHeight() - y;
-		}
-
-	} 
-	else 
-	{
-		x = ScreenWidth() / 2;
-		y = ScreenHeight() / 2;
-	}
-
-#else
 	float x, y;
 	x = ScreenWidth()/2;
 	y = ScreenHeight()/2;
-#endif
 
 	float flApparentZ = vgui::STEREO_NOOP;
 	bool bStereoActive = materials->IsStereoActiveThisFrame();

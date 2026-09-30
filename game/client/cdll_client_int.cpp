@@ -206,10 +206,6 @@ extern void ProcessPortalTeleportations( void );
 #include "tier1/utldict.h"
 #include "keybindinglistener.h"
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
 #if defined(_PS3)
 #include "buildrenderables_PS3.h"
 #endif
@@ -1408,10 +1404,6 @@ int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGl
 	InitCRTMemDebug();
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
-#ifdef SIXENSE
-	g_pSixenseInput = new SixenseInput;
-#endif
-
 	// Hook up global variables
 	gpGlobals = pGlobals;
 
@@ -1742,11 +1734,6 @@ CEG_NOINLINE void CHLClient::PostInit()
 		engine->ExecuteClientCmd( "toggleRdrOpt" );
 	}
 
-#ifdef SIXENSE
-	// allow sixnese input to perform post-init operations
-		g_pSixenseInput->PostInit();
-#endif
-
 	STEAMWORKS_TESTSECRETALWAYS();
 }
 
@@ -1773,12 +1760,6 @@ CEG_NOINLINE void CHLClient::Shutdown( void )
 	EventList_Free();
 
 	VGui_ClearVideoPanels();
-
-#ifdef SIXENSE
-		g_pSixenseInput->Shutdown();
-		delete g_pSixenseInput;
-		g_pSixenseInput = NULL;
-#endif
 
 	C_BaseAnimating::ShutdownBoneSetupThreadPool();
 	ClientWorldFactoryShutdown();
@@ -1923,13 +1904,6 @@ void CHLClient::HudUpdate( bool bActive )
 	// I can check into this further.
 	C_BaseTempEntity::CheckDynamicTempEnts();
 
-#ifdef SIXENSE
-	// If we're not connected, update sixense so we can move the mouse cursor when in the menus
-	if( !engine->IsConnected() || engine->IsPaused() )
-	{
-		g_pSixenseInput->SixenseFrame( 0, NULL ); 
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2166,9 +2140,6 @@ void CHLClient::IN_SetSampleTime( float frametime )
 	input->Joystick_SetSampleTime( frametime );
 	input->IN_SetSampleTime( frametime );
 
-#ifdef SIXENSE
-		g_pSixenseInput->ResetFrameTime( frametime );
-#endif
 }
 //-----------------------------------------------------------------------------
 // Purpose: Fills in usercmd_s structure based on current view angles and key/controller inputs

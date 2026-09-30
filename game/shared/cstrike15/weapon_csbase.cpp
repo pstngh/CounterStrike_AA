@@ -25,11 +25,6 @@
 #define SILENCER_VISIBLE 0
 #define SILENCER_HIDDEN 1
 
-#ifdef SIXENSE
-#include "sixense\in_sixense.h"
-#include "view.h"
-#endif
-
 #if defined( CLIENT_DLL )
 
 	#include "vgui/ISurface.h"
@@ -2079,46 +2074,8 @@ void CWeaponCSBase::DrawCrosshair()
 		iCappedCrosshairDistance = 4 + cl_crosshairgap.GetFloat();
 	}
 
-#ifdef SIXENSE
-	int iCenterX;
-	int iCenterY;
-
-	if( g_pSixenseInput->IsEnabled() ) 
-	{
-		// Never autoaim a predicted weapon (for now)
-		Vector	aimVector;
-		AngleVectors( CurrentViewAngles() - g_pSixenseInput->GetViewAngleOffset(), &aimVector );
-
-		// calculate where the bullet would go so we can draw the cross appropriately
-		Vector vecStart = pPlayer->Weapon_ShootPosition();
-		Vector vecEnd = pPlayer->Weapon_ShootPosition() + aimVector * MAX_TRACE_LENGTH;
-
-
-		trace_t tr;
-		UTIL_TraceLine( vecStart, vecEnd, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr );
-
-		Vector screen;
-		screen.Init();
-		ScreenTransform(tr.endpos, screen);
-
-		iCenterX = ScreenWidth() / 2;
-		iCenterY = ScreenHeight() / 2;
-
-		iCenterX += 0.5 * screen[0] * ScreenWidth() + 0.5;
-		iCenterY += 0.5 * screen[1] * ScreenHeight() + 0.5;
-		iCenterY = ScreenHeight() - iCenterY;
-
-	} 
-	else 
-	{
-		iCenterX = ScreenWidth() / 2;
-		iCenterY = ScreenHeight() / 2;
-	}
-
-#else
 	int iCenterX = ScreenWidth() / 2;
 	int iCenterY = ScreenHeight() / 2;
-#endif
 
 	float flAngleToScreenPixel = 0;
 

@@ -38,10 +38,6 @@
 #include "steam/steam_api.h"
 #endif
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1093,17 +1089,10 @@ void SFHudReticle::ProcessInput( void )
 		float x = 0.0f;
 		float y = 0.0f;
 
-#ifdef SIXENSE
-		if( g_pSixenseInput->IsEnabled() && 
-			C_BasePlayer::GetLocalPlayer() && 
-			( C_BasePlayer::GetLocalPlayer()->GetObserverMode()==OBS_MODE_NONE ) &&
-			lockMoveControllerRet.GetBool() == false )
-#else
 		if ( inputsystem->MotionControllerActive() && 
 			C_BasePlayer::GetLocalPlayer() && 
 			( C_BasePlayer::GetLocalPlayer()->GetObserverMode()==OBS_MODE_NONE ) &&
 			 lockMoveControllerRet.GetBool() == false )
-#endif
 		{
 
 			Vector aimDirection;

@@ -72,10 +72,6 @@
 #include "obstacle_pushaway.h"
 #include "igamemovement.h"
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 

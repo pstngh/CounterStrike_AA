@@ -419,13 +419,6 @@ target_sources(${OUTBINNAME} PRIVATE "subtitlepanel.cpp")
 target_sources(${OUTBINNAME} PRIVATE "c_vote_controller.h")
 target_sources(${OUTBINNAME} PRIVATE "c_vote_controller.cpp")
 
-target_sources(${OUTBINNAME} PRIVATE "sixense/in_sixense.cpp")
-target_sources(${OUTBINNAME} PRIVATE "sixense/in_sixense.h")
-target_sources(${OUTBINNAME} PRIVATE "sixense/in_sixense_gesture_bindings.cpp")
-target_sources(${OUTBINNAME} PRIVATE "sixense/in_sixense_gesture_bindings.h")
-target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/game/shared/sixense/sixense_convars.cpp")
-target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/game/shared/sixense/sixense_convars_extern.h")
-
 #// Files not using precompiled header cbase.h
 
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/closedcaptions.cpp")
@@ -540,8 +533,6 @@ target_sources(${OUTBINNAME} PRIVATE "NextBot/C_NextBot.cpp")
 target_sources(${OUTBINNAME} PRIVATE "NextBot/C_NextBot.h")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/game/shared/SharedFunctorUtils.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/game/shared/SharedFunctorUtils.h")
-target_sources(${OUTBINNAME} PRIVATE "mp3player.cpp")
-target_sources(${OUTBINNAME} PRIVATE "mp3player.h")
 
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/tools/bonelist.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/tools/bonelist.h")

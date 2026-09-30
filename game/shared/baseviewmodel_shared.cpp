@@ -24,11 +24,6 @@
 #include "vguiscreen.h"
 #endif
 
-#if defined( CLIENT_DLL ) && defined( SIXENSE )
-#include "sixense/in_sixense.h"
-#include "sixense/sixense_convars_extern.h"
-#endif
-
 extern ConVar in_forceuser;
 
 // memdbgon must be the last include file in a .cpp file!!!

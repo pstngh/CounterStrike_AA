@@ -26,9 +26,6 @@
 #include "inputsystem/iinputsystem.h"
 #include <ctype.h> // isalnum()
 #include <voice_status.h>
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
 
 extern ConVar cam_idealpitch;
 extern ConVar cam_idealyaw;
@@ -1365,17 +1362,6 @@ void CInput::ExtraMouseSample( float frametime, bool active )
 		// Allow mice and other controllers to add their inputs
 		ControllerMove( nSlot, frametime, cmd );
 
-#ifdef SIXENSE
-			if ( nSlot == in_forceuser.GetInt() )
-			{
-			g_pSixenseInput->SixenseFrame( frametime, cmd ); 
-
-				if( g_pSixenseInput->IsEnabled() )
-				{
-					g_pSixenseInput->SetView( frametime, cmd );
-				}
-			}
-#endif
 	}
 
 	// Retrieve view angles from engine ( could have been set in AdjustAngles above )
@@ -1394,19 +1380,7 @@ void CInput::ExtraMouseSample( float frametime, bool active )
 		round_start_reset_speed.SetValue( false );
 	}	// Set button and flag bits, don't blow away state
 
-#ifdef SIXENSE
-	if( g_pSixenseInput->IsEnabled() )
-	{
-		// Some buttons were set in SixenseUpdateKeys, so or in any real keypresses
-		cmd->buttons |= GetButtonBits( false );
-	}
-	else
-	{
-		cmd->buttons = GetButtonBits( false );
-	}
-#else
 	cmd->buttons = GetButtonBits( false );
-#endif
 
 	// Use new view angles if alive, otherwise user last angles we stored off.
 	VectorCopy( viewangles, cmd->viewangles );
@@ -1476,17 +1450,6 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 		// Allow mice and other controllers to add their inputs
 		ControllerMove( nSlot, input_sample_frametime, cmd );
 
-#ifdef SIXENSE
-		if ( nSlot == in_forceuser.GetInt() )
-		{
-			g_pSixenseInput->SixenseFrame( input_sample_frametime, cmd ); 
-
-			if( g_pSixenseInput->IsEnabled() )
-			{
-				g_pSixenseInput->SetView( input_sample_frametime, cmd );
-			}
-		}
-#endif
 	}
 	else
 	{
@@ -1516,27 +1479,11 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 		GetPerUser( nSlot ).m_hSelectedWeapon = NULL;
 	}
 
-#ifdef SIXENSE
-	if( g_pSixenseInput->IsEnabled() )
-	{
-		// Some buttons were set in SixenseUpdateKeys, so or in any real keypresses
-		cmd->buttons |= GetButtonBits( true );
-	}
-	else
-	{
-		cmd->buttons = GetButtonBits( true );
-	}
-#else
 	// Set button and flag bits
 	cmd->buttons = GetButtonBits( true );
-#endif
 
 	// Using joystick?
-#ifdef SIXENSE
-	if ( g_pInputSystem->IsDeviceReadingInput( INPUT_DEVICE_GAMEPAD ) && ( in_joystick.GetInt() || g_pSixenseInput->IsEnabled() ) )
-#else
 	if ( ( g_pInputSystem->IsDeviceReadingInput( INPUT_DEVICE_GAMEPAD ) && in_joystick.GetInt() ) || g_pInputSystem->MotionControllerActive() || g_pInputSystem->IsSteamControllerActive() )
-#endif
 	{
 		if ( cmd->forwardmove > 0 )
 		{
@@ -1556,15 +1503,7 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 	if ( GetClientMode()->CreateMove( input_sample_frametime, cmd ) )
 	{
 		// Get current view angles after the client mode tweaks with it
-#ifdef SIXENSE
-		// Only set the engine angles if sixense is not enabled. It is done in SixenseInput::SetView otherwise.
-		if( !g_pSixenseInput->IsEnabled() )
-		{
-			engine->SetViewAngles( cmd->viewangles );
-		}
-#else
 		engine->SetViewAngles( cmd->viewangles );
-#endif
 	}
 
 	CheckPaused( cmd );

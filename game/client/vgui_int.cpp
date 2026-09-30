@@ -24,20 +24,11 @@
 #include "filesystem.h"
 #include "matsys_controls/matsyscontrols.h"
 
-#ifdef SIXENSE
-#include "sixense/in_sixense.h"
-#endif
-
 #ifdef _PS3
 #include "ps3/ps3_core.h"
 #endif
 
 using namespace vgui;
-
-#ifndef _GAMECONSOLE
-void MP3Player_Create( vgui::VPANEL parent );
-void MP3Player_Destroy();
-#endif
 
 #include <vgui/IInputInternal.h>
 vgui::IInputInternal *g_InputInternal = NULL;
@@ -469,17 +460,9 @@ void VGui_CreateGlobalPanels( void )
 	netgraphpanel->Create( toolParent );
 	debugoverlaypanel->Create( gameToolParent );
 
-#ifndef _GAMECONSOLE
-	// Create mp3 player off of tool parent panel
-	MP3Player_Create( toolParent );
-#endif
-
 	// Create Steam overlay
 	if ( IsPS3() && g_pISteamOverlayMgr )
 		g_pISteamOverlayMgr->Create( enginevgui->GetPanel( PANEL_STEAMOVERLAY ) );
-#ifdef SIXENSE
-	g_pSixenseInput->CreateGUI( gameToolParent );
-#endif
 }
 
 void VGui_Shutdown()
@@ -487,10 +470,6 @@ void VGui_Shutdown()
 	// Destroy Steam overlay
 	if ( IsPS3() && g_pISteamOverlayMgr )
 		g_pISteamOverlayMgr->Destroy();
-
-#ifndef _GAMECONSOLE
-	MP3Player_Destroy();
-#endif
 
 	netgraphpanel->Destroy();
 	debugoverlaypanel->Destroy();
