@@ -29,7 +29,7 @@ m_flags( 0 )
 
 INLINE_ON_PS3 CThread::~CThread()
 {
-#ifdef MSVC
+#ifdef _WIN32
 	if (m_hThread)
 #elif defined(POSIX)
 	if ( m_threadId )

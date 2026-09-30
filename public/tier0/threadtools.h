@@ -1847,7 +1847,7 @@ public:
 //
 //-----------------------------------------------------------------------------
 
-#ifdef MSVC
+#ifdef _WIN32
 typedef struct _RTL_CRITICAL_SECTION RTL_CRITICAL_SECTION;
 typedef RTL_CRITICAL_SECTION CRITICAL_SECTION;
 
@@ -1906,7 +1906,7 @@ inline void CThreadMutex::Unlock()
 
 inline void CThreadMutex::LockSilent()
 {
-	#ifdef MSVC
+	#ifdef _WIN32
 	EnterCriticalSection((CRITICAL_SECTION *)&m_CriticalSection);
 	#else
 	DebuggerBreak();	// should not be called - not defined for this platform/compiler!!!
@@ -1917,7 +1917,7 @@ inline void CThreadMutex::LockSilent()
 
 inline void CThreadMutex::UnlockSilent()
 {
-	#ifdef MSVC
+	#ifdef _WIN32
 	LeaveCriticalSection((CRITICAL_SECTION *)&m_CriticalSection);
 	#else
 	DebuggerBreak();	// should not be called - not defined for this platform/compiler!!!
