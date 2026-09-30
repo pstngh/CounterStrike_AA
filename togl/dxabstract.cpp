@@ -5545,7 +5545,11 @@ HRESULT IDirect3DDevice9::DrawIndexedPrimitive( D3DPRIMITIVETYPE Type,INT BaseVe
         goto draw_failed;    
     
     this->FlushIndexBindings( );
+#if GLMDEBUG
+    // FlushDrawStates binds the vertex attributes; the setup this builds on every
+    // draw is only read by the debug dumps.
     this->FlushVertexBindings( BaseVertexIndex );
+#endif
     m_ctx->FlushDrawStates( MinVertexIndex, MinVertexIndex + NumVertices - 1, 0 );
     
     if (gl.m_FogEnable)
