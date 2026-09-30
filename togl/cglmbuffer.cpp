@@ -9,13 +9,14 @@
 // memdbgon -must- be the last include file in a .cpp file.
 #include "tier0/memdbgon.h"
 
-// LINUXTODO : took out cmdline here
-bool g_bUsePseudoBufs = false; //( Plat_GetCommandLineA() ) ? ( strstr( Plat_GetCommandLineA(), "-gl_enable_pseudobufs" ) != NULL ) : false;
+// The GLMContext constructor applies -gl_enable_pseudobufs, -gl_enable_static_buffer and
+// -gl_disable_static_buffer, before it creates any buffer.
+bool g_bUsePseudoBufs = false;
 #ifdef OSX
 // Significant perf degradation on some OSX parts if static buffers not disabled
 bool g_bDisableStaticBuffer = true;
 #else
-bool g_bDisableStaticBuffer = false; //( Plat_GetCommandLineA() ) ? ( strstr( Plat_GetCommandLineA(), "-gl_disable_static_buffer" ) != NULL ) : false;
+bool g_bDisableStaticBuffer = false;
 #endif
 
 // http://www.opengl.org/registry/specs/ARB/vertex_buffer_object.txt

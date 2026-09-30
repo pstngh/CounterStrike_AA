@@ -2689,9 +2689,26 @@ GLMContext::GLMContext( IDirect3DDevice9 *pDevice, GLMDisplayParams *params )
 		m_bTexClientStorage = true;
 	}
 	
+	// Choose how dynamic buffer locks without persistent mapping reach GL. By default OSX
+	// maps and unmaps a GL buffer on every lock. The static buffer copies into memory and
+	// uploads with glBufferSubData; pseudo buffers keep dynamic data in client memory.
+	if ( CommandLine()->CheckParm( "-gl_enable_static_buffer" ) )
+	{
+		g_bDisableStaticBuffer = false;
+	}
+	if ( CommandLine()->CheckParm( "-gl_disable_static_buffer" ) )
+	{
+		g_bDisableStaticBuffer = true;
+	}
+	if ( CommandLine()->CheckParm( "-gl_enable_pseudobufs" ) )
+	{
+		g_bUsePseudoBufs = true;
+	}
+
 	char buf[256];
 	V_snprintf( buf, sizeof( buf ), "GL sampler object usage: %s\n", m_bUseSamplerObjects ? "ENABLED" : "DISABLED" );
 	Plat_DebugString( buf );
+	printf( "GL buffer locks without persistent mapping: %s\n", g_bUsePseudoBufs ? "pseudo buffers for dynamic data" : ( g_bDisableStaticBuffer ? "map/unmap" : "static buffer + glBufferSubData" ) );
 	
 	m_nCurOwnerThreadId = ThreadGetCurrentId();
 	m_nThreadOwnershipReleaseCounter = 0;

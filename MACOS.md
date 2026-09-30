@@ -78,6 +78,25 @@ arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 
 Standalone listen servers intentionally fall back to LAN mode when Steam services are unavailable. Console messages from failed Steam API initialization may still appear; they are non-fatal in this mode.
 
+## Performance options
+
+These settings trade smoothness or old-driver workarounds for frame rate. Their
+effect on Apple's OpenGL has not been measured, so compare each one with
+`fps_max 0` and `cl_showfps 1` on the same map, spot and bot count.
+
+- `r_frameratesmoothing 0` in the console turns on Apple's multithreaded OpenGL
+  engine, which the default of 1 keeps off. Valve described the default as
+  reducing stutter at the expense of frame rate. The setting is saved.
+- `gl_swap_limit 0` in the console lets more than one frame queue for display,
+  at the cost of input latency.
+- By default each update to a dynamic vertex or index buffer maps and unmaps an
+  OpenGL buffer. Launch with `-gl_enable_static_buffer` to copy updates into
+  memory and upload them with `glBufferSubData` instead, or with
+  `-gl_enable_pseudobufs` to keep dynamic data in client memory. The game log
+  names the active mode on a line that starts with `GL buffer locks`. The Mac
+  launcher does not pass these options, so start the game from a terminal to
+  try them.
+
 ## Native Mac launcher
 
 Build the launcher app in a playable game directory:

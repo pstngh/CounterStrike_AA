@@ -13,6 +13,7 @@
 //===============================================================================
 
 extern bool g_bUsePseudoBufs;
+extern bool g_bDisableStaticBuffer;
 
 // forward declarations
 
