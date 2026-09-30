@@ -1,92 +1,211 @@
-# csgo-mac
+# CounterStrike_AA
 
-Native Apple Silicon support for [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source CS:GO engine port.
+CounterStrike_AA is a build of [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source port of the 2017 CS:GO engine, for Linux x64 and Apple Silicon Macs. It adds an optional gameplay preset that plays like Medal of Honor: Allied Assault, with leaning, Allied Assault movement speeds and scoped sniping, fixed loadouts and free-for-all deathmatch against bots.
 
-The macOS build runs as arm64 code without Rosetta. It can start without the Steam desktop client and supports insecure offline/LAN play. Steam matchmaking, VAC, inventory, achievements, and other online Steam services are not available in standalone mode.
+The repository contains source code only. You need legally acquired CS:GO game files to play.
 
-See [MACOS.md](MACOS.md) for the Apple Silicon build and launch instructions. Original game assets are not included in this repository.
+## Features
 
-Kisak-Strike: Gentoo Offensive(KSGO) is a CSGO port aimed towards Linux enthusiasts. 
+- **Native Apple Silicon build.** arm64 code throughout, no Rosetta. It starts without the Steam desktop client, using an offline Steam API shim built from source.
+- **Linux x64 build.** It links Valve's `libsteam_api.so`.
+- **Allied Assault gameplay preset.** It's on by default on macOS and off on Linux; see [Gameplay preset](#gameplay-preset).
+- **Mac launcher app.** Pick a map, the bot count and difficulty, resolution and graphics settings, then start the game.
+- **Open-source physics.** Choose between the Kisak-Strike rebuild of Valve's physics and a Bullet-based implementation, instead of Valve's closed `vphysics` library.
+- **RmlUi menus.** The open-source RocketUI replaces the proprietary Scaleform UI.
 
-It can be built 100% Open-Source with optional Closed-source components.
+Play is offline or on LAN listen servers. Valve's online services, such as matchmaking, VAC, inventory and achievements, are not available.
 
-Want to learn more about the History of Kisak-Strike? See this accompanying blog post: https://lwss.github.io/Kisak-Strike/
-# Current Building Steps
+The project is experimental. Some legacy assets and features are incomplete.
 
-```
-Attention!
+## Prebuilt binaries
 
-Kisak-Strike will build into folder ../game/
-Make sure you clone this repo inside an existing folder!
-```
+Every push to `main` builds both platforms in GitHub Actions. Open the latest successful [Build run](https://github.com/pstngh/CounterStrike_AA/actions/workflows/build.yml) and download:
 
-Kisak-Strike uses CMake, the following sections will provide more information.
+- `csgo-linux-x64` for Linux
+- `csgo-macos-arm64` for Apple Silicon Macs
 
-## Packages
-SDL2 SDL2_mixer rt openal curl ssl z crypto dl pthread fontconfig freetype GL
+Each artifact is a tarball of the game directory's binaries, without Valve's assets. Unpack it over a game directory prepared as described in [Game files](#game-files).
 
-#### Ubuntu 
-```
-sudo apt install git build-essential cmake ninja-build libsdl2-mixer-dev libsdl2-dev libopenal-dev libssl-dev libfontconfig1-dev libcurl4-openssl-dev libglu1-mesa-dev net-tools
-```
-#### Fedora
-```
-sudo dnf install git SDL2-devel SDL2_mixer-devel openal-soft-devel libcurl-devel openssl-devel fontconfig-devel freetype-devel cmake gcc g++ mesa-libGL-devel mesa-libGLU-devel
-```
-#### Arch
-```
-sdl2 sdl2_mixer openal libcurl-compat openssl fontconfig freetype2 mesa cmake gcc base-devel
+## Building
+
+The build writes its binaries to `../game`, a directory beside the source tree. So clone into a parent folder that you keep for this purpose:
+
+```sh
+mkdir csgo && cd csgo
+git clone https://github.com/pstngh/CounterStrike_AA.git src
 ```
 
-#### Gentoo
-```
-media-libs/libsdl2 media-libs/sdl2-mixer media-libs/openal net-misc/curl dev-libs/openssl media-libs/fontconfig media-libs/freetype media-libs/mesa dev-util/cmake sys-devel/gcc
-```
+The game then lands in `csgo/game`. Build directories can go anywhere; the commands below use `csgo/build`.
 
-## BUILD - cmake/make
-See the wiki page for building options: https://github.com/SwagSoftware/Kisak-Strike/wiki/CMake
+### Linux
 
- #### Basic Usage
-```
-cd ./cmake-build
-cmake .. <VARIOUS OPTIONS HERE>
-make -j<NUM_THREADS>
-```
-CI builds with `-DUSE_KISAK_PHYSICS=ON`. Release binaries target `-march=x86-64-v2` so they run on CPUs other than the build host; add `-DKISAK_ARCH_FLAGS=-march=native` to tune for your own machine, or `-DRELEASE_DEBUG_INFO=OFF` to leave out the debug info that Release builds otherwise keep.
-## POSTBUILD - Acquire Original Game Files
-Use Depot Downloader( https://github.com/SteamRE/DepotDownloader ) with your steam account. The depotdownloader built-into Steam was broken earlier this year and this is the only option currently.
-```
-CSGO SteamAppID: 730
-CSGO Assets: DepotID: 731 ManifestID: 7043469183016184477
-Windows Binaries: DepotID: 732 4047004309608881181
-Linux Binaries: Depot ID: 734 4197642562793798650
+Install the dependencies. On Ubuntu, CI uses:
+
+```sh
+sudo apt install build-essential cmake ninja-build libsdl2-dev libsdl2-mixer-dev \
+  libopenal-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev net-tools
 ```
 
-* Copy over all files from the 731 assets depot (manifest: 7043469183016184477)
-* Copy over *only needed* files from the 734 linux binary depot (manifest: 4197642562793798650)
-    * ./bin/map_publish/* - (FOLDER which seems to contain some vgui assets)
-    * ./csgo.sh
-    * [OPTIONAL]./game/bin/linux64/libphonon3d.so -- If you want HRTF 3D sound. Copy it before configuring with `-DUSE_VALVE_HRTF=ON`, which links against it.
-    * [OPTIONAL]./game/bin/linux64/vphysics_client.so -- If you want Valve-Original physics engine. (It runs a bit better than the rebuild, but is closed-source)
-    * [OPTIONAL]./game/bin/linux64/scaleformui_client.so -- If you want the ScaleformUI for some reason.
+The engine calls `ifconfig` from `net-tools` to find its LAN address.
 
-## POSTBUILD - Acquire Additional Kisak-Strike Files
-Head over to the Files Repo: https://github.com/SwagSoftware/Kisak-Strike-Files
-These belong inside of your `../game/` folder.
+<details>
+<summary>Package lists for Fedora, Arch and Gentoo</summary>
 
+Fedora:
 
-## Current Nonfree blobs
-* lib/public/linux64/libsteam_api.so - Linked by the Linux build and copied into `../game/bin/linux64`.
+```sh
+sudo dnf install git SDL2-devel SDL2_mixer-devel openal-soft-devel libcurl-devel openssl-devel \
+  fontconfig-devel freetype-devel cmake ninja-build gcc g++ mesa-libGL-devel mesa-libGLU-devel
+```
 
-## Launch
-`./csgo_linux64`
+Arch:
 
-The modules find each other relative to their own location, so the `../game` directory can be moved, or unpacked from the `csgo-linux-x64` tarball that CI builds, and run from anywhere.
+```
+sdl2 sdl2_mixer openal libcurl-compat openssl fontconfig freetype2 mesa cmake ninja gcc base-devel
+```
 
+Gentoo:
 
+```
+media-libs/libsdl2 media-libs/sdl2-mixer media-libs/openal net-misc/curl dev-libs/openssl
+media-libs/fontconfig media-libs/freetype media-libs/mesa dev-build/cmake dev-build/ninja sys-devel/gcc
+```
 
+</details>
 
-## License(s)
+Configure and build:
+
+```sh
+cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_KISAK_PHYSICS=ON
+cmake --build build
+```
+
+### macOS
+
+You need an Apple Silicon Mac; Intel Macs are not supported. Install the Command Line Tools (`xcode-select --install`), then the remaining dependencies with Homebrew:
+
+```sh
+brew install cmake ninja sdl2-compat
+```
+
+Configure with the bundled toolchain file, then build:
+
+```sh
+cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_KISAK_PHYSICS=ON \
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/macos-arm64.cmake"
+cmake --build build
+```
+
+[MACOS.md](MACOS.md) covers the macOS port in more detail.
+
+### Windows
+
+Windows is not supported: CMake stops when configuring on Windows. The engine's Windows code paths are still in the source, as a starting point for a port.
+
+### Build options
+
+Pass these to the configure step as `-D<option>=<value>`:
+
+| Option | Default | Effect |
+|---|---|---|
+| `CMAKE_BUILD_TYPE` | `Release` | `Release` or `Debug`. |
+| `USE_KISAK_PHYSICS` | `OFF` | Build the open-source rebuild of Valve's physics. CI turns it on. |
+| `USE_BULLET_PHYSICS` | `OFF` | Build the Bullet-based physics instead. It is experimental. |
+| `USE_BULLET_PHYSICS_THREADED` | `OFF` | Multithreaded Bullet; the `bt_threadcount` console variable sets the thread count. Experimental. |
+| `USE_MAC_PRESET` | `ON` on macOS, `OFF` elsewhere | Compile the [gameplay preset](#gameplay-preset). |
+| `USE_ROCKETUI` | `ON` | Use the RmlUi menus. |
+| `USE_SCALEFORM` | `OFF` | Use Valve's incomplete Scaleform UI instead. It needs Valve's prebuilt `scaleformui_client.so`. Not recommended. |
+| `DEDICATED` | `OFF` | Build a dedicated server instead of the game; see [Dedicated server](#dedicated-server). |
+| `USE_VALVE_HRTF` | `OFF` | Linux only. Link Valve's Steam Audio HRTF library for 3D sound. Copy `libphonon3d.so` into `game/bin/linux64` before configuring. |
+| `KISAK_ARCH_FLAGS` | `-march=x86-64-v2` or `-mcpu=apple-m1` | CPU target. Set `-march=native` to tune for the build machine; the binaries then may not run elsewhere. |
+| `RELEASE_DEBUG_INFO` | `ON` | Keep debug info in Release builds for symbolized crash backtraces. |
+| `USE_ASAN` | `OFF` | Linux only. Build with AddressSanitizer. |
+| `USE_TRACY` | `OFF` | Enable the Tracy profiler. |
+| `TRACY_STORE_LOGS` | `OFF` | Make Tracy record from startup and send the data when a viewer connects, instead of only while one is connected. This uses memory quickly. |
+
+If neither physics option is on, the game loads Valve's closed-source physics library instead. On Linux, copy `vphysics_client.so` from Valve's Linux binaries; see [Game files](#game-files).
+
+### Dedicated server
+
+Configure a separate build directory with `-DDEDICATED=ON`. It writes `srcds_linux` (`srcds_osx` on macOS) to the game directory, and its engine modules replace the game's there. Build the game again when you want to play.
+
+## Game files
+
+The repository ships no Valve content. With a Steam account that owns CS:GO, download it with [DepotDownloader](https://github.com/SteamRE/DepotDownloader):
+
+| Content | App | Depot | Manifest |
+|---|---|---|---|
+| Game assets | 730 | 731 | `7043469183016184477` |
+| Linux binaries | 730 | 734 | `4197642562793798650` |
+
+1. Copy everything from the assets depot into the game directory (`csgo/game` in the layout above).
+2. From the Linux binaries depot, copy `bin/map_publish/`, which holds VGUI assets. Optionally also copy these files into `game/bin/linux64`:
+   - `libphonon3d.so` for `USE_VALVE_HRTF`.
+   - `vphysics_client.so` for Valve's original physics.
+   - `scaleformui_client.so` for `USE_SCALEFORM`.
+3. Copy [Kisak-Strike-Files](https://github.com/SwagSoftware/Kisak-Strike-Files) into the game directory. Its `csgo/rocketui` directory holds the RocketUI menus. Without it, the team and pause menus cannot render.
+4. Optional: to give the AK-47 its Asiimov finish, supply `ak47_asiimov.vtf` from your CS:GO content:
+
+   ```sh
+   python3 src/tools/install_ak_asiimov.py /path/to/ak47_asiimov.vtf game
+   ```
+
+## Running
+
+Run the game from the game directory. The modules find each other relative to their own location, so the directory can live anywhere.
+
+Linux:
+
+```sh
+cd game
+./csgo_linux64 -insecure -novid +map de_dust2
+```
+
+macOS:
+
+```sh
+cd game
+arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
+```
+
+`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. On macOS, messages about the Steam API failing to start are expected and harmless.
+
+To build the Mac launcher app into a game directory, run:
+
+```sh
+src/tools/install_macos_launcher.sh game
+```
+
+Then open `CSGO Launcher.app` from that directory. [MACOS.md](MACOS.md#native-mac-launcher) describes its settings.
+
+## Gameplay preset
+
+`USE_MAC_PRESET` compiles in Allied Assault-style rules for local play:
+
+- **Leaning and movement.** Left Shift leans left and Space leans right, with OpenMoHAA's timing, and F jumps. Control toggles crouch and C toggles walk. Movement uses Allied Assault's run, walk and crouch speeds, and opposing movement and lean keys resolve like nullbinds: the last key pressed wins.
+- **Sniping.** The AWP uses a circular 20-degree scope and Allied Assault's camera kick.
+- **Recoil and spread.** Recoil and hit reactions are softened, and spread doesn't grow while moving.
+- **Loadouts.** CT players spawn with a USP-S, M4A1-S, AK-47, AUG and AWP, and T players with a USP-S, AK-47 and AWP. Grenades, knives and C4 are removed.
+- **Matches.** Local matches are free-for-all deathmatch with no warmup or round end. The host has god mode, full ammunition, maximum money, and can buy anywhere.
+- **Bots.** Bots carry a random primary, keep hunting, and lean as they strafe.
+- **View.** The FOV is fixed at 80, the HUD shows only the crosshair, and the K key cycles the weapon model between hidden, weapon only, and weapon and hands.
+
+The preset changes shared client and server code, including the player network table. A preset client therefore only plays correctly on a server built from the same source with the same setting. [MACOS.md](MACOS.md#mac-gameplay-preset) documents every change and the console variables that tune them.
+
+## Proprietary components
+
+- `lib/public/linux64/libsteam_api.so` is Valve's Steam API library. Linux builds link it and copy it to `game/bin/linux64`. macOS builds use the offline shim in `thirdparty/steam_api_offline` instead.
+- The optional files from Valve's Linux binaries depot are listed under [Game files](#game-files).
+
+## Credits
+
+- Kisak-Strike is by lwss and contributors. Its [blog post](https://lwss.github.io/Kisak-Strike/) tells the project's history.
+- The Allied Assault lean, movement and camera-kick values follow [OpenMoHAA](https://github.com/openmoh/openmohaa).
+- Apple Silicon support translates the engine's SSE code with [sse2neon](https://github.com/DLTcollab/sse2neon).
+- Bundled libraries include RmlUi, Bullet, protobuf, Crypto++, Lua, Squirrel, zlib, libpng and Tracy. Each keeps its license file beside its source.
+
+## License
+
 ##### Any contributions made to Kisak-Strike will be considered donations to the public domain.
 
 ##### The following Inherited License from Source SDK also applies.
