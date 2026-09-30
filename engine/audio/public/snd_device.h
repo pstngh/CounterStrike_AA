@@ -34,7 +34,7 @@
 class Vector;
 struct channel_t;
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) && !defined(USE_SDL)
 #define USE_AUDIO_DEVICE_V1 1
 #endif
 

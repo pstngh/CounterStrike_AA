@@ -1416,7 +1416,7 @@ public:
 
 	void BuildComment( char const *pchSysErrorText )
 	{
-#ifdef IS_WINDOWS_PC
+#ifdef COMPILER_MSVC
 		// This warning is not actually true in this context.
 #pragma warning( suppress : 4535 ) // warning C4535: calling _set_se_translator() requires /EHa
 		_se_translator_function curfilter = _set_se_translator( &FailSafe );
@@ -1550,7 +1550,7 @@ public:
 			// Oh oh
 		}
 		
-#ifdef IS_WINDOWS_PC
+#ifdef COMPILER_MSVC
 		_set_se_translator( curfilter );
 #endif
 
@@ -1606,7 +1606,7 @@ int CEngineAPI::Run()
 		Host_DisallowSecureServers();
 	}
 
-#if defined ( _WIN32 )
+#if defined( COMPILER_MSVC )
 	if ( !Plat_IsInDebugSession() && !CommandLine()->FindParm( "-nominidumps") )
 	{
 		// This warning is not actually true in this context.
