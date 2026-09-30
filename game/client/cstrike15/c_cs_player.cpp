@@ -2630,22 +2630,6 @@ void C_CSPlayer::FireGameEvent( IGameEvent *event )
 			FirePerfStatsEvent( PERF_STATS_PLAYER );
 			if ( pLocalPlayer && pLocalPlayer->GetUserID() == event->GetInt( "attackerid" ) )
 			{
-// 				if ( event->GetInt( "dominated" ) == 1 )
-// 				{
-// 					// Play gun game domination sound
-// 					C_RecipientFilter filter;
-// 					filter.AddRecipient( this );
-// 					C_BaseEntity::EmitSound( filter, entindex(), "Music.GG_Dominating" );
-//				}
-
-				if ( event->GetInt( "revenge" ) == 1 )
-				{
-					// Play gun game revenge sound
-					C_RecipientFilter filter;
-					filter.AddRecipient( this );
-					C_BaseEntity::EmitSound( filter, entindex(), "Music.GG_Revenge" );
-					STEAMWORKS_TESTSECRETALWAYS_AMORTIZE( 7 );
-				}
 				if ( event->GetInt( "bonus" ) != 0 )
 				{
 					C_RecipientFilter filter;
