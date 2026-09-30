@@ -1378,10 +1378,14 @@ CGLMShaderPair	*CGLMShaderPairCache::SelectShaderPairInternal( CGLMProgram *vp, 
 		CGLMPairCacheEntry *evict = row + oldestway;
 			
 		Assert( evict->m_pair != NULL );
-		Assert( evict->m_pair != m_ctx->m_pBoundPair );	// just check
-			
-		///////////////////////FIXME may need to do a shoot-down if the pair being evicted is currently active in the context
-			
+
+		// Unbind the pair if it is active. Otherwise the new pair, which may be allocated
+		// at the same address, would look already bound and skip its constant upload.
+		if ( evict->m_pair == m_ctx->m_pBoundPair )
+		{
+			m_ctx->NullProgram();
+		}
+
 		m_evictions[ rowIndex ]++;
 
 		// log eviction if desired

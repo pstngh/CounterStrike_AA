@@ -39,6 +39,10 @@ void RocketRender::PrepareGLState()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
+    // RmlUi draws with the fixed-function pipeline, so leave togl's GLSL program.
+    // togl binds its program again after RestoreGLState.
+    glUseProgram(0);
+
     glActiveTexture(GL_TEXTURE0);
     glDisable(GL_CULL_FACE);
 

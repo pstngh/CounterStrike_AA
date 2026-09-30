@@ -1934,6 +1934,9 @@ CGLMProgram	*GLMContext::NewProgram( EGLMProgramType type, char *progString, con
 	prog->SetShaderName( pShaderName );
 	prog->CompileActiveSources();
 
+	// Compiling unbinds the GL program, so make the next draw bind its pair again.
+	NullProgram();
+
 	return prog;
 }
 
@@ -3236,8 +3239,9 @@ void GLMContext::FlushDrawStatesNoShaders( )
 	GLM_FUNC;
 
 	GL_BATCH_PERF( m_FlushStats.m_nTotalBatchFlushes++; )
-			
-	NullProgram();
+
+	// glClear ignores the bound program, so keep it. Unbinding here made the next draw
+	// rebind the same program and re-upload all of its shader constants.
 }
 
 
