@@ -1421,27 +1421,6 @@ void CClientLeafSystem::AddShadowToRenderable( ClientRenderHandle_t renderHandle
 	m_ShadowsOnRenderable.AddElementToBucket( renderHandle, shadowHandle );
 
 	// Also, do some stuff specific to the particular types of renderables
-#if 0
-	// If the renderable is a brush model, then add this shadow to it
-	IClientRenderable* pRenderable = m_Renderables[renderHandle].m_pRenderable;
-	switch( m_Renderables[renderHandle].m_nModelType )
-	{
-	case RENDERABLE_MODEL_BRUSH:
-		g_pClientShadowMgr->AddShadowToReceiver( m_Shadows[shadowHandle].m_Shadow,
-			pRenderable, SHADOW_RECEIVER_BRUSH_MODEL );
-		break;
-
-	case RENDERABLE_MODEL_STATIC_PROP:
-		g_pClientShadowMgr->AddShadowToReceiver( m_Shadows[shadowHandle].m_Shadow,
-			pRenderable, SHADOW_RECEIVER_STATIC_PROP );
-		break;
-
-	case RENDERABLE_MODEL_STUDIOMDL:
-		g_pClientShadowMgr->AddShadowToReceiver( m_Shadows[shadowHandle].m_Shadow,
-			pRenderable, SHADOW_RECEIVER_STUDIO_MODEL );
-		break;
-	}
-#else
 	// Do AddShadowToReceiver to avoid branching
 	static const byte arrRecvType[0x4] = {
 		0,
@@ -1461,7 +1440,6 @@ void CClientLeafSystem::AddShadowToRenderable( ClientRenderHandle_t renderHandle
 			ri.m_pRenderable,
 			( ShadowReceiver_t ) arrRecvType[ ri.m_nModelType ] );
 	}
-#endif
 }
 
 void CClientLeafSystem::RemoveShadowFromRenderables( ClientLeafShadowHandle_t handle )
@@ -2861,17 +2839,6 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 	BuildRenderListInfo_t **pTranslucentRLInfo = (BuildRenderListInfo_t**)stackalloc( nCount * sizeof(BuildRenderListInfo_t*) );
 
 
-#if 0//defined(_PS3)
-	bool bPortalTestEnts = r_PortalTestEnts.GetBool() && !r_portalsopenall.GetBool();
-	Frustum_t *list[MAX_MAP_AREAS];
-
-	if ( bPortalTestEnts )
-	{
-		engine->GetFrustumList( list, ARRAYSIZE(list) );
-	}
-#endif
-
-
 	int nTranslucent = 0;
 	int nCurDetail = 0;
 	int nTLucInfoCount = 0;
@@ -2913,45 +2880,6 @@ void CClientLeafSystem::AddRenderablesToRenderLists( const SetupRenderInfo_t &in
 			nWorldListLeafIndex++;
 			continue;
 		}
-
-#if 0//defined(_PS3)
-		{
-		// two pass culling - recalc AABB and re-cull if still invalid since we didn't perform this pass on SPU
-		if ( ( pInfo->m_Flags & RENDER_FLAGS_BOUNDS_VALID ) == 0 )
-		{
-			CalcRenderableWorldSpaceAABB( pInfo->m_pRenderable, pInfo->m_vecAbsMins, pInfo->m_vecAbsMaxs );
-			if ( ( pInfo->m_Flags & RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE ) == 0 )
-			{
-				// NOTE: If aiments aren't showing up sometimes, we need to either fix
-				// invalidatephysicsrecursive for aiments (best fix, but may be harder)
-				// or we should not or this in for aiments
-				pInfo->m_Flags |= RENDER_FLAGS_BOUNDS_VALID;
-			}
-
-			// don't add if culled
-			BuildRenderListInfo_t &rlInfo = pRLInfo[i];
-
-			pRLInfo[i].m_vecMins = pInfo->m_vecAbsMins;
-			pRLInfo[i].m_vecMaxs = pInfo->m_vecAbsMaxs;
-
-			int frustumIndex = rlInfo.m_nArea + 1;
-			if ( list[frustumIndex]->CullBox( rlInfo.m_vecMins, rlInfo.m_vecMaxs ) )
-			{
-				// Necessary for dependent models to be grabbed
-				pInfo->m_nRenderFrame--;
-				continue;
-			}
-
-			// cull with main frustum
-			if ( engine->CullBox( rlInfo.m_vecMins, rlInfo.m_vecMaxs ) )
-			{
-				// Necessary for dependent models to be grabbed
-				pInfo->m_nRenderFrame--;
-				continue;
-			}
-		}
-		}
-#endif
 
 		bool bIsTranslucent = ( pRLInfo[i].m_nAlpha != 255 ) || ( pInfo->m_nTranslucencyType != RENDERABLE_IS_OPAQUE ); 
 		if ( !bIsTranslucent || (pInfo->m_Flags & RENDER_FLAGS_FORCE_OPAQUE_PASS) )
@@ -3292,34 +3220,6 @@ void CClientLeafSystem::BuildRenderablesList_SPURSJob( const SetupRenderInfo_t &
 		// OLD method of pushing buildrenderable jobs - we now do this at the end of pass1 allowing us to better schedule those jobs given the buildworld jobs can
 		// all run concurrently. The problem is in the documentation /implementation of pushsync and the impact it has on all jobs pushed prior to it.
 		// See implementation of push of buildrenderable jobs in viewrender.cpp - CConcurrentViewBuilder::PushBuildRenderableJobs 
-#if 0
-		int syncTag = 0;
-
-		// world job pushed, this job syncs (is dependant) against that one
-		if( g_viewBuilder.GetWorldRenderListElement() )
-		{
-			// some views don't build world lists (simpleworldmodel for waterreflection)
-
-			// to sync 
-			syncTag = 1 + g_viewBuilder.GetBuildViewID();
-
-// causes some particle 'popping' with this syncMask
-			//CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].pushSync( 0x01 << syncTag, 0 ) );
-			//Msg("pushSync 0x%x\n", 0x01 << syncTag );
-// or sync with all previous buildworld/buildrenderable jobs
-			int syncMask = 0;
-
-			for( int i = 0; i < (1 + g_viewBuilder.GetBuildViewID()); i++ )
-			{
- 				syncMask |= (0x01 << (i+1));
-			}
-			CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].pushSync( syncMask, 0 ) );
-			//Msg("pushSync 0x%x\n", syncMask );
-		}
-
-		CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].pushJob( &pJobDescriptor->header, sizeof(*pJobDescriptor), syncTag, CELL_SPURS_JOBQUEUE_FLAG_SYNC_JOB ) );
-		//Msg("pushJob Renderable(%d) SyncTag(%d)\n", g_viewBuilder.GetBuildViewID(), syncTag );
-#endif
 	}
 
 }
@@ -3513,25 +3413,10 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 		int leaf = info.m_pWorldListInfo->m_pLeafDataList[ 0 ].leafIndex;
 		orderedList.AddToTail( LeafToMarker( leaf ) );
 
-#if 1
 		for ( int i = m_Renderables.Head(); i != m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
 		{
 			orderedList.AddToTail( &m_Renderables[ i ] );
 		}
-#else
-		renderable_LIST_t **ppRenderables = (renderable_LIST_t **)&m_Renderables;
-		renderable_LIST_t *pRenderables   = *ppRenderables;
-
-		int i = m_Renderables.Head();
-
-		for ( ; i != 0xffff;  )
-		{
-			orderedList.AddToTail( &m_Renderables[ i ] );
-
-			//i = m_Renderables.Next( i )
-			i = pRenderables[i].next;
-		}
-#endif
 	}
 	else
 	{
@@ -3546,38 +3431,10 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 			// iterate over all elements in this leaf
 			unsigned short idx = m_RenderablesInLeaf.FirstElement(leaf);
 
-#if 1 // old			
 			for ( ; idx != m_RenderablesInLeaf.InvalidIndex(); idx = m_RenderablesInLeaf.NextElement( idx ) )
 			{
 				orderedList.AddToTail( &m_Renderables[ m_RenderablesInLeaf.Element(idx) ] );
 			}
-#else
-			// TMP
-			renderableInLeaf_LIST_t **pTmp = (renderableInLeaf_LIST_t **)&m_RenderablesInLeaf;
-			renderableInLeaf_LIST_t *pRenderablesInLeaf = (renderableInLeaf_LIST_t *)(*pTmp);
-			// TMP
-
-			for ( ; idx != 0xffff;  )
-			{
-				unsigned int renderableInLeafIdxNEW = pRenderablesInLeaf[idx].element;
-				unsigned int renderableInLeafIdxOLD = m_RenderablesInLeaf.Element(idx);
-
-				if( renderableInLeafIdxNEW != renderableInLeafIdxOLD )
-				{
-					DebuggerBreak();
-				}
-
-				orderedList.AddToTail( &m_Renderables[ m_RenderablesInLeaf.Element(idx) ] );
-
-				unsigned short idxOLD = m_RenderablesInLeaf.NextElement( idx );
-				idx = pRenderablesInLeaf[idx].next;
-
-				if( idx != idxOLD )
-				{
-					DebuggerBreak();
-				}
-			}
-#endif
 		}
 	}
 

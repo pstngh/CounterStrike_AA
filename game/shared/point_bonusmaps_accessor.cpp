@@ -66,12 +66,6 @@ void CPointBonusMapsAccessor::Activate( void )
 
 void CPointBonusMapsAccessor::InputUnlock( inputdata_t& inputdata )
 {
-#if 0
-	if ( m_pGameUI )
-	{
-		m_pGameUI->BonusMapUnlock( m_String_tFileName.ToCStr(), m_String_tMapName.ToCStr() );
-	}
-#endif
 }
 
 void CPointBonusMapsAccessor::InputComplete( inputdata_t& inputdata )
@@ -79,11 +73,6 @@ void CPointBonusMapsAccessor::InputComplete( inputdata_t& inputdata )
 	if ( m_pGameUI )
 	{
 		int iNumAdvancedComplete = 0;
-
-#if 0
-		m_pGameUI->BonusMapComplete( m_String_tFileName.ToCStr(), m_String_tMapName.ToCStr() );
-		iNumAdvancedComplete = m_pGameUI->BonusMapNumAdvancedCompleted();
-#endif
 
 		IGameEvent *event = gameeventmanager->CreateEvent( "advanced_map_complete" );
 		if ( event )
@@ -96,10 +85,6 @@ void CPointBonusMapsAccessor::InputComplete( inputdata_t& inputdata )
 
 void CPointBonusMapsAccessor::InputSave( inputdata_t& inputdata )
 {
-#if 0
-	if ( m_pGameUI )
-		m_pGameUI->BonusMapDatabaseSave();
-#endif
 }
 
 #endif
@@ -113,11 +98,6 @@ void BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, c
 		if ( pGameUI )
 		{
 			int piNumMedals[ 3 ] = {0};
-
-#if 0
-			pGameUI->BonusMapChallengeUpdate( pchFileName, pchMapName, pchChallengeName, iBest );
-			pGameUI->BonusMapNumMedals( piNumMedals );
-#endif
 
 			IGameEvent *event = gameeventmanager->CreateEvent( "challenge_map_complete" );
 			if ( event )
@@ -133,30 +113,8 @@ void BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, c
 
 void BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName )
 {
-#if 0
-	CreateInterfaceFn gameUIFactory = g_GameUI.GetFactory();
-	if ( gameUIFactory )
-	{
-		IGameUI *pGameUI = (IGameUI *) gameUIFactory(GAMEUI_INTERFACE_VERSION, NULL );
-		if ( pGameUI )
-		{
-			pGameUI->BonusMapChallengeNames( pchFileName, pchMapName, pchChallengeName );
-		}	
-	}
-#endif
 }
 
 void BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold )
 {
-#if 0
-	CreateInterfaceFn gameUIFactory = g_GameUI.GetFactory();
-	if ( gameUIFactory )
-	{
-		IGameUI *pGameUI = (IGameUI *) gameUIFactory(GAMEUI_INTERFACE_VERSION, NULL );
-		if ( pGameUI )
-		{
-			pGameUI->BonusMapChallengeObjectives( iBronze, iSilver, iGold );
-		}
-	}
-#endif
 }

@@ -426,17 +426,6 @@ void qh_initstatistics (void) {
   if (qhstat next > (int)sizeof(qhstat id)) {
     ivp_message( "qhull error (qh_initstatistics): increase size of qhstat.id[].\n\
       qhstat.next %d should be <= sizeof(qhstat id) %d\n", qhstat next, sizeof(qhstat id));
-#if 0 /* for locating error, Znumridges should be duplicated */
-    for (i=0; i < ZEND; i++) {
-      int j;
-      for (j=i+1; j < ZEND; j++) {
-	if (qhstat id[i] == qhstat id[j]) {
-          ivp_message( "qhull error (qh_initstatistics): duplicated statistic %d at indices %d and %d\n", 
-	      qhstat id[i], i, j);
-	}
-      }
-    }
-#endif 
     exit (1);  /* can not use qh_errexit() */
   }
   qhstat init[zinc].i= 0;

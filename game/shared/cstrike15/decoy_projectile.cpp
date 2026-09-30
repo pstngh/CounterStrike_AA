@@ -224,14 +224,12 @@ void CDecoyProjectile::SetTimer( float timer )
 
 void CDecoyProjectile::Think_Detonate( void )
 {
-#if 1
 	if ( GetAbsVelocity().Length() > 0.2f )
 	{
 		// Still moving. Don't detonate yet.
 		SetNextThink( gpGlobals->curtime + 0.2f );
 		return;
 	}
-#endif // 0
 
 	CCSPlayer *player = ToCSPlayer( GetThrower() );
 	if ( player )

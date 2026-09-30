@@ -554,12 +554,6 @@ int CAI_StandoffBehavior::SelectScheduleEstablishAim( void )
 				StandoffMsg( "Looking for enemy\n" );
 			}
 		}
-#if 0
-		else
-		{
-			return SCHED_ESTABLISH_LINE_OF_FIRE;
-		}
-#endif
 	}
 
 	return SCHED_NONE;

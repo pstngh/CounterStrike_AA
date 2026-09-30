@@ -581,11 +581,6 @@ int	CMatLightmaps::AllocateWhiteLightmap( IMaterial *iMaterial )
 		{
 			// material change
 			m_numSortIDs++;
-#if 0
-			char buf[128];
-			Q_snprintf( buf, sizeof( buf ), "AllocateWhiteLightmap: m_numSortIDs = %d %s\n", m_numSortIDs, pMaterial->GetName() );
-			OutputDebugString( buf );
-#endif
 		}
 //		Warning( "%d material: \"%s\" lightmapPageID: -1\n", m_numSortIDs, pMaterial->GetName() );
 		m_currentWhiteLightmapMaterial = pMaterial;
@@ -2383,11 +2378,6 @@ void CMatLightmaps::ComputeSortInfo( MaterialSystem_SortInfo_t* pInfo, int& sort
 		{
 			pInfo[sortId].material = pMaterial->GetQueueFriendlyVersion();
 			pInfo[sortId].lightmapPageID = lightmapPageID;
-#if 0
-			char buf[128];
-			Q_snprintf( buf, sizeof( buf ), "ComputeSortInfo: %s lightmapPageID: %d sortID: %d\n", pMaterial->GetName(), lightmapPageID, sortId );
-			OutputDebugString( buf );
-#endif
 			++sortId;
 		}
 	}

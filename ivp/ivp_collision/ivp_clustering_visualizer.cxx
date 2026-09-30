@@ -766,38 +766,3 @@ IVP_Clustering_Visualizer_Longrange::~IVP_Clustering_Visualizer_Longrange() {
 
 
 
-#if 0
-
-IVP_Clustering_Visualizer_Shortrange::IVP_Clustering_Visualizer_Shortrange(IVP_Real_Object *object) {
-
-    // { statistical output
-    this->statistics_sphere_collisions = new IVP_BetterStatisticsmanager_Data_Entity(INT_VALUE);
-    this->statistics_sphere_collisions->set_text("# of sphere collision tests: ");
-    this->statistics_sphere_collisions->set_position(10, 10);
-
-    this->statistics_box_collisions = new IVP_BetterStatisticsmanager_Data_Entity(INT_VALUE);
-    this->statistics_box_collisions->set_text("# of box collision tests: ");
-    this->statistics_box_collisions->set_position(10, 20);
-
-    this->statistics_true_collisions = new IVP_BetterStatisticsmanager_Data_Entity(INT_VALUE);
-    this->statistics_true_collisions->set_text("# of true collisions: ");
-    this->statistics_true_collisions->set_position(10, 30);
-
-    this->statistics_terminals = new IVP_BetterStatisticsmanager_Data_Entity(INT_VALUE);
-    this->statistics_terminals->set_text("# of terminal collisions: ");
-    this->statistics_terminals->set_position(10, 40);
-
-    IVP_BetterStatisticsmanager *stats_manager = this->environment->get_betterstatisticsmanager();
-    stats_manager->install_data_entity(this->statistics_sphere_collisions);
-    stats_manager->install_data_entity(this->statistics_box_collisions);
-    stats_manager->install_data_entity(this->statistics_true_collisions);
-    stats_manager->install_data_entity(this->statistics_terminals);
-    // statistical output }
-
-    return;
-}
-
-
-#endif
-
-

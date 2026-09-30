@@ -40,23 +40,8 @@ void hk_Incr_LU_Matrix::exchange_rows_l_u(int pivot_col,int exchange) {
     int base_a = pivot_col*m_aligned_row_len;
     int base_b = exchange *m_aligned_row_len;
 
-#if 0 /* single FPU */  
-    hk_incrlu_real temp;
-    int i;
-    for(i=m_n_sub-1;i>=pivot_col;i--) {
-	temp=m_U_matrix[base_a + i];
-	m_U_matrix[base_a + i]=m_U_matrix[base_b + i];
-	m_U_matrix[base_b + i]=temp;
-    }
-    for(i=m_n_sub-1;i>=0;i--) {
-	temp=m_L_matrix[base_a + i];
-	m_L_matrix[base_a + i]=m_L_matrix[base_b + i];
-	m_L_matrix[base_b + i]=temp;	
-    }
-#else
     hk_VecFPU::fpu_exchange_rows(&m_U_matrix[base_a+pivot_col],&m_U_matrix[base_b+pivot_col],m_n_sub-pivot_col,HK_FALSE);
     hk_VecFPU::fpu_exchange_rows(&m_L_matrix[base_a],&m_L_matrix[base_b],m_n_sub,HK_FALSE);
-#endif    
 }
 
 // search from col_nr|colnr down to m_n_sub|colnr
@@ -81,25 +66,12 @@ void hk_Incr_LU_Matrix::pivot_search_l_u(int col_nr) {
 void hk_Incr_LU_Matrix::add_neg_row_upwards_l_u(int row_down,int dest_row,hk_incrlu_real factor) {
     hk_incrlu_real *base_a=&m_U_matrix[row_down * m_aligned_row_len];
     hk_incrlu_real *base_b=&m_U_matrix[dest_row * m_aligned_row_len];
-#if 0 /* single FPU */
-    int i;
-    for(i=row_down+1;i<m_n_sub;i++) {
-	base_b[i] -= factor * base_a[i];
-    }
-#else
     hk_VecFPU::fpu_add_multiple_row(&base_b[row_down+1],&base_a[row_down+1],-factor,m_n_sub-row_down-1,HK_FALSE);
-#endif    
     
     
     base_a=&m_L_matrix[row_down * m_aligned_row_len];
     base_b=&m_L_matrix[dest_row * m_aligned_row_len];
-#if 0    
-    for(i=m_n_sub-1;i>=0;i--) {
-	base_b[i] -=factor * base_a[i];
-    }
-#else
     hk_VecFPU::fpu_add_multiple_row(&base_b[0],&base_a[0],-factor,m_n_sub,HK_TRUE); //should be TRUE
-#endif    
     base_b[row_down] = 0.0f;
 }
 
@@ -108,32 +80,15 @@ void hk_Incr_LU_Matrix::add_neg_row_to_row_l_u(int pivot_row,int dest_row,hk_inc
     int base_a = pivot_row * m_aligned_row_len;
     int base_b = dest_row * m_aligned_row_len;
 
-#if 0 /* single FPU */    
-    int i;
-    for(i=m_n_sub-1;i>pivot_row;i--) {
-	m_U_matrix[ base_b + i ] -= factor*m_U_matrix[ base_a + i];
-    }
-    for(i=m_n_sub-1;i>=0;i--) {
-	m_L_matrix[ base_b + i ] -= factor*m_L_matrix[ base_a + i]; 
-    }
-#else
     hk_VecFPU::fpu_add_multiple_row(&m_U_matrix[ base_b + pivot_row +1], &m_U_matrix[ base_a + pivot_row +1], -factor, m_n_sub-pivot_row-1,HK_FALSE);
     hk_VecFPU::fpu_add_multiple_row(&m_L_matrix[ base_b ], &m_L_matrix[ base_a ], -factor, m_n_sub, HK_FALSE); //set to TRUE
-#endif
     m_U_matrix[base_b + pivot_row] = 0.0f; 
 }
 
 void hk_Incr_LU_Matrix::subtract_row_L(int from,int dest,hk_incrlu_real factor) {
     hk_incrlu_real *base_a=&m_L_matrix[from*m_aligned_row_len];
     hk_incrlu_real *base_b=&m_L_matrix[dest*m_aligned_row_len];
-#if 0 /* single FPU */
-    int i;
-    for(i=m_n_sub-1;i>=0;i--) {
-	base_b[i] -= base_a[i]*factor;
-    }
-#else
     hk_VecFPU::fpu_add_multiple_row(&base_b[0],&base_a[0],-factor,m_n_sub,HK_FALSE); //should be TRUE
-#endif
     
     base_b[from]=0.0f;
 }
@@ -180,12 +135,6 @@ hk_result hk_Incr_LU_Matrix::l_u_decomposition_with_pivoting() {
 // last column of new U is stored in m_m_input_vec, column has length m_n_sub
 hk_result hk_Incr_LU_Matrix::increment_l_u() {
     int i;
-#if 0
-    for(i=m_n_sub-1;i>=0;i--) {
-	int original_index = i; //m_index_pos_contains[ i ];
-	m_mult_vec[i] = m_input_vec[ original_index ];
-    }
-#endif    
 
     mult_vec_with_L();
 
@@ -321,18 +270,6 @@ void hk_Incr_LU_Matrix::solve_vec_with_U() {
 	    for(j=m_n_sub-1;j>i;j--) {
 	        leftsum += m_U_matrix[ i * m_aligned_row_len + j ] * m_temp_vec[ j ];
 		}
-#if 0 /*doesnt work, but why?*/
-		//WARNING !!!!!
-		//this is dirty: vector multiplication starts in middle of datastructure
-		//               put one zero in front -> zero mult something is zero
-		hk_incrlu_real remember=m_U_matrix[i*m_aligned_row_len+i];
-		m_U_matrix[i*m_aligned_row_len+i]=0.0f;
-		hk_incrlu_real leftsum = hk_VecFPU::fpu_large_dot_product(&m_U_matrix[i*m_aligned_row_len+i+1],&m_temp_vec[i+1],m_n_sub-i-1,HK_FALSE);
-		m_U_matrix[i*m_aligned_row_len+i]=remember;
-		if( hkMath::fabs(leftsum-oldleftsum) > 0.0001f ) {
-			leftsum=oldleftsum;
-		}
-#endif 
 	    hk_incrlu_real res = m_temp_vec[ i ] - leftsum;
 	    m_temp_vec[ i ] = res;
 	    m_inout_vec[ i ] = res;
@@ -348,30 +285,11 @@ void hk_Incr_LU_Matrix::add_neg_row_L(int source_row,int dest_row,hk_incrlu_real
     int base_a = source_row * m_aligned_row_len;
     int base_b = dest_row * m_aligned_row_len;
 
-#if 0 /* single FPU */    
-    int i;
-    for(i=m_n_sub-1;i>=0;i--) {
-	m_L_matrix[ base_b + i ] -= factor*m_L_matrix[ base_a + i]; 
-    }
-#else
     hk_VecFPU::fpu_add_multiple_row(&m_L_matrix[base_b],&m_L_matrix[base_a],-factor,m_n_sub,HK_FALSE); //should be TRUE
-#endif    
 }
 
 void hk_Incr_LU_Matrix::debug_print_l_u() {
     int i;
-#if 0
-    hk_Console::get_instance()->printf("\nindex  ");
-    for(i=0;i<m_n_sub;i++) {
-	hk_Console::get_instance()->printf("%d  ",m_index_pos_contains[i]);
-    }
-    hk_Console::get_instance()->printf("\n");
-    hk_Console::get_instance()->printf("\ninvindex  ");
-    for(i=0;i<m_n_sub;i++) {
-	hk_Console::get_instance()->printf("%d  ",inv_m_index_pos_contains[i]);
-    }
-    hk_Console::get_instance()->printf("\n");
-#endif    
     hk_Console::get_instance()->printf("  L                                      U\n");
     for(i=0;i<m_n_sub;i++) {
 	int j;
@@ -387,24 +305,4 @@ void hk_Incr_LU_Matrix::debug_print_l_u() {
 }
 
 void hk_Incr_LU_Matrix::debug_print_a() {
-#if 0
-	IVP_Great_Matrix_Many_Zero *was_l=new IVP_Great_Matrix_Many_Zero(m_n_sub);
-	IVP_Great_Matrix_Many_Zero *was_u=new IVP_Great_Matrix_Many_Zero(m_n_sub);
-
-	int i,j;
-	for(i=0;i<m_n_sub;i++) {
-	  for(j=0;j<m_n_sub;j++) {
-	    was_l->matrix_values[i*m_n_sub+j]=m_L_matrix[i*m_aligned_row_len+j];
-	    was_u->matrix_values[i*m_n_sub+j]=m_U_matrix[i*m_aligned_row_len+j];	    
-	  }
-	}
-
-	IVP_Great_Matrix_Many_Zero *inv_l=new IVP_Great_Matrix_Many_Zero(m_n_sub);
-	was_l->invert(inv_l);
-
-	IVP_Great_Matrix_Many_Zero *new_a=new IVP_Great_Matrix_Many_Zero(m_n_sub);
-	new_a->matrix_multiplication(inv_l->matrix_values,was_u->matrix_values);
-
-	new_a->print_great_matrix("orig_A");
-#endif
 }

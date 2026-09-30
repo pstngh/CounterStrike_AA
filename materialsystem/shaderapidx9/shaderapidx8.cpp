@@ -2388,13 +2388,8 @@ bool CheckAndFixProfileSettings( NvDRSSessionHandle hSession, NvDRSProfileHandle
 
 	if ( profileInformation.numOfApps > 0 )
 	{
-#if 1	// use the basic V1 info to work with oldest possible drivers
 		NVDRS_APPLICATION_V1 *appArray = new NVDRS_APPLICATION_V1[ profileInformation.numOfApps ];
 		appArray[ 0 ].version = NVDRS_APPLICATION_VER_V1;
-#else	// most recent version of app info
-		NVDRS_APPLICATION *appArray = new NVDRS_APPLICATION[ profileInformation.numOfApps ];
-		appArray[ 0 ].version = NVDRS_APPLICATION_VER;
-#endif
 		NvU32 numAppsRead = profileInformation.numOfApps;
 		status = NvAPI_DRS_EnumApplications( hSession, hProfile, 0, &numAppsRead, reinterpret_cast< NVDRS_APPLICATION * >( appArray ) );
 		if ( status != NVAPI_OK )
@@ -3676,20 +3671,6 @@ void CShaderAPIDx8::SetStandardVertexShaderConstants( float fOverbright )
 	standardVertexShaderConstant.Init( 1.0f/2.2f, fOverbright, 1.0f / 3.0f, 1.0f / fOverbright );
 	SetVertexShaderConstantInternal( VERTEX_SHADER_MATH_CONSTANTS1, standardVertexShaderConstant.Base(), 1 );
 
-#if 0
-	int nModelIndex = VERTEX_SHADER_MODEL;
-
-	// These point to the lighting and the transforms
-	standardVertexShaderConstant.Init( 
-		VERTEX_SHADER_LIGHTS,
-		VERTEX_SHADER_LIGHTS + 5, 
-        // Use COLOR instead of UBYTE4 since Geforce3 does not support it
-        // vConst.w should be 3, but due to about hack, mul by 255 and add epsilon
-		// 360 supports UBYTE4, so no fixup required
-		(IsPC() || !IsX360()) ? 765.01f : 3.0f,
-		 nModelIndex );	// DX8 has different constant packing
-#endif
-
 	SetVertexShaderConstantInternal( VERTEX_SHADER_LIGHT_INDEX, standardVertexShaderConstant.Base(), 1 );
 
 	/*
@@ -4432,14 +4413,6 @@ void CShaderAPIDx8::ResetRenderState( bool bFullReset )
 	SetSupportedRenderState( D3DRS_CLIPPING, TRUE );
 	SetSupportedRenderState( D3DRS_LOCALVIEWER, TRUE );
 	SetSupportedRenderState( D3DRS_POINTSCALEENABLE, FALSE );
-
-#if 0
-	float fBias = -1.0f;
-	SetTextureStageState( 0, D3DTSS_MIPMAPLODBIAS, *( ( LPDWORD ) (&fBias) ) );
-	SetTextureStageState( 1, D3DTSS_MIPMAPLODBIAS, *( ( LPDWORD ) (&fBias) ) );
-	SetTextureStageState( 2, D3DTSS_MIPMAPLODBIAS, *( ( LPDWORD ) (&fBias) ) );
-	SetTextureStageState( 3, D3DTSS_MIPMAPLODBIAS, *( ( LPDWORD ) (&fBias) ) );
-#endif
 
 	if ( bFullReset )
 	{
@@ -17107,14 +17080,6 @@ void CShaderAPIDx8::WriteShaderConstantsToGPU()
 	}
 
 	// integer pixel constants are not used, so not supporting
-#if 0
-	if ( m_MaxIntegerPixelShaderConstant )
-	{
-		Dx9Device()->SetPixelShaderConstantI( 0, (int *)m_DesiredState.m_pIntegerPixelShaderConstant, m_MaxIntegerPixelShaderConstant );
-		memcpy( m_DynamicState.m_pIntegerPixelShaderConstant[0].Base(), m_DesiredState.m_pIntegerPixelShaderConstant[0].Base(), m_MaxIntegerPixelShaderConstant * sizeof(IntVector4D) );
-		m_MaxIntegerPixelShaderConstant = 0;
-	}
-#endif
 #endif
 }
 

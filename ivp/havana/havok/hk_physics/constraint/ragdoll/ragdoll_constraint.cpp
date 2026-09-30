@@ -234,23 +234,6 @@ int	hk_Ragdoll_Constraint::setup_and_step_constraint(
 
 		hk_Vector3 &dir = work.dir;
 		dir.set_sub( position_ws[1], position_ws[0] );
-#if 0
-
-		// UNDONE: store per joint rescue teleport distance squared?
-		// UNDONE: Then enable this to fix stretchy ragdolls?
-		if ( dir.length_squared() > 0.01 )
-		{
-			IVP_U_Quat rot;
-			IVP_U_Point position;
-			b0->get_quat_world_f_object_AT( &rot, &position );
-			position.k[0] = position_ws[1].x;
-			position.k[1] = position_ws[1].y;
-			position.k[2] = position_ws[1].z;
-			b0->beam_object_to_new_position( &rot, &position, IVP_FALSE );
-			position_ws[0] = position_ws[1];
-			dir.set_sub( position_ws[1], position_ws[0] );
-		}
-#endif
 
 		query_engine.begin(3);
 		{

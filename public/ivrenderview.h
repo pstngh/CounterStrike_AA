@@ -101,7 +101,6 @@ enum
 
 //-----------------------------------------------------------------------------
 // NOTE: This is slightly slower on x360 but saves memory
-#if 1
 struct WorldListLeafData_t
 {
 	LeafIndex_t	leafIndex;	// 16 bits
@@ -109,15 +108,6 @@ struct WorldListLeafData_t
 	uint16 	firstTranslucentSurface;	// engine-internal list index
 	uint16	translucentSurfaceCount;	// count of translucent surfaces+disps
 };
-#else
-struct WorldListLeafData_t
-{
-	uint32	leafIndex;
-	int32	waterData;
-	uint32	firstTranslucentSurface;	// engine-internal list index
-	uint32	translucentSurfaceCount;	// count of translucent surfaces+disps
-};
-#endif
 struct WorldListInfo_t
 {
 	int		m_ViewFogVolume;

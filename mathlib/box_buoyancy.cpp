@@ -707,18 +707,12 @@ fltx4 GetBoxBuoyancy3x4( const FourVectors &box_in )
 	fltx4 f4All_Z = Four_Zeros;//Sum3SIMD( f4All_Z_Cpos - f4All_Z_Cneg ); 
 	
 	fltx4 f4All_W = Sum3SIMD( f4All_W_Cpos - f4All_W_Cneg );
-#if 1
 	// <Sergiy> again, to be brutally honest, I don't care about the actual lever of archimedes force.
 	// I can just as well use lever * displaced_volume to compute the torque, and it'll actually be more precise, although less understandable.
 	// 
 
 	// this variant returns XYZ of the center of mass of displaced fluid multiplied by W, and W = volume of displaced fluid
 	fltx4 f4All = CombineSIMD( f4All_X, f4All_Y, f4All_Z, f4All_W ) + f4All_W * boxCenterXY;
-#else
-	// this variant returns XYZ of the center of mass of displaced fluid, and W = volume of displaced fluid
-	fltx4 rcpAllW = ReciprocalSIMD( f4All_W );
-	fltx4 f4All = SetWSIMD( CombineXYZ_Special( f4All_X, f4All_Y, f4All_Z ) * rcpAllW + boxCenterXY, f4All_W );
-#endif
 	return f4All;
 }
 
@@ -798,11 +792,7 @@ Vector4D GetPyramidBuoyancy( const Vector &pos, const Vector &a, const Vector &b
 	}
 
 	Vector4D result;
-#if 1
 	result.Init( vecCenter * flSign, flSum * flSign );
-#else
-	result.Init( flSum > 1e-8f ? vecCenter / flSum : Vector( 0, 0, 0 ), flSum * flSign );
-#endif
 	return result;
 }
 

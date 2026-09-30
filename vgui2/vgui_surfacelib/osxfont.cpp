@@ -100,13 +100,6 @@ bool COSXFont::Create(const char *windowsFontName, int tall, int weight, int blu
 	m_iWeight = weight;
 	m_iFlags = flags;
 	m_bAntiAliased = flags & FONTFLAG_ANTIALIAS;
-#if 0
-// the font used in portal2 looks ok (better, in fact) anti-aliased when small, 
-	if ( tall < 20 )
-	{
-		m_bAntiAliased = false;
-	}
-#endif
 	
 	m_bUnderlined = flags & FONTFLAG_UNDERLINE;
 	m_iDropShadowOffset = (flags & FONTFLAG_DROPSHADOW) ? 1 : 0;

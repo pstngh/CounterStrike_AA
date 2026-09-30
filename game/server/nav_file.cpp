@@ -901,64 +901,6 @@ void CNavArea::ComputeEarliestOccupyTimes( void )
  */
 void CNavMesh::ComputeBattlefrontAreas( void )
 {
-#if 0
-#ifdef CSTRIKE_DLL
-	ShortestPathCost cost;
-	CBaseEntity *tSpawn, *ctSpawn;
-
-	for( tSpawn = gEntList.FindEntityByClassname( NULL, "info_player_terrorist" );
-		 tSpawn;
-		 tSpawn = gEntList.FindEntityByClassname( tSpawn, "info_player_terrorist" ) )
-	{
-		CNavArea *tArea = TheNavMesh->GetNavArea( tSpawn->GetAbsOrigin() );
-		if (tArea == NULL)
-			continue;
-
-		for( ctSpawn = gEntList.FindEntityByClassname( NULL, "info_player_counterterrorist" );
-			 ctSpawn;
-			 ctSpawn = gEntList.FindEntityByClassname( ctSpawn, "info_player_counterterrorist" ) )
-		{
-			CNavArea *ctArea = TheNavMesh->GetNavArea( ctSpawn->GetAbsOrigin() );
-
-			if (ctArea == NULL)
-				continue;
-
-			if (tArea == ctArea)
-			{
-				m_isBattlefront = true;
-				return;
-			}
-
-			// build path between these two spawn points - assume if path fails, it at least got close
-			// (ie: imagine spawn points that you jump down from - can't path to)
-			CNavArea *goalArea = NULL;
-			NavAreaBuildPath( tArea, ctArea, NULL, cost, &goalArea );
-
-			if (goalArea == NULL)
-				continue;
-
-
-/**
- * @todo Need to enumerate ALL paths between all pairs of spawn points to find all battlefront areas
- */
-
-			// find the area with the earliest overlapping occupy times
-			CNavArea *battlefront = NULL;
-			float earliestTime = 999999.9f;
-
-			const float epsilon = 1.0f;
-			CNavArea *area;
-			for( area = goalArea; area; area = area->GetParent() )
-			{
-				if (fabs(area->GetEarliestOccupyTime( TEAM_TERRORIST ) - area->GetEarliestOccupyTime( TEAM_CT )) < epsilon)
-				{
-				}
-				
-			}
-		}
-	}
-#endif
-#endif
 }
 
 

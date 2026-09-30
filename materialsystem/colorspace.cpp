@@ -105,19 +105,6 @@ void ColorSpace::SetGamma( float screenGamma, float texGamma,
 		linearToTexture[i] =  ( int )( pow( i / 1023.0f, 1.0f / texGamma ) * 255 );
 	}
 
-#if 0
-	for (i=0 ; i<256 ; i++)
-	{
-		float f;
-
-		// convert from nonlinear lightmap space (0..255) to linear space (0..4)
-		f =  ( float )( (i / 255.0f) * sqrt( 4 ) );
-		f = f * f;
-
-		texLightToLinear[i] = f;
-	}
-#endif
-	
 	float f, overbrightFactor;
 	
 	// Can't do overbright without texcombine

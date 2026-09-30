@@ -3947,18 +3947,6 @@ CEG_NOINLINE void CHLClient::OnSplitScreenStateChanged()
 
 	GetFullscreenClientMode()->Layout( true );
 
-#if 0
-	// APS: This cannot be done in this way, the schemes also need to be reloaded as they hook the fonts and
-	// various font metrics for custom drawing/sizing etc.
-	// See CMatSystemSurface::OnScreenSizeChanged() which is doing the better thing.
-	// However, that is still not good enough due to questionable code in CScheme::ReloadFontGlyphs() which
-	// prevents the reload due to it's cached concept of the screensize not changing, except the purge is already partialy done,
-	// which results in a broken font state.
-	// Instead, we are doing the same thing the consoles do (which cannot change video sizes) which is to NOT ditch the glyphs
-	// when changing split screen state. When SS for PC gets turned into a primary concept this can be revisited.
-	vgui::surface()->ResetFontCaches();
-#endif
-
 	// Update visibility for all ents so that the second viewport for the split player guy looks right, etc.
 	C_BaseEntityIterator iterator;
 	C_BaseEntity *pEnt;

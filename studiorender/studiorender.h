@@ -872,27 +872,17 @@ public:
 		switch (nLightType)	
 		{
 			case MATERIAL_LIGHT_POINT:
-#if 1
 				// half-lambert
 				dot = DotProduct( snormal, delta );
 				if (dot < 0.f)
 					return 0.f;
-#else
-				dot = DotProduct( snormal, delta ) * 0.5 + 0.5;
-				dot = dot * dot;
-#endif
 				return dot;
 
 			case MATERIAL_LIGHT_SPOT:
-#if 1
 				// half-lambert
 				dot = DotProduct( snormal, delta );
 				if (dot < 0.)
 					return 0.f;
-#else
-				dot = DotProduct( snormal, delta ) * 0.5 + 0.5;
-				dot = dot * dot;
-#endif
 
  				dot2 = -DotProduct (delta, lnormal);
 				if (dot2 <= wl->m_PhiDot)
@@ -913,15 +903,10 @@ public:
 				return ratio;
 
 			case MATERIAL_LIGHT_DIRECTIONAL:
-#if 1
 				// half-lambert
 				dot2 = -DotProduct( snormal, lnormal );
 				if (dot2 < 0.f)
 					return 0.f;
-#else
-				dot2 = -DotProduct( snormal, lnormal ) * 0.5 + 0.5;
-				dot2 = dot2 * dot2;
-#endif
 				return dot2;
 
 			case MATERIAL_LIGHT_DISABLE:

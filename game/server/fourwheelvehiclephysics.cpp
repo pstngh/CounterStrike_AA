@@ -566,12 +566,10 @@ void CFourWheelVehiclePhysics::Teleport( matrix3x4_t& relativeTransform )
 	}
 }
 
-#if 1
 // For the #if 0 debug code below!
 #define HL2IVP_FACTOR	METERS_PER_INCH
 #define IVP2HL(x)		(float)(x * (1.0f/HL2IVP_FACTOR))
 #define HL2IVP(x)		(double)(x * HL2IVP_FACTOR)		
-#endif
 
 //-----------------------------------------------------------------------------
 // Debugging methods
@@ -1031,17 +1029,6 @@ void CFourWheelVehiclePhysics::SteeringTurnAnalog( float carSpeed, const vehicle
 {
 
 	// OLD Code
-#if 0
-	float flSteeringRate = STEERING_BASE_RATE;
-
-	float factor = clamp( fabs( sidemove ) / STICK_EXTENTS, 0.0f, 1.0f );
-
-	factor *= 30;
-	flSteeringRate *= log( factor );
-	flSteeringRate *= gpGlobals->frametime;
-
-	SetSteering( sidemove < 0.0f ? -1 : 1, flSteeringRate );
-#else
 	// This is tested with gamepads with analog sticks.  It gives full analog control allowing the player to hold shallow turns.
 	float steering = ( sidemove / STICK_EXTENTS );
 
@@ -1054,7 +1041,6 @@ void CFourWheelVehiclePhysics::SteeringTurnAnalog( float carSpeed, const vehicle
 
 	m_controls.bAnalogSteering = true;
 	SetSteering( flSign * flSteerAdj, flSteeringRate * gpGlobals->frametime );
-#endif
 }
 
 //-----------------------------------------------------------------------------

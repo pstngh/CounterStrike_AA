@@ -150,7 +150,6 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 	// is the first member of CUtlSymbolTabke, this == pTable
 	CUtlSymbolTable *pTable = (CUtlSymbolTable *)( (byte *)this - offsetof(CUtlSymbolTable::CTree, m_LessFunc) ) - offsetof(CUtlSymbolTable, m_Lookup );
 
-#if 1 // using the hashes
 	const char *str1, *str2;
 	hashDecoration_t hash1, hash2;
 
@@ -205,23 +204,6 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 		return hash1 < hash2;
 	}
 
-#else // not using the hashes, just comparing strings
-	const char* str1 = (i1 == INVALID_STRING_INDEX) ? pTable->m_pUserSearchString :
-		pTable->StringFromIndex( i1 );
-	const char* str2 = (i2 == INVALID_STRING_INDEX) ? pTable->m_pUserSearchString :
-		pTable->StringFromIndex( i2 );
-
-	if ( !str1 && str2 )
-		return 1;
-	if ( !str2 && str1 )
-		return -1;
-	if ( !str1 && !str2 )
-		return 0;
-	if ( !pTable->m_bInsensitive )
-		return strcmp( str1, str2 ) < 0;
-	else
-		return strcmpi( str1, str2 ) < 0;
-#endif
 }
 
 

@@ -715,18 +715,6 @@ void DrawDispCollPlane( CBaseTrace *pTrace )
 	vecPlanePoints[2] = vecImpactPoint + ( vecBasisU * flLength ) + ( vecBasisV * flLength );
 	vecPlanePoints[3] = vecImpactPoint + ( vecBasisU * flLength ) + ( vecBasisV * -flLength );
 
-#if 0
-	// Test facing.
-	Vector vecEdges[2];
-	vecEdges[0] = vecPlanePoints[1] - vecPlanePoints[0];
-	vecEdges[1] = vecPlanePoints[2] - vecPlanePoints[0];
-	Vector vecCross = vecEdges[0].Cross( vecEdges[1] );
-	if ( vecCross.Dot( vecNormal ) < 0.0f )
-	{
-		// Reverse winding.
-	}
-#endif
-
 	// Draw the plane.
 	NDebugOverlay::Triangle( vecPlanePoints[0], vecPlanePoints[1], vecPlanePoints[2], 125, 125, 125, 125, false, 5.0f );
 	NDebugOverlay::Triangle( vecPlanePoints[0], vecPlanePoints[2], vecPlanePoints[3], 125, 125, 125, 125, false, 5.0f );

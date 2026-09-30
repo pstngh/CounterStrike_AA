@@ -586,9 +586,6 @@ BEGIN_VS_SHADER( Water_DX90,
 				params[REFRACTAMOUNT]->GetFloatValue(), params[REFRACTAMOUNT]->GetFloatValue() };
 			pShaderAPI->SetPixelShaderConstant( 5, c5, 1 );
 
-#if 0
-			SetPixelShaderConstantGammaToLinear( 6, FOGCOLOR );
-#else
 			// Need to use the srgb curve since that we do in UpdatePixelFogColorConstant so that we match the older version of water where we render to an offscreen buffer and fog on the way in.
 			float fogColorConstant[4];
 
@@ -599,7 +596,6 @@ BEGIN_VS_SHADER( Water_DX90,
 			fogColorConstant[1] = SrgbGammaToLinear( fogColorConstant[1] );
 			fogColorConstant[2] = SrgbGammaToLinear( fogColorConstant[2] );
 			pShaderAPI->SetPixelShaderConstant( 6, fogColorConstant, 1 );
-#endif
 
 			float c7[4] = 
 			{ 

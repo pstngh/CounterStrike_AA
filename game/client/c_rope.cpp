@@ -68,13 +68,11 @@ IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_RopeKeyframe, DT_RopeKeyframe, CRopeKeyframe 
 	RecvPropInt( RECVINFO( m_iParentAttachment ) ),
 	RecvPropInt( RECVINFO( m_iDefaultRopeMaterialModelIndex ) ),	
 	
-#if 1
 // #ifndef _GAMECONSOLE -- X360 client and Win32 XLSP dedicated server need equivalent SendTables
 	RecvPropInt( RECVINFO( m_nMinCPULevel ) ), 
 	RecvPropInt( RECVINFO( m_nMaxCPULevel ) ), 
 	RecvPropInt( RECVINFO( m_nMinGPULevel ) ), 
 	RecvPropInt( RECVINFO( m_nMaxGPULevel ) ), 
-#endif
 
 END_RECV_TABLE()
 

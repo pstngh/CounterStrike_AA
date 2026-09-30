@@ -125,12 +125,6 @@ CCreateMedalStatsDialogScaleform::CCreateMedalStatsDialogScaleform( eDialogType 
 
 #if !defined( _GAMECONSOLE )
 	m_nEloBracket = -1;
-#if 0 // Disabling elo bracket display in the menu.
-	// Right now our elo values arn't meaningful so for 1.20 we're disabling the display.
-	// This is done in scaleform, but i'm also disabling it here because we still have this unsolved ecoroutine
-	// crash on OSX that will be triggered by the yielding gc message... 
-	RequestEloBracket( &m_nEloBracket, ELOGameType::CLASSIC_COMPETITIVE, INPUT_DEVICE_KEYBOARD_MOUSE );
-#endif
 #endif
 }
 

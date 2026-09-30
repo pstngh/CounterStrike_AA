@@ -3239,38 +3239,6 @@ bool CBugUIPanel::CopyInfoFromRemoteBug()
 	m_pBugReporter->SetConsoleHistory( pKV->GetString( "Console" ) );
 	m_pBugReporter->SetDriverInfo( pKV->GetString( "DriverInfo" ) );
 
-#if 0 
-	// BUG: Savegames crash on load after this copy step. Not including them for now, if we use this feature
-	// a lot then we can revisit this and fix it.
-	CUtlString strSaveName = pKV->GetString( "Savegame" );
-	if ( strSaveName.IsEmpty() == false )
-	{
-		char buffer[MAX_PATH];
-		V_StripExtension( strSaveName.UnqualifiedFilename(), m_szSaveGameName, sizeof ( m_szSaveGameName ) );
-		V_snprintf( buffer, sizeof( buffer ), "%s/save/%s.sav", com_gamedir, m_szSaveGameName );
-		CUtlString strSavePath = m_strRemoteBugInfoPath + "\\" + m_szSaveGameName + ".sav";
-		UploadFile( strSavePath, buffer, true );
-
-		V_snprintf( buffer, sizeof( buffer ), "%s/BugId/%s.sav", GetRepositoryURL(), m_szSaveGameName );
-		V_FixSlashes( buffer );
-		m_pBugReporter->SetSaveGame( buffer );
-	}
-
-	CUtlString strBSPName = pKV->GetString( "Bspname" );
-	if ( strBSPName.IsEmpty() == false )
-	{
-		char buffer[MAX_PATH];
-		V_StripExtension( strBSPName.UnqualifiedFilename(), m_szBSPName, sizeof ( m_szBSPName ) );
-		V_snprintf( buffer, sizeof( buffer ), "%s/maps/%s.bsp", com_gamedir, m_szBSPName );
-		CUtlString strBSPPath = m_strRemoteBugInfoPath + "\\" + m_szBSPName + ".bsp";
-		UploadFile( strBSPPath, buffer, true );
-
-		V_snprintf( buffer, sizeof( buffer ), "%s/BugId/%s.bsp", GetRepositoryURL(), m_szBSPName );
-		V_FixSlashes( buffer );
-		m_pBugReporter->SetBSPName( buffer );
-	}
-#endif
-
 	CUtlString strSSName = pKV->GetString( "Screenshot" );
 	if ( strSSName.IsEmpty() == false )
 	{
@@ -3591,14 +3559,4 @@ void CBugUIPanel::InitAsRemoteBug()
 	// always autosubmit when bugging from a remote machine
 	m_bAutoSubmit = true;
 
-#if 0 // BUG: The save games come across broken. Leaving alone
-	// for now but will fix if we make use of this feature
-
-	// always take a save game if singleplayer
-	if ( GetBaseLocalClient().m_nMaxClients == 1 ) 
-	{
-		OnSaveGame();
-		OnSaveBSP();
-	}
-#endif
 }

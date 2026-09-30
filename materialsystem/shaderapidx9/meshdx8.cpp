@@ -887,57 +887,6 @@ private:
 #endif
 };
 
-#if 0
-//-----------------------------------------------------------------------------
-// A mesh that stores temporary vertex data in the correct format (for modification)
-//-----------------------------------------------------------------------------
-class CTempIndexBufferDX8 : public CIndexBufferBase
-{
-public:
-	// constructor, destructor
-	CTempIndexBufferDX8( bool isDynamic );
-	virtual ~CTempIndexBufferDX8();
-
-	// Locks/unlocks the mesh
-	void LockIndexBuffer( int nIndexCount );
-	void UnlockMesh( int nIndexCount );
-
-	// Locks mesh for modifying
-	virtual void ModifyBeginEx( bool bReadOnly, int nFirstIndex, int nIndexCount );
-	virtual void ModifyEnd();
-
-	// Number of indices
-	virtual int IndexCount() const;
-	virtual bool IsDynamic() const;
-
-	virtual void CopyToIndexBuilder( 
-		int iStartIndex,	// Which indices to copy.
-		int nIndices, 
-		int indexOffset,	// This is added to each index.
-		CIndexBuilder &builder );
-private:
-	// Selection mode 
-	void TestSelection( );
-
-	CDynamicMeshDX8 *GetDynamicMesh();
-
-	CUtlVector< unsigned short > m_IndexData;
-
-	MaterialPrimitiveType_t m_Type;
-	int m_LockedIndices;
-	bool m_IsDynamic;
-
-	// Used in rendering sub-parts of the mesh
-	static unsigned int s_NumIndices;
-	static unsigned int s_FirstIndex;
-
-#ifdef DBGFLAG_ASSERT
-	bool m_Locked;
-	bool m_InPass;
-#endif
-};
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Implementation of the mesh manager
@@ -4073,14 +4022,7 @@ void CMeshDX8::RenderPass( const unsigned char *pInstanceCommandBuffer )
 		else if ( m_Type == MATERIAL_SUBD_QUADS_EXTRA || m_Type == MATERIAL_SUBD_QUADS_REG )
 		{
 //#if ( defined ( _X360 ) || defined ( DX_TO_GL_ABSTRACTION ) )
-#if ( 1 )
 			AssertMsg( false, "MATERIAL_SUBD_QUADS are not supported" );
-#else
-			Assert( ShaderAPI()->GetTessellationMode() != TESSELLATION_MODE_DISABLED );
-
-			Dx9Device()->SetTessellationLevel( MIN( MAX_TESS_DIVISIONS_PER_SIDE, MAX( 1, mat_tessellationlevel.GetFloat() ) ) );
-			Dx9Device()->DrawTessellatedIndexedPrimitive( m_FirstIndex, s_FirstVertex, s_NumVertices, pPrim->m_FirstIndex, pPrim->m_NumIndices / 4 );
-#endif
 		}
 		else
 		{
@@ -6563,15 +6505,6 @@ bool CMeshMgr::SetRenderState( int nVertexOffsetInBytes, int nFirstVertexIdx, Ve
 	// make sure the vertex format is a superset of the current material's
 	// vertex format...
 	// MESHFIXME : This path is only used for the new index/vertex buffer interfaces.
-#if 0
-	// FIXME
-	if ( !IsValidVertexFormat( vertexFormat ) )
-	{
-		Warning( "Material %s is being applied to a model, you need $model=1 in the .vmt file!\n",
-			ShaderAPI()->GetBoundMaterial()->GetName() );
-		return false;
-	}
-#endif
 
 	SetVertexIDStreamState( 0 );
 	SetColorStreamState();

@@ -1229,8 +1229,6 @@ CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( const Vector &vStart, c
 		NDebugOverlay::BoxDirection(vStart, mins, maxs, direction, 255,0,0,20,1.0);
 	}
 
-#if 1
-
 	CTakeDamageInfo	dmgInfo( this, this, flDamage, iDmgType );
 	
 	// COLLISION_GROUP_PROJECTILE does some handy filtering that's very appropriate for this type of attack, as well. (sjb) 7/25/2007
@@ -1271,59 +1269,6 @@ CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( const Vector &vStart, c
 	}
 
 	return pEntity;
-
-#else
-
-	trace_t tr;
-	UTIL_TraceHull( vStart, vEnd, mins, maxs, MASK_SHOT_HULL, this, COLLISION_GROUP_NONE, &tr );
-
-	CBaseEntity *pEntity = tr.m_pEnt;
-
-	if ( !pEntity )
-	{
-		// See if perhaps I'm trying to claw/bash someone who is standing on my head.
-		Vector vecTopCenter;
-		Vector vecEnd;
-		Vector vecMins, vecMaxs;
-
-		// Do a tracehull from the top center of my bounding box.
-		vecTopCenter = GetAbsOrigin();
-		CollisionProp()->WorldSpaceAABB( &vecMins, &vecMaxs );
-		vecTopCenter.z = vecMaxs.z + 1.0f;
-		vecEnd = vecTopCenter;
-		vecEnd.z += 2.0f;
-		UTIL_TraceHull( vecTopCenter, vecEnd, mins, maxs, MASK_SHOT_HULL, this, COLLISION_GROUP_NONE, &tr );
-		pEntity = tr.m_pEnt;
-	}
-
-	if ( !pEntity || !pEntity->m_takedamage || !pEntity->IsAlive() )
-		return NULL;
-
-	// Translate the vehicle into its driver for damage
-	if ( pEntity->GetServerVehicle() != NULL )
-	{
-		CBaseEntity *pDriver = pEntity->GetServerVehicle()->GetPassenger();
-
-		if ( pDriver != NULL )
-		{
-			pEntity = pDriver;
-			//FIXME: Hook for damage scale in car here
-		}
-	}
-
-	// Must hate the hit entity
-	if ( IRelationType( pEntity ) == D_HT )
-	{
-		if ( iDamage > 0 )
-		{
-			CTakeDamageInfo info( this, this, flDamage, iDmgType );
-			CalculateMeleeDamageForce( &info, (vEnd - vStart), vStart, forceScale );
-			pEntity->TakeDamage( info );
-		}
-	}
-	return pEntity;
-
-#endif
 
 }
 

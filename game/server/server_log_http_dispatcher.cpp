@@ -160,10 +160,6 @@ void CServerLogHTTPDispatcher::Shutdown()
 
 void CServerLogHTTPDispatcher::LevelInitPreEntity()
 {
-#if 0 // autoadd self for debugging
-	if ( m_vecListeners.Count() == 0 )
-		engine->ServerCommand( "log on;logaddress_add_http \"http://127.0.0.1:3000\"\n" );
-#endif
 	m_localTimeLoggingStart = Plat_GetTime();
 	m_loggingStartPlatTime = Plat_FloatTime();
 }

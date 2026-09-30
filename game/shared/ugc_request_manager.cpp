@@ -509,32 +509,6 @@ bool CUGCFileRequestManager::PromoteRequestToTop( UGCHandle_t handle )
 //-----------------------------------------------------------------------------
 void  CUGCFileRequestManager::Debug_LogPendingOperations( void )
 {
-#if 0
-	// Must have something to operate on
-	if ( m_PendingFileOperations.Count() == 0 )
-		return;
-
-	// For debugging insertion into priority queue
-	Log_Msg( LOG_WORKSHOP, "\n==[Pending UGC Operations]==\n");
-	
-	// The queue cannot be walked through trivially, so we need to actually pop each member off the top, the reinsert at the end
-	CUtlVector< UGCFileRequest_t * > vecOverflow;
-	while ( m_PendingFileOperations.Count() )
-	{
-		UGCFileRequest_t *pQueuedRequest = m_PendingFileOperations.ElementAtHead();
-		Log_Msg( LOG_WORKSHOP, "o File: %llu\tPriority:%u\tTimestamp:%u\n", pQueuedRequest->fileHandle, pQueuedRequest->unPriority, pQueuedRequest->unTimestamp );
-		vecOverflow.AddToTail( pQueuedRequest );
-		m_PendingFileOperations.RemoveAtHead();
-	}
-
-	// Put them all back
-	for ( int i=0; i < vecOverflow.Count(); i++ )
-	{
-		m_PendingFileOperations.Insert( vecOverflow[i] );
-	}
-
-	Log_Msg( LOG_WORKSHOP, "==============================\n\n");
-#endif //
 }
 
 bool CUGCFileRequestManager::HasPendingDownloads( void ) const

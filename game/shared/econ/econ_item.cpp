@@ -1289,20 +1289,6 @@ void CEconItem::SerializeToProtoBufItem( CSOEconItem &msgItem ) const
 		msgItem.set_original_id( GetOriginalID() );
 	#endif
 
-#if 0
-	// Names and descriptions are now attributes, no need to duplicate them here (perf)
-	const char *pszCustomName = GetCustomName();
-	if ( pszCustomName )
-	{
-		msgItem.set_custom_name( pszCustomName );
-	}
-
-	const char *pszCustomDesc = GetCustomDesc();
-	if ( pszCustomDesc )
-	{
-		msgItem.set_custom_desc( pszCustomDesc );
-	}
-#endif
 }
 
 // --------------------------------------------------------------------------

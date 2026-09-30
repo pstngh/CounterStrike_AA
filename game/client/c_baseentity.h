@@ -545,10 +545,6 @@ public:
 public:
 	virtual bool GetRenderData( void *pData, ModelDataCategory_t nCategory );
 
-#if 0	
-	virtual string_t		GetModelName( void ) const;
-#endif
-
 // Methods of IClientRenderable
 public:
 

@@ -2801,16 +2801,6 @@ bool CEconItemView::CanGenerateInventoryImageRgba()
 				return !GetItemDefinition()->IsDefaultSlotItem();
 			}
 		}
-#if 0 // Relies on prebuilt maps of item tags which isn't in staging yet
-		if ( HasTag( "Weapon" ) )
-		{
-			return true;
-		}
-		if ( HasTag( "Hands" ) )
-		{
-			return true;
-		}
-#endif
 	}
 
 	return false;
@@ -3322,57 +3312,6 @@ bool CEconItemView::IsStyleUnlocked( int iStyle ) const
 
 bool CEconItemView::CanCollect( CEconItemView &subject )
 {
-#if 0
-	int nItemSet = GetItemSetIndex();
-	if ( nItemSet < 0 )
-		return false;
-
-	CEconItemSchema *pSchema = GetItemSchema();
-	if ( !pSchema )
-		return false;
-
-	const CEconItemSetDefinition *pItemSet = pSchema->GetItemSetByIndex( nItemSet );
-	if ( !pItemSet )
-		return false;
-
-	if ( !pItemSet->m_bIsCollection )
-		return false;
-
-	// Check and see if subject is in our item set.
-	FOR_EACH_VEC( pItemSet->m_ItemEntries, i )
-	{
-		unsigned int iIndex = pItemSet->m_ItemEntries[i].m_nItemDef;
-
-		const CEconItemDefinition *pItemDef = GetItemSchema()->GetItemDefinition( iIndex );
-		if ( !pItemDef )
-			continue;
-
-		if ( subject.GetStaticData()->GetDefinitionIndex() != pItemDef->GetDefinitionIndex() )
-			continue;
-
-		// Check and see if this item is already collected.
-		CEconItem* pItem = GetSOCData();
-		if ( !pItem )
-			continue;
-
-		const CEconItemAttributeDefinition* pCollectionAttrib = GetItemSchema()->GetAttributeDefinitionByName( "collection bits" );
-		if ( !pCollectionAttrib )
-			continue;
-
-		float flValue = 0;
-		pItem->HasCustomAttribute( pCollectionAttrib->GetDefinitionIndex(), &flValue );
-		uint32 iCollectionBits = *(int *) &flValue;
-
-		if ( iCollectionBits & (1 << i) )
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	}
-#endif
 
 	return false;
 }

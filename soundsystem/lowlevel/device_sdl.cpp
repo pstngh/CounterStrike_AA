@@ -141,22 +141,6 @@ bool CAudioSDL::Init( const audio_device_init_params_t &params )
 		}
 	}
 
-#if 0
-	// setup the format structure
-	{
-		int nChannels = details.InputChannels;
-		if ( params.m_bOverrideSpeakerConfig )
-		{
-			nChannels = SpeakerConfigValueToChannelCount( params.m_nOverrideSpeakerConfig );
-			if ( params.m_nOverrideSpeakerConfig == 0 )
-			{
-				m_bIsHeadphone = true;
-			}
-		}
-		m_nChannels = nChannels;
-	}
-#endif
-
 	SDL_AudioSpec desired;
 	desired.freq = int(MIX_DEFAULT_SAMPLING_RATE);
 	desired.format = AUDIO_S16SYS;

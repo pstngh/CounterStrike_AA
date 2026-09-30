@@ -514,12 +514,6 @@ void BuyState::OnUpdate( CCSBot *me )
 
 			++m_prefRetries;
 
-#if 0 // Actually, DO waste money on other equipment... 
-			// bail out so we dont waste money on other equipment
-			// unless everything we prefer has been disallowed, then buy at random
-			if (isPreferredAllDisallowed == false)
-				return;
-#endif
 		}
 
 		// if we have no preferred primary weapon (or everything we want is disallowed), buy at random

@@ -928,15 +928,6 @@ void IVP_Real_Object::get_geom_center_speed_vec(IVP_U_Point *speed_ws_out) const
 
 IVP_Controller_VHash::~IVP_Controller_VHash() 
 {
-#if 0 /*TL  */
-    for (int i=this->len()-1; i>=0; i--) {
-	IVP_Controller *controller;
-	controller = (IVP_Controller *)this->element_at(i);
-	if (controller){
-	    controller->object_is_going_to_be_deleted_event(real_object);
-	}
-    }
-#endif    
 }
 
 int IVP_Controller_VHash::controller_to_index(IVP_Controller *controller)

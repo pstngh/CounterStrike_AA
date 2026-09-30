@@ -467,13 +467,6 @@ CAI_Hint *CAI_FearBehavior::FindFearWithdrawalDest()
 		// Otherwise, if I fail to get there, the node will come available again soon.
 		pHint->DisableForSeconds( 4.0f );
 	}
-#if 0
-	else
-	{
-		Msg("DID NOT FIND HINT\n");
-		NDebugOverlay::Cross3D( GetOuter()->WorldSpaceCenter(), 32, 255, 255, 0, false, 10.0f );
-	}
-#endif
 
 	return pHint;
 }

@@ -754,14 +754,6 @@ void CAI_FollowBehavior::GatherConditions( void )
 		}
 	}
 
-#if 0
-	else if ( !IsFollowPointInRange() )
-	{
-		GetHintNode()->Unlock();
-		SetHintNode( NULL );
-	}
-#endif
-
 #ifdef HL2_EPISODIC
 	// Let followers know if the player is lit in the darkness
 	if ( GetFollowTarget()->IsPlayer() && HL2GameRules()->IsAlyxInDarknessMode() )

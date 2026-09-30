@@ -1283,14 +1283,6 @@ void SlerpBonesSpeedy(
 										q1 + aBonesSlerpAlign[i+2],
 										q1 + aBonesSlerpAlign[i+3] );
 
-#if 0
-		// FIXME: the SIMD slerp doesn't handle quaternions that have opposite signs
-		q2four.LoadAndSwizzleAligned(	q2 + aBonesSlerpAlign[i+0],
-										q2 + aBonesSlerpAlign[i+1],
-										q2 + aBonesSlerpAlign[i+2],
-										q2 + aBonesSlerpAlign[i+3] );
-		result = q2four.Slerp(q1four, oneMinusWeight);
-#else
 		// force the quaternions to be the same sign (< 180 degree separation)
 		BoneQuaternionAligned q20, q21, q22, q23;
 		QuaternionAlign( q1[aBonesSlerpAlign[i+0]], q2[aBonesSlerpAlign[i+0]], q20 );
@@ -1299,7 +1291,6 @@ void SlerpBonesSpeedy(
 		QuaternionAlign( q1[aBonesSlerpAlign[i+3]], q2[aBonesSlerpAlign[i+3]], q23 );
 		q2four.LoadAndSwizzleAligned( &q20, &q21, &q22, &q23 );
 		result = q2four.SlerpNoAlign(q1four, oneMinusWeight);
-#endif
 
 		result.SwizzleAndStoreAligned( q1 + aBonesSlerpAlign[i+0],
 			q1 + aBonesSlerpAlign[i+1],
@@ -1829,50 +1820,6 @@ void BlendBones(
 				BONE_PROFILE_LOOP(BlendBoneLoop2g,pActiveBonesEnd-pActiveBones);
 
 				const int *RESTRICT p = pActiveBones, *RESTRICT pNext;
-#if 0//ndef _X360
-				// swizzled (vertical) 4 at a time processing
-				for(; (pNext = p+4) < pActiveBonesEnd; p = pNext)
-				{
-					int nBoneA = p[0], nBoneB = p[1], nBoneC = p[2], nBoneD = p[3];
-
-					BoneQuaternionAligned *RESTRICT pq1A = &q1[nBoneA]; 
-					BoneQuaternionAligned *RESTRICT pq1B = &q1[nBoneB]; 
-					BoneQuaternionAligned *RESTRICT pq1C = &q1[nBoneC]; 
-					BoneQuaternionAligned *RESTRICT pq1D = &q1[nBoneD]; 
-
-					const BoneQuaternionAligned *RESTRICT pq2A = &q2[nBoneA]; 
-					const BoneQuaternionAligned *RESTRICT pq2B = &q2[nBoneB]; 
-					const BoneQuaternionAligned *RESTRICT pq2C = &q2[nBoneC]; 
-					const BoneQuaternionAligned *RESTRICT pq2D = &q2[nBoneD]; 
-
-					float *pp1A = pos1[nBoneA].Base();
-					float *pp1B = pos1[nBoneB].Base();
-					float *pp1C = pos1[nBoneC].Base();
-					float *pp1D = pos1[nBoneD].Base();
-
-					const float *pp2A = pos2[nBoneA].Base();
-					const float *pp2B = pos2[nBoneB].Base();
-					const float *pp2C = pos2[nBoneC].Base();
-					const float *pp2D = pos2[nBoneD].Base();
-
-					FourQuaternions four4q1, four4q2;
-					four4q1.LoadAndSwizzleAligned(pq1A,pq1B,pq1C,pq1D);
-					four4q2.LoadAndSwizzleAligned(pq2A,pq2B,pq2C,pq2D);
-
-					FourVectors four4Pos1, four4Pos2;
-					four4Pos1.LoadAndSwizzleUnaligned(pp1A,pp1B,pp1C,pp1D);
-					four4Pos2.LoadAndSwizzleUnaligned(pp2A,pp2B,pp2C,pp2D);
-
-					four4q1 = QuaternionAlign(four4q2, four4q1);
-
-					FourQuaternions four4Blended = QuaternionNormalize(Madd( four4q1, scale1, Mul( four4q2 , scale2 )));
-					// now blend the linear parts
-					FourVectors f4PosBlended = Madd(four4Pos1, scale1, Mul(four4Pos2, scale2));
-					f4PosBlended.TransposeOntoUnaligned3(*(fltx4*)pp1A, *(fltx4*)pp1B, *(fltx4*)pp1C, *(fltx4*)pp1D);
-
-					four4Blended.SwizzleAndStoreAligned(pq1A,pq1B,pq1C,pq1D);
-				}
-#else
 				// horizontal 4 at a time processing
 				for(; (pNext = p+4) < pActiveBonesEnd; p = pNext)
 				{
@@ -1929,7 +1876,6 @@ void BlendBones(
 					StoreAlignedSIMD(pq1D,f4BlendedD);
 					StoreUnaligned3SIMD(pp1D, f4PosBlendedD);
 				}
-#endif
 				for(; p < pActiveBonesEnd; ++p)
 				{
 					int nBone = *p;

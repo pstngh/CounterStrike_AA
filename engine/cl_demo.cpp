@@ -1256,24 +1256,6 @@ void CDemoPlayer::SkipToTick( int tick, bool bRelative, bool bPause )
 		}
 		RestartPlayback();
 
-#if 0 // old way
-		// we have to reload the whole demo file
-		// we need to create a temp copy of the filename
-		char fileName[MAX_OSPATH];
-		V_strcpy_safe( fileName, m_DemoFile.m_szFileName );
-
-		StopPlayback();
-
-		// disconnect before reloading demo, to avoid sometimes loading into game instead of demo
-		GetBaseLocalClient().Disconnect(false);
-
-		// reload current demo file
-		StartPlayback( fileName, m_bTimeDemo, NULL );
-
-		// Make sure the proper skipping occurs after reload
-		if ( tick > 0 )
-			tick |= SKIP_TO_TICK_FLAG;
-#endif
 	}
 
 	if ( tick != GetPlaybackTick() )

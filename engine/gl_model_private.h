@@ -340,19 +340,6 @@ struct worldbrushdata_t
 
 	int              m_nBSPFileSize;
 
-#if 0
-	int			numportals;
-	mportal_t	*portals;
-
-	int			numclusters;
-	mcluster_t	*clusters;
-
-	int			numportalverts;
-	unsigned short *portalverts;
-
-	int			numclusterportals;
-	unsigned short *clusterportals;
-#endif
 };
 
 // only models with type "mod_brush" have this data

@@ -600,15 +600,6 @@ IVP_DOUBLE IVP_Compact_Ledge_Solver::calc_qlen_PP_P_space(const IVP_Compact_Ledg
   
 
 IVP_DOUBLE  IVP_Compact_Ledge_Solver::calc_qlen_PK_K_space(const IVP_U_Point *P_in_K_space, const IVP_Compact_Ledge *K_ledge, const IVP_Compact_Edge *K ){
-#if 0
-    //TL: Playstation2 assert for alignment
-    unsigned int adress=(unsigned int)P_in_K_space;
-	unsigned int aligned_a=(adress & 0xfffffff0 );
-	IVP_IF( aligned_a != adress ) {
-		printf("erroradress %lx\n",adress);
-		IVP_ASSERT(1==0);
-	}
-#endif
 	
 	IVP_Unscaled_S_Result sr;
     calc_unscaled_s_val_K_space(K_ledge, K,P_in_K_space, &sr);

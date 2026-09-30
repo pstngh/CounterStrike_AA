@@ -280,22 +280,5 @@ void Init_GCVs();
 // do a binary search on one or all of the below calls by restoring part of the #if 0 block below. You'll get a duplicate definition warning,
 // but anything redefined below will be a no-op in the build, allowing you to rule it out as a potential perf issue.
 // Remember that CEG builds neeed to be rebuilds (CEG'ed dlls only), but the /MP flag should make it about 60 seconds per rebuild.
-#if 0
-#define STEAMWORKS_TESTSECRET()
-#define STEAMWORKS_TESTSECRETALWAYS()
-#define STEAMWORKS_SELFCHECK()
-#define RANDOM_CEG_TEST_SECRET()
-#define RANDOM_CEG_TEST_SECRET_PERIOD( testPeriod, checkPeriod )
-#define RANDOM_CEG_TEST_SECRET_LINE_PERIOD( testPeriod, testLinePeriod, checkPeriod, checkLinePeriod )
-#define CEG_PROTECT_FUNCTION( unquotedSymbolHelper )
-#define CEG_PROTECT_MEMBER_FUNCTION( unquotedSymbolHelper )
-#define CEG_PROTECT_VIRTUAL_FUNCTION( unquotedSymbolHelper )
-#define CEG_PROTECT_STATIC_MEMBER_FUNCTION( unquotedSymbolHelper, fn_name )
-#define CEG_DECLARE_CONSTANT_FUNCTION( fn_name )			extern DWORD	__cdecl	fn_name();
-#define CEG_DECLARE_CONSTANT_FLOAT_FUNCTION( fn_name )		extern float	__cdecl	fn_name();
-#define CEG_DEFINE_CONSTANT_FUNCTION( fn_name, val )		DWORD __cdecl fn_name() { return val; }
-#define CEG_DEFINE_CONSTANT_FLOAT_FUNCTION( fn_name, val )	float __cdecl fn_name() { return val; }
-#define CEG_GET_CONSTANT_VALUE( fn_name )					fn_name()
-#endif
 
 #endif //_CEGCLIENTWRAPPER_H_

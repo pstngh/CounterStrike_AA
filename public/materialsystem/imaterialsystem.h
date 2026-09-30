@@ -1200,21 +1200,6 @@ public:
 	virtual bool PS3InitFontLibrary( unsigned fontFileCacheSizeInBytes, unsigned maxNumFonts ){return false;};
 	virtual void PS3DumpFontLibrary(){return;}
 	virtual void *PS3GetFontLibPtr() { return NULL; }
-#if 0 // This is disabled for now -- apparently we render font characters ad hoc 
-	  // every frame, and so for the moment we're forced to keep the font library in 
-	  // memory forever. sigh.
-	// and for some convenient stack semantics
-	struct PS3FontLibraryRAII
-	{
-		PS3FontLibraryRAII( IMaterialSystem *imatsys, 
-			unsigned int fontFileCacheSizeInBytes = 256 * 1024, unsigned int maxNumFonts = 64 ) : m_pmatsys(imatsys) 
-			{ imatsys->PS3InitFontLibrary( fontFileCacheSizeInBytes, maxNumFonts ); }
-		~PS3FontLibraryRAII()
-			{ m_pmatsys->PS3DumpFontLibrary(); }
-
-		IMaterialSystem *m_pmatsys;
-	};
-#endif
 	// debug info for screenshots
 	enum VRAMScreenShotInfoColorFormat_t
 	{ kX8R8G8B8 = 0, kX8B8G8R8 = 1, kR16G16B16X16 = 2} ;

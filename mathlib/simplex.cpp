@@ -409,27 +409,6 @@ float CSimplex::GetObjective()const
 
 void CSimplex::Validate()
 {
-#if defined(_DEBUG) && 0
-	GatherSolution();
-	for(int i = 0; i <= m_numConstraints; ++i)
-	{
-		float flRes = 0;
-		for(int j = 0; j < m_numVariables; ++j)
-			flRes += GetInitialTableau(i,j) * m_pSolution[j];
-		if(i == m_numConstraints)
-		{
-			Msg("Objective = %g; basis:",flRes);
-			for (int j = 0; j < m_numVariables; ++j)
-				Msg(" %g", m_pSolution[j]);
-			Msg(" |slacks:");
-			for(int j = 0; j < m_numConstraints; ++j)
-				Msg(" %g", m_pSolution[j+m_numVariables]);
-			Msg("\n");
-		}
-		else
-			Msg("%g\t<= %g\n", flRes, GetInitialTableau(i,NumColumns()-1));
-	}
-#endif
 }
 
 

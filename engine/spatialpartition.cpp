@@ -729,11 +729,6 @@ void CVoxelHash::InsertIntoTree( SpatialPartitionHandle_t hPartition, Voxel_t vo
 			{
 				voxel.bitsVoxel.z = iZ;
 
-#if 0
-				// Debug!
-				RenderVoxel( voxel );
-#endif
-
 				// Entity list.
 				intp iEntity = m_aEntityList.Alloc( true );
 				m_aEntityList[iEntity].m_handle = hPartition;

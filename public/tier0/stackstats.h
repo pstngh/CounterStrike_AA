@@ -780,13 +780,6 @@ public:
 		SSMSL_Squirrel, //Only support squirrel for now, theoretically expandable to any vscript supported language
 	};
 
-#if 0 //embedded script handling not ready yet
-	//this is expected to write a piece of script code into the body of a function that will merge two values of this type
-	//The function will have two parameters, "mergeTo", and "mergeFrom". Both are tables with your field defined by name
-	//So, an example to merge an integer count defined as "foo" in the stack struct would look like this "mergeTo.foo += mergeFrom.foo\n"
-	virtual size_t DescribeMergeOperation( MergeScript_Language scriptLanguage, uint8 *pDescribeWriteBuffer, size_t iDescribeMaxLength ) = 0;
-#endif
-
 	//reserve your description field versions here to avoid stomping others
 	enum DescribeFieldVersions_t
 	{
@@ -856,9 +849,6 @@ class PLATFORM_CLASS BasicStatStructFieldDesc : public CallStackStatStructDescFu
 public:
 	BasicStatStructFieldDesc( BasicStatStructFieldTypes_t type, BasicStatStructFieldCombineMethods_t combineMethod ) : m_Type(type), m_Combine(combineMethod) {};
 	size_t DescribeField( uint8 *pDescribeWriteBuffer, size_t iDescribeMaxLength );
-#if 0 //embedded script handling not ready yet
-	size_t DescribeMergeOperation( MergeScript_Language scriptLanguage, uint8 *pDescribeWriteBuffer, size_t iDescribeMaxLength );
-#endif
 
 	BasicStatStructFieldTypes_t m_Type;
 	BasicStatStructFieldCombineMethods_t m_Combine;	

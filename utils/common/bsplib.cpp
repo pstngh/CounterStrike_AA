@@ -3198,13 +3198,6 @@ void WriteBSPFile( const char *filename, char *pUnused )
 	AddLump( LUMP_ORIGINALFACES, dorigfaces, numorigfaces );     // original faces lump
 
 	// NOTE: This is just for debugging, so it is disabled in release maps
-#if 0
-	// add the vis portals to the BSP for visualization
-	AddLump( LUMP_PORTALS, dportals, numportals );
-	AddLump( LUMP_CLUSTERS, dclusters, numclusters );
-	AddLump( LUMP_PORTALVERTS, dportalverts, numportalverts );
-	AddLump( LUMP_CLUSTERPORTALS, dclusterportals, numclusterportals );
-#endif
 
 	AddGameLumps();
 
@@ -5201,118 +5194,6 @@ int ComputeLightmapPrefixSize( dface_t *pFace )
 void StripUnusedLightmapAlphaData()
 {
 // 7LS CSM's now working on console => we need the lightmap alpha data
-#if 0
-	if ( ( g_LevelFlags & LVLFLAGS_LIGHTMAP_ALPHA ) == 0 )
-	{
-		// not applicable, this map does not have the extra data
-		return;
-	}
-
-	if ( g_pBSPHeader->lumps[LUMP_FACES_HDR].filelen == 0 || g_pBSPHeader->lumps[LUMP_LIGHTING_HDR].filelen == 0 )
-	{
-		// only care about fixing shipping maps built properly for HDR
-		// expected data is missing, nothing to do
-		return;
-	}
-	
-	// get the texinfo
-	texinfo_t *pTexInfos = (texinfo_t *)malloc( g_pBSPHeader->lumps[LUMP_TEXINFO].filelen );
-	CopyLumpInternal( LUMP_TEXINFO, pTexInfos, g_pBSPHeader->lumps[LUMP_TEXINFO].version );
-
-	// get the current lighting
-	int nOldTotalLightmapSize = g_pBSPHeader->lumps[LUMP_LIGHTING_HDR].filelen;
-	byte *pOldLightingBase = (byte *)malloc( nOldTotalLightmapSize );
-	CopyLumpInternal( FIELD_CHARACTER, LUMP_LIGHTING_HDR, pOldLightingBase, g_pBSPHeader->lumps[LUMP_LIGHTING_HDR].version );
-	
-	// create new lighting data
-	// the new lighting data can only be the same size or smaller
-	byte *pNewLightingBase = (byte *)malloc( g_pBSPHeader->lumps[LUMP_LIGHTING_HDR].filelen );
-	memset( pNewLightingBase, 0, g_pBSPHeader->lumps[LUMP_LIGHTING_HDR].filelen );
-	byte *pNewLighting = pNewLightingBase;
-
-	// there is no guarantee that the face order has anything to do with their luxel placement
-	// the face order will remain unchanged, but the relevant luxels will be gathered and re-serialized
-	dface_t *pFaces = (dface_t *)malloc( g_pBSPHeader->lumps[LUMP_FACES_HDR].filelen );
-	int nNumFaces = CopyLumpInternal( LUMP_FACES_HDR, pFaces, g_pBSPHeader->lumps[LUMP_FACES_HDR].version );
-	int nTotalNewLightmapSize = 0;
-	for ( int i = 0; i < nNumFaces; i++ )
-	{
-		// matches the logic in modelloader.cpp
-		int nLightmapSize = ComputeLightmapSize( &pFaces[i], pTexInfos );
-
-		// there are prefix bytes (avgcolors) stored prior to the lighting offset
-		int nLightmapPrefixSize = ComputeLightmapPrefixSize( &pFaces[i] );
-
-		if ( nLightmapSize )
-		{
-			if ( nTotalNewLightmapSize + nLightmapPrefixSize + nLightmapSize > nOldTotalLightmapSize )
-			{
-				// very bad, unexpected misalignment of data
-				// would have caused memory corruption
-				Error( "StripUnusedLightmapAlphaData: lightmap size:%d at offset:%d on face:%d causes an unexpected inflation past %d bytes\n", nLightmapSize, pFaces[i].lightofs, i, nOldTotalLightmapSize );
-			}
-			else
-			{
-				// transfer the prefix avgcolor data
-				memcpy( pNewLighting, pOldLightingBase + pFaces[i].lightofs - nLightmapPrefixSize, nLightmapPrefixSize );
-				pNewLighting += nLightmapPrefixSize;
-
-				// advance past the avgcolor prefix data, all other code expects to BACK up to get to it
-				nTotalNewLightmapSize += nLightmapPrefixSize;
-
-				// transfer the luxels
-				memcpy( pNewLighting, pOldLightingBase + pFaces[i].lightofs, nLightmapSize );
-				pNewLighting += nLightmapSize;
-
-				// update (in place) to the packed new luxel offset
-				// this face's prior luxels will not be revisited, so update is destructive
-				pFaces[i].lightofs = nTotalNewLightmapSize;
-
-				// advance past the luxels
-				nTotalNewLightmapSize += nLightmapSize;
-			}
-		}
-	}
-
-	free( pOldLightingBase );
-	free( pTexInfos );
-
-	// can't distort unexpected use of helper functions
-	g_Lumps.bLumpParsed[LUMP_LIGHTING_HDR] = false;
-	g_Lumps.bLumpParsed[LUMP_TEXINFO] = false;
-	g_Lumps.bLumpParsed[LUMP_FACES_HDR] = false;
-
-	if ( nTotalNewLightmapSize < nOldTotalLightmapSize )
-	{
-		// update the lumps
-		Msg( "Strip unused lightmap data removed %s.\n", V_pretifymem( nOldTotalLightmapSize - nTotalNewLightmapSize, 2, true ) );
-
-		// altered faces
-		g_Lumps.size[LUMP_FACES_HDR] = g_pBSPHeader->lumps[LUMP_FACES_HDR].filelen;
-		if ( g_Lumps.pLumps[LUMP_FACES_HDR] )
-		{
-			free( g_Lumps.pLumps[LUMP_FACES_HDR] );
-			g_Lumps.pLumps[LUMP_FACES_HDR] = NULL;
-		}
-		g_Lumps.pLumps[LUMP_FACES_HDR] = pFaces;
-		g_Lumps.bLumpFixed[LUMP_FACES_HDR] = true;
-
-		// altered lighting
-		g_Lumps.size[LUMP_LIGHTING_HDR] = nTotalNewLightmapSize;
-		if ( g_Lumps.pLumps[LUMP_LIGHTING_HDR] )
-		{
-			free( g_Lumps.pLumps[LUMP_LIGHTING_HDR] );
-			g_Lumps.pLumps[LUMP_LIGHTING_HDR] = NULL;
-		}
-		g_Lumps.pLumps[LUMP_LIGHTING_HDR] = pNewLightingBase;
-		g_Lumps.bLumpFixed[LUMP_LIGHTING_HDR] = true;
-	}
-	else
-	{
-		free( pNewLightingBase );
-		free( pFaces );
-	}
-#endif
 }
 
 int AlignBuffer( CUtlBuffer &buffer, int alignment )

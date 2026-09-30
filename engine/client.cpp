@@ -2053,37 +2053,6 @@ void CClientState::FinishSignonState_New()
 	COM_TimestampedLog( "CL_InstallAndInvokeClientStringTableCallbacks" );
 	CL_InstallAndInvokeClientStringTableCallbacks();
 	
-#if 0
-
-	// HACK!!!!  For use only on PC not yet using a whitelist!
-	// install hooks
-	if ( IsPC() && 	( m_nMaxClients > 1 ) )
-	{
-		m_pModelPrecacheTable->SetStringChangedCallback( NULL, Callback_ModelChanged );
-
-		int nTableCount = m_StringTableContainer->GetNumTables();
-		for ( int iTable =0; iTable < nTableCount; ++iTable )
-		{
-			// iterate through server tables
-			CNetworkStringTable *pTable = (CNetworkStringTable*)m_StringTableContainer->GetTable( iTable );
-			if ( !pTable )
-				continue;
-
-			pfnStringChanged pCallbackFunction = pTable->GetCallback();
-			if ( pCallbackFunction )
-				for ( int iString = 0; iString < pTable->GetNumStrings(); ++iString )
-				{
-					int userDataSize;
-					const void *pUserData = pTable->GetStringUserData( iString, &userDataSize );
-					(*pCallbackFunction)( NULL, pTable, iString, pTable->GetString( iString ), pUserData );
-				}
-		}
-
-		materials->CacheUsedMaterials();
-	}
-
-#endif
-
 	COM_TimestampedLog( "materials->CacheUsedMaterials" );
 
 	materials->CacheUsedMaterials();

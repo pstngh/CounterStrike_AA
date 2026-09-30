@@ -265,13 +265,8 @@ private:
 	CNetworkVector( m_vecSpecifiedSurroundingMaxs );
 
 	// Cached off world-aligned surrounding bounds
-#if 0
-	short	m_surroundingMins[3];
-	short	m_surroundingMaxs[3];
-#else
 	Vector	m_vecSurroundingMins;
 	Vector	m_vecSurroundingMaxs;
-#endif
 
 	// pointer to the entity's physics object (vphysics.dll)
 	//IPhysicsObject	*m_pPhysicsObject;

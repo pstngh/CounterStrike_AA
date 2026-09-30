@@ -65,24 +65,12 @@ int CWorkThread::Run()
 
 	OnStart();
 
-#if 0 // need to port over new vprof code
-#if defined( VPROF_ENABLED )
-	CVProfile *pProfile = GetVProfProfileForCurrentThread();
-#endif
-#endif
-
 	CWorkThreadPool *pPool = m_pThreadPool;
 
 	int nIterations = 0;
 	const int nMaxFastIterations = 4;
 	while ( !m_bExitThread )
 	{
-#if 0 // game vprof doesn't yet support TLS'd vprof instances, until new vprof code is ported
-#if defined( VPROF_ENABLED )
-		if ( pProfile )
-			pProfile->MarkFrame( GetName() );
-#endif
-#endif
 		pPool->m_cActiveThreads++;
 
 		nIterations = 0;
@@ -92,9 +80,6 @@ int CWorkThread::Run()
 			CWorkItem *pWorkItem = pPool->GetNextWorkItemToProcess( );
 			while ( pWorkItem )
 			{
-#if 0
-				pPool->m_StatWaitTime.Update( pWorkItem->WaitingTime() );
-#endif
 				if ( pWorkItem->HasTimedOut() )
 				{
 					pWorkItem->m_bCanceled = true;
@@ -112,9 +97,6 @@ int CWorkThread::Run()
 					fastTimer.End();
 					CCycleCount cycleCount = fastTimer.GetDuration();
 					pWorkItem->SetCycleCount(cycleCount);
-#if 0
-					pPool->m_StatExecutionTime.Update( cycleCount.GetUlMicroseconds() );
-#endif
 					if ( bSuccess )
 						pPool->m_cSuccesses ++;
 					else
@@ -148,12 +130,6 @@ int CWorkThread::Run()
 					pWorkItem = NULL;
 				}
 
-#if 0 // game vprof doesn't yet support TLS'd vprof instances, until new vprof code is ported
-#if defined( VPROF_ENABLED )
-				if ( pProfile && pWorkItem )
-					pProfile->MarkFrame( GetName() );
-#endif
-#endif
 			}
 
 			if ( m_bExitThread )
@@ -201,10 +177,6 @@ int CWorkThread::Run()
 //-----------------------------------------------------------------------------
 CWorkThreadPool::CWorkThreadPool( const char *pszThreadName )
  :	
-#if 0
-    m_StatWaitTime( 100 ),
-	m_StatExecutionTime( 100 ),
-#endif
 	m_bThreadsInitialized( false ),
 	m_cThreadsRunning( 0 ),
 	m_cActiveThreads( 0 ),
@@ -279,20 +251,6 @@ CWorkThreadPool::~CWorkThreadPool()
 	delete m_pTSQueueToProcess;
 	delete m_pTSQueueCompleted;
 }
-
-
-#if 0
-//-----------------------------------------------------------------------------
-// Purpose:	estimate the current backlog time using previous execution time,
-//			the number of outstanding items, and the number of running threads
-//-----------------------------------------------------------------------------
-uint64 CWorkThreadPool::GetCurrentBacklogTime() const
-{
-	if ( m_WorkThreads.Count() == 0 )
-		return 0;
-	return ( m_pTSQueueToProcess->Count() * m_StatExecutionTime.GetUlAvg() ) / m_WorkThreads.Count();
-}
-#endif
 
 
 int CWorkThreadPool::AddWorkThread( CWorkThread *pThread ) 
@@ -741,10 +699,6 @@ void CWorkThreadPool::Validate( CValidator &validator, const char *pchName )
 		m_WorkThreads[ iWorkThread ]->Resume();
 	}
 
-#if 0
-	ValidateObj( m_StatExecutionTime );
-	ValidateObj( m_StatWaitTime );
-#endif
 }
 #endif // DBGFLAG_VALIDATE
 

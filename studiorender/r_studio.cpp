@@ -324,19 +324,6 @@ void ComputePoseToWorld( matrix3x4_t *pPoseToWorld, studiohdr_t *pStudioHdr, int
 		}
 	}
 
-#if 0
-			// These don't seem to be used in any existing QC file, re-enable in a future project?
-			// Pretransform
-			if( !( pCurBone->flags & ( BONE_SCREEN_ALIGN_SPHERE | BONE_SCREEN_ALIGN_CYLINDER )))
-			{
-				ConcatTransforms( pBoneToWorld[ i ], pCurBone->poseToBone, pPoseToWorld[ i ] );
-			}
-			else 
-			{
-				// If this bone is screen aligned, then generate a PoseToWorld matrix that billboards the bone
-				ScreenAlignBone( &pPoseToWorld[i], pCurBone, vecViewOrigin, pBoneToWorld[i] );
-			} 	
-#endif
 }
 
 //-----------------------------------------------------------------------------

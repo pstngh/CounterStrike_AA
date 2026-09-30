@@ -1423,26 +1423,6 @@ void CCSPlayer::FireBullet(
 
 	//Adrian: visualize server/client player positions
 	//This is used to show where the lag compesator thinks the player should be at.
-#if 0 
-	for ( int k = 1; k <= gpGlobals->maxClients; k++ )
-	{
-		CBasePlayer *clientClass = (CBasePlayer *)CBaseEntity::Instance( k );
-
-		if ( clientClass == NULL ) 
-			 continue;
-
-		if ( k == entindex() ) 
-			 continue;
-
-#ifdef CLIENT_DLL
-		debugoverlay->AddBoxOverlay( clientClass->GetAbsOrigin(), clientClass->WorldAlignMins(), clientClass->WorldAlignMaxs(), QAngle( 0, 0, 0), 255,0,0,127, 4 );
-#else
-		NDebugOverlay::Box( clientClass->GetAbsOrigin(), clientClass->WorldAlignMins(), clientClass->WorldAlignMaxs(), 0,0,255,127, 4 );
-#endif
-
-	}
-
-#endif
 
 #ifndef CLIENT_DLL
 	// [pfreese] Track number player entities killed with this bullet

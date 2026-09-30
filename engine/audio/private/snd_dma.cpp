@@ -2877,11 +2877,6 @@ bool SND_IsLongWave( const channel_t *pChannel )
 			return true;
 
 	// UNDONE: Do this on long wave files too?
-#if 0
-		float length = (float)pSource->SampleCount() / (float)pSource->SampleRate();
-		if ( length > 0.75f )
-			return true;
-#endif
 	}
 
 	return false;
@@ -6382,11 +6377,6 @@ inline void ChannelStopVolXfade( channel_t *pch, int ivol )
 }
 
 // Once the correct parameters are determined, we can bake them in if we want (and if there is a noticeable performance overhead)
-#if 0
-#define	VOL_XFADE_TIME	0.070	
-#define VOL_INCR_MAX	20.0
-#define VOL_NO_XFADE	5.0
-#else
 ConVar snd_vol_xfade_time( "snd_vol_xfade_time", "0.070", 0, "Channel volume cross-fade time in seconds." );
 ConVar snd_vol_xfade_incr_max( "snd_vol_xfade_incr_max", "20.0", 0, "Never change volume by more than +/-N units per frame during cross-fade." );
 ConVar snd_vol_no_xfade( "snd_vol_no_xfade", "5.0", 0, "If current and target volumes are close, don't cross-fade." );
@@ -6395,7 +6385,6 @@ ConVar snd_vol_xfade_speed_multiplier_for_doppler( "snd_vol_xfade_speed_multipli
 #define	VOL_XFADE_TIME	snd_vol_xfade_time.GetFloat()
 #define VOL_INCR_MAX	snd_vol_xfade_incr_max.GetFloat()
 #define VOL_NO_XFADE	snd_vol_no_xfade.GetFloat()
-#endif
 
 // set volume target and volume increment (for crossfade) for channel & speaker
 void ChannelSetVolTarget( channel_t *pch, int ivol, float volume_target )
@@ -7387,22 +7376,6 @@ int S_StartSoundEntry( StartSoundParams_t &pStartParams, int nSeed, bool bFromPr
 
 	// Try to deduce the actor's gender
 	gender_t gender = GENDER_NONE;
-#if 0
-// 
-// 	IClientEntity *pClientEntity = NULL;
-// 	if ( entitylist )
-// 	{
-// 		pClientEntity = entitylist->GetClientEntity( pStartParams.soundsource );
-// 		if ( pClientEntity )
-// 		{
-// 			char const *actorModel = STRING( pClientEntity->GetModelName() );
-// 			if( actorModel )
-// 			{
-// 				gender = g_pSoundEmitterSystem->GetActorGender( actorModel );
-// 			}
-// 		}
-// 	}
-#endif
 
 	pStartParams.m_pSoundEntryName = g_pSoundEmitterSystem->GetSoundNameForHash( pStartParams.m_nSoundScriptHash );
 
@@ -7455,10 +7428,6 @@ int S_StartSoundEntry( StartSoundParams_t &pStartParams, int nSeed, bool bFromPr
 
 	}
 
-
-#if 0
-	S_CompareSoundParams( pStartParams , pScriptParams );
-#endif
 
 	// only block and execute start stack if an actual "start" message
 	if ( !( pStartParams.flags & SND_STOP || 

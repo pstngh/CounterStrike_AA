@@ -1304,38 +1304,6 @@ const mstudioiklock_t &CStudioHdr::pIKAutoplayLock( int i )
 	return *pStudioHdr->pLocalIKAutoplayLock( m_pVModel->m_iklock[i].index );
 }
 
-#if 0
-int	CStudioHdr::CountAutoplaySequences() const
-{
-	int count = 0;
-	for (int i = 0; i < GetNumSeq(); i++)
-	{
-		mstudioseqdesc_t &seqdesc = pSeqdesc( i );
-		if (seqdesc.flags & STUDIO_AUTOPLAY)
-		{
-			count++;
-		}
-	}
-	return count;
-}
-
-int	CStudioHdr::CopyAutoplaySequences( unsigned short *pOut, int outCount ) const
-{
-	int outIndex = 0;
-	for (int i = 0; i < GetNumSeq() && outIndex < outCount; i++)
-	{
-		mstudioseqdesc_t &seqdesc = pSeqdesc( i );
-		if (seqdesc.flags & STUDIO_AUTOPLAY)
-		{
-			pOut[outIndex] = i;
-			outIndex++;
-		}
-	}
-	return outIndex;
-}
-
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose:	maps local sequence bone to global bone
 //-----------------------------------------------------------------------------

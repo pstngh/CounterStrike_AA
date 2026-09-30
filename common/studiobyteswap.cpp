@@ -1778,15 +1778,6 @@ int ByteswapMDL( void *pDestBase, int destBaseSize, const void *pSrcBase, const 
 		int destnameindex = SrcNative( &pTexture->sznameindex ) + nameOffset;
 		pTextureDest->sznameindex = DestNative( &destnameindex );
 		char *pName = (char*)pTexture + SrcNative( &pTexture->sznameindex );
-#if 0 // Undone: Killing textures here can cause crashes at runtime.
-		// Don't need pupil textures 
- 		if ( Q_stristr( pName, "pupil_" ) || !Q_stricmp( pName, "pupil" ) )
- 		{
- 			--textureCt;
- 			nameOffset += sizeof(mstudiotexture_t);
- 		}
- 		else
-#endif
 		{
 			++pTextureDest;
 		}

@@ -1990,20 +1990,6 @@ QuadBarycentricRetval_t PointInQuadToBarycentric( const Vector &v1, const Vector
 
 		return QuadWithParallelEdges( v1, vecUAvg, fLengthUAvg, vecVAvg, fLengthVAvg, point, uv );
 
-#if 0
-		// legacy code -- kept here for completeness!
-
-		// not a quadratic -- solve linearly
-		t = C / negB;
-
-		// See (1.2) above
-		float ui = axisU[0][projAxes[0]] + t * ( axisU[1][projAxes[0]] - axisU[0][projAxes[0]] );
-		if( FloatMakePositive( ui ) >= 1e-5 )
-		{
-			// See (1.0) above
-			s = ( point[projAxes[0]] - v1[projAxes[0]] - axisV[0][projAxes[0]] * t ) / ui;
-		}
-#endif
 	}
 	else
 	{
@@ -2908,60 +2894,6 @@ bool IsBoxIntersectingTriangle( const Vector &vecBoxCenter, const Vector &vecBox
 }
 
 // NOTE: JAY: This is untested code based on Real-time Collision Detection by Ericson
-#if 0
-Vector CalcClosestPointOnTriangle( const Vector &P, const Vector &v0, const Vector &v1, const Vector &v2 )
-{
-	Vector e0 = v1 - v0;
-	Vector e1 = v2 - v0;
-	Vector p0 = P - v0;
-
-	// voronoi region of v0
-	float d1 = DotProduct( e0, p0 );
-	float d2 = DotProduct( e1, p0 );
-	if (d1 <= 0.0f && d2 <= 0.0f)
-		return v0;
-
-	// voronoi region of v1
-	Vector p1 = P - v1;
-	float d3 = DotProduct( e0, p1 );
-	float d4 = DotProduct( e1, p1 );
-	if (d3 >=0.0f && d4 <= d3)
-		return v1;
-
-	// voronoi region of e0 (v0-v1)
-	float ve2 = d1*d4 - d3*d2;
-	if ( ve2 <= 0.0f && d1 >= 0.0f && d3 <= 0.0f )
-	{
-		float v = d1 / (d1-d3);
-		return v0 + v * e0;
-	}
-	// voronoi region of v2
-	Vector p2 = P - v2;
-	float d5 = DotProduct( e0, p2 );
-	float d6 = DotProduct( e1, p2 );
-	if (d6 >= 0.0f && d5 <= d6)
-		return v2;
-	// voronoi region of e1
-	float ve1 = d5*d2 - d1*d6;
-	if (ve1 <= 0.0f && d2 >= 0.0f && d6 >= 0.0f)
-	{
-		float w = d2 / (d2-d6);
-		return v0 + w * e1;
-	}
-	// voronoi region on e2
-	float ve0 = d3*d6 - d5*d4;
-	if ( ve0 <= 0.0f && (d4-d3) >= 0.0f && (d5-d6) >= 0.0f )
-	{
-		float w = (d4-d3)/((d4-d3) + (d5-d6));
-		return v1 + w * (v2-v1);
-	}
-	// voronoi region of v0v1v2 triangle
-	float denom = 1.0f / (ve0+ve1+ve2);
-	float v = ve1*denom;
-	float w = ve2 * denom;
-	return v0 + e0 * v + e1 * w;
-}
-#endif
 
 
 bool OBBHasFullyContainedIntersectionWithQuad( const Vector &vOBBExtent1_Scaled, const Vector &vOBBExtent2_Scaled, const Vector &vOBBExtent3_Scaled, const Vector &ptOBBCenter,

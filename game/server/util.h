@@ -179,16 +179,6 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return ( sz1 == sz2 || stricmp(sz1, sz2) == 0 );
 }
 
-#if 0
-// UNDONE: Remove/alter MAKE_STRING so we can do this?
-inline bool FStrEq( string_t str1, string_t str2 )
-{
-	// now that these are pooled, we can compare them with 
-	// integer equality
-	return str1 == str2;
-}
-#endif
-
 const char *nexttoken(char *token, const char *str, char sep);
 
 // Misc. Prototypes

@@ -3308,16 +3308,6 @@ static bool GlowEffectGunGameLeader( C_CSPlayer* thisPlayer, C_CSPlayer* pLocalP
 	if ( team->GetGGLeader( nTeam ) != thisPlayer->entindex() )
 		return false;
 
-#if 0
-	// if this player hasn't fired for a while, they don't glow
-	// (REMOVED)
-	if ( thisPlayer->m_flLastFiredWeaponTime > 0 )
-	{
-		if ( gpGlobals->curTime > ( thisPlayer->m_flLastFiredWeaponTime + 4.0f ) )
-			return false;
-	}
-#endif
-
 	// if the player is at gold knife level, they don't glow
 	int nMaxIndex = CSGameRules()->GetNumProgressiveGunGameWeapons( nTeam ) - 1;
 	if ( thisPlayer->m_iGunGameProgressiveWeaponIndex >= nMaxIndex )

@@ -28,44 +28,6 @@ static inline fltx4 LoadSIMD( float flR0, float flR1, float flR2, float flR3 )
 }
 
 // scalar implemetation
-#if 0
-void SimpleFilter_ProcessBuffer( float flSamples[MIX_BUFFER_SIZE], float flOutput[MIX_BUFFER_SIZE], filterstate_t *pFilter )
-{
-	float x1 = pFilter->m_flFIRState[0];
-	float x2 = pFilter->m_flFIRState[1];
-	float y1 = pFilter->m_flIIRState[0];
-	float y2 = pFilter->m_flIIRState[1];
-	float sample, out;
-
-	float fir0 = pFilter->m_flFIRCoeff[0];
-	float fir1 = pFilter->m_flFIRCoeff[1];
-	float fir2 = pFilter->m_flFIRCoeff[2];
-	float iir0 = -pFilter->m_flIIRCoeff[0];
-	float iir1 = -pFilter->m_flIIRCoeff[1];
-	for ( int i = 0; i < MIX_BUFFER_SIZE; i++ )
-	{
-		sample = flSamples[i];
-		// FIR part of the filter
-		out = fir0 * sample + fir1 * x1 + fir2 * x2;
-		// IIR part of the filter
-		out += iir0 * y1 + iir1 * y2;
-		// write FIR delay line of input
-		x2 = x1;
-		x1 = sample;
-
-		// write IIR delay line of output
-		y2 = y1;
-		y1 = out;
-		// write filtered sample
-		flOutput[i] = out;
-	}
-	// write state back to the filter
-	pFilter->m_flFIRState[0] = x1;
-	pFilter->m_flFIRState[1] = x2;
-	pFilter->m_flIIRState[0] = y1;
-	pFilter->m_flIIRState[1] = y2;
-}
-#endif
 
 void SimpleFilter_ProcessFIR4( const float flSamples[MIX_BUFFER_SIZE], float flOutput[MIX_BUFFER_SIZE], filterstate_t *pFilter )
 {

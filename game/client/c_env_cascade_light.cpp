@@ -1298,12 +1298,6 @@ void CCascadeLightManager::RenderViews( CCascadeLightManager::CFullCSMState &sta
 {
 	SunLightState_t &lightState = state.m_CSMParallelSplit.GetLightState();
 	
-#if 0
-	VMatrix computedWorldToView;
-	VMatrix computedViewToProj;
-	VMatrix computedWorldToProj;
-#endif
-
 	uint nCascadeIndex = 0;
     if( IsGameConsole() )
 	{
@@ -1374,10 +1368,6 @@ void CCascadeLightManager::RenderViews( CCascadeLightManager::CFullCSMState &sta
 
 		// Set depth bias factors specific to this cascade
 		
-#if 0		
-		float flShadowSlopeScaleDepthBias = g_pMaterialSystemHardwareConfig->GetShadowSlopeScaleDepthBias();
-		float flShadowDepthBias = g_pMaterialSystemHardwareConfig->GetShadowDepthBias();
-#else
 		static ConVar *s_csm_slopescales[4] = { &cl_csm_slopescaledepthbias_c0, &cl_csm_slopescaledepthbias_c1, &cl_csm_slopescaledepthbias_c2, &cl_csm_slopescaledepthbias_c3 };
 		static ConVar *s_csm_depthbias[4] = { &cl_csm_depthbias_c0, &cl_csm_depthbias_c1, &cl_csm_depthbias_c2, &cl_csm_depthbias_c3 };
 				
@@ -1389,7 +1379,6 @@ void CCascadeLightManager::RenderViews( CCascadeLightManager::CFullCSMState &sta
 			flShadowSlopeScaleDepthBias = cl_csm_viewmodel_slopescaledepthbias.GetFloat();
 			flShadowDepthBias = cl_csm_viewmodel_depthbias.GetFloat();
 		}
-#endif
 
 		pRenderContext->PerpareForCascadeDraw( nCascadeIndex, flShadowSlopeScaleDepthBias, flShadowDepthBias );
 		pRenderContext->SetShadowDepthBiasFactors( flShadowSlopeScaleDepthBias, flShadowDepthBias );
@@ -1410,48 +1399,6 @@ void CCascadeLightManager::RenderViews( CCascadeLightManager::CFullCSMState &sta
 
 		shadowView.m_pCSMVolumeCuller = &volumeCuller;
 
-#if 0
-		// Purely for debugging.
-		shadowView.m_bCustomViewMatrix = false;
-		shadowView.m_bCustomProjMatrix = false;
-
-		shadowView.ComputeViewMatrices( &computedWorldToView, &computedViewToProj, &computedWorldToProj );
-
-		if ( cl_csm_use_forced_view_matrices.GetBool() )
-		{
-			shadowView.m_bCustomViewMatrix = true;
-			shadowView.m_bCustomProjMatrix = true;
-		}
-
-		Vector currentViewForward, currentViewRight, currentViewUp;
-		AngleVectors( shadowView.angles, &currentViewForward, &currentViewRight, &currentViewUp );
-
-		// Now compute the culling planes the same way as CRender::OrthoExtractFrustumPlanes() does, so they can be manually 
-		// compared against the planes the CSM manager computed. The game makes several assumptions about view and ortho projection space.
-		VPlane frustumPlanes[6];
-
-		float orgOffset = DotProduct(shadowView.origin, currentViewForward);
-		frustumPlanes[FRUSTUM_FARZ].m_Normal = -currentViewForward;
-		frustumPlanes[FRUSTUM_FARZ].m_Dist = -shadowView.zFar - orgOffset;
-
-		frustumPlanes[FRUSTUM_NEARZ].m_Normal = currentViewForward;
-		frustumPlanes[FRUSTUM_NEARZ].m_Dist = shadowView.zNear + orgOffset;
-
-		orgOffset = DotProduct(shadowView.origin, currentViewRight);
-		frustumPlanes[FRUSTUM_LEFT].m_Normal = currentViewRight;
-		frustumPlanes[FRUSTUM_LEFT].m_Dist = shadowView.m_OrthoLeft + orgOffset;
-
-		frustumPlanes[FRUSTUM_RIGHT].m_Normal = -currentViewRight;
-		frustumPlanes[FRUSTUM_RIGHT].m_Dist = -shadowView.m_OrthoRight - orgOffset;
-
-		orgOffset = DotProduct(shadowView.origin, currentViewUp);
-		frustumPlanes[FRUSTUM_TOP].m_Normal = currentViewUp;
-		frustumPlanes[FRUSTUM_TOP].m_Dist = shadowView.m_OrthoTop + orgOffset;
-
-		frustumPlanes[FRUSTUM_BOTTOM].m_Normal = -currentViewUp;
-		frustumPlanes[FRUSTUM_BOTTOM].m_Dist = -shadowView.m_OrthoBottom - orgOffset;
-#endif
-		
 		// Render to the shadow depth texture with appropriate view
 		
 		view->UpdateShadowDepthTexture( m_DummyColorTexture, m_ShadowDepthTexture, shadowView, true, bIncludeViewModels );

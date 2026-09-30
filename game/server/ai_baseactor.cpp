@@ -1371,14 +1371,9 @@ bool CAI_BaseActor::PickRandomLookTarget( AILookTargetArgs_t *pArgs )
 		}
 	
 		int iImportance;
-#if 0
-		// consider things in front to be more important than things to the sides
-		iImportance = (DotProduct( vLookTargetDir, HeadDirection3D() );
-#else
 		// No, for now, give all targets random priority (as long as they're in front)
 		iImportance = random->RandomInt( 1, 100 );
 		
-#endif
 		// make other npcs, and moving npc's far more important
 		if (pEntity->MyNPCPointer())
 		{

@@ -736,15 +736,6 @@ bool CShaderDeviceMgrDx8::ComputeCapsFromD3D( HardwareCaps_t *pCaps, int nAdapte
         pCaps->m_SupportsShaderModel_3_0 = true;
 	}
 
-#if 0
-	// Slam 3.0 shaders off for Intel
-	// Don't do this anymore on CS:GO because we require shader model 3.0, and there are Intel chipsets with decent SM3 support now.
-	if ( pCaps->m_VendorID == VENDORID_INTEL )
-	{
-		pCaps->m_SupportsShaderModel_3_0 = false;
-	}
-#endif
-
 	pCaps->m_MaxVertexShader30InstructionSlots = 0;
 	pCaps->m_MaxPixelShader30InstructionSlots  = 0;
 
@@ -1678,12 +1669,6 @@ int CShaderDeviceMgrDx8::GetVidMemBytes( int nAdapter ) const
 // Shader device
 //
 //-----------------------------------------------------------------------------
-
-#if 0
-// FIXME: Enable after I've separated it out from shaderapidx8 a little better
-static CShaderDeviceDx8 s_ShaderDeviceDX8;
-CShaderDeviceDx8* g_pShaderDeviceDx8 = &s_ShaderDeviceDX8;
-#endif
 
 #if defined( _GAMECONSOLE )
 IDirect3DDevice *m_pD3DDevice;

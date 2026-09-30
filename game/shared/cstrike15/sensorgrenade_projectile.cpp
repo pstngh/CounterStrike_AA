@@ -143,14 +143,12 @@ void CSensorGrenadeProjectile::SetTimer( float timer )
 
 void CSensorGrenadeProjectile::Think_Arm( void )
 {
-#if 1
 	if ( GetAbsVelocity().Length() > 0.2f )
 	{
 		// Still moving. Don't detonate yet.
 		SetNextThink( gpGlobals->curtime + 0.2f );
 		return;
 	}
-#endif // 0
 
 	m_fExpireTime = gpGlobals->curtime + 2.0f; // TODO: Make this Data Driven
 

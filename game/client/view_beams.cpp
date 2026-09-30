@@ -771,18 +771,6 @@ int CViewRenderBeams::CullBeam( const Vector &start, const Vector &end, int pvsO
 //-----------------------------------------------------------------------------
 Beam_t *CViewRenderBeams::CreateGenericBeam( BeamInfo_t &beamInfo )
 {
-#if 0
-	if ( BeamCreationAllowed() == false )
-	{
-		//NOTENOTE: If you've hit this, you may not add a beam where you have attempted to.
-		//			Most often this means that you have added it in an entity's DrawModel function.
-		//			Move this to the ClientThink function instead!
-
-		DevMsg( "ERROR: Beam created too late in frame!\n" );
-		Assert(0);
-		return NULL;
-	}
-#endif
 
 	Beam_t *pBeam = BeamAlloc( beamInfo.m_bRenderable );
 	if ( !pBeam )

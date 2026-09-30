@@ -1907,8 +1907,6 @@ void CNetChan::UpdateSubChannels()
 	}
 }
 
-#if 1
-
 unsigned short BufferToShortChecksum( const void *pvData, size_t nLength )
 {
 	CRC32_t crc = CRC32_ProcessSingleBuffer( pvData, nLength );
@@ -1918,38 +1916,6 @@ unsigned short BufferToShortChecksum( const void *pvData, size_t nLength )
 
 	return (unsigned short)( lowpart ^ highpart );
 }
-
-#else
-
-// If the CRC version ever is deemed to expensive, here's a quick xor version.
-//  It's probably not super robust.
-inline unsigned short BufferToShortChecksum( const void *pvData, size_t nSize )
-{
-	const uint32 *pData = (const uint32 *)pvData;
-
-	unsigned short us = 0;
-	while ( nSize >= sizeof( uint32 ) )
-	{
-		us ^= ( *pData & 0xffff );
-		us ^= ( ( *pData >> 16 ) & 0xffff );
-
-		nSize -= sizeof( uint32 );
-		pData += sizeof( uint32 );
-	}
-
-	const byte *pbData = (const byte *)pData;
-
-	while ( nSize > 0 )
-	{
-		us ^= *pbData;
-		++pbData;
-		--nSize;
-	}
-
-	return us;
-}
-
-#endif
 
 #define MIN_ROUTABLE_TESTING
 

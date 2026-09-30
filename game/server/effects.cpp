@@ -979,12 +979,6 @@ void CTestEffect::Think( void )
 		m_pBeam[m_iBeam] = pbeam;
 		m_iBeam++;
 
-#if 0
-		Vector vecMid = (vecSrc + tr.endpos) * 0.5;
-		CBroadcastRecipientFilter filter;
-		TE_DynamicLight( filter, 0.0,
-			vecMid, 255, 180, 100, 3, 2.0, 0.0 );
-#endif
 	}
 
 	if (t < 3.0)

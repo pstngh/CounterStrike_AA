@@ -1186,20 +1186,6 @@ void CViewRender::Render( vrect_t *rect )
 	// TODO: when embedded UI will be used for HUD, we will need it to maintain
 	// a separate screen for HUD and a separate screen stack for pause menu & main menu.
 	// for now only render embedded UI in pause menu & main menu
-#if defined( GAMEUI_UISYSTEM2_ENABLED ) && 0
-	BaseModUI::CBaseModPanel *pBaseModPanel = BaseModUI::CBaseModPanel::GetSingletonPtr();
-	// render the new-style embedded UI only if base mod panel is not visible (game-hud)
-	// otherwise base mod panel will render the embedded UI on top of video/productscreen
-	if ( !pBaseModPanel || !pBaseModPanel->IsVisible() )
-	{
-		Rect_t uiViewport;
-		uiViewport.x		= rect->x;
-		uiViewport.y		= rect->y;
-		uiViewport.width	= rect->width;
-		uiViewport.height	= rect->height;
-		g_pGameUIGameSystem->Render( uiViewport, gpGlobals->curtime );
-	}
-#endif
 
 	// Draw all of the UI stuff "fullscreen"
 	if ( true ) // For PIXEVENT

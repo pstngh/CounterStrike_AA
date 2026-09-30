@@ -3057,34 +3057,6 @@ void	GLMSetIndent( int indent )
 
 #endif
 
-#if 0 // defined in platform.h
-inline uint64 Plat_Rdtsc()
-{
-#if defined( _X360 )
-	return ( uint64 )__mftb32();
-#elif defined( _WIN64 )
-	return ( uint64 )__rdtsc();
-#elif defined( _WIN32 )
-  #if defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
-	return ( uint64 )__rdtsc();
-  #else
-    __asm rdtsc;
-	__asm ret;
-  #endif
-#elif defined( __i386__ )
-	uint64 val;
-	__asm__ __volatile__ ( "rdtsc" : "=A" (val) );
-	return val;
-#elif defined( __x86_64__ )
-	uint32 lo, hi;
-	__asm__ __volatile__ ( "rdtsc" : "=a" (lo), "=d" (hi));
-	return ( ( ( uint64 )hi ) << 32 ) | lo;
-#else
-	#error
-#endif
-}
-#endif
-
 // PIX tracking - you can call these outside of GLMDEBUG=true
 char sg_pPIXName[128];
 
@@ -3232,7 +3204,6 @@ public:
 
 				DbgPrintf("------- %1.20f\n", flDelta );
 
-#if 1
 				if ( flDelta < 0.0000005f )
 				{
 					flGPURatio += .000000125f;
@@ -3241,48 +3212,11 @@ public:
 				{
 					flGPURatio -= .000000125f;
 				}
-#else				
-				if ( flDelta < 0.0000005f )
-				{
-					flGPURatio += .0000000125f;
-				}
-				else if ( flDelta > 0.0000005f )
-				{
-					flGPURatio -= .0000000125f;
-				}
-#endif
 			}
 		}
 
 		m_flGPUToS *= flGPURatio;
 
-#if 0
-		// dump drift over time to debugger output
-		double flLatency = 0;
-		for ( ; ; )
-		{
-			// test
-			const uint64 nStartCPUTime = Plat_Rdtsc();
-
-			gGL->glQueryCounter( m_FreeQueryPool[0], GL_TIMESTAMP);
-
-			PipelineFlush();
-
-			GLint nAvailable;
-			do 
-			{ 
-				gGL->glGetQueryObjectiv( m_FreeQueryPool[0], GL_QUERY_RESULT_AVAILABLE, &nAvailable ); 
-			} while ( !nAvailable );
-
-			GLuint64 nGPUTime;
-			gGL->glGetQueryObjectui64v( m_FreeQueryPool[0], GL_QUERY_RESULT, &nGPUTime );
-
-			double flStartGPUTime = ( ( nGPUTime * m_flGPUToS ) + m_flGPUToCPUOffsetInS );
-
-			flLatency = flStartGPUTime - nStartCPUTime * m_flRdtscToS;
-			DbgPrintf("%f\n", flLatency );
-		}
-#endif
 	}
 
 	void Deinit()
@@ -4292,7 +4226,6 @@ void	CGLMEditableTextItem::GenMungedText( bool fromMirror )
 	}
 	else
 	{
-		#if 1
 			// we don't actually clone/munge any more.
 			if (m_mungedText)
 			{
@@ -4306,82 +4239,6 @@ void	CGLMEditableTextItem::GenMungedText( bool fromMirror )
 			
 			m_mungedSize = m_origSize;
 			
-		#else
-			// take pure 'orig' text that came in from the engine, and clone it
-			// do not clone the first line
-			char	temp[100000];
-			char	*dst = temp;
-			char	*lim = &temp[ sizeof(temp) ];
-			
-			// zero temp
-			memset( temp, 0, sizeof(temp) );
-
-			// write orig text to temp
-			if (m_origSize >= (sizeof(temp)/2) )
-			{
-				GLMDebugger();
-			}
-			
-			memcpy( dst, m_origText, m_origSize );
-			dst += m_origSize;
-			
-			// add a newline if the last character wasn't
-			if ( (*(dst-1)) != '\n' )
-			{
-				*dst++ = '\n';
-			}
-			
-			// walk orig text again and copy it over, with these caveats
-			// don't copy the first line
-			// insert a # before all the other lines.
-			char *src = temp;
-
-			// walk to end of first line
-			char *firstNewline = strchr( src, '\n' );
-			if (!firstNewline)
-			{
-				GLMDebugger();
-			}
-			else
-			{
-				// advance 'src' to that newline- we're not copying the !! line
-				src = firstNewline;
-			}
-
-			
-			// now walk the rest - insert a # after each newline
-			while( (dst < lim) && ((src-temp) < m_origSize) )
-			{
-				switch( *src )
-				{
-					case '\n':
-						*dst++ = *src++;
-						*dst++ = '#';
-						break;
-
-					default:
-						*dst++ = *src++;
-				}
-			}
-			if (dst >= lim)
-			{
-				GLMDebugger();
-			}
-			
-			// final newline
-			*dst++ = '\n';
-			
-			// copyout
-			if (m_mungedText)
-			{
-				free( m_mungedText );
-				m_mungedText = NULL;
-			}
-			
-			m_mungedSize = dst - temp;
-			m_mungedText = (char *)malloc( m_mungedSize );
-			memcpy( m_mungedText, temp, m_mungedSize );
-		#endif
 	}
 }
 

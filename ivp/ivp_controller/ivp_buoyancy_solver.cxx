@@ -818,12 +818,6 @@ void IVP_Buoyancy_Solver::compute_values_for_one_ball(const IVP_Real_Object *obj
     //fetch some ball related values
     IVP_Ball *ball = (IVP_Ball *) object;
 	
-#if 0
-    IVP_U_Point non_float_geom_center_ws;
-    IVP_U_Float_Point geom_center_ws;  //the mass(!!!!) center in world space
-    ball->get_geom_center_world_space(&non_float_geom_center_ws);
-    geom_center_ws.set(&non_float_geom_center_ws);
-#endif
     IVP_U_Float_Point geom_center_os; geom_center_os.set_to_zero();
     IVP_FLOAT radius = ball->get_radius();  //get radius of ball
 	
@@ -869,29 +863,6 @@ void IVP_Buoyancy_Solver::compute_values_for_one_ball(const IVP_Real_Object *obj
 	    }
 	}
     }
-	
-#if 0
-    P_IF(1) {
-	IVP_U_Float_Point geom_center_ws;
-	IVP_U_Float_Hesse surface_ws;
-	{
-	    IVP_Cache_Object *cache_object = object->get_cache_object();
-	    cache_object->transform_vector_to_world_coords(&geom_center_os, &geom_center_ws);
-	    cache_object->transform_vector_to_world_coords(surface_os, &surface_ws);
-	    cache_object->remove_reference();
-	}
-	//draw debug vectors to indicate surface (dirty!)
-	IVP_U_Point middle(geom_center_ws.k[0], -(surface_ws.hesse_val), geom_center_ws.k[2]);
-	IVP_U_Point vec1(-5.0f, 0.0f, 0.0f);
-	IVP_U_Point vec2(5.0f, 0.0f, 0.0f);
-	IVP_U_Point vec3(0.0f, 0.0f, 5.0f);
-	IVP_U_Point vec4(0.0f, 0.0f, -5.0f);
-	environment->add_draw_vector(&middle,&vec1,"",2);
-	environment->add_draw_vector(&middle,&vec2,"",2);
-	environment->add_draw_vector(&middle,&vec3,"",2);
-	environment->add_draw_vector(&middle,&vec4,"",2);
-    }
-#endif
 	
 	
     //compute buoyancy values
@@ -1008,10 +979,6 @@ void IVP_Buoyancy_Solver::compute_values_for_one_polygon( IVP_Real_Object *objec
     // finish the volume center computation
     if ( volume_under > buoyancy_eps )
 	volume_center_under.mult( 0.25f / volume_under );
-#if 0
-    if (volume_above > buoyancy_eps )
-	volume_center_above.mult( 1.0f / volume_above );
-#endif
 }
 
 
@@ -1125,24 +1092,6 @@ void IVP_Buoyancy_Solver::compute_volumes_and_centers_for_one_pyramid(IVP_Real_O
 	volume_center_under.add(&volume_center_pyramid);
     }
     break;
-#if 0
-    case 3: {//triangle is completely above the surface
-		
-	volume_pyramid_above = compute_pyramid_volume( triangle_points[0], triangle_points[1], triangle_points[2], &s_point );
-	volume_above += volume_pyramid_above;
-		
-	//compute the volume center of the pyramid
-	volume_center_pyramid.set(triangle_points[0]);
-	volume_center_pyramid.add(triangle_points[1]);
-	volume_center_pyramid.add(triangle_points[2]);
-	volume_center_pyramid.add(&s_point);
-	volume_center_pyramid.mult( 0.25f  * volume_pyramid_above);  //weight the volume center of this part of the object with its volume
-		
-	//save results to class variables
-	volume_center_above.add(&volume_center_pyramid);
-    }
-    break;
-#endif
     case 1: { //the vertex with index "index_neg" is above the surface
 
 	//compute the first disection point on the surface 

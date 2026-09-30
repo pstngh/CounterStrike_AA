@@ -888,40 +888,6 @@ void IVP_Constraint_Local::do_simulation_controller(IVP_Event_Sim *es,IVP_U_Vect
     }
 }
 
-#if 0
-void IVP_Constraint_Local::change_fixed_object(IVP_Real_Object *objR) {
-    // was wenn jetzt beide Objekte NULL werden?
-    // cores_of_constraint_system anpassen
-    if (objR) objR->ensure_in_simulation(); else m_Afs_f_Acs.object->ensure_in_simulation();
-    IVP_U_Matrix m_identity; m_identity.init();
-    const IVP_U_Matrix &m_ws_f_pRcs = m_Rfs_f_Rcs.object ? *m_Rfs_f_Rcs.object->get_core()->get_m_world_f_core_PSI() : m_identity;
-    const IVP_U_Matrix &m_ws_f_nRcs = objR ? *objR->get_core()->get_m_world_f_core_PSI() : m_identity;
-    m_Rfs_f_Rcs.object = objR;
-    if (m_Rfs_f_Rcs.rot) {
-	IVP_U_Matrix3 m_Rrs_f_ws; m_Rfs_f_Rcs.rot->mi2mult3(&m_ws_f_pRcs, &m_Rrs_f_ws);
-	m_Rrs_f_ws.mmult3(&m_ws_f_nRcs, m_Rfs_f_Rcs.rot);
-    }
-    IVP_U_Matrix m_Rfs_f_ws; m_Rfs_f_Rcs.mi2mult4(&m_ws_f_pRcs, &m_Rfs_f_ws);
-    m_Rfs_f_ws.mmult4(&m_ws_f_nRcs, &m_Rfs_f_Rcs);
-}
-
-void IVP_Constraint_Local::change_attached_object(IVP_Real_Object *objA) {
-    // was wenn jetzt beide Objekte NULL werden?
-    // cores_of_constraint_system anpassen
-    if (objA) objA->ensure_in_simulation(); else m_Rfs_f_Rcs.object->ensure_in_simulation();
-    IVP_U_Matrix m_identity; m_identity.init();
-    const IVP_U_Matrix &m_ws_f_pAcs = m_Afs_f_Acs.object ? *m_Afs_f_Acs.object->get_core()->get_m_world_f_core_PSI() : m_identity;
-    const IVP_U_Matrix &m_ws_f_nAcs = objA ? *objA->get_core()->get_m_world_f_core_PSI() : m_identity;
-    m_Afs_f_Acs.object = objA;
-    if (m_Afs_f_Acs.rot) {
-	IVP_U_Matrix3 m_Ars_f_ws; m_Afs_f_Acs.rot->mi2mult3(&m_ws_f_pAcs, &m_Ars_f_ws);
-	m_Ars_f_ws.mmult3(&m_ws_f_nAcs, m_Afs_f_Acs.rot);
-    }
-    IVP_U_Matrix m_Afs_f_ws; m_Afs_f_Acs.mi2mult4(&m_ws_f_pAcs, &m_Afs_f_ws);
-    m_Afs_f_ws.mmult4(&m_ws_f_nAcs, &m_Afs_f_Acs);
-}
-#endif
-
 void IVP_Constraint_Local::change_fixing_point_Ros(const IVP_U_Point *anchor) { // point_Ros_f_nRfs, point_nRfs_in_Ros
     if (m_Rfs_f_Rcs.object) m_Rfs_f_Rcs.object->ensure_in_simulation(); else m_Afs_f_Acs.object->ensure_in_simulation();
     IVP_U_Matrix m_Rcs_f_Ros; if (m_Rfs_f_Rcs.object) m_Rfs_f_Rcs.object->calc_m_core_f_object(&m_Rcs_f_Ros); else m_Rcs_f_Ros.init();

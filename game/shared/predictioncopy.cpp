@@ -1606,32 +1606,6 @@ FORCEINLINE int ComputeTypeMask( int nType )
 	return nType + 1;
 }
 
-#if 0 // Enable this for perf testing
-static ConVar cl_predictioncopy_runs( "cl_predictioncopy_runs", "1" );
-static ConVar cl_predictioncopy_repeats( "cl_predictioncopy_repeats", "1" );
-void CPredictionCopy::TransferDataCopyOnly( datamap_t *dmap )
-{
-	int repeat = cl_predictioncopy_repeats.GetInt();
-	for ( int k = 0; k < repeat; ++k )
-	{
-		int types = ComputeTypeMask( m_nType );
-		for ( int i = 0; i < PC_COPYTYPE_COUNT; ++i )
-		{
-			if ( types & (1<<i) )
-			{
-				if ( !cl_predictioncopy_runs.GetBool() )
-				{
-					CopyFlatFields( dmap, i );
-				}
-				else
-				{	
-					CopyFlatFieldsUsingRuns( dmap, i );
-				}
-			}
-		}
-	}
-}
-#else
 void CPredictionCopy::TransferDataCopyOnly( const datamap_t *dmap )
 {
 	int types = ComputeTypeMask( m_nType );
@@ -1643,7 +1617,6 @@ void CPredictionCopy::TransferDataCopyOnly( const datamap_t *dmap )
 		}
 	}
 }
-#endif
 
 // Stop at first error
 void CPredictionCopy::TransferDataErrorCheckNoSpew( char const *pchOperation, const datamap_t *dmap )

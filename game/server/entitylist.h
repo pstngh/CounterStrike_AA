@@ -244,41 +244,6 @@ inline CBaseEntity* CGlobalEntityList::GetBaseEntity( CBaseHandle hEnt ) const
 
 //-----------------------------------------------------------------------------
 // Common finds
-#if 0
-
-template <class ENT_TYPE>
-inline bool FindEntityByName( const char *pszName, ENT_TYPE **ppResult)
-{
-	CBaseEntity *pBaseEntity = gEntList.FindEntityByName( NULL, pszName );
-	
-	if ( pBaseEntity )
-		*ppResult = dynamic_cast<ENT_TYPE *>( pBaseEntity );
-	else
-		*ppResult = NULL;
-
-	return ( *ppResult != NULL );
-}
-
-template <>
-inline bool FindEntityByName<CBaseEntity>( const char *pszName, CBaseEntity **ppResult)
-{
-	*ppResult = gEntList.FindEntityByName( NULL, pszName );
-	return ( *ppResult != NULL );
-}
-
-template <>
-inline bool FindEntityByName<CAI_BaseNPC>( const char *pszName, CAI_BaseNPC **ppResult)
-{
-	CBaseEntity *pBaseEntity = gEntList.FindEntityByName( NULL, pszName );
-	
-	if ( pBaseEntity )
-		*ppResult = pBaseEntity->MyNPCPointer();
-	else
-		*ppResult = NULL;
-
-	return ( *ppResult != NULL );
-}
-#endif
 //-----------------------------------------------------------------------------
 // Purpose: Simple object for storing a list of objects
 //-----------------------------------------------------------------------------

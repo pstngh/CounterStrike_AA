@@ -318,80 +318,6 @@ IVP_FLOAT IVP_Friction_Solver::do_penalty_step( IVP_FLOAT *impulses, IVP_FLOAT *
     
     return sum_quad_pretension;
 }
-#if 0
-void IVP_Friction_Solver::do_penalty_method(IVP_Friction_System *fs){
-    IVP_FLOAT *impulses   = (IVP_FLOAT*)alloca( sizeof(IVP_FLOAT) * contact_info_vector.len());
-    IVP_FLOAT *pretension = (IVP_FLOAT*)alloca( sizeof(IVP_FLOAT) * contact_info_vector.len());
-    
-    // compress now_friction press into shorter array
-    for ( IVP_Contact_Point *fr_dist=fs->get_first_friction_dist();
-	  fr_dist;
-	  fr_dist = fs->get_next_friction_dist(fr_dist)){
-	IVP_Impact_Solver_Long_Term *info = fr_dist->get_lt();
-	int i = info->index_in_fs;
-	if (i<0) continue;
-	
-	IVP_DOUBLE desired_gap = ivp_mindist_settings.keeper_dist;
-	IVP_DOUBLE gap_diff = desired_gap - fr_dist->get_gap_length();
-	//desired_speed_to_close_gap[i] = gap_diff * es->i_delta_time;
-	pretension[i] = gap_diff * es->i_delta_time * 0.1f;
-	//impulses[i] = 0.0f;
-	impulses[i] = 0.5f * fr_dist->now_friction_pressure * es->delta_time;
-
-	//	IVP_DOUBLE delta_velocity = info->get_closing_speed();
-	//printf("%x %i old %f pressure %f\n", fr_dist, i, delta_velocity, impulses[i]);
-    }
-
-    IVP_IF(0){
-	for (int i = contact_info_vector.len()-1; i>=0;i--){
-	    IVP_Impact_Solver_Long_Term *info = contact_info_vector.element_at(i);
-	    IVP_DOUBLE delta_velocity = info->get_closing_speed();
-	    printf("%i old %f\n", i, delta_velocity);
-	}
-    }
-    
-    // first do old now friction pressures
-    for (int i = contact_info_vector.len()-1; i>=0;i--){
-	IVP_Impact_Solver_Long_Term *info = contact_info_vector.element_at(i);
-	IVP_DOUBLE push_val = impulses[i];
-	apply_impulse( info, push_val );
-    }
-
-    IVP_IF(0){
-	for (int i = contact_info_vector.len()-1; i>=0;i--){
-	    IVP_Impact_Solver_Long_Term *info = contact_info_vector.element_at(i);
-	    IVP_DOUBLE delta_velocity = info->get_closing_speed();
-	    printf("%i new %f\n", i, delta_velocity);
-	}
-    }
-    
-    // do the steps (max 50)
-    if (1){
-	//IVP_FLOAT max_sum_qdiff = 0.01f * 0.01f;
-	printf("penalty step: ");
-	for (int s = 10; s>=0; s--){
-	    IVP_FLOAT sum_qdiff = do_penalty_step( impulses, pretension, 0.5f, 0.9f );
-	    printf("%f ",sum_qdiff);
-	    //if (sum_qdiff < max_sum_qdiff) break;
-	};
-	printf("\n");
-    }
-    
-    { ; // uncompress now_friction_pressure
-	for ( IVP_Contact_Point *fr_dist=fs->get_first_friction_dist();
-	      fr_dist;
-	      fr_dist = fs->get_next_friction_dist(fr_dist)){
-	    IVP_Impact_Solver_Long_Term *info = fr_dist->get_lt();
-	    int i = info->index_in_fs;
-	    if (i<0){
-		fr_dist->now_friction_pressure = 0.0f;
-		continue;
-	    }
-	    fr_dist->now_friction_pressure = impulses[i] * es->i_delta_time;
-	}
-    }
-}
-#endif
 
 // fuer glaettung des complex
 void IVP_Friction_Solver::do_inactives_pushes(IVP_Friction_System *fs){
@@ -410,32 +336,6 @@ void IVP_Friction_Solver::do_inactives_pushes(IVP_Friction_System *fs){
 void IVP_Friction_Solver::debug_distance_after_push(int counter)
 {
     IVP_USE(counter);
-#if 0 /* muss noch umgeschrieben werden */   
-    IVP_Core *core0,*core1;
-    core0=cores_of_dist[counter*2];
-    core1=cores_of_dist[counter*2+1];
-    IVP_U_Float_Point speed_world0,speed_world1;
-
-    IVP_U_Float_Point rotation,translation;
-    rotation.set(&core0->rot_speed);
-    rotation.add(&core0->rot_speed_change);
-    translation.set(&core0->speed);
-    translation.add(&core0->speed_change);
-    core0->get_surface_speed_on_test(&obj_points_dist[counter*2],&translation,&rotation,&speed_world0);
-
-    rotation.set(&core1->rot_speed);
-    rotation.add(&core1->rot_speed_change);
-    translation.set(&core1->speed);
-    translation.add(&core1->speed_change);
-    core1->get_surface_speed_on_test(&obj_points_dist[counter*2+1],&translation,&rotation,&speed_world1);
-
-    speed_world1.subtract(&speed_world0);
-    IVP_DOUBLE new_dist_speed=speed_world1.dot_product(&dist_vector_world[counter]);
-    IVP_IF(environment->debug_information->debug_impact)
-    {
-	printf("dist_speed_d: distance %.5f  speed:  before %.5f  after %.5f dis_change %.5f\n",dist_len[counter],dist_velocity[counter],new_dist_speed,new_dist_speed-dist_velocity[counter]);
-    }
-#endif    
 }
 
 void IVP_Friction_Solver::complex_failed(IVP_Friction_System *fs) {
@@ -590,34 +490,9 @@ void IVP_Friction_System::test_hole_fr_system_data()
     IVP_Contact_Point *mindist=fs->get_first_friction_dist();
     if (!mindist) return;
     
-#if 0	
-    int startnumber;
-    {
-	startnumber=mindist->number_in_friction+1;
-	if(startnumber!=fs->friction_dist_number)
-	{
-	    printf("test_fr dist_number wrong\n");
-	    CORE;
-	}
-    }
-#endif	
     int two_count=0;
     while(mindist)
     {
-#if 0	
-	startnumber--;
-	if(startnumber<0)
-	{
-	    printf("test_fr number <0");
-	    CORE;
-	}
-
-	if(startnumber!=mindist->number_in_friction)
-	{
-	    printf("test_fr wrong number");
-	    CORE;
-	}
-#endif
 	for(int i=0;i<2;i++){
 	    IVP_Core *r_obj= mindist->get_synapse(i)->l_obj->friction_core;	    
 	    IVP_Real_Object *obj_obj=r_obj->objects.element_at(0);
@@ -698,29 +573,6 @@ void IVP_Friction_System::test_hole_fr_system_data()
     }
 }
 
-#if 0
-// doesnt work when a object has more than one friction system
-void check_fr_info_mindist(IVP_Friction_Solver *fsolv,IVP_Contact_Point *my_dist,int dist_counter_two)
-{
-    IVP_Real_Object *obj0=(IVP_Real_Object*)my_dist->synapse[0]->l_obj;
-    IVP_Real_Object *obj1=(IVP_Real_Object*)my_dist->synapse[1]->l_obj;
-
-    IVP_Friction_Info_For_Obj *fr_i;
-    fr_i=obj0->get_first_friction_info_of_obj();
-    if(fr_i!=fsolv->friction_infos[dist_counter_two])
-    {
-	printf("fr_info_damaged obj %lx\n",(long)obj0&0x0000ffff);
-	CORE;
-    }
-    fr_i=obj1->get_first_friction_info_of_obj();
-    if(fr_i!=fsolv->friction_infos[dist_counter_two+1])
-    {
-	printf("fr_info_damaged obj %lx\n",(long)obj1&0x0000ffff);
-	CORE;
-    }
-}
-#endif
-
 
 int global_friction_counter=0;
 
@@ -749,54 +601,6 @@ void IVP_Friction_Solver::setup_coords_mindists(IVP_Friction_System *fs)
 	info->index_in_fs = index_of_contact_point++;
     } // for all contact_points
 }
-
-
-#if 0
-	IVP_Synapse_Friction *syn0 = my_dist->get_synapse(0);
-	IVP_Synapse_Friction *syn1 = my_dist->get_synapse(1);
-
-	IVP_Friction_Solver_Data *frisodat=&frimindist_data[dist_counter_two];
-
-	frisodat->dist_vector_obj[0]=my_dist->tmp_contact_info->surface_normal_cs[0];
-	frisodat->dist_vector_obj[1]=my_dist->tmp_contact_info->surface_normal_cs[1];	
- 	frisodat->cores_of_dist[0]= syn0->l_obj->physical_core;
-	frisodat->cores_of_dist[1]= syn1->l_obj->physical_core;
-	
-	//vielleicht nicht die IVP_Friction_Info_For_Obj speichern sondern gleich den IVP_U_Vector der mindists
-	frisodat->friction_infos[0]=syn0->l_obj->friction_core->get_friction_info(fs);
-	frisodat->friction_infos[1]=syn1->l_obj->friction_core->get_friction_info(fs);
-
-	IVP_IF(0) {
-	    IVP_U_Float_Point space_pointer;
-	    IVP_U_Point world_points_dist[2];
-	    IVP_U_Matrix *mat;
-	    mat=&frisodat->cores_of_dist[0]->m_world_f_core_last_psi;
-	    mat->vmult4(&frisodat->contact_point_cs[0],&world_points_dist[0]);
-	    mat=&frisodat->cores_of_dist[1]->m_world_f_core_last_psi;
-	    mat->vmult4(&frisodat->contact_point_cs[1],&world_points_dist[1]);
-
-	    space_pointer.subtract(&world_points_dist[1],&world_points_dist[0]);
-	    char *out_text=p_make_string("d%d_%.1f",my_dist->has_negative_pull_since,my_dist->now_friction_pressure);
-	    syn0->l_obj->get_environment()->add_draw_vector(&world_points_dist[0],&space_pointer,out_text,1);
-	    P_FREE (out_text);
-	}
-
-	//IVP_U_Float_Point diff_vec_world; //vector of position difference. points from first synapse to second
-	//diff_vec_world.subtract(&world_points_dist[1],&world_points_dist[0]);
-	//frisodat->dist_len=diff_vec_world.fast_real_length();
-	frisodat->dist_len = my_dist->get_gap_length();
-	//diff_vec_world.normize();
-	//diff_vec_world.set(0.0f,1.0f,0.0f);
-	//printf("difff %f %f %f\n",diff_vec_world.k[0],diff_vec_world.k[1],diff_vec_world.k[2]);
-	//frisodat->dist_vector_world=diff_vec_world;
-
-	frisodat->dist_vector_world.set_multiple(&my_dist->get_lt()->surf_normal,+1.0f);
-	
-	IVP_IF(l_environment->debug_information->debug_impact)
-	{
-	    //printf("dist_vec_world %.3f %.3f %.3f\n",dist_vector_world[dist_counter].k[0],dist_vector_world[dist_counter].k[1],dist_vector_world[dist_counter].k[2]);
-	}
-#endif
 
 
 void out_friction_info_obj(IVP_Core *obj)
@@ -1072,58 +876,6 @@ void IVP_Friction_System::bubble_sort_dists_importance()
 	}
     }
 }
-
-#if 0
-//sort dists, dists beeing active for longest nr of PSIs are at end of queue
-void IVP_Friction_System::bubble_sort_dists_importance()
-{
-    int did_exchange=1;
-    //printf("start_bubble\n");
-    while(did_exchange) {
-	did_exchange=0;
-	IVP_Contact_Point *moving_dist=this->get_first_friction_dist();
-	if(!moving_dist) {
-	    return; //degenerated system (without any mindist)
-	}
-	IVP_Contact_Point *test_dist;
-	//printf("tlp_for %lx  ",(long)moving_dist&0x0000ffff);
-	//ivp_debug_fs_pointers();
-	while((test_dist=this->get_next_friction_dist(moving_dist))!=NULL) {
-	    if(moving_dist->has_negative_pull_since<test_dist->has_negative_pull_since) {
-		this->exchange_friction_dists(moving_dist,test_dist);
-		did_exchange=1;
-		//printf("exchgg %lx %lx  ",(long)moving_dist&0x0000ffff,(long)test_dist&0x0000ffff);
-		//ivp_debug_fs_pointers();
-	    } else {
-		moving_dist=test_dist;
-	    }
-	}
-    }
-    IVP_IF(1) {
-	for(IVP_Contact_Point *fr_d=get_first_friction_dist();fr_d;fr_d=get_next_friction_dist(fr_d))
-	{
-	    IVP_Contact_Point *test_d=get_next_friction_dist(fr_d);
-	    if(test_d) {
-		if(fr_d->has_negative_pull_since<test_d->has_negative_pull_since) {
-		    printf("bubble_sort_error\n");
-		    CORE;
-		}
-	    }
-	}
-    }
-    //printf("after_bs  ");
-    //ivp_debug_fs_pointers();
-    IVP_IF(0)
-    {
-        printf("sort_dists ");
-	for(IVP_Contact_Point *fr_d=get_first_friction_dist();fr_d;fr_d=get_next_friction_dist(fr_d))
-	{
-	    printf("%d ",fr_d->has_negative_pull_since);
-	}
-	printf("\n");
-    }
-}
-#endif
 
 IVP_BOOL IVP_Friction_System::core_is_terminal_in_fs(IVP_Core *test_core) {
     int total_number_of_partners=0;

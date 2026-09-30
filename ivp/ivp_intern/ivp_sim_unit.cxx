@@ -154,23 +154,6 @@ IVP_Core *IVP_Simulation_Unit::sim_unit_union_find_test()
 	    }
 	}
     }
-#if 0    
-    for(my_core=this->get_first_sim_unit_core();my_core;my_core=this->get_next_sim_unit_core())
-    {
-        IVP_Core *father_core=my_core->union_find_get_father();
-        for(my_controller=my_core->get_first_core_controller();my_controller;my_controller=my_core->get_next_core_controller()) {
-	    IVP_U_Vector<IVP_Core> *controlled_cores;
-	    controlled_cores=my_controller->get_associated_controlled_cores(my_core);
-	    for(i=controlled_cores->len()-1;i>=0;i--) {
-	        IVP_Core *test_core=controlled_cores->element_at(i);
-		IVP_Core *test_father=test_core->union_find_get_father();
-		if(father_core!=test_father) {
-		    test_core->tmp.union_find_father=father_core;
-		}
-	    }
-        }
-    }
-#endif
     
     IVP_Core *first_father=this->sim_unit_cores.element_at(0)->union_find_get_father();
     // find representative obj for second system (must not be a fixed obj)
@@ -891,28 +874,6 @@ sim_units_0:
     ;
 
 
-#if 0 && defined(WIN32)
-  unsigned long time = p_get_time();
-
-  //BLOCKING
-  if( (time > 957460357 /*4may*/ + 60*60*24* (31+26) )) {
-    IVP_Time now_time=env->get_current_time();
-    // IVP_BLOCKING 
-    if(this->nb-now_time < 0.0) {
-        this->nb=now_time+9.73;
-	IVP_Time_Event_N *n_event=new IVP_Time_Event_N(env->get_current_time());
-	env->get_time_manager()->insert_event(n_event,env->get_current_time());
-	
-	P_DELETE(env->get_time_manager()->event_manager);
-	env->get_time_manager()->event_manager=new IVP_Event_Manager_D();
-	env->get_time_manager()->event_manager->mode=1;
-	for(int i=0;i<15;i++) {
-	    IVP_Time_Event_D *d_event=new IVP_Time_Event_D(env->get_current_time());
-	    env->get_time_manager()->insert_event(d_event,env->get_current_time());
-	}
-    }    
-  }
-#endif
 }
 
 void IVP_Sim_Units_Manager::reset_time( IVP_Time offset){

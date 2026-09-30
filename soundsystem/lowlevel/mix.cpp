@@ -534,17 +534,8 @@ static uint Resample16to32( float *pOut, const short *pWaveData, float sampleRat
 	{
 		nFirst = (int)( pWaveData[nSampleIndex] );
 		nSecond = (int)( pWaveData[nSampleIndex + 1] );
-#if 0
-		// this expression doesn't truncate the value to 16-bits and preserves fractional samples in the float
-		// output.  It is a bit slower and the improved precision won't be audible unless the sample is amplified
-		// or processed in some way because the output stage will simply round these back to 16-bit values
-		// so disable this until we find a reason that we need it
-		nInterp = ( nFirst << FIX_BITS ) + ( ( ( nSecond - nFirst ) * int( nSampleFrac ) ) );
-		pOut[i] = float( nInterp ) * ( 1.0f / float( 1ul << FIX_BITS ) );
-#else
 		nInterp = nFirst + ( ( ( nSecond - nFirst ) * int( nSampleFrac ) ) >> FIX_BITS );
 		pOut[i] = float( nInterp );
-#endif
 
 		nSampleFrac += nRateScaleFix;
 		nSampleIndex += nSampleFrac >> FIX_BITS;

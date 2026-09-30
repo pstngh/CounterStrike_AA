@@ -259,25 +259,6 @@ static HMODULE Sys_LoadLibraryGuts( const char *pLibraryName )
 		{
 			StackToolsNotify_LoadedLibrary( str );
 		}
-#if 0	// you can enable this block to help track down why a module isn't loading:
-		else
-		{
-#ifdef  _WINDOWS
-			char buf[1024];
-			FormatMessage( 
-				FORMAT_MESSAGE_FROM_SYSTEM | 
-				FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL,
-				GetLastError(),
-				0, // Default language
-				(LPTSTR) buf,
-				1023,
-				NULL  // no insert arguments
-				);
-			Warning( "Could not load %s: %s\n", str, buf );
-#endif
-		}
-#endif
 
 		return retVal;
 	}

@@ -405,14 +405,6 @@ void CPlayerController::StepUp( float height )
 
 void CPlayerController::Jump()
 {
-#if 0
-	// float for one tick to allow stepping and jumping to work properly
-	IVP_Real_Object *pIVP = m_pObject->GetObject();
-	const IVP_U_Point *pgrav = pIVP->get_environment()->get_gravity();
-	IVP_U_Float_Point gravSpeed;
-	gravSpeed.set_multiple( pgrav, pIVP->get_environment()->get_delta_PSI_time() );
-	pIVP->get_core()->speed.subtract( &gravSpeed );
-#endif
 }
 
 const int MAX_LIST_NORMALS = 8;
@@ -1249,30 +1241,10 @@ void CShadowController::MaxSpeed( float maxSpeed, float maxAngularSpeed )
 {
 	// UNDONE: Turn this on when shadow controllers are having velocity updated per frame
 	// right now this has the effect of making dampspeed zero by default.
-#if 0
-	IVP_Core *pCore = m_pObject->GetObject()->get_core();
-	{
-		// limit additional velocity to that which is not amplifying the current velocity
-		float availableSpeed = ConvertDistanceToIVP( maxSpeed );
-		float currentSpeed = pCore->speed.real_length();
-
-		m_shadow.maxDampSpeed = min(currentSpeed, availableSpeed);
-		m_shadow.maxSpeed = availableSpeed - m_shadow.maxDampSpeed;
-	}
-
-	{
-		// limit additional velocity to that which is not amplifying the current velocity
-		float availableAngularSpeed = ConvertAngleToIVP( maxAngularSpeed );
-		float currentAngularSpeed = pCore->rot_speed.real_length();
-		m_shadow.maxDampAngular = min(currentAngularSpeed, availableAngularSpeed);
-		m_shadow.maxAngular = availableAngularSpeed - m_shadow.maxDampAngular;
-	}
-#else
 	m_shadow.maxSpeed = maxSpeed;
 	m_shadow.maxDampSpeed = maxSpeed;
 	m_shadow.maxAngular = maxAngularSpeed;
 	m_shadow.maxDampAngular = maxAngularSpeed;
-#endif
 }
 
 void CShadowController::GetMaxSpeed( float *pMaxSpeedOut, float *pMaxAngularSpeedOut )

@@ -2312,12 +2312,6 @@ public:
 	{
 		return m_pObjectHash->find_elem(pObject0) != NULL ? true : false;
 	}
-#if 0
-	virtual int CountObjectsInHash()
-	{
-		return m_pObjectHash->n_elems();
-	}
-#endif
 
 private:
 	// this is a hash of object pairs

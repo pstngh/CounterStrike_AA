@@ -238,33 +238,6 @@ void CBaseAchievement::IncrementCount( int iOptIncrement )
 			Msg( "Achievement count increased for %s: %d/%d\n", GetName(), m_iCount, m_iGoal );
 		}
 
-#if 0 // !defined( NO_STEAM ) - <vitaliy> achievements should always go via TitleData
-		// if this achievement's progress should be stored in Steam, set the steam stat for it
-		if ( StoreProgressInSteam() && steamapicontext->SteamUserStats() )
-		{
-			// Set the Steam stat with the same name as the achievement.  Only cached locally until we upload it.
-			char pszProgressName[1024];
-			Q_snprintf( pszProgressName, 1024, "%s_STAT", GetName() );
-			bool bRet = steamapicontext->SteamUserStats()->SetStat( pszProgressName, m_iCount );
-			if ( !bRet )
-			{
-				DevMsg( "ISteamUserStats::GetStat failed to set progress value in Steam for achievement %s\n", pszProgressName );
-			}
-
-#ifdef INFESTED_DLL
-			// Upload user data to commit the change to Steam so if the client crashes, progress isn't lost.
-			// Only upload if we haven't uploaded recently, to keep us from spamming Steam with uploads.  If we don't
-			// upload now, it will get uploaded no later than level shutdown.
-			if ( ( m_pAchievementMgr->GetTimeLastUpload() == 0 ) || ( Plat_FloatTime() - m_pAchievementMgr->GetTimeLastUpload() > 60 * 15 ) )
-			{
-				m_pAchievementMgr->UploadUserData( STEAM_PLAYER_SLOT );
-			}
-#else
-			m_pAchievementMgr->SetDirty( true, m_nUserSlot );
-#endif
-		}
-#endif
-
 		// if we've hit goal, award the achievement
 		if ( m_iGoal > 0 )
 		{
@@ -458,40 +431,6 @@ void CBaseAchievement::EnsureComponentBitSetAndEvaluate( int iBitNumber )
 
 		// new component, set the bit and increment the count
 		SetComponentBits( m_iComponentBits | iBitMask );
-
-#if 0 // !defined( NO_STEAM ) - <vitaliy> achievements should go via TitleData
-		// if this achievement's progress should be stored in Steam, set the steam stat for it
-		if ( StoreProgressInSteam() && steamapicontext->SteamUserStats() )
-		{
-			// Set the Steam stat with the same name as the achievement.  Only cached locally until we upload it.
-			char pszProgressName[1024];
-			Q_snprintf( pszProgressName, 1024, "%s_STAT", GetName() );
-			bool bRet = steamapicontext->SteamUserStats()->SetStat( pszProgressName, m_iCount );
-			if ( !bRet )
-			{
-				DevMsg( "ISteamUserStats::GetStat failed to set progress value in Steam for achievement %s\n", pszProgressName );
-			}
-
-			if ( HasComponents() )
-			{
-				Q_snprintf( pszProgressName, 1024, "%s_COMP", GetName() );
-				int32 bits = (int32) GetComponentBits();
-				bool bRet = steamapicontext->SteamUserStats()->SetStat( pszProgressName, bits );
-				if ( !bRet )
-				{
-					DevMsg( "ISteamUserStats::GetStat failed to set component value in Steam for achievement %s\n", pszProgressName );
-				}
-			}
-
-			// Upload user data to commit the change to Steam so if the client crashes, progress isn't lost.
-			// Only upload if we haven't uploaded recently, to keep us from spamming Steam with uploads.  If we don't
-			// upload now, it will get uploaded no later than level shutdown.
-			if ( ( m_pAchievementMgr->GetTimeLastUpload() == 0 ) || ( Plat_FloatTime() - m_pAchievementMgr->GetTimeLastUpload() > 60 * 15 ) )
-			{
-				m_pAchievementMgr->UploadUserData( m_nUserSlot );
-			}
-		}
-#endif
 
 		Assert( m_iCount <= m_iGoal );
 		if ( m_iCount == m_iGoal )

@@ -347,13 +347,6 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 	if ( g_EntityCollisionHash->IsObjectPairInHash( pObj0, pObj1 ) )
 		return 0;
 
-#if 0
-	int solid0 = pEntity0->GetSolid();
-	int solid1 = pEntity1->GetSolid();
-	int nSolidFlags0 = pEntity0->GetSolidFlags();
-	int nSolidFlags1 = pEntity1->GetSolidFlags();
-#endif
-
 	int movetype0 = pEntity0->GetMoveType();
 	int movetype1 = pEntity1->GetMoveType();
 
@@ -797,33 +790,6 @@ void CPhysicsSystem::PhysicsSimulate()
 			}
 		}
 
-#if 0
-		if ( cl_visualize_physics_shadows.GetBool() )
-		{
-			int entityCount = NUM_ENT_ENTRIES;
-			for ( int i = 0; i < entityCount; i++ )
-			{
-				IClientEntity *pClientEnt = cl_entitylist->GetClientEntity(i);
-				if ( !pClientEnt )
-					continue;
-				C_BaseEntity *pEntity = pClientEnt->GetBaseEntity();
-				if ( !pEntity )
-					continue;
-
-				Vector pos;
-				QAngle angle;
-				IPhysicsObject *pObj = pEntity->VPhysicsGetObject();
-				if ( !pObj || !pObj->GetShadowController() )
-					continue;
-
-				pObj->GetShadowPosition( &pos, &angle );
-				debugoverlay->AddBoxOverlay( pos, pEntity->CollisionProp()->OBBMins(), pEntity->CollisionProp()->OBBMaxs(), angle, 255, 255, 0, 32, 0 );
-				char tmp[256];
-				V_snprintf( tmp, sizeof(tmp),"%s, (%s)\n", pEntity->GetClassname(), VecToString(angle) );
-				debugoverlay->AddTextOverlay( pos, 0, tmp );
-			}
-		}
-#endif
 		g_Collisions.BufferTouchEvents( false );
 		g_Collisions.FrameUpdate();
 	}

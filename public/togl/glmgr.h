@@ -114,22 +114,6 @@ public:
 	//===========================================================================
 	// plain methods
 
-					#if 0				// turned all these off while new approach is coded
-						void			RefreshDisplayDB( void );	// blow away old display DB, make a new one
-						GLMDisplayDB	*GetDisplayDB( void );		// get a ptr to the one GLMgr keeps.  only valid til next refresh.
-
-							// eligible renderers will be ranked by desirability starting at index 0 within the db
-							// within each renderer, eligible displays will be ranked some kind of desirability (area? dist from menu bar?) 
-							// within each display, eligible modes will be ranked by descending areas
-						
-							// calls supplying indices are implicitly making reference to the current DB
-						bool			CaptureDisplay( int rendIndex, int displayIndex, bool captureAll );		// capture one display or all displays
-						void			ReleaseDisplays( void );												// release all captures
-						
-						int				GetDisplayMode( int rendIndex, int displayIndex );						// retrieve current display res (returns modeIndex)
-						void			SetDisplayMode( GLMDisplayParams *params );								// set the display res (only useful for FS)
-					#endif
-	
 	GLMContext		*NewContext( IDirect3DDevice9 *pDevice, GLMDisplayParams *params );		// this will have to change
 	void			DelContext( GLMContext *context );
 
@@ -1913,70 +1897,6 @@ FORCEINLINE void GLMContext::DrawRangeElements(	GLenum mode, GLuint start, GLuin
 	}
 
 //#if GLMDEBUG
-#if 0
-	bool	hasVP = m_drawingProgram[ kGLMVertexProgram ] != NULL;
-	bool	hasFP = m_drawingProgram[ kGLMFragmentProgram ] != NULL;
-
-	// init debug hook information
-	GLMDebugHookInfo info;
-	memset( &info, 0, sizeof(info) );
-	info.m_caller = eDrawElements;
-
-	// relay parameters we're operating under
-	info.m_drawMode = mode;
-	info.m_drawStart = start;
-	info.m_drawEnd = end;
-	info.m_drawCount = count;
-	info.m_drawType = type;
-	info.m_drawIndices = indices;
-		
-	do
-	{
-		// obey global options re pre-draw clear
-		if ( m_autoClearColor || m_autoClearDepth || m_autoClearStencil )
-		{
-			GLMPRINTF(("-- DrawRangeElements auto clear" ));
-			this->DebugClear();
-		}
-
-		// always sync with editable shader text prior to draw
-#if GLMDEBUG
-		//FIXME disengage this path if context is in GLSL mode..
-		// it will need fixes to get the shader pair re-linked etc if edits happen anyway.
-
-		if (m_drawingProgram[ kGLMVertexProgram ])
-		{
-			m_drawingProgram[ kGLMVertexProgram ]->SyncWithEditable();
-		}
-		else
-		{
-			AssertOnce(!"drawing with no vertex program bound");
-		}
-
-
-		if (m_drawingProgram[ kGLMFragmentProgram ])
-		{
-			m_drawingProgram[ kGLMFragmentProgram ]->SyncWithEditable();
-		}
-		else
-		{
-			AssertOnce(!"drawing with no fragment program bound");
-		}
-#endif
-		// do the drawing
-		if (hasVP && hasFP)
-		{
-			gGL->glDrawRangeElementsBaseVertex( mode, start, end, count, type, indicesActual, baseVertex );
-
-			if ( m_slowCheckEnable )
-			{
-				CheckNative();
-			}
-		}
-		this->DebugHook( &info );
-
-	} while ( info.m_loop );
-#else
 	Assert( m_drawingLang == kGLMGLSL );
 
 	if ( m_pBoundPair )
@@ -1990,7 +1910,6 @@ FORCEINLINE void GLMContext::DrawRangeElements(	GLenum mode, GLuint start, GLuin
 		}
 #endif
 	}
-#endif
 
 #endif // GL_ENABLE_INDEX_VERIFICATION
 }

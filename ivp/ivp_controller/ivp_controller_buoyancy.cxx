@@ -92,11 +92,6 @@ IVP_BOOL IVP_Controller_Buoyancy::use_buoyancy_solver(const IVP_Buoyancy_Input *
 	solution_values_out->sum_impulse_x_point.set(&bs.sum_impulse_x_point);
 	solution_values_out->sum_impulse_x_movevector.set(&bs.sum_impulse_x_movevector);
 	
-#if 0
-	printf("Buoyancy-Solver's results:\n");
-	((IVP_MI_Vector*) solution_values_out)->print();
-#endif
-		
     }
     return(in_water);
 }
@@ -196,12 +191,6 @@ void IVP_Controller_Buoyancy::apply_dampening( IVP_Real_Object *object,
 	}
     }
 
-#if 0
-    printf("In apply_dampening:\n");
-    sum_impulse_x_movevector->print("sum_impulse_x_movevector");
-    sum_impulse_x_point->print("sum_impulse_x_point");
-#endif
-    
     //core->rot_speed_change.print("rot_speed_change");
 }
 
@@ -372,15 +361,6 @@ void IVP_Controller_Buoyancy::provide_new_input_solution_combination(Attacher_In
 	
     } //end switch statement
     
-#if 0
-    if (ai->mi->get_nr_occupied() < ai->mi->get_nr_of_vectors()) {
-	//the array of input vectors in the multidim. interpolator is not yet fully occupied
-	ai->mi->add_new_input_solution_combination_conventional(new_input, solution_values);
-    } else {
-	//array of input vectors is already fully occupied, so a member has to be replaced by a new one
-	ai->mi->add_new_input_solution_combination_stochastic(new_input, solution_values);
-    }
-#endif    
     }
     
     

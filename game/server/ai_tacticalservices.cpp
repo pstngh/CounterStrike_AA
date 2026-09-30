@@ -601,21 +601,6 @@ int CAI_TacticalServices::FindLosNode(const Vector &vThreatPos, const Vector &vT
 							// to use it again right away.
 							GetNetwork()->GetNode(nodeIndex)->Lock( flBlockTime );
 
-#if 0
-							if ( GetOuter()->GetHintNode() )
-							{
-								GetOuter()->GetHintNode()->Unlock(GetOuter()->GetHintDelay(GetOuter()->GetHintNode()->HintType()));
-								GetOuter()->SetHintNode( NULL );
-							}
-
-							// This used to not be set, why? (kenb)
-							// @Note (toml 05-19-04): I think because stomping  the hint can lead to
-							// unintended side effects. The hint node is primarily a high level
-							// tool, and certain NPCs break if it gets slammed here. If we need
-							// this, we should propagate it out and let the schedule selector
-							// or task decide to set the hint node
-							GetOuter()->SetHintNode( GetNetwork()->GetNode(nodeIndex)->GetHint() );
-#endif
 							if ( ShouldDebugLos( nodeIndex ) )
 							{
 								NDebugOverlay::Text( nodeOrigin, CFmtStr( "%d:los!", nodeIndex), false, 1 );

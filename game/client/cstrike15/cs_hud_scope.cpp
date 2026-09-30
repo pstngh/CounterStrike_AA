@@ -263,13 +263,6 @@ void CHudScope::Paint( void )
 		float fRawSpreadDistance = fWeaponInaccuracy * fInaccuracyIn640x480Pixels; // 
 		float fSpreadDistance = clamp( fRawSpreadDistance, 0, 100 );
 
-#if 0
-		// This lets you verify inaccuracy vs screenshots of cl_weapon_debug_show_accuracy 2;
-		// the number after screen= should max the radius (in pixels) of the drawn circle.
-		float fInaccuracyInScreenPixels = fRawSpreadDistance * screenTall / 480; // 480 = "reference screen width"
-		Msg( "fWeaponInaccuracy = %8.5f, referenceScreen = %8.5f, screen = %8.5f, fov = %8.5f\n", fWeaponInaccuracy, fRawSpreadDistance, fInaccuracyInScreenPixels, flTargetFOVForZoom );
-#endif
-
 		// reduce the goal  (* 0.4 / 30.0f)
 		// then animate towards it at speed 19.0f
 		// (where did these numbers come from?)

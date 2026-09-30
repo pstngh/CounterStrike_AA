@@ -801,7 +801,6 @@ void ivp_dummy_func(){
 }
 
 void IVP_Time_Event_D::simulate_time_event(IVP_Environment *env) {
-#if 1
 	int nr=number_of_sons;
     int i;
     for(i=0;i<=nr;i++) {
@@ -810,9 +809,6 @@ void IVP_Time_Event_D::simulate_time_event(IVP_Environment *env) {
         env->get_time_manager()->insert_event(delay_event,env->get_current_time());
     }
     P_DELETE_THIS(this);
-#else
-    P_DELETE_THIS(this);    
-#endif
 }
 
 void IVP_Time_Event_N::simulate_time_event(IVP_Environment *env) {

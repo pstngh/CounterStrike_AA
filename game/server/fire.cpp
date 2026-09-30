@@ -1066,37 +1066,6 @@ void CFire::BurnThink( void )
 
 	Update( FIRE_THINK_INTERVAL );
 
-#if 0
-	// Noone is currently using the NavMesh!
-
-	// only need to update the nav mesh infrequently
-	const float NavUpdateDelta = 5.0f;
-	if ( gpGlobals->curtime > m_flLastNavUpdateTime + NavUpdateDelta )
-	{
-		m_flLastNavUpdateTime = gpGlobals->curtime;
-
-		// mark overlapping nav areas as "damaging"
-		NavAreaCollector overlap;
-		Extent extent;
-		CollisionProp()->WorldSpaceAABB( &extent.lo, &extent.hi );
-		extent.lo.z -= HumanHeight;
-
-		// bloat extents enough to ensure any non-damaging area is actually safe
-		// bloat in Z as well to catch nav areas that may be slightly above/below ground
-		const float DangerBloat = 32.0f;
-		Vector dangerBloat( DangerBloat, DangerBloat, DangerBloat );
-		extent.lo -= dangerBloat;
-		extent.hi += dangerBloat;
-
-		TheNavMesh->ForAllAreasOverlappingExtent( overlap, extent );
-
-		FOR_EACH_VEC( overlap.m_area, it )
-		{
-			CNavArea *area = overlap.m_area[ it ];
-			area->MarkAsDamaging( NavUpdateDelta + 1.0f );
-		}
-	}
-#endif
 }
 
 void CFire::GoOutThink()

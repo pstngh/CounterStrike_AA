@@ -174,66 +174,6 @@ IVP_BOOL IVP_3D_Solver::find_first_t_for_value_max_dev2(IVP_DOUBLE value,
     return IVP_FALSE;
 }
 
-#if 0
-/** we know that there will be no zero value for first deviation !!! */
-IVP_BOOL IVP_3D_Solver::find_first_t_for_value_no_zero_dev(IVP_DOUBLE value,
-							IVP_DOUBLE t_now, IVP_DOUBLE t_max, int t_now_cache_index, 
-							IVP_U_Matrix_Cache *mc_A, IVP_U_Matrix_Cache *mc_B,
-							IVP_DOUBLE *opt_val_at_t_now,
-							IVP_DOUBLE *opt_val_at_next_psi,
-							IVP_DOUBLE *t_out
-    )
-{    
-    /***** first 'null'-stelle from t_now to t_max *******/
-
-    /*** calc max allowed t step (we want the FIRST nullstelle!) ***/
-    IVP_DOUBLE v0;	// value at left side of interval
-    IVP_DOUBLE v1;	// value at right side of interval
-    // first of all check right side
-    if (opt_val_at_next_psi){
-	v1 = *opt_val_at_next_psi;
-	IVP_ASSERT(v1 <= value);	// right side should be checked already
-    }else{
-	IVP_U_Matrix *A = mc_A->m_world_f_core_next_PSI;
-	IVP_U_Matrix *B = mc_B->m_world_f_core_next_PSI;	// maximum values 
-	v1 = get_value(A,B);
-	if (v1 >= value) return IVP_FALSE;		// no zero value
-    }
-    // ok we know that there will be a zero value
-
-    if (t_max != mc_A->core->time_of_next_psi){	// check more in more detail
-	IVP_U_Matrix A,B;
-	IVP_Core *solver_a = mc_A->core;
-	IVP_Core *solver_b = mc_B->core;
-    
-	solver_a->calc_at_matrix(t_max, &A);
-	solver_b->calc_at_matrix(t_max, &B);
-	v1 = get_value(&A,&B);
-	if (v1 >= value) return IVP_FALSE;		// no zero value
-    }
-
-    /** now get first value */
-    if (opt_val_at_t_now) {
-	v0 = *opt_val_at_t_now;
-    }else{
-	IVP_ASSERT( mc_A->base_time == t_now);
-	IVP_ASSERT( mc_B->base_time == t_now);
-	IVP_ASSERT( t_now_cache_index == 0);
-	
-	IVP_U_Matrix *A = mc_A->calc_matrix_at_now( t_now, 0);
-	IVP_U_Matrix *B = mc_B->calc_matrix_at( t_now, 0);
-	v0 = get_value(A,B);
-    }
-    IVP_ASSERT( v0> value);
-    {
-	*t_out = calc_nullstelle(t_now, t_max, value, v0, v1, mc_A->core, mc_B->core);
-	if ( *t_out < t_max) return IVP_TRUE;
-    }
-    // no nullstelle crossed our way
-    return IVP_FALSE;
-}
-#endif
-
 
 /** only max deviation ist known  */
   

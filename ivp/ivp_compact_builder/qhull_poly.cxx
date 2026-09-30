@@ -835,28 +835,6 @@ void qh_matchnewfacets (void) {
   FORALLnew_facets {
     for (newskip=1; newskip<qh hull_dim; newskip++) /* furthest/horizon already matched */
       qh_matchneighbor (newfacet, newskip, hashsize, &hashcount);
-#if 0   /* use the following to trap hashcount errors */
-    {
-      int count= 0, k;
-      facetT *facet, *neighbor;
-
-      count= 0;
-      FORALLfacet_(qh newfacet_list) {  /* newfacet already in use */
-	for (k=1; k < qh hull_dim; k++) {
-	  neighbor= SETelemt_(facet->neighbors, k, facetT);
-	  if (!neighbor || neighbor == qh_DUPLICATEridge)
-	    count++;
-	}
-	if (facet == newfacet)
-	  break;
-      }
-      if (count != hashcount) {
-	ivp_message( "qh_matchnewfacets: after adding facet %d, hashcount %d != count %d\n",
-		 newfacet->id, hashcount, count);
-	qh_errexit (qh_ERRqhull, newfacet, NULL);
-      }
-    }
-#endif  /* end of trap code */
   }
   if (hashcount) {
     FORALLnew_facets {

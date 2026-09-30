@@ -621,11 +621,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 		if  ( pShader->IsSnapshotting() )
 		{
 			// Per-instance state
-#if 0
-			int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 ) + 2 * IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER1 );
-#else
 			int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 );
-#endif
 			pShader->PI_BeginCommandBuffer();
 			if ( bVertexLitGeneric )
 			{
@@ -1015,11 +1011,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			}
 			else // !(bHasBump || bHasDiffuseWarp)
 			{
-#if 0
-				int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 ) + 2 * IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER1 );
-#else
 				int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 );
-#endif
 bool bDistanceAlphaFromDetail = false;
 				bool bSoftMask = false;
 				bool bGlow = false;

@@ -415,7 +415,6 @@ void C_BaseAnimatingOverlay::CheckForLayerChanges( CStudioHdr *hdr, float curren
 		if ( !pHead || !pPrev1 || pHead->m_nSequence == pPrev1->m_nSequence )
 			continue;
 
-#if 1 // _DEBUG
 		if (r_sequence_debug.GetInt() == entindex())
 		{
 			DevMsgRT( "(%7.4f : %30s : %5.3f : %4.2f : %1d)\n", t0, hdr->pSeqdesc( pHead->m_nSequence ).pszLabel(),  (float)pHead->m_flCycle,  (float)pHead->m_flWeight, i );
@@ -423,7 +422,6 @@ void C_BaseAnimatingOverlay::CheckForLayerChanges( CStudioHdr *hdr, float curren
 			if (pPrev2)
 				DevMsgRT( "(%7.4f : %30s : %5.3f : %4.2f : %1d)\n", t2, hdr->pSeqdesc( pPrev2->m_nSequence ).pszLabel(),  (float)pPrev2->m_flCycle,  (float)pPrev2->m_flWeight, i );
 		}
-#endif
 
 		pPrev1->m_nSequence = pHead->m_nSequence;
 		pPrev1->m_flCycle = pHead->m_flPrevCycle;
@@ -550,7 +548,6 @@ void C_BaseAnimatingOverlay::AccumulateLayers( IBoneSetup &boneSetup, BoneVector
 		engine->Con_NPrintf( 10 + j, "%30s %6.2f : %6.2f : %1d", boneSetup.GetStudioHdr()->pSeqdesc( m_AnimOverlay[i].m_nSequence ).pszLabel(), fCycle, fWeight, i );
 #endif
 
-#if 1 // _DEBUG
 		if (r_sequence_debug.GetInt() == entindex())
 		{
 			if (1)
@@ -586,7 +583,6 @@ void C_BaseAnimatingOverlay::AccumulateLayers( IBoneSetup &boneSetup, BoneVector
 
 			}
 		}
-#endif
 	}
 	//RegenerateDispatchedLayers( boneSetup, pos, q, currentTime );
 }
@@ -906,7 +902,6 @@ void C_BaseAnimatingOverlay::AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &bone
 		engine->Con_NPrintf( 10 + j, "%30s %6.2f : %6.2f : %1d", boneSetup.GetStudioHdr()->pSeqdesc( m_AnimOverlay[i].m_nSequence ).pszLabel(), fCycle, fWeight, i );
 #endif
 
-#if 1 // _DEBUG
 		if (r_sequence_debug.GetInt() == entindex())
 		{
 			if (1)
@@ -942,7 +937,6 @@ void C_BaseAnimatingOverlay::AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &bone
 
 			}
 		}
-#endif
 	}
 }
 

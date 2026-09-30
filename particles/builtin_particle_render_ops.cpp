@@ -3165,17 +3165,6 @@ void C_OP_RenderBlobs::Render( IMatRenderContext *pRenderContext, CParticleColle
 
 
 
-	#if 0
-		// Note: it is not good to have these static variables here.
-		static RENDERER_CLASS* sweepRenderer = NULL;
-		static ImpTiler* tiler = NULL;
-		if(!sweepRenderer)
-		{
-		sweepRenderer = new RENDERER_CLASS();
-		tiler = new ImpTiler(sweepRenderer);
-		}
-	#endif
-
 	IMaterial *pMaterial = pParticles->m_pDef->GetMaterial();
 
 	// TODO: I don't need to load this as a sorted list. See Lennard Jones forces for better way!

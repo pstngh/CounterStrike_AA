@@ -192,15 +192,6 @@ void IVP_Mindist_Base::get_ledges( const IVP_Compact_Ledge *ledges_out[2] ){
 
 void IVP_Synapse_Real::check_consistency_of_ledge(const IVP_Compact_Edge * /*test_edge*/ )const{
     return;
-#if 0
-    const IVP_Compact_Ledge *ledge = test_edge->get_compact_ledge();
-    const IVP_Compact_Surface *sur = ((IVP_SurfaceManager_Polygon *)l_obj->get_surface_manager())->get_compact_surface();
-    const IVP_Compact_Ledgetree_Node *root = sur->get_compact_ledge_tree_root();
-    IVP_IF (root ->is_terminal()){
-	const IVP_Compact_Ledge *ref_ledge = root->get_compact_ledge();
-	IVP_ASSERT (  ref_ledge == ledge );
-    }
-#endif    
 }
 
 
@@ -210,7 +201,6 @@ const IVP_Compact_Ledge *IVP_Synapse::get_ledge() const
 }
 
 
-#if defined(DEBUG) || 1
 void IVP_Synapse_Real::print()
 {
     char *stat_text = NULL;
@@ -233,7 +223,6 @@ void IVP_Synapse_Real::print()
 	CORE;
     }
 }
-#endif
 
 void IVP_Mindist_Manager::print_mindists()
 {
@@ -451,36 +440,6 @@ void IVP_Mindist_Manager::create_exact_mindists(IVP_Real_Object *pop0, IVP_Real_
 	}
     }
     
-#if 0
-    { // check final mindists elements
-	for (int x = mindists->len()-1; x>=0; x--){
-	    IVP_Collision *c = mindists->element_at(x);
-	    const IVP_Compact_Ledge *ledges[2];
-	    c->get_ledges(ledges);
-	    IVP_ASSERT( ledges0.index_of( ledges[0] ) >= 0 && ledges1.index_of( ledges[1] )  >= 0 );
-	}
-    }
-    { // check all ledge ledge combinations
-	for (int i= ledges0.len()-1; i>=0; i--){
-	    const IVP_Compact_Ledge *l0 = ledges0.element_at(i);
-	    for (int j = ledges1.len()-1;j>=0;j--){
-		const IVP_Compact_Ledge *l1 = ledges1.element_at(j);
-		int x;
-		for (x = mindists->len()-1; x>=0; x--){
-		    IVP_Collision *c = mindists->element_at(x);
-		    const IVP_Compact_Ledge *ledges[2];
-		    c->get_ledges(ledges);
-		    if (ledges[0] == l0 && ledges[1] == l1) {
-			x = -1;
-			break;
-		    }
-		}
-		IVP_ASSERT( x = -1);
-	    }
-	}
-    }
-#endif	    
-
 }
 
 
@@ -686,16 +645,6 @@ void IVP_Mindist_Manager::recheck_ov_element(IVP_Real_Object *object){
     IVP_Core *core = object->get_core();
     const IVP_U_Point *object_position = core->get_position_PSI();
     
-#if 0
-    const IVP_DOUBLE use_old_hull_factor = 0.5f;
-    IVP_U_Point sphere_position; sphere_position.set(elem->center);
-
-    IVP_DOUBLE moved_distance = sphere_position.quad_distance_to(object_position);
-    IVP_DOUBLE old_hull_time = elem->radius - core->upper_limit_radius;
-    if (moved_distance < use_old_hull_factor * old_hull_time){
-	return;
-    }
-#endif
     environment->ov_tree_manager->remove_ov_element( elem);
 
     environment->get_statistic_manager()->range_world_exceeded++;

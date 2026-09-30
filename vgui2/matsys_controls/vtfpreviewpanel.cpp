@@ -375,13 +375,8 @@ void CVTFPreviewPanel::SetupProjectionMatrix( int nWidth, int nHeight )
 	float flZFar = ZFAR;
 	float flApsectRatio = (nHeight != 0.0f) ? (float)nWidth / (float)nHeight : 100.0f;
 
-#if 1
 	float halfWidth = tan( flFOV * M_PI / 360.0 );
 	float halfHeight = halfWidth / flApsectRatio;
-#else
-	float halfHeight = tan( flFOV * M_PI / 360.0 );
-	float halfWidth = flApsectRatio * halfHeight;
-#endif
 	memset( proj.Base(), 0, sizeof( proj ) );
 	proj[0][0]  = 1.0f / halfWidth;
 	proj[1][1]  = 1.0f / halfHeight;

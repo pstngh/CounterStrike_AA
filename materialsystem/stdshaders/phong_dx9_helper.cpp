@@ -1108,10 +1108,6 @@ void DrawPhong_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 			}
 
 			int nLightingPreviewMode = 0;
-#if 0
-			// Unused. Disabled for CS:GO -- Thorsten
-			nLightingPreviewMode = ShaderApiFast( pShaderAPI )->GetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING );
-#endif
 			if ( ( nLightingPreviewMode == ENABLE_FIXED_LIGHTING_OUTPUTNORMAL_AND_DEPTH ) && IsPC() )
 			{
 				float vEyeDir[4];

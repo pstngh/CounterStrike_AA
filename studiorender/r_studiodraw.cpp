@@ -127,11 +127,6 @@ void CStudioRender::R_StudioDrawHulls( int hitboxset, bool translucent )
 		}
 		for (j = 0; j < 6; j++)
 		{
-#if 0
-			tmp[0] = tmp[1] = tmp[2] = 0;
-			tmp[j % 3] = (j < 3) ? 1.0 : -1.0;
-			// R_StudioLighting( &lv, pbbox[i].bone, 0, tmp ); // BUG: not updated
-#endif
 
 			IMesh* pMesh = pRenderContext->GetDynamicMesh();
 			CMeshBuilder meshBuilder;
@@ -2883,11 +2878,6 @@ int CStudioRender::R_StudioDrawPoints( IMatRenderContext *pRenderContext, int sk
 	VPROF( "R_StudioDrawPoints" );
 	int			i;
 	int numFacesRendered = 0;
-
-#if 0 // garymcthack
-	if ( m_pSubModel->numfaces == 0 )
-		return 0;
-#endif
 
 	// happens when there's a model load failure
 	if ( m_pStudioMeshes == 0 )

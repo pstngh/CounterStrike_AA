@@ -923,14 +923,6 @@ CPolyhedron *ConvertLinkedGeometryToPolyhedron( GeneratePolyhedronFromPlanes_Uno
 	DumpPolyhedronToGLView( pReturn, "PolyhedronDumps/NewStyle_PolyhedronDump_All-Appended.txt", &s_matIdentity );
 #endif
 
-#if defined( DEBUG_POLYHEDRON_CONVERSION ) && 0 //probably too redundant to check here
-	//last bit of debugging from whatever outside source wants this stupid thing
-	if( (g_pPolyhedronCarvingDebugStepCallback != NULL) && (pReturn != NULL) )
-	{
-		AssertMsg( g_pPolyhedronCarvingDebugStepCallback( pReturn ), "Outside conversion failed" );
-	}
-#endif
-
 	return pReturn;
 }
 
@@ -2878,7 +2870,6 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 					AssertMsg_DumpPolyhedron( pLineWalk->pLine->pPoints[1 - pLineWalk->iReferenceIndex] == pCheckPoint, "Line endpoint mismatch" ); //last line's endpoint does not match up with this lines start point
 					AssertMsg_DumpPolyhedron( pLineWalk->pLine->pPolygons[pLineWalk->iReferenceIndex] == &pDebugPolygonWalk->polygon, "Line links to wrong polygon" );
 
-#if 1
 					fltx4 f4Diff1 = SubSIMD( pLineWalk->pLine->pPoints[pLineWalk->iReferenceIndex]->ptPosition, pLineWalk->pLine->pPoints[1 - pLineWalk->iReferenceIndex]->ptPosition );
 					fltx4 f4Diff2 = SubSIMD( pLineWalk->pNext->pLine->pPoints[pLineWalk->pNext->iReferenceIndex]->ptPosition, pLineWalk->pLine->pPoints[1 - pLineWalk->iReferenceIndex]->ptPosition );
 					Vector vDiff1( SubFloat( f4Diff1, 0 ), SubFloat( f4Diff1, 1 ), SubFloat( f4Diff1, 2 ) );
@@ -2887,7 +2878,6 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 					Vector vCross = vDiff2.Cross( vDiff1 );
 					float fDot = vCross.Dot( pDebugPolygonWalk->polygon.vSurfaceNormal );
 					AssertMsg_DumpPolyhedron( fDot >= 0.0f, "Concave polygon" );
-#endif
 
 
 					pCheckPoint = pLineWalk->pLine->pPoints[pLineWalk->iReferenceIndex];
@@ -2898,37 +2888,12 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 
 
 				
-#if 0
-				fltx4 vSurfaceNormal;
-				SubFloat( vSurfaceNormal, 0 ) = pDebugPolygonWalk->polygon.vSurfaceNormal.x;
-				SubFloat( vSurfaceNormal, 1 ) = pDebugPolygonWalk->polygon.vSurfaceNormal.y;
-				SubFloat( vSurfaceNormal, 2 ) = pDebugPolygonWalk->polygon.vSurfaceNormal.z;
-				SubFloat( vSurfaceNormal, 3 ) = 0.0f;
-#endif
-
 				pLineStart = &pLineStart->pLine->PointLineLinks[1 - pLineStart->iReferenceIndex];
 				pLineWalk = pLineStart;
 				//walk around the polygon again using point traversal
 				do
 				{
 					AssertMsg_DumpPolyhedron( pLineWalk->pLine->pPolygons[pLineWalk->iReferenceIndex] == &pDebugPolygonWalk->polygon, "bad line/polygon linkage" );
-
-#if 0
-					//at each point of each polygon, make sure every line connected to that point goes away from our normal
-					{
-						GeneratePolyhedronFromPlanes_LineLL *pConcavityWalk = &pLineWalk->pLine->PointLineLinks[pLineWalk->iReferenceIndex];
-						GeneratePolyhedronFromPlanes_LineLL *pConcavityWalkStop = pConcavityWalk->pPrev;
-						pConcavityWalk = pConcavityWalk->pNext;
-						while ( pConcavityWalk != pConcavityWalkStop )
-						{
-							fltx4 vLine = SubSIMD( pConcavityWalk->pLine->pPoints[pConcavityWalk->iReferenceIndex]->ptPosition, pConcavityWalk->pLine->pPoints[1 - pConcavityWalk->iReferenceIndex]->ptPosition );
-							fltx4 vMul = MulSIMD( vSurfaceNormal, vLine );
-							float fDot = SubFloat( vMul, 0 ) + SubFloat( vMul, 1 ) + SubFloat( vMul, 2 );
-							AssertMsg_DumpPolyhedron( fDot <= kfPointRounding, "Concave polyhedron" );
-							pConcavityWalk = pConcavityWalk->pNext;
-						}
-					}
-#endif
 
 					pLineWalk = pLineWalk->pLine->PointLineLinks[pLineWalk->iReferenceIndex].pPrev;
 				} while( pLineWalk != pLineStart );
@@ -2979,24 +2944,6 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 			{
 				AssertMsg_DumpPolyhedron( (pDebugLineWalk->line.pPolygons[0] != NULL) && (pDebugLineWalk->line.pPolygons[1] != NULL), "There's a polygon missing" );
 				AssertMsg_DumpPolyhedron( pDebugLineWalk->line.pPoints[0] && pDebugLineWalk->line.pPoints[1], "Line missing a point" );
-
-#if 0
-				fltx4 f4Line = SubSIMD( pDebugLineWalk->line.pPoints[0]->ptPosition, pDebugLineWalk->line.pPoints[1]->ptPosition );
-				Vector vLine( SubFloat( f4Line, 0 ), SubFloat( f4Line, 1 ), SubFloat( f4Line, 2 ) );
-				float fLength = vLine.Length();
-				AssertMsg_DumpPolyhedron( fLength > FLT_EPSILON, "Ridiculously short line" );
-
-				if( fLength > fOnPlaneEpsilon )
-				{
-					if( fLength > 1.0f )
-						vLine *= 1.0f / fLength;
-
-					float fDots[2] = { vLine.Dot( pDebugLineWalk->line.pPolygons[0]->vSurfaceNormal ), vLine.Dot( pDebugLineWalk->line.pPolygons[1]->vSurfaceNormal ) };
-					AssertMsg_DumpPolyhedron( (fabs( fDots[0] ) < (1.0f/128.0f) ) && 
-												(fabs( fDots[1] ) < (1.0f/128.0f) ), 
-												"Line is not orthogonal to plane normal it's surrounding" );
-				}
-#endif
 
 				pDebugLineWalk = pDebugLineWalk->pNext;
 			} while( pDebugLineWalk );

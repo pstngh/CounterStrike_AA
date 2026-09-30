@@ -1953,25 +1953,6 @@ void KeyValues::RecursiveCopyKeyValues( KeyValues& src )
 		}
 
 	}
-#if 0
-	KeyValues *pDst = this;
-	for ( KeyValues *pSrc = src.m_pSub; pSrc; pSrc = pSrc->m_pPeer )
-	{
-		if ( pSrc->m_pSub )
-		{
-			pDst->m_pSub = new KeyValues( pSrc->m_pSub->getName() );
-			pDst->m_pSub->RecursiveCopyKeyValues( *pSrc->m_pSub );
-		}
-		else
-		{
-			// copy non-empty keys
-			if ( pSrc->m_sValue && *(pSrc->m_sValue) )
-			{
-				pDst->m_pPeer = new KeyValues( 
-			}
-		}
-	}
-#endif
 
 	// Handle the immediate child
 	if( src.m_pSub )
@@ -3922,16 +3903,6 @@ bool IKeyValuesDumpContextAsText::KvWriteValue( KeyValues *val, int nIndentLevel
 
 	default:
 		break;
-#if 0	// this code was accidentally stubbed out by a mis-integration in CL722860; it hasn't been tested
-		{
-			int n = val->GetDataType();
-			char *chBuffer = ( char * ) stackalloc( 128 );
-			V_snprintf( chBuffer, 128, "??kvtype[%d]", n );
-			if ( !KvWriteText( chBuffer ) )
-				return false;
-		}
-		break;
-#endif
 	}
 
 	return KvWriteText( "\n" );

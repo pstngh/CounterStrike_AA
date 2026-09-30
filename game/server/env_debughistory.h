@@ -23,9 +23,7 @@ enum debughistorycategories_t
 	MAX_HISTORY_CATEGORIES,
 };
 
-#if 0//!( defined(_X360) || defined(_PS3) )
-#undef DISABLE_DEBUG_HISTORY
-#elif !defined(DISABLE_DEBUG_HISTORY)
+#if !defined(DISABLE_DEBUG_HISTORY)
 #define DISABLE_DEBUG_HISTORY
 #endif
 

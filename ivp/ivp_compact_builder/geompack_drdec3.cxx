@@ -432,25 +432,6 @@ Retry_convex_decomposition:
 	    ivp_debugmanager.dprint(IVP_DM_GEOMPACK_LEVEL2, "\n\n");
 	}
 
-#if 0
-	s_wsfe(&io___90);
-	for (i=0; i<this->npolh; i++) {
-	    do_fio(1, (char *)&this->g_polyhedronfirstfaceoffset[i], (ftnlen)sizeof(int));
-	}
-	e_wsfe();
-
-	s_wsfe(&io___91);
-	for (i__ = 1; i__ <= this->n_polyhedronfaces; i__++) {
-	    int j;
-	    do_fio(1, (char *)&i__, (ftnlen)sizeof(int));
-	    for (j=1; j<=2; j++) {
-		do_fio(1, (char *)&this->g_polyhedronfaceindices[j + (i__ << 1) - 3], (ftnlen)
-			sizeof(int));
-	    }
-	}
-	e_wsfe();
-#endif
-
     }
 
 GEOMPACK_abort:

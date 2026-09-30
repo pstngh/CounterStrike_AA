@@ -736,12 +736,6 @@ void ButtonCode_InitKeyTranslationTable()
 	COMPILE_TIME_ASSERT( sizeof(s_pAnalogCodeName) / sizeof( const char * ) == ANALOG_CODE_LAST );
 
 // For debugging, spews entire mapping
-#if 0
-	for ( int i = 0; i < BUTTON_CODE_LAST; ++i )
-	{
-		Msg( "code %d == %s\n", i, s_pButtonCodeName[ i ] );
-	}
-#endif
 
 	// set virtual key translation table
 	memset( s_pVirtualKeyToButtonCode, KEY_NONE, sizeof(s_pVirtualKeyToButtonCode) );

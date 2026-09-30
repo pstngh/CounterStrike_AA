@@ -96,40 +96,6 @@ static void DispatchComeback( CAI_ExpresserWithFollowup *pExpress, CBaseEntity *
 	}
 }
 
-#if 0
-//-----------------------------------------------------------------------------
-// Purpose: Placeholder for rules based response system
-// Input  : concept - 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifiers /*= NULL*/, char *pszOutResponseChosen /* = NULL*/, size_t bufsize /* = 0 */, IRecipientFilter *filter /* = NULL */ )
-{
-	AI_Response *result = SpeakFindResponse( concept, modifiers );
-	if ( !result )
-	{
-		return false;
-	}
-
-	CNPC_CompanionBot *pBot = dynamic_cast<CNPC_CompanionBot *>(GetOuter());
-	if ( pBot )
-	{
-		pBot->SetConversationTopic( g_pConceptManager->GetTopic( handle ) );
-		pBot->SetLastSpeaker( g_pConceptManager->GetSpeaker( handle ) );
-		//		Msg( "%s: Conversing about %s\n", pBot->GetBotString(), g_pConceptManager->GetTopicName( handle ) );
-	}
-
-	SpeechMsg( GetOuter(), "%s (%x) spoke %s (%f)\n", STRING(GetOuter()->GetEntityName()), GetOuter(), g_pConceptManager->GetConcept( handle ), gpGlobals->curtime );
-
-	bool spoke = SpeakDispatchResponse( handle, result, filter );
-	if ( pszOutResponseChosen )
-	{
-		result->GetResponse( pszOutResponseChosen, bufsize );
-	}
-
-	return spoke;
-}
-#endif
-
 
 // Work out the character from the "subject" context.
 // Right now, this is a simple find by entity name search.

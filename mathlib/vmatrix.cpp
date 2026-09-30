@@ -197,7 +197,6 @@ VMatrix SetupMatrixOrgAngles(const Vector &origin, const QAngle &vAngles)
 
 #endif // VECTOR_NO_SLOW_OPERATIONS
 
-#if 1
 bool PlaneIntersection( const VPlane &vp1, const VPlane &vp2, const VPlane &vp3, Vector &vOut )
 {
 	Vector v2Cross3 = CrossProduct( vp2.m_Normal, vp3.m_Normal );
@@ -208,29 +207,6 @@ bool PlaneIntersection( const VPlane &vp1, const VPlane &vp2, const VPlane &vp3,
 	vOut = vRet * ( 1.0 / flDenom );
 	return true;
 }
-#else  // old slow innaccurate code
-bool PlaneIntersection( const VPlane &vp1, const VPlane &vp2, const VPlane &vp3, Vector &vOut )
-{
-	VMatrix mMat, mInverse;
-
-	mMat.Init(
-		vp1.m_Normal.x, vp1.m_Normal.y, vp1.m_Normal.z, -vp1.m_Dist,
-		vp2.m_Normal.x, vp2.m_Normal.y, vp2.m_Normal.z, -vp2.m_Dist,
-		vp3.m_Normal.x, vp3.m_Normal.y, vp3.m_Normal.z, -vp3.m_Dist,
-		0.0f, 0.0f, 0.0f, 1.0f
-		);
-	if(mMat.InverseGeneral(mInverse))
-	{
-		//vOut = mInverse * Vector(0.0f, 0.0f, 0.0f);
-		mInverse.GetTranslation( vOut );
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-#endif
 
 
 // ------------------------------------------------------------------------------------------- //

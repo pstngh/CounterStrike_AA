@@ -14,13 +14,8 @@
 #include "mathlib/vector.h"
 #include "mathlib/ssemath.h"
 #include "appframework/iappsystem.h"
-#if 1
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/MaterialSystemUtil.h"
-#else
-class IMaterial;
-class IMatRenderContext;
-#endif
 
 #include "dmxloader/dmxelement.h"
 #include "tier1/utlintrusivelist.h"

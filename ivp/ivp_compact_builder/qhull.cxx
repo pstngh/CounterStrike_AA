@@ -1268,20 +1268,6 @@ Convex hull of %d points in %d-d:\n\n", size, qh hull_dim);
   fprintf(fp, "  Number of hyperplanes created: %d\n", zzval_(Zsetplane));
   fprintf(fp, "  Number of distance tests for qhull: %d\n", zzval_(Zpartition)+
       zzval_(Zpartitionall)+zzval_(Znumvisibility)+zzval_(Zpartcoplanar));
-#if 0  /* NOTE: must print before printstatistics() */
-  {realT stddev, ave;
-  fprintf(fp, "  average new facet balance: %2.2g\n",
-	  wval_(Wnewbalance)/zval_(Zprocessed));
-  stddev= qh_stddev (zval_(Zprocessed), wval_(Wnewbalance), 
-                                 wval_(Wnewbalance2), &ave);
-  fprintf(fp, "  new facet standard deviation: %2.2g\n", stddev);
-  fprintf(fp, "  average partition balance: %2.2g\n",
-	  wval_(Wpbalance)/zval_(Zpbalance));
-  stddev= qh_stddev (zval_(Zpbalance), wval_(Wpbalance), 
-                                 wval_(Wpbalance2), &ave);
-  fprintf(fp, "  partition standard deviation: %2.2g\n", stddev);
-  }
-#endif
   nummerged= zzval_(Ztotmerge) - zzval_(Zcyclehorizon) + zzval_(Zcyclefacettot);
   if (nummerged) {
     fprintf(fp,"  Number of merged facets: %d\n", nummerged);

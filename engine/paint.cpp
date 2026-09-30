@@ -1630,27 +1630,3 @@ void R_RedownloadAllPaintmaps()
 }
 
 
-#if 0
-CON_COMMAND_F( dump_paintmaps, "dump paintmap data to \"paintmap_#.txt\"", FCVAR_CHEAT )
-{
-	for ( int i=0; i<g_PaintManager.m_iPaintmaps; ++i )
-	{
-		char filename[64];
-		V_snprintf( filename, sizeof(filename), "paintmap_%i.txt", i );
-
-		CUtlBuffer buf;
-		const BYTE *pData = g_PaintManager.GetPaintmapData(i);
-		int w,h;
-		g_PaintManager.GetPaintmapSize( i, w, h );
-		int size = w*h;
-		for ( int b=0; b<size; ++b)
-		{
-			buf.PutChar( pData[b] );
-		}
-
-		g_pFullFileSystem->WriteFile( filename, NULL, buf );
-
-		buf.Purge();
-	}
-}
-#endif

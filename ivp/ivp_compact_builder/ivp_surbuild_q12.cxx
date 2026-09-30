@@ -468,30 +468,6 @@ void IVP_SurfaceBuilder_Q12::convert_node(int64_t node)
 }
 
 
-#if 0 /* not used right now, but don't delete!*/
-void IVP_SurfaceBuilder_Q12::convert_clipnode(int clipnode)
-{
-    this->nodes.add((int *)clipnode);
-
-    if ( dclipnodes[clipnode].children[0] > 0 ) {
-	this->convert_clipnode(dclipnodes[clipnode].children[0]);
-    }
-    else if ( dclipnodes[clipnode].children[0] == -2 ) {
-	this->convert_solid_clipnode();
-    }
-    if ( dclipnodes[clipnode].children[1] > 0 ) {
-	this->convert_clipnode(dclipnodes[clipnode].children[1]);
-    }
-    else if ( dclipnodes[clipnode].children[1] == -2 ) {
-	this->convert_solid_clipnode();
-    }
-
-    this->nodes.delete_at(this->nodes.len()-1);
-    return;
-}
-#endif
-
-
 // -------------------------------------------------------------------------
 // convert_solid_node
 // ==================
@@ -535,30 +511,6 @@ void IVP_SurfaceBuilder_Q12::convert_solid_node()
 }
 
 
-#if 0 /* not used right now, but don't delete!*/
-// ----------------------------------------------------------------------------
-// convert_solid_clipnode
-// ======================
-//
-// extract a solid clipnode from bsp tree and convert it into a physical object
-// ----------------------------------------------------------------------------
-void IVP_SurfaceBuilder_Q12::convert_solid_clipnode()
-{
-
-    // [...]
-
-    // --------------------------------
-    // extract all planes from bsp tree
-    // --------------------------------
-    this->clipnodes_to_planes();
-
-    // [...]
-
-    return;
-}
-#endif
-
-
 void IVP_SurfaceBuilder_Q12::nodes_to_planes()
 {
     int i;
@@ -589,36 +541,6 @@ void IVP_SurfaceBuilder_Q12::nodes_to_planes()
 
     return;
 }
-
-
-#if 0 /* not used right now, but don't delete!*/
-void IVP_SurfaceBuilder_Q12::clipnodes_to_planes()
-{
-    int i;
-    
-    for (i=0; i<this->nodes.len(); i++) {
-	dplane_t *bsp_plane = &dplanes[dclipnodes[(int)nodes.element_at(i)].planenum];
-	if ( i == this->nodes.len()-1 ) {
-	    if ( dclipnodes[(int)this->nodes.element_at(i)].children[0] == -1 ) {
-		create_and_insert_plane( bsp_plane->normal[0],  bsp_plane->normal[1],  bsp_plane->normal[2], bsp_plane->dist);
-	    }
-	    else {
-		create_and_insert_plane(-bsp_plane->normal[0], -bsp_plane->normal[1], -bsp_plane->normal[2], -bsp_plane->dist);
-	    }
-	}
-	else {
-	    if ( dclipnodes[(int)this->nodes.element_at(i)].children[0] == (int)this->nodes.element_at(i+1) ) {
-		create_and_insert_plane( bsp_plane->normal[0],  bsp_plane->normal[1],  bsp_plane->normal[2], bsp_plane->dist);
-	    }
-	    else {
-		create_and_insert_plane(-bsp_plane->normal[0], -bsp_plane->normal[1], -bsp_plane->normal[2], -bsp_plane->dist);
-	    }
-	}
-    }
-
-    return;
-}
-#endif
 
 
 // ------------------------------------------------------------------------

@@ -201,28 +201,6 @@ void CDialogGameInfo::ChangeGame( int serverIP, int queryPort, unsigned short co
 //-----------------------------------------------------------------------------
 void CDialogGameInfo::OnPersonaStateChange( PersonaStateChange_t *pPersonaStateChange )
 {
-#if 0 // TBD delete this func
-	if ( m_SteamIDFriend && m_SteamIDFriend == pPersonaStateChange->m_ulSteamID )
-	{
-		// friend may have changed servers
-		uint64 nGameID;
-		uint32 unGameIP;
-		uint16 usGamePort;
-		uint16 usQueryPort;
-		
-		if ( SteamFriends()->GetFriendGamePlayed( m_SteamIDFriend, &nGameID, &unGameIP, &usGamePort, &usQueryPort ) )
-		{
-			if ( pPersonaStateChange->m_nChangeFlags & k_EPersonaChangeGamePlayed )
-			{
-				ChangeGame( unGameIP, usQueryPort, usGamePort );
-			}
-		}
-		else
-		{
-			// bugbug johnc: change to not be in a game anymore
-		}
-	}
-#endif
 }
 
 

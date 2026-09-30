@@ -652,55 +652,6 @@ CBoneSetup::CBoneSetup( const CStudioHdr *pStudioHdr, int boneMask, const float 
 }
 
 
-#if 0
-//-----------------------------------------------------------------------------
-// Purpose: calculate a pose for a single sequence
-//			adds autolayers, runs local ik rukes
-//-----------------------------------------------------------------------------
-void CalcPose(
-	const CStudioHdr *pStudioHdr,
-	CIKContext *pIKContext,
-	BoneVector pos[], 
-	BoneQuaternionAligned q[], 
-	int sequence, 
-	float cycle,
-	const float poseParameter[],
-	int boneMask,
-	float flWeight,
-	float flTime
-	)
-{
-	BONE_PROFILE_FUNC();
-	mstudioseqdesc_t	&seqdesc = pStudioHdr->pSeqdesc( sequence );
-
-	Assert( flWeight >= 0.0f && flWeight <= 1.0f );
-	// This shouldn't be necessary, but the Assert should help us catch whoever is screwing this up
-	flWeight = clamp( flWeight, 0.0f, 1.0f );
-
-	// add any IK locks to prevent numautolayers from moving extremities 
-	CIKContext seq_ik;
-	if (seqdesc.numiklocks)
-	{
-		seq_ik.Init( pStudioHdr, vec3_angle, vec3_origin, 0.0, 0, boneMask ); // local space relative so absolute position doesn't mater
-		seq_ik.AddSequenceLocks( seqdesc, pos, q );
-	}
-
-	CalcPoseSingle( pStudioHdr, pos, q, seqdesc, sequence, cycle, poseParameter, boneMask, flTime );
-
-	if ( pIKContext )
-	{
-		pIKContext->AddDependencies( seqdesc, sequence, cycle, poseParameter, flWeight );
-	}
-	
-	AddSequenceLayers( pStudioHdr, pIKContext, pos, q, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime );
-
-	if (seqdesc.numiklocks)
-	{
-		seq_ik.SolveSequenceLocks( seqdesc, pos, q );
-	}
-}
-#endif
-
 extern ConVar cl_use_simd_bones;
 //-----------------------------------------------------------------------------
 // Purpose: accumulate a pose for a single sequence on top of existing animation
@@ -1117,17 +1068,6 @@ void DoAxisInterpBone(
 
 		// invert it back into parent's space.
 		VectorIRotate( tmp, bonetoworld.GetBone( pbones[pProc->control].parent ), control );
-#if 0
-		matrix3x4a_t	tmpmatrix;
-		matrix3x4a_t	controlmatrix;
-		MatrixInvert( bonetoworld.GetBone( pbones[pProc->control].parent ), tmpmatrix );
-		ConcatTransforms_Aligned( tmpmatrix, bonetoworld.GetBone( pProc->control ), controlmatrix );
-
-		// pull out the control column
-		control.x = controlmatrix[0][pProc->axis];
-		control.y = controlmatrix[1][pProc->axis];
-		control.z = controlmatrix[2][pProc->axis];
-#endif
 	}
 	else
 	{

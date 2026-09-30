@@ -407,29 +407,6 @@ CDispUtilsHelper* TransformIntoNeighbor(
 
 	CDispUtilsHelper *pRet = TransformIntoSubNeighbor( pDisp, iEdge, iSub, nodeIndex, out );
 	
-#if 0
-	// Debug check.. make sure it comes back to the same point from the other side.
-	#if defined( _DEBUG )
-		static bool bTesting = false;
-		if ( pRet && !bTesting )
-		{
-			bTesting = true;
-
-			// We could let TransformIntoNeighbor figure out the index but if this is a corner vert, then
-			// it may pick the wrong edge and we'd get a benign assert.
-			int nbOrientation = pDisp->GetEdgeNeighbor( iEdge )->m_SubNeighbors[iSub].GetNeighborOrientation();
-			int iNeighborEdge = (iEdge + 2 + nbOrientation) & 3;
-
-			CVertIndex testIndex;
-			CDispUtilsHelper *pTest = TransformIntoNeighbor( pRet, iNeighborEdge, out, testIndex );
-			Assert( pTest == pDisp );
-			Assert( testIndex == nodeIndex );
-		
-			bTesting = false;
-		}
-	#endif
-#endif
-		
 	return pRet;
 }
 
@@ -1240,19 +1217,6 @@ void DisableUnallowedVerts_R( CDispUtilsHelper *pDisp, CVertIndex const &nodeInd
 			UnallowVerts_R( pDisp, sideVert, nUnallowed );
 		}
 	}
-
-#if 0
-	// Test dependencies.
-	for( int iDep=0; iDep < 2; iDep++ )
-	{
-		CVertDependency const &dep = pDisp->GetPowerInfo()->m_pVertInfo[iNodeIndex].m_Dependencies[iDep];
-
-		if( dep.m_iNeighbor == -1 && !IsVertAllowed( pDisp, dep.m_iVert, iLevel ) )
-		{
-			UnallowVerts_R( pDisp, nodeIndex, nUnallowed );
-		}
-	}
-#endif
 
 	// Recurse.
 	if( iLevel+1 < pDisp->GetPower() )

@@ -43,7 +43,6 @@ void IVP_SurfaceManager_Polygon_Solver::traverse_cluster(const IVP_Compact_Ledge
     //this->traversion_depth++;
     //if ( this->traversion_depth > this->max_traversion_depth ) this->max_traversion_depth = this->traversion_depth;
 
-#if 1
     // first check sphere against sphere.
     IVP_U_Point dist_vec;
     IVP_U_Float_Point center; center.set( node->center.k);
@@ -58,9 +57,7 @@ void IVP_SurfaceManager_Polygon_Solver::traverse_cluster(const IVP_Compact_Ledge
 	}
 	return;
     }
-#endif
     
-#if 1
     // sphere collision detected! now check bounding box against bounding box.
     register IVP_FLOAT work2 = work * node->radius;
 
@@ -85,7 +82,6 @@ void IVP_SurfaceManager_Polygon_Solver::traverse_cluster(const IVP_Compact_Ledge
 
     //printf("Node    : %f - %f *** %f - %f *** %f - %f\n", min_x, max_x, min_y, max_y, min_z, max_z);
     //printf("Intruder: %f - %f *** %f - %f *** %f - %f\n", s_bb_min_x, s_bb_max_x, s_bb_min_y, s_bb_max_y, s_bb_min_z, s_bb_max_z);
-#endif
     const IVP_Compact_Ledge *hull = node->get_compact_hull();
     if ( hull ){
 	resulting_ledges->add(&(IVP_Compact_Ledge&)*hull);

@@ -2168,60 +2168,6 @@ static void FloatToString( char *pBuf, uint nBufSize, double fConst )
 	}
 }
 
-#if 0
-#include "vstdlib/random.h"
-static void TestFloatConversion()
-{
-	for ( ; ; )
-	{
-		double fConst;
-		switch ( rand() % 4 )
-		{
-		case 0:
-			fConst = RandomFloat( -1e-30, 1e+30 ); break;
-		case 1:
-			fConst = RandomFloat( -1e-10, 1e+10 ); break;
-		case 2: 
-			fConst = RandomFloat( -1e-5, 1e+5 ); break;
-		default:
-			fConst = RandomFloat( -1, 1 ); break;
-		}
-
-		char szTemp[1024];
-
-		// FloatToString does not rely on V_snprintf(), so it can't be affected by the current locale setting.
-		FloatToString( szTemp, sizeof( szTemp ), fConst );
-
-		static double flMaxErr1;
-		static double flMaxErr2;
-
-		// Compare FloatToString()'s results vs. V_snprintf()'s, also track maximum error of each.
-		double flCheck = atof( szTemp );
-		double flErr = fabs( flCheck - fConst );
-		flMaxErr1 = MAX( flMaxErr1, flErr );
-		Assert( EqualTol( flCheck, fConst, .000000125 ) );
-
-		char szTemp2[256];
-		V_snprintf( szTemp2, sizeof( szTemp2 ), "%.12f", fConst );
-		StripExtraTrailingZeros( szTemp2 );
-
-		if ( !strchr( szTemp2, '.' ) )
-		{
-			V_strncat( szTemp2, ".0", sizeof( szTemp2 ) );
-		}
-		double flCheck2 = atof( szTemp2 );
-		double flErr2 = fabs( flCheck2 - fConst );
-		flMaxErr2 = MAX( flMaxErr2, flErr2 );
-		Assert( EqualTol( flCheck2, fConst, .000000125 ) );
-
-		if ( flMaxErr1 > flMaxErr2 )
-		{
-			Plat_DebugString( "!\n" );
-		}
-	}
-}
-#endif
-
 void D3DToGL::Handle_DEFIB( uint32 instruction )
 {
 	Assert( ( instruction == D3DSIO_DEFI ) || ( instruction == D3DSIO_DEFB ) );
@@ -2283,35 +2229,6 @@ void D3DToGL::Handle_DEF()
 		char szTemp[1024];
 
 		FloatToString( szTemp, sizeof( szTemp ), fConst );
-
-#if 0
-		static double flMaxErr1;
-		static double flMaxErr2;
-
-		// Compare FloatToString()'s results vs. V_snprintf()'s, also track maximum error of each.
-		double flCheck = atof( szTemp );
-		double flErr = fabs( flCheck - fConst );
-		flMaxErr1 = MAX( flMaxErr1, flErr );
-		Assert( EqualTol( flCheck, fConst, .000000125 ) );
-
-		char szTemp2[256];
-		V_snprintf( szTemp2, sizeof( szTemp2 ), "%.12f", fConst );
-		StripExtraTrailingZeros( szTemp2 );
-
-		if ( !strchr( szTemp2, '.' ) )
-		{
-			V_strncat( szTemp2, ".0", sizeof( szTemp2 ) );
-		}
-		double flCheck2 = atof( szTemp2 );
-		double flErr2 = fabs( flCheck2 - fConst );
-		flMaxErr2 = MAX( flMaxErr2, flErr2 );
-		Assert( EqualTol( flCheck2, fConst, .000000125 ) );
-
-		if ( flMaxErr1 > flMaxErr2 )
-		{
-			Plat_DebugString( "!\n" );
-		}
-#endif
 
 		PrintToBuf( *m_pBufParamCode, i != 3 ? "%s, " : "%s", szTemp ); // end with comma-space
 	}

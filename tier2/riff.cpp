@@ -17,58 +17,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if 0
-//-----------------------------------------------------------------------------
-// Purpose: Test code that implements the interface on stdio
-//-----------------------------------------------------------------------------
-class StdIOReadBinary : public IFileReadBinary
-{
-public:
-	int open( const char *pFileName )
-	{
-		return (int)fopen( pFileName, "rb" );
-	}
-
-	int read( void *pOutput, int size, int file )
-	{
-		FILE *fp = (FILE *)file;
-
-		return fread( pOutput, size, 1, fp );
-	}
-
-	void seek( int file, int pos )
-	{
-		fseek( (FILE *)file, pos, SEEK_SET );
-	}
-
-	unsigned int tell( int file )
-	{
-		return ftell( (FILE *)file );
-	}
-
-	unsigned int size( int file )
-	{
-		FILE *fp = (FILE *)file;
-		if ( !fp )
-			return 0;
-
-		unsigned int pos = ftell( fp );
-		fseek( fp, 0, SEEK_END );
-		unsigned int size = ftell( fp );
-
-		fseek( fp, pos, SEEK_SET );
-		return size;
-	}
-
-	void close( int file )
-	{
-		FILE *fp = (FILE *)file;
-
-		fclose( fp );
-	}
-};
-#endif
-
 
 #define RIFF_ID MAKEID('R','I','F','F')
 

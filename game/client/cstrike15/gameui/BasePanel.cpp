@@ -677,14 +677,6 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 		m_hNewGameDialog->MarkForDeletion();
 		g_bIsCreatingNewGameMenuForPreFetching = false;
 
-#if 0
-		m_hOptionsDialog_Xbox = new COptionsDialogXbox( this );
-		m_hOptionsDialog_Xbox->MarkForDeletion();
-
-		m_hControllerDialog = new CControllerDialog( this );
-		m_hControllerDialog->MarkForDeletion();
-#endif
-		
         if ( !IsStartScreenEnabled() && !IsScaleformIntroMovieEnabled() && !m_bBypassStartScreen )
 		{
 			ArmFirstMenuItem();
@@ -2184,17 +2176,6 @@ void CBaseModPanel::OnGameUIActivated()
 			}
 		}
 
-#if 0
-		// determine if we're starting up because of a cross-game invite
-		int fLaunchFlags = XboxLaunch()->GetLaunchFlags();
-		if ( fLaunchFlags & LF_INVITERESTART )
-		{
-			XNKID nSessionID;
-			XboxLaunch()->GetInviteSessionID( &nSessionID );
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Leaving invite acceptance restart behavior broken" )
-			//matchmaking->JoinInviteSessionByID( nSessionID );
-		}
-#endif
 #endif
 
 		// Brute force check to open tf matchmaking ui.
@@ -3244,18 +3225,6 @@ bool CBaseModPanel::HandleStorageDeviceRequest( const char *command )
 		if ( m_bUserRefusedStorageDevice && CommandRespectsSignInDenied( command ) )
 			return true;
 
-#if 0 // This attempts to find user data, but may not be cert-worthy even though it's a bit nicer for the user
-		// Attempt to automatically find a device
-		DWORD nFoundDevice = xboxsystem->DiscoverUserData( XBX_GetPrimaryUserId(), COM_GetModDirectory() );
-		if ( nFoundDevice != XBX_INVALID_STORAGE_ID )
-		{
-			// Take this device
-			XBX_SetStorageDeviceId( XBX_GetPrimaryUserId(), nFoundDevice );
-			OnDeviceAttached();
-			return true;
-		}
-#endif // 
-
 		// If the message is required first, then do that instead
 		if ( CommandRequiresStorageDevice( command ) )
 		{
@@ -3656,15 +3625,6 @@ void CBaseModPanel::OnOpenSettingsDialog()
 //-----------------------------------------------------------------------------
 void CBaseModPanel::OnOpenOptionsDialog_Xbox()
 {
-#if 0
-	if ( !m_hOptionsDialog_Xbox.Get() )
-	{
-		m_hOptionsDialog_Xbox = new COptionsDialogXbox( this );
-		PositionDialog( m_hOptionsDialog_Xbox );
-	}
-
-	m_hOptionsDialog_Xbox->Activate();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -4297,16 +4257,7 @@ void CBaseModPanel::OnOpenCSAchievementsDialog()
 
 void CBaseModPanel::OnOpenAchievementsDialog_Xbox()
 {
-#if 0
-	if (!m_hAchievementsDialog.Get())
-	{
-		m_hAchievementsDialog = new CAchievementsDialog_XBox( this );
-		PositionDialog(m_hAchievementsDialog);
-	}
-	m_hAchievementsDialog->Activate();
-#else
 	AssertMsg( false, "Fixme" );
-#endif
 }
 
 //-----------------------------------------------------------------------------

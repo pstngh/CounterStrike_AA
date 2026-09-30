@@ -1785,41 +1785,6 @@ bool CAI_BlendedMotor::AddTurnGesture( float flYD )
 
 
 
-#if 0
-Activity CAI_BlendedMotor::GetTransitionActivity( )
-{
-	AI_Waypoint_t *waypoint = GetNavigator()->GetPath()->GetTransitionWaypoint();
-
-	if ( waypoint->Flags() & bits_WP_TO_GOAL )
-	{
-		if ( waypoint->activity != ACT_INVALID)
-		{
-			return waypoint->activity;
-		}
-
-		return GetStoppedActivity( );
-	}
-
-	if (waypoint)
-		waypoint = waypoint->GetNext();
-
-	switch(waypoint->NavType() )
-	{
-	case NAV_JUMP:
-		return ACT_JUMP; // are jumps going to get a movement track added to them?
-
-	case NAV_GROUND:
-		return GetNavigator()->GetMovementActivity(); // yuck
-
-	case NAV_CLIMB:
-		return ACT_CLIMB_UP; // depends on specifics of climb node
-
-	default:
-		return ACT_IDLE;
-	}
-}
-#endif
-
 //-------------------------------------
 // Purpose:	return a velocity that should be hit at the end of the interval to match goal
 // Input  : flInterval - time interval to consider

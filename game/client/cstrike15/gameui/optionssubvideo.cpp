@@ -388,12 +388,6 @@ public:
 		{
 			m_pHDR->AddItem("#GameUI_hdr_level2", NULL);
 		}
-#if 0
-		if ( materials->SupportsHDRMode( HDR_TYPE_FLOAT ) )
-		{
-			m_pHDR->AddItem("#GameUI_hdr_level3", NULL);
-		}
-#endif
 
 		m_pHDR->SetEnabled( mat_dxlevel.GetInt() >= 80 );
 

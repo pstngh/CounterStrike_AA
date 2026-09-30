@@ -292,16 +292,9 @@ static bool LightmapLess( const SurfaceHandle_t& surfID1, const SurfaceHandle_t&
 	// Then sort by lightmap area for better packing... (big areas first)
 	// NOTE: Don't care about bumpmap increasing area here because it is a linear factor 
 	// (all surfs with the same material have the same bumpmapping cost)
-#if 1
 	int area1 = MSurf_LightmapExtents( surfID1 )[0] * MSurf_LightmapExtents( surfID1 )[1];
 	int area2 = MSurf_LightmapExtents( surfID2 )[0] * MSurf_LightmapExtents( surfID2 )[1];
 	return area2 < area1;
-#else
-	// Previous algorithm: pack minimum height first
-	// NOTE: In d1_trainstation_05, greatest area results in fewer material splits
-	//		so I've switched over to that heuristic
-	return MSurf_LightmapExtents( surfID1 )[1] < MSurf_LightmapExtents( surfID2 )[1];
-#endif
 }
 
 void MaterialSystem_RegisterLightmapSurfaces( void )
@@ -1052,27 +1045,6 @@ void DebugDrawLightmapAtCrossHair()
 //	pMaterial->GetLowResColorSample( textureS, textureT, baseColor );
 	DrawLightmapPage( materialSortInfoArray[MSurf_MaterialSortID( s_CrossHairSurfID )].lightmapPageID );
 
-#if 0
-	int i;
-	for( i = 0; i < 2; i++ )
-	{
-		xy[i] = 
-			( ( float )pCrossHairSurf->offsetIntoLightmapPage[i] / ( float )lightmapPageSize[i] ) +
-			lightmapCoord[i] * ( pCrossHairSurf->lightmapExtents[i] / ( float )lightmapPageSize[i] );
-	}
-
-	materials->Bind( g_materialWireframe );
-	IMesh* pMesh = materials->GetDynamicMesh( g_materialWireframe );
-	
-	CMeshBuilder meshBuilder;
-	meshBuilder.Begin( pMesh, MATERIAL_QUAD, 1 );
-
-	meshBuilder.Position3f( 
-	meshBuilder.AdvanceVertex();
-
-	meshBuilder.End();
-	pMesh->Draw();
-#endif
 }
 
 void ReleaseMaterialSystemObjects( int nChangeFlags );

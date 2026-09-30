@@ -201,16 +201,6 @@ void MatrixAngles( const matrix3x4_t &matrix, Quaternion &q, Vector &pos )
 
 	QuaternionNormalize( q );
 
-#if 0
-	// check against the angle version
-	RadianEuler ang;
-	MatrixAngles( matrix, ang );
-	Quaternion test;
-	AngleQuaternion( ang, test );
-	float d = QuaternionDotProduct( q, test );
-	Assert( fabs(d) > 0.99 && fabs(d) < 1.01 );
-#endif
-
 	MatrixGetColumn( matrix, 3, pos );
 }
 
@@ -765,14 +755,6 @@ R_ConcatTransforms
 
 void ConcatTransforms (const matrix3x4_t& in1, const matrix3x4_t& in2, matrix3x4_t& out)
 {
-#if 0
-	// test for ones that'll be 2x faster
-	if ( (((size_t)&in1) % 16) == 0 && (((size_t)&in2) % 16) == 0 && (((size_t)&out) % 16) == 0 )
-	{
-		ConcatTransforms_Aligned( in1, in2, out );
-		return;
-	}
-#endif
 
 	fltx4 lastMask = *(fltx4 *)(&g_SIMD_ComponentMask[3]);
 	fltx4 rowA0 = LoadUnalignedSIMD( in1.m_flMatVal[0] );
@@ -1796,7 +1778,6 @@ void QuaternionSlerpNoAlign( const Quaternion &p, const Quaternion &q, float t, 
 //-----------------------------------------------------------------------------
 float QuaternionAngleDiff( const Quaternion &p, const Quaternion &q )
 {
-#if 1
 	// this code path is here for 2 reasons:
 	// 1 - acos maps 1-epsilon to values much larger than epsilon (vs asin, which maps epsilon to itself)
 	//     this means that in floats, anything below ~0.05 degrees truncates to 0
@@ -1811,25 +1792,6 @@ float QuaternionAngleDiff( const Quaternion &p, const Quaternion &q )
 	float sinang = MIN( 1.0f, sqrt( diff.x * diff.x + diff.y * diff.y + diff.z * diff.z ) );
 	float angle = RAD2DEG( 2 * asin( sinang ) );
 	return angle;
-#else
-	Quaternion q2;
-	QuaternionAlign( p, q, q2 );
-
-	Assert( s_bMathlibInitialized );
-	float cosom = p.x * q2.x + p.y * q2.y + p.z * q2.z + p.w * q2.w;
-
-	if ( cosom > -1.0f )
-	{
-		if ( cosom < 1.0f )
-		{
-			float omega = 2 * fabs( acos( cosom ) );
-			return RAD2DEG( omega );
-		}
-		return 0.0f;
-	}
-
-	return 180.0f;
-#endif
 }
 
 void QuaternionConjugate( const Quaternion &p, Quaternion &q )
@@ -1903,18 +1865,6 @@ void QuaternionScale( const Quaternion &p, float t, Quaternion &q )
 {
 	Assert( s_bMathlibInitialized );
 
-#if 0
-	Quaternion p0;
-	Quaternion q;
-	p0.Init( 0.0, 0.0, 0.0, 1.0 );
-
-	// slerp in "reverse order" so that p doesn't get realigned
-	QuaternionSlerp( p, p0, 1.0 - fabs( t ), q );
-	if (t < 0.0)
-	{
-		q.w = -q.w;
-	}
-#else
 	float r;
 
 	// FIXME: nick, this isn't overly sensitive to accuracy, and it may be faster to 
@@ -1940,7 +1890,6 @@ void QuaternionScale( const Quaternion &p, float t, Quaternion &q )
 		q.w = -r;
 	else
 		q.w = r;
-#endif
 
 	Assert( q.IsValid() );
 
@@ -2158,7 +2107,6 @@ void QuaternionMatrix( const Quaternion &q, matrix3x4_t& matrix )
 // Original code
 // This should produce the same code as below with optimization, but looking at the assmebly,
 // it doesn't.  There are 7 extra multiplies in the release build of this, go figure.
-#if 1
 	matrix[0][0] = 1.0 - 2.0 * q.y * q.y - 2.0 * q.z * q.z;
 	matrix[1][0] = 2.0 * q.x * q.y + 2.0 * q.w * q.z;
 	matrix[2][0] = 2.0 * q.x * q.z - 2.0 * q.w * q.y;
@@ -2174,38 +2122,6 @@ void QuaternionMatrix( const Quaternion &q, matrix3x4_t& matrix )
 	matrix[0][3] = 0.0f;
 	matrix[1][3] = 0.0f;
 	matrix[2][3] = 0.0f;
-#else
-   float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
-
-    // precalculate common multiplitcations
-    x2 = q.x + q.x; 
-	y2 = q.y + q.y; 
-    z2 = q.z + q.z;
-    xx = q.x * x2;
-	xy = q.x * y2;
-	xz = q.x * z2;
-    yy = q.y * y2;
-	yz = q.y * z2;
-	zz = q.z * z2;
-    wx = q.w * x2;
-	wy = q.w * y2;
-	wz = q.w * z2;
-
-    matrix[0][0] = 1.0 - (yy + zz);
-    matrix[0][1] = xy - wz;
-	matrix[0][2] = xz + wy;
-    matrix[0][3] = 0.0f;
-
-    matrix[1][0] = xy + wz;
-	matrix[1][1] = 1.0 - (xx + zz);
-    matrix[1][2] = yz - wx;
-	matrix[1][3] = 0.0f;
-
-    matrix[2][0] = xz - wy;
-	matrix[2][1] = yz + wx;
-    matrix[2][2] = 1.0 - (xx + yy);
-	matrix[2][3] = 0.0f;
-#endif
 }
 
 
@@ -2326,25 +2242,10 @@ void QuaternionAngles( const Quaternion &q, QAngle &angles )
 	VPROF_BUDGET( "QuaternionAngles", "Mathlib" );
 #endif
 
-#if 1
 	// FIXME: doing it this way calculates too much data, needs to do an optimized version...
 	matrix3x4_t matrix;
 	QuaternionMatrix( q, matrix );
 	MatrixAngles( matrix, angles );
-#else
-	float m11, m12, m13, m23, m33;
-
-	m11 = ( 2.0f * q.w * q.w ) + ( 2.0f * q.x * q.x ) - 1.0f;
-	m12 = ( 2.0f * q.x * q.y ) + ( 2.0f * q.w * q.z );
-	m13 = ( 2.0f * q.x * q.z ) - ( 2.0f * q.w * q.y );
-	m23 = ( 2.0f * q.y * q.z ) + ( 2.0f * q.w * q.x );
-	m33 = ( 2.0f * q.w * q.w ) + ( 2.0f * q.z * q.z ) - 1.0f;
-
-	// FIXME: this code has a singularity near PITCH +-90
-	angles[YAW] = RAD2DEG( atan2(m12, m11) );
-	angles[PITCH] = RAD2DEG( asin(-m13) );
-	angles[ROLL] = RAD2DEG( atan2(m23, m33) );
-#endif
 
 	Assert( angles.IsValid() );
 }

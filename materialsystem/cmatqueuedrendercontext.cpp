@@ -1538,47 +1538,6 @@ void CMatQueuedRenderContext::CallQueued( bool bTermAfterCall )
 	}
 #endif
 
-#if 0
-	static int s_nVHisto[ 33 ];
-	static int s_nIHisto[ 9 ];
-	static int s_nHistoCount;
-	int nMem = ( Vertices().GetUsed() + m_Vertices.GetUsed() + ( 64 * 1024 ) - 1 ) / ( 64 * 1024 );
-	nMem = clamp( nMem, 0, 32 );
-	s_nVHisto[ nMem ]++;
-	nMem = ( Indices().GetUsed() + m_Indices.GetUsed() + ( 32 * 1024 ) - 1 ) / ( 32 * 1024 );
-	nMem = clamp( nMem, 0, 8 );
-	s_nIHisto[ nMem ]++;
-	if ( ( ++s_nHistoCount % 1024 ) == 0 )
-	{
-		Msg( "Verts:" );
-		bool bFound = false;
-		for( int i = 32; i >= 0; --i )
-		{
-			if ( s_nVHisto[i] )
-			{
-				bFound = true;
-			}
-			if ( !bFound )
-				continue;
-			Msg( "[%dk %d] ", i * 64, s_nVHisto[i] );
-		}
-		Msg( "\n" );
-		Msg( "Indices: " );
-		bFound = false;
-		for( int i = 8; i >= 0; --i )
-		{
-			if ( s_nIHisto[i] )
-			{
-				bFound = true;
-			}
-			if ( !bFound )
-				continue;
-			Msg( "[%dk %d] ", i * 32, s_nIHisto[i] );
-		}
-		Msg( "\n" );
-	}
-#endif
-
 	m_Vertices.FreeAll( false );
 	m_Indices.FreeAll( false );
 

@@ -1672,38 +1672,6 @@ void CCSGameStats::UploadRoundStats( void )
 #endif // !NO_STEAM
 }
 
-#if 0 
-CON_COMMAND ( teststats, "Test command" )
-{
-	CFastTimer totalTimer;
-	double uploadTime = 0.0f;
-	g_rowCommitTime = 0.0f;
-	g_rowWriteTime = 0.0f;
-
-	for( int i = 0; i < 1000; i++ )
-	{
-		KeyValues *pKV = new KeyValues( "basedata" );
-		if ( !pKV )
-			return;
-
-		pKV->SetName( "foobartest" );
-		pKV->SetUint64( "test1", 1234 );
-		pKV->SetUint64( "test2", 1234 );
-		pKV->SetUint64( "test3", 1234 );
-		pKV->SetUint64( "test4", 1234 );
-		pKV->SetString( "test5", "TEST1234567890TEST1234567890TEST!");
-
-		totalTimer.Start();
-		GetSteamWorksGameStatsServer().AddStatsForUpload( pKV, args.ArgC() == 1 );
-		totalTimer.End();
-
-		uploadTime += totalTimer.GetDuration().GetMillisecondsF();
-	}
-
-	Msg( "teststats took %.3f msec   commit: %.3fms   write: %.3fms.\n", uploadTime, g_rowCommitTime, g_rowWriteTime );
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

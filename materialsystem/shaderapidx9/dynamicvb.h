@@ -363,14 +363,6 @@ void CVertexBuffer::Create( D3DDeviceWrapper *pD3D )
 	desc.FVF = m_TheFVF;
 
 
-#if defined( IS_WINDOWS_PC ) && defined( SHADERAPIDX9 ) && 0	// this may not be supported on all platforms
-	extern bool g_ShaderDeviceUsingD3D9Ex;
-	if ( g_ShaderDeviceUsingD3D9Ex )
-	{
-		desc.Pool = D3DPOOL_DEFAULT;
-	}
-#endif
-
 	desc.Usage = D3DUSAGE_WRITEONLY;
 	if ( m_bDynamic )
 	{

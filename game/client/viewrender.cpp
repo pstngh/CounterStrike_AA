@@ -496,20 +496,6 @@ void Aperture_QueuePhotoView( EHANDLE hPhotoEntity, ITexture *pRenderTarget )
 static int ComputeSimpleWorldModelDrawFlags()
 {
 #if defined( PORTAL ) 
-#if 0
-	// Some spew to track portal distances
-	static int nLastFrame = -1;
-	static int nCurrentEntryInFrame = 0;
-
-	if ( nLastFrame != gpGlobals->framecount )
-	{
-		nLastFrame = gpGlobals->framecount;
-		nCurrentEntryInFrame = 0;
-	}
-
-	engine->Con_NPrintf( 1 + nCurrentEntryInFrame, "Portal %X distance: %f", g_pPortalRender->GetCurrentViewExitPortal(), g_pPortalRender->GetCurrentPortalDistanceBias() );
-	++ nCurrentEntryInFrame;
-#endif // 0 
 
 	bool bSimpleWorldModeWaterReflection;
 	int nSimpleWorldModelRecursionLevel;
@@ -7166,14 +7152,10 @@ void CAperturePhotoView::Draw()
 	if( fLength > fGoodDist )
 	{
 		//move the camera closer for a better view
-#if 1 //use camera forward as offset direction
 		Vector vCameraForward;
 		AngleVectors( angles, &vCameraForward );
 
 		origin = m_pTargetEntity->WorldSpaceCenter() - (vCameraForward * fGoodDist); 
-#else //use existing offset direction, but shorter
-		origin = m_pTargetEntity->WorldSpaceCenter() - (vDiff * (fGoodDist / fLength));
-#endif
 		//Vector vCameraForward;
 		//AngleVectors( angles, &vCameraForward );
 		//origin += vCameraForward * ((fLength - fGoodDist) * vCameraForward.Dot( vDiff / fLength ));
@@ -7304,12 +7286,6 @@ void CShadowDepthView::Draw()
 	VPROF_BUDGET( "CShadowDepthView::Draw", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 
 	bool bRenderWorldAndObjects = true;
-#if 0
-	if ( ( m_bRenderViewModels ) && ( g_CascadeLightManager.GetCSMQualityMode() < CSMQUALITY_LOW ) )
-	{
-		bRenderWorldAndObjects = false;
-	}
-#endif
 
 	// Start view
 	unsigned int visFlags;
@@ -7349,47 +7325,6 @@ void CShadowDepthView::Draw()
 
 	bool bFlashlightStaticGeoCacheValid = false;
 	bool bFlashlightStaticGeoCacheEnabled = 0; bFlashlightStaticGeoCacheEnabled;
-#if 0
-	bool bFlashlightStaticGeoCacheEnabled = r_flashlight_staticgeocache.GetBool();
-	if ( bFlashlightStaticGeoCacheEnabled )
-	{
-		if ( g_flashlight_staticgeo_cache_valid )
-		{
-			ShadowDepthStaticGeoCacheEntry_t entry( *this );
-			bFlashlightStaticGeoCacheValid = !V_memcmp( &entry, &g_flashlight_staticgeo_cache, sizeof( entry ) );
-			if ( !bFlashlightStaticGeoCacheValid )
-			{
-				if ( r_flashlight_staticgeocache.GetInt() > 1 )
-				{
-					DevMsg( "Shadow Depth View: depth cache is stale [id=%d]\n", g_flashlight_staticgeo_cache_id );
-					DevMsg( "   pos   = %.3f:%.3f:%.3f -> %.3f:%.3f:%.3f\n",
-						g_flashlight_staticgeo_cache.origin.x, g_flashlight_staticgeo_cache.origin.y, g_flashlight_staticgeo_cache.origin.z,
-						entry.origin.x, entry.origin.y, entry.origin.z );
-					DevMsg( "   ang   = %.3f:%.3f:%.3f -> %.3f:%.3f:%.3f\n",
-						g_flashlight_staticgeo_cache.angles.x, g_flashlight_staticgeo_cache.angles.y, g_flashlight_staticgeo_cache.angles.z,
-						entry.angles.x, entry.angles.y, entry.angles.z );
-					DevMsg( "   fov   = %.3f -> %.3f\n", g_flashlight_staticgeo_cache.fov, entry.fov );
-					DevMsg( "   zNear = %.3f -> %.3f\n", g_flashlight_staticgeo_cache.zNear, entry.zNear );
-					DevMsg( "   zFar  = %.3f -> %.3f\n", g_flashlight_staticgeo_cache.zFar, entry.zFar );
-				}
-				V_memcpy( &g_flashlight_staticgeo_cache, &entry, sizeof( entry ) );
-			}
-		}
-		if ( !bFlashlightStaticGeoCacheValid )
-		{
-			++ g_flashlight_staticgeo_cache_id;
-			g_flashlight_staticgeo_cache_valid = true;
-			if ( r_flashlight_staticgeocache.GetInt() > 1 )
-			{
-				DevMsg( "Shadow Depth View: fully refreshing depth cache [id=%d]\n", g_flashlight_staticgeo_cache_id );
-			}
-		}
-	}
-	else
-	{
-		g_flashlight_staticgeo_cache_valid = false;
-	}
-#endif
 
 	bool bRenderWorld;
 	// 7LS - turn off all world rendering in view model cascade, viewmodel and renderables only
@@ -8127,14 +8062,6 @@ void CBaseWorldView::SSAO_DepthPass()
 		DrawOpaqueRenderables( pRenderContext, RENDERABLES_RENDER_PATH_NORMAL, DEPTH_MODE_SSA0, NULL );
 
 	}
-
-#if 0
-	if ( m_bRenderFlashlightDepthTranslucents || r_flashlightdepth_drawtranslucents.GetBool() )
-	{
-		VPROF_BUDGET( "DrawTranslucentRenderables", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
-		DrawTranslucentRenderables( false, true );
-	}
-#endif
 
 	modelrender->ForcedMaterialOverride( 0 );
 

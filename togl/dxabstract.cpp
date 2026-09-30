@@ -1265,16 +1265,6 @@ HRESULT IDirect3D9::GetAdapterIdentifier( UINT Adapter, DWORD Flags, D3DADAPTER_
 	pIdentifier->Revision				= 0;								// 162;
 	pIdentifier->VideoMemory			= glmRendererInfo.m_vidMemory;		// amount of video memory in bytes
 
-	#if 0
-		// this came from the shaderapigl effort	
-		Q_strncpy( pIdentifier->Driver, "Fake-Video-Card", MAX_DEVICE_IDENTIFIER_STRING );
-		Q_strncpy( pIdentifier->Description, "Fake-Video-Card", MAX_DEVICE_IDENTIFIER_STRING );
-		pIdentifier->VendorId				= 4318;
-		pIdentifier->DeviceId				= 401;
-		pIdentifier->SubSysId				= 3358668866;
-		pIdentifier->Revision				= 162;
-	#endif
-	
 	return S_OK;
 }
 
@@ -1891,12 +1881,6 @@ HRESULT IDirect3DQuery9::GetData(void* pData,DWORD dwSize,DWORD dwGetDataFlags)
 					gGL->glFlush();
 				}
 
-#if 0
-				if ( ( m_nIssueStartThreadID != nCurThreadId ) || ( m_nIssueEndThreadID != nCurThreadId ) )
-				{
-					GLMDebugPrintf( "IDirect3DQuery9::GetData: GetData() called from different thread verses the issueing thread()!\n" );
-				}
-#endif
 				if ( m_nIssueStartQueryCreationCounter != m_nIssueEndQueryCreationCounter )
 				{
 					GLMDebugPrintf( "IDirect3DQuery9::GetData: One or more queries have been created or released while this query was still issued! This scenario is not supported in GL.\n");
@@ -2330,25 +2314,6 @@ HRESULT	IDirect3DDevice9::Create( IDirect3DDevice9Params *params )
 
 	glmParams.m_focusWindow					=	params->m_focusWindow;	
 
-		#if 0	//FIXME-HACK
-			// map the D3D "adapter" to a renderer/display pair
-			// (that GPU will have to stay set as-is for any subsequent mode changes)
-		
-			int glmRendererIndex = -1;
-			int glmDisplayIndex = -1;
-		
-			GLMRendererInfoFields		glmRendererInfo;
-			GLMDisplayInfoFields		glmDisplayInfo;
-		
-			// the D3D "Adapter" number feeds the fake adapter index
-			bool adaptResult = GLMgr::aGLMgr()->GetDisplayDB()->GetFakeAdapterInfo( params->m_adapter, &glmRendererIndex, &glmDisplayIndex, &glmRendererInfo, &glmDisplayInfo );
-			Assert(!adaptResult);
-
-			glmParams.m_rendererIndex				=	glmRendererIndex;
-			glmParams.m_displayIndex				=	glmDisplayIndex;
-				// glmParams.m_modeIndex  hmmmmm, client doesn't give us a mode number, just a resolution..
-		#endif
-	
 	m_ctx = GLMgr::aGLMgr()->NewContext( this, &glmParams );
 	if (!m_ctx)
 	{
@@ -4054,15 +4019,6 @@ HRESULT IDirect3DDevice9::SetPixelShaderConstantFNonInline(UINT StartRegister,CO
 	GL_BATCH_PERF_CALL_TIMER;
 	GL_PUBLIC_ENTRYPOINT_CHECKS( this );
 	TOGL_NULL_DEVICE_CHECK;
-#if 0
-	const uint nRegToWatch = 3;
-	if ( ( ( StartRegister + Vector4fCount ) > nRegToWatch ) && ( StartRegister <= nRegToWatch ) )
-	{
-		char buf[256];
-		V_snprintf( buf, sizeof(buf ), "-- %f %f %f %f\n", pConstantData[(nRegToWatch - StartRegister)*4+0], pConstantData[(nRegToWatch - StartRegister)*4+1], pConstantData[(nRegToWatch - StartRegister)*4+2], pConstantData[(nRegToWatch - StartRegister)*4+3] );
-		Plat_DebugString( buf );
-	}
-#endif
 	m_ctx->SetProgramParametersF( kGLMFragmentProgram, StartRegister, (float *)pConstantData, Vector4fCount );
 	return S_OK;
 }

@@ -693,52 +693,6 @@ void IVP_Friction_Solver::ease_test_two_mindists(IVP_Contact_Point *dist0,IVP_Co
 #ifdef NOEASING
     return;
 #endif
-#if 0   
-    IVP_Core *rev_core; 
-    rev_core=dist0->synapse[0]->l_obj->to_real()->physical_core; //forces seen relative to this core
-    
-    IVP_real_friction_data fr_data0,fr_data1;
-    dist0->get_world_friction_forces_dist(&fr_data0,0);
-
-    dist1->get_world_friction_forces_dist(&fr_data1,0);
-    if(rev_core!=dist1->synapse[0]->l_obj->to_real()->physical_core) {
-	fr_data1.revert_friction_data();
-    }
-    
-    IVP_U_Float_Point force0_vec,force1_vec;
-    force0_vec.subtract(&fr_data0.world0,&fr_data1.world0);
-    force1_vec.subtract(&fr_data0.world1,&fr_data1.world1);
-    
-    IVP_DOUBLE lendiff=IVP_Inline_Math::fabsd(force0_vec.real_length()-force1_vec.real_length());
-    IVP_IF(1) {
-
-	IVP_Synapse_Polygon *syn0,*syn1;
-	syn0=dist0->synapse[0]->to_poly();
-	syn1=dist1->synapse[0]->to_poly();
-	IVP_SYNAPSE_POLYGON_STATUS ty0,ty1;
-	ty0=syn0->status;
-	ty1=syn1->status;
-	IVP_Core *core00,*core01,*core10,*core11;
-	core00=dist0->synapse[0]->l_obj->to_real()->physical_core;
-	core01=dist0->synapse[1]->l_obj->to_real()->physical_core;
-	core10=dist0->synapse[0]->l_obj->to_real()->physical_core;
-	core11=dist1->synapse[1]->l_obj->to_real()->physical_core;
-	//printf("tcores %lx %lx %lx %lx ",(long)core00,(long)core01,(long)core10,(long)core11);
-	printf("test_ease %lx %lx  ",(long)dist0,(long)dist1);
-	if(ty0==IVP_ST_EDGE) {
-	  printf("edge-edge ");
-	} else {
-	  printf("point-sur ");
-	}
-	if(ty1==IVP_ST_EDGE) {
-	  printf("edge-edge  ");
-	} else {
-	  printf("point-sur  ");
-	}
-	printf("diff %f l0 %f l1 %f\n",lendiff,force0_vec.real_length(),force1_vec.real_length());
-	printf("   parallel_ease %f %f %f   %f %f %f\n",force0_vec.k[0],force0_vec.k[1],force0_vec.k[2],force1_vec.k[0],force1_vec.k[1],force1_vec.k[2]);
-    }
-#endif    
 }
 
 void IVP_Friction_Solver::ease_two_mindists(IVP_Contact_Point *dist0,IVP_Contact_Point *dist1,
@@ -940,39 +894,6 @@ void IVP_Friction_Solver::ease_friction_pair(IVP_Friction_Core_Pair *my_pair,IVP
 }
 
 
-
-#if 0 /* not needed any more (snief), but function is correct */
-	 //given rot and trans of a core and a surface normal. wanted virtual center p in surface where no translation exists (relative to surface  2D!) 
-IVP_RETURN_TYPE IVP_Friction_Solver::calc_virtual_rotation_center(IVP_Core *core,IVP_U_Float_Point *rotation,IVP_U_Float_Point *translation,IVP_U_Float_Point *surf_normal,IVP_U_Float_Point *obj_p_out)
-{
-    IVP_U_Matrix mat_world_f_z;
-    mat_world_f_z.init_normized(surf_normal);
-
-    IVP_U_Float_Point rot_z,trans_z,out_p_z;
-    mat_world_f_z.vmult3(rotation,&rot_z);
-
-    IVP_U_Float_Point test_n;
-    mat_world_f_z.vmult3(surf_normal,&test_n);
-    printf("z_normal %f %f %f\n",test_n.k[0],test_n.k[1],test_n.k[2]);
-    
-    if(IVP_Inline_Math::fabsd(rot_z.k[2]) < DOUBLE_EPS) {
-	return IVP_FAULT;
-    }
-
-    IVP_DOUBLE inv_z=1.0f/rot_z.k[2];
-    
-    mat_world_f_z.vmult3(translation,&trans_z);
-    
-    out_p_z.k[2]=0.0f;
-    out_p_z.k[0]=-trans_z.k[1]*inv_z;
-    
-    out_p_z.k[1]=trans_z.k[0]*inv_z;
-
-    mat_world_f_z.vimult3(&out_p_z,obj_p_out);
-
-    return IVP_OK;
-}
-#endif
 
 // move points of synapses in a way unnecessary forces are reduced
 void IVP_Friction_System::ease_friction_forces()
@@ -1249,20 +1170,6 @@ int IVP_Friction_Core_Pair::number_of_pair_dists()
 
 void IVP_Friction_Core_Pair::add_fr_dist_obj_pairs(IVP_Contact_Point *dist)
 {
-#if 0 /* TL: this code is for initializing span_friction_s, but why at this point :( */   
-    int numbers = fr_dists.len();
-    if( numbers > 0 ) {
-	IVP_U_Float_Point friction_vec;
-	get_average_friction_vector(&friction_vec);
-	IVP_Core *core0 = dist->get_synapse(0)->get_object()->friction_core;
-	if( core0 != objs[0] ) {
-	    friction_vec.mult(-1.0f);
-	}
-	IVP_Impact_Solver_Long_Term *info = dist->tmp_contact_info;
-	dist->span_friction_s[0]=friction_vec.dot_product(&info->span_friction_v[0]);
-	dist->span_friction_s[1]=friction_vec.dot_product(&info->span_friction_v[1]);
-    }
-#endif    
     fr_dists.add(dist);
 }
 
@@ -1849,24 +1756,6 @@ void IVP_Friction_Core_Pair::debug_read_vector_after_ease() {
     IVP_U_Float_Point test_vec;
     test_vec.set_to_zero();
     get_average_friction_vector(&test_vec);
-#if 0    
-    IVP_Contact_Point *fr_dist;
-    for(fr_dist=this->get_first_fr_dist_obj_pairs(); fr_dist; fr_dist=this->get_next_fr_dist_obj_pairs()) {
-	IVP_U_Float_Point temp_v;
-	temp_v.set_to_zero();
-    IVP_Impact_Solver_Long_Term *info0 = &dist0.long_term_impact_info;
-	temp_v.add_multiple(&fr_dist->span_friction_v[0],fr_dist->span_friction_s[0]);
-	temp_v.add_multiple(&fr_dist->span_friction_v[1],fr_dist->span_friction_s[1]);
-	IVP_DOUBLE sign;
-	if( fr_dist->synapse[0]->l_obj->physical_core == objs[0] ) {
-	    sign = 1.0f;
-	} else {
-	    sign =-1.0f;
-	}
-
-	test_vec.add_multiple(&temp_v,sign);
-    }
-#endif
     IVP_U_Float_Point diff;
     diff.subtract(&test_vec,&span_vector_sum);
     if( diff.real_length() > 0.01f ) {
@@ -1930,14 +1819,6 @@ IVP_Friction_Core_Pair *IVP_Friction_System::find_pair_of_cores(IVP_Core *core0,
     }
     return NULL;
 }
-
-#if 0
-IVP_Mindist_Collision_Watcher::IVP_Mindist_Collision_Watcher()
-{
-    some_pushes_after_turnaround=0;
-    time_diff=0.0f;
-}
-#endif
 
 // be sure the core point of contact is valid
 // this function is called at generation of mindist. It should be called more often, as contact point can slide away

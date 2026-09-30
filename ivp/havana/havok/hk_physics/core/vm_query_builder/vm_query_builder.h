@@ -177,14 +177,10 @@ class hk_VM_Query_Builder
 			vmq.m_linear( axis ) = signum;
 
 			const hk_Vector3 &mcr = mass_center_relative.m_vector;
-#if 1
 			if (axis == 0){			vmq.m_angular.set( 0.0f, signum * mcr.z, -mcr.y * signum  );
 			}else if ( axis == 1){	vmq.m_angular.set( -mcr.z * signum, 0.0f, mcr.x *signum );
 			}else{					vmq.m_angular.set( mcr.y * signum, -mcr.x * signum, 0.0f   );
 			}
-#else
-			vmq.m_angular.set_cross( mcr, vmq.m_linear );
-#endif
 			HK_TRANSFORM_TO_CORE_SPACE( rb, vmq.m_angular );
 			/*
 			{ // ipion check hack

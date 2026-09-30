@@ -625,13 +625,11 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropFloat( SENDINFO( m_fadeMaxDist ),			0, SPROP_NOSCALE ),
 	SendPropFloat( SENDINFO( m_flFadeScale ),			0, SPROP_NOSCALE ),
 
-#if 1
 // #ifndef _GAMECONSOLE -- X360 client and Win32 XLSP dedicated server need equivalent SendTables
 	SendPropInt( SENDINFO(m_nMinCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMaxCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMinGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMaxGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
-#endif
 
 	SendPropFloat(SENDINFO( m_flUseLookAtAngle ) ),
 
@@ -2654,7 +2652,6 @@ void CBaseEntity::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 int CBaseEntity::ObjectCaps( void ) 
 {
-#if 1
 	model_t *pModel = GetModel();
 	bool bIsBrush = ( pModel && modelinfo->GetModelType( pModel ) == mod_brush );
 
@@ -2681,22 +2678,6 @@ int CBaseEntity::ObjectCaps( void )
 	}
 
 	return 0;
-#else
-	// We inherit our parent's use capabilities so that we can forward use commands
-	// to our parent.
-	int parentCaps = 0;
-	if (GetParent())
-	{
-		parentCaps = GetParent()->ObjectCaps();
-		parentCaps &= ( FCAP_IMPULSE_USE | FCAP_CONTINUOUS_USE | FCAP_ONOFF_USE | FCAP_DIRECTIONAL_USE );
-	}	
-
-	model_t *pModel = GetModel();
-	if ( pModel && modelinfo->GetModelType( pModel ) == mod_brush )
-		return parentCaps;
-
-	return FCAP_ACROSS_TRANSITION | parentCaps;
-#endif
 }
 
 #if defined ( PORTAL2 )

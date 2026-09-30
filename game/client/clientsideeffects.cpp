@@ -136,17 +136,6 @@ CEffectsList::~CEffectsList( void )
 //-----------------------------------------------------------------------------
 void CEffectsList::AddEffect( CClientSideEffect *effect )
 {
-#if 0
-	if ( FXCreationAllowed() == false )
-	{
-		//NOTENOTE: If you've hit this, you may not add a client effect where you have attempted to.
-		//			Most often this means that you have added it in an entity's DrawModel function.
-		//			Move this to the ClientThink function instead!
-
-		Assert(0);
-		return;
-	}
-#endif
 
 	if ( effect == NULL )
 		return;

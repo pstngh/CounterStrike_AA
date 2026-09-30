@@ -1371,13 +1371,6 @@ void CMDLCache::Flush( studiodata_t *pStudioData, MDLCacheFlush_t nFlushFlags )
 
 			if ( pStudioData->m_pCombinedStudioData->m_nReferenceFlags == 0 )
 			{
-#if 0
-				if ( pStudioData->m_pCombinedStudioData->m_pCombineData != NULL )
-				{
-					//				Assert( 0 ); // is this currently in flight in the combiner thread?
-					delete pStudioData->m_pCombinedStudioData->m_pCombineData;
-				}
-#endif
 #ifdef DEBUG_COMBINER
 				Msg( "%p Free: pStudioData=%p\n", pStudioData->m_pCombinedStudioData, pStudioData );
 #endif
@@ -1632,13 +1625,6 @@ void CMDLCache::UnserializeVCollide( MDLHandle_t handle, bool bUseAsync, bool sy
 		Assert( pStudioData->m_pVCollide == NULL);
 		pStudioData->m_pVCollide = NULL;
 
-#if 0
-		// FIXME:  ywb
-		// If we don't ask for the virtual model to load, then we can get a hitch later on after startup
-		// Should we async load the sub .mdls during startup assuming they'll all be resident by the time the level can actually
-		//  start drawing?
-		if ( pStudioData->m_pVirtualModel || synchronousLoad )
-#endif
 		{
 			pStudioData->m_nFlags |= STUDIODATA_FLAGS_VCOLLISION_SCANNED;
 			virtualmodel_t *pVirtualModel = GetVirtualModel( handle );
@@ -5561,10 +5547,6 @@ void CMDLCache::ShutdownCombiner( )
 		m_bCombinerShutdown = true;
 		m_CombinerEvent.Set();
 		m_CombinerShutdownEvent.Wait();
-#if 0
-		// how to kill this guy off?
-		ReleaseThreadHandle( m_hCombinerThread );
-#endif
 		m_hCombinerThread = NULL;
 	}
 

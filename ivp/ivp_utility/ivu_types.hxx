@@ -301,10 +301,6 @@ IVP_FLOAT ivp_rand();		// returns [0 .. 1]
 #   endif
 
 
-#elif defined(PSXII) && 0
-#	define IVP_PREFETCH_CLINE_SIZE 0x40
-#	define IVP_IF_PREFETCH_ENABLED(x) if(x)
-#	define	IVP_PREFETCH(__addr,__offs)  ({asm volatile("pref 0,%1(%0)" : : "r"(__addr),"i"(__offs));})
 #endif
 
 

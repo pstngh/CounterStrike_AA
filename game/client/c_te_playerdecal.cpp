@@ -924,10 +924,6 @@ void CPlayerLogoProxy::OnLogoBindInternal( const DecalData_t& decalData, bool bP
 	if ( gpGlobals->curtime >= decalData.m_flCreationTime )
 	{
 		float flDecalTime = gpGlobals->curtime;
-#if 0 // quick decals fading code
-		flDecalTime = decalData.m_flCreationTime + PLAYERDECALS_DURATION_SOLID - 5;
-		flDecalTime = flDecalTime + ( gpGlobals->curtime - decalData.m_flCreationTime ) * 4;
-#endif
 		if ( !m_bInspectInModelPreviewWindow && bPreviewMaterial )
 		{
 			flRenderAlpha = flDecalTime * cl_playerspray_debug_pulse_timescale.GetFloat(); // make the full cycle longer than 1 second

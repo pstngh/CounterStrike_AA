@@ -124,20 +124,6 @@ void CPlayerRankManager::FireGameEvent( IGameEvent *event )
 // network to other clients and display in the scoreboard.
 void CPlayerRankManager::SendRankDataToServer( void )
 {
-#if 0
-	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( !pLocalPlayer || !engine->IsConnected() )
-		return;
-
-	KeyValues *kv = new KeyValues("player_medal_ranking");
-	for ( int i = MEDAL_CATEGORY_START; i < MEDAL_CATEGORY_COUNT; ++i )
-	{
-		kv->SetInt( CFmtStr("rank%d",i), m_rank[i] );
-	}
-
-	// Base_CmdKeyValues handles the kv deletion.
-	engine->ServerCmdKeyValues( kv );
-#endif
 }
 
 // Once we have achievements loaded, sort them into category lists and build our internal

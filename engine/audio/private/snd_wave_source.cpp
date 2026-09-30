@@ -2454,15 +2454,6 @@ void CAudioSourceCachedInfo::Rebuild( char const *filename )
 	Assert( s_pSfx );
 	Assert( s_CurrentType != CAudioSource::AUDIO_SOURCE_MAXTYPE );
 
-#if 0 
-	// Never cachify something which is not in the client precache list
-	if ( s_bIsPrecacheSound != s_pSfx->IsPrecachedSound() )
-	{
-		Msg( "Logic bug, precaching entry for '%s' which is not in precache list\n",
-			filename );
-	}
-#endif
-
 	SetType( s_CurrentType );
 
 	CAudioSource *as = NULL;

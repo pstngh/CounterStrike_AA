@@ -861,11 +861,6 @@ void CInferno::InfernoThink( void )
 		MarkCoveredAreaAsDamaging();
 	}
 
-#if 0
-	// Debug draw flame region
-	NDebugOverlay::Box( vec3_origin, m_extent.lo, m_extent.hi, 255, 255, 255, 10, 0.1f );
-#endif
-
 	// Deal damage every 0.2s
 	const float kDamageTimerSeconds = 0.2f;
 	while ( m_damageTimer.RunEvery( kDamageTimerSeconds ) )

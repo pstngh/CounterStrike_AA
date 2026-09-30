@@ -227,40 +227,6 @@ void IVP_Controller_Raycast_Car::DoSimulationShocks( IVP_Raycast_Car_Wheel_Temp 
 		if ( flDiff >= 0 ) 
 			continue;
 
-#if 0
-		// Since the front and back wheels are not the same distance from the center of mass we need to adjust the spring
-		// constant accordingly.
-	    const IVP_U_Matrix *m_world_f_core = car_body->get_core()->get_m_world_f_core_PSI();
-
-		IVP_Raycast_Car_Wheel *pFrontWheel = get_wheel( IVP_POS_WHEEL( 0 ) );
-		IVP_Raycast_Car_Wheel *pBackWheel = get_wheel( IVP_POS_WHEEL( 3 ) );
-
-		IVP_U_Point frontPoint, backPoint;
-		m_world_f_core->vmult4( &pFrontWheel->hp_cs, &frontPoint );
-		m_world_f_core->vmult4( &pBackWheel->hp_cs, &backPoint );
-
-		const IVP_U_Point pCenterOfMass = pCarCore->get_position_PSI();
-
-		IVP_DOUBLE flZDeltaFront = frontPoint.k[2] - pCenterOfMass.k[2];
-		IVP_DOUBLE flZDeltaBack = backPoint.k[2] - pCenterOfMass.k[2];
-
-		IVP_DOUBLE flAlpha = fabs( flZDeltaFront / flZDeltaBack );
-
-		IVP_FLOAT flSpringConstant, flSpringRelax, flSpringCompress;
-		if ( iWheel == 0 || iWheel == 1 )
-		{
-			flSpringConstant = pWheel->spring_constant;
-			flSpringRelax = pWheel->spring_damp_relax;
-			flSpringCompress = pWheel->spring_damp_compress;
-		}
-		else
-		{
-			flSpringConstant = pWheel->spring_constant / flAlpha;
-			flSpringRelax = pWheel->spring_damp_relax / flAlpha;
-			flSpringCompress = pWheel->spring_damp_compress / flAlpha;
-		}
-#endif
-
 		IVP_FLOAT flSpringConstant, flSpringRelax, flSpringCompress;
 		flSpringConstant = pWheel->spring_constant;
 		flSpringRelax = pWheel->spring_damp_relax;

@@ -715,11 +715,6 @@ void CL_DispatchSound( const SoundInfo_t &sound )
 			// this adjusts for host_thread_mode or any other cases where we're running more than one
 			// tick at a time, but we get network updates on the first tick
 			soundtime -= ((g_ClientGlobalVariables.simTicksThisFrame-1) * host_state.interval_per_tick);
-#if 0
-			static float lastSoundTime = 0;
-			Msg("[%.3f] Play %s at %.3f\n", soundtime - lastSoundTime, name, soundtime );
-			lastSoundTime = soundtime;
-#endif
 			// this sound was networked over from the server, use server clock
 			params.delay = S_ComputeDelayForSoundtime( soundtime, CLOCK_SYNC_SERVER );
 			if ( params.delay < 0 )

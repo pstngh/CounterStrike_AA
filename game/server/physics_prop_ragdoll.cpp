@@ -871,13 +871,6 @@ void CRagdollProp::SetupBones( matrix3x4a_t *pBoneToWorld, int boneMask )
 
 bool CRagdollProp::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace )
 {
-#if 0
-	// PERFORMANCE: Use hitboxes for rays instead of vcollides if this is a performance problem
-	if ( ray.m_IsRay )
-	{
-		return BaseClass::TestCollision( ray, mask, trace );
-	}
-#endif
 
 	MDLCACHE_CRITICAL_SECTION();
 	CStudioHdr *pStudioHdr = GetModelPtr( );

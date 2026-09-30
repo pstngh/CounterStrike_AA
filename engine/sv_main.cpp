@@ -1407,11 +1407,6 @@ void SV_StartSound ( IRecipientFilter& filter, edict_t *pSoundEmittingEntity, in
         sound.fTickTime = sv.GetFinalTickTime();
         sound.fDelay = soundtime - sv.GetFinalTickTime();
         sound.nFlags |= SND_DELAY;
-#if 0
-        static float lastSoundTime = 0;
-        Msg("SV: [%.3f] Play %s at %.3f\n", soundtime - lastSoundTime, pSample, soundtime );
-        lastSoundTime = soundtime;
-#endif
     }
     
     // find precache number for sound
@@ -1823,18 +1818,6 @@ static ConVar sv_minuptimelimit(  "sv_minuptimelimit", "0", FCVAR_RELEASE,
 static ConVar sv_maxuptimelimit(  "sv_maxuptimelimit", "0", FCVAR_RELEASE, 
 	"If set, whenever a game ends, if the server uptime exceeds "
 	"this number of hours, the server will exit."	);
-
-
-#if 0
-static void sv_WasteMemory( void )
-{
-    uint8 *pWastedRam = new uint8[ 100 * 1024 * 1024 ];
-    memset( pWastedRam, 0xff, 100 * 1024 * 1024 );			// make sure it gets committed
-    Msg( "waste 100mb. using %dMB with an sv_memory_limit of %dMB\n", ApproximateProcessMemoryUsage() / ( 1024 * 1024 ), sv_memlimit.GetInt() );
-}
-
-static ConCommand sv_wastememory( "sv_wastememory", sv_WasteMemory, "Causes the server to allocate 100MB of ram and never free it", FCVAR_CHEAT );
-#endif
 
 
 

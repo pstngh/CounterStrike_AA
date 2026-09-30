@@ -13,7 +13,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if 1
 // game is in inches
 vphysics_units_t g_PhysicsUnits = 
 { 
@@ -23,17 +22,6 @@ vphysics_units_t g_PhysicsUnits =
 	DIST_EPSILON,	// float		collisionSweepEpsilon;		// collision sweep tests clip at this, must be the same as engine's DIST_EPSILON
 	1.0f/256.0f,	// float		collisionSweepIncrementalEpsilon;	// near-zero test for incremental steps in collision sweep tests
 };
-#else
-// game is in meters
-vphysics_units_t g_PhysicsUnits = 
-{ 
-	1.0f,			//float		unitScaleMeters;			// factor that converts game units to meters
-	1.0f,			//float		unitScaleMetersInv;			// factor that converts meters to game units
-	0.01f,			// float		globalCollisionTolerance;	// global collision tolerance in game units
-	0.01f,			// float		collisionSweepEpsilon;		// collision sweep tests clip at this, must be the same as engine's DIST_EPSILON
-	1e-4f,			// float		collisionSweepIncrementalEpsilon;	// near-zero test for incremental steps in collision sweep tests
-};
-#endif
 
 //-----------------------------------------------------------------------------
 // HL to IVP conversions
@@ -125,7 +113,6 @@ void ConvertRotationToIVP( const QAngle& angles, IVP_U_Quat &out )
 
 void ConvertMatrixToHL( const IVP_U_Matrix &in, matrix3x4_t& output )
 {
-#if 1
 	// copy the row vectors over, swapping z & -y.  Also, negate output z
 	output[0][0] = in.get_elem(0, 0);
 	output[0][2] = -in.get_elem(0, 1);
@@ -139,32 +126,6 @@ void ConvertMatrixToHL( const IVP_U_Matrix &in, matrix3x4_t& output )
 	output[2][2] = in.get_elem(1, 1);
 	output[2][1] = -in.get_elem(1, 2);
 
-#else
-
-	// this code is conceptually simpler, but the above is smaller/faster
-	Vector forward, left, up;
-	IVP_U_Float_Point out;
-
-	in.get_col( IVP_INDEX_X, &out );
-	ConvertDirectionToHL( out, forward );
-	in.get_col( IVP_INDEX_Z, &out );
-	ConvertDirectionToHL( out, left);
-	in.get_col( IVP_INDEX_Y, &out );
-	ConvertDirectionToHL( out, up );
-	up = -up;
-
-	output[0][0] = forward.x;
-	output[1][0] = forward.y;
-	output[2][0] = forward.z;
-
-	output[0][1] = left.x;
-	output[1][1] = left.y;
-	output[2][1] = left.z;
-
-	output[0][2] = up.x;
-	output[1][2] = up.y;
-	output[2][2] = up.z;
-#endif
 	output[0][3] = IVP2HL(in.vv.k[0]);
 	output[1][3] = IVP2HL(in.vv.k[2]);
 	output[2][3] = -IVP2HL(in.vv.k[1]);

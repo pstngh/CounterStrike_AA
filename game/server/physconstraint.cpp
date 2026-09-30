@@ -1635,16 +1635,6 @@ class CRagdollConstraint : public CPhysConstraint
 	DECLARE_CLASS( CRagdollConstraint, CPhysConstraint );
 public:
 	DECLARE_DATADESC();
-#if 0
-	void DrawDebugGeometryOverlays()
-	{
-		if ( m_debugOverlays & (OVERLAY_BBOX_BIT|OVERLAY_PIVOT_BIT|OVERLAY_ABSBOX_BIT) )
-		{
-			NDebugOverlay::Line( refPos, attachPos, 0, 255, 0, false, 0 );
-		}
-		BaseClass::DrawDebugGeometryOverlays();
-	}
-#endif
 
 	IPhysicsConstraint *CreateConstraint( IPhysicsConstraintGroup *pGroup, const hl_constraint_info_t &info );
 
@@ -1754,42 +1744,6 @@ void VelocitySampler::Initialize(float samplerate)
 }
 
 // This is an old style approach to reversal sounds, from when there was only one.
-#if 0
-bool VelocitySampler::HasReversed(const Vector &relativeVelocity, float thresholdAcceleration)
-{
-	// first, make sure the velocity has reversed (is more than 90deg off) from last time, or is zero now.
-	// float rVsq = relativeVelocity.LengthSqr();
-	float vDot = relativeVelocity.Dot(m_prevSample);
-	if (vDot <= 0) // there is a reversal in direction. compute the magnitude of acceleration.
-	{
-		// find the scalar projection of the relative acceleration this fame onto the previous frame's
-		// velocity, and compare that to the threshold. 
-		Vector accel = relativeVelocity - m_prevSample;
-
-		float prevSampleLength = m_prevSample.Length();
-		float projection = 0;
-		// divide through by dt to get the accel per sec
-		if (prevSampleLength)
-		{
-			projection = -(accel.Dot(m_prevSample) / prevSampleLength) / (gpGlobals->curtime - m_fPrevSampleTime);
-		}
-		else
-		{
-			projection = accel.Length() / (gpGlobals->curtime - m_fPrevSampleTime);
-		}
-
-		if (g_debug_constraint_sounds.GetBool())
-		{
-			Msg("Reversal accel is %f/%f\n",projection,thresholdAcceleration);
-		}
-		return ((projection) > thresholdAcceleration); // the scalar projection is negative because the acceleration is against vel
-	}
-	else
-	{
-		return false;
-	}
-}
-#endif
 
 /// Looks at the force of reversal and compares it to a ladder of thresholds.
 /// Returns the index of the highest threshold exceeded by the reversal velocity. 

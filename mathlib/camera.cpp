@@ -522,22 +522,6 @@ void CFrustum::BuildShadowFrustum( VMatrix &newWorldToView, VMatrix &newProj )
 		
 	VPlane pSixPlanes[FRUSTUM_NUMPLANES];
 	
-#if 0
-	Vector actualOriginProjSpace( 0.0f, 0.0f, .5f );
-	Vector actualOriginWorldSpace;
-	VMatrix projToWorld;
-	m_viewProj.InverseGeneral( projToWorld );
-	projToWorld.V3Mul( actualOriginProjSpace, actualOriginWorldSpace );
-	
-	ExtractClipPlanesFromNonTransposedMatrix( m_viewProj, pSixPlanes, true );
-	// Testing
-	float flDots[6];
-	for (uint i = 0; i < 6; i++)
-	{
-		flDots[i] = pSixPlanes[i].DistTo( actualOriginWorldSpace );
-	}
-#endif
-
 	ExtractClipPlanesFromNonTransposedMatrix( shadowCamLocalWorldToViewProj, pSixPlanes, true );
 
 	m_frustumStruct.SetPlanes( pSixPlanes );

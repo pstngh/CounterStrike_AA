@@ -223,21 +223,8 @@ bool Serialize( CUtlBuffer &buf, const DmeTime_t &src )
 
 	if ( buf.IsText() )
 	{
-#if 1
 		double tms = src.GetTenthsOfMS();
 		buf.Printf( "%.04f", tms / 10000 );
-#else
-		int tms = src.GetTenthsOfMS();
-		uint postms = tms; // can't just negate tms, since -INT_MIN == INT_MIN
-		if ( tms < 0 )
-		{
-			buf.PutChar( '-' );
-			postms = -tms;
-		}
-		int seconds   = postms / 10000;
-		int remainder = postms % 10000;
-		buf.Printf( "%d.%04d", seconds, remainder );
-#endif
 	}
 	else
 	{
@@ -251,7 +238,6 @@ bool Unserialize( CUtlBuffer &buf, DmeTime_t &dest )
 	if ( buf.IsText() )
 	{
 		buf.EatWhiteSpace();
-#if 1
 		double tms = buf.GetDouble() * 10000;
 		if ( !buf.IsValid() )
 			return false;
@@ -260,50 +246,6 @@ bool Unserialize( CUtlBuffer &buf, DmeTime_t &dest )
 			return false;
 
 		dest.SetTenthsOfMS( ( int )floor( tms + 0.5 ) );
-#else
-		char str[ 16 ];
-		buf.GetString( str, sizeof( str ) );
-		if ( !buf.IsValid() )
-			return false;
-
-		char *p = str;
-
-		bool bNegative = *p == '-';
-		if ( bNegative )
-		{
-			++p;
-		}
-
-		bool bSeenDigit = false;
-		bool bOverflow = false;
-		int seconds = 0;
-		while ( isdigit( *p ) )
-		{
-			seconds = seconds * 10 + *p++ - '0';
-			bSeenDigit = true;
-			bOverflow = seconds > INT_MAX / 10000; // once this goes invalid, it stays that way, so no extra check is needed
-		}
-
-		int remainder = 0;
-		if ( *p == '.' )
-		{
-			++p;
-
-			int multiplier = 1000;
-			while ( isdigit( *p ) )
-			{
-				remainder += multiplier * ( *p++ - '0' );
-				multiplier /= 10;
-				bSeenDigit = true;
-			}
-		}
-
-		uint tms = seconds * 10000 + remainder;
-		if ( bOverflow || !bSeenDigit || ( tms > ( bNegative ? ( uint )-INT_MIN : INT_MAX ) ) )
-			return false;
-
-		dest.SetTenthsOfMS( bNegative ? -tms : tms );
-#endif
 		return true;
 	}
 
@@ -319,87 +261,3 @@ bool Unserialize( CUtlBuffer &buf, DmeTime_t &dest )
 ////////////////////////////////////////////////////////////////////////////////
 // DmeTime_t serialization/unserialization tests
 ////////////////////////////////////////////////////////////////////////////////
-
-#if 0 // not as necessary now that CUtlBuffer::GetDouble() works
-
-class CTestTimeSerialization
-{
-public:
-
-	CTestTimeSerialization()
-	{
-		TestSerialization( DMETIME_INVALID );
-		TestSerialization( DMETIME_MINTIME );
-		TestSerialization( DMETIME_MAXTIME );
-		TestSerialization( DMETIME_MINDELTA );
-		TestSerialization( DMETIME_ZERO );
-		TestSerialization( "214748.3647" );
-		TestSerialization( "214748.3648", NULL, false );
-		TestSerialization( "500000.0000", NULL, false );
-		TestSerialization( "-214748.3648" );
-		TestSerialization( "-214748.3649", NULL, false );
-		TestSerialization( "-500000.0000", NULL, false );
-		TestSerialization( "1.2", "1.2000" );
-		TestSerialization( "1", "1.0000" );
-		TestSerialization( "1.", "1.0000" );
-		TestSerialization( ".2", "0.2000" );
-		TestSerialization( "-1.2", "-1.2000" );
-		TestSerialization( "-1.", "-1.0000" );
-		TestSerialization( "-1", "-1.0000" );
-		TestSerialization( "-.2", "-0.2000" );
-		TestSerialization( "1.23456", "1.2345" );
-		TestSerialization( "-1.23456", "-1.2345" );
-	}
-
-	void TestSerialization( DmeTime_t time )
-	{
-		CUtlBuffer buf( 0, 20, CUtlBuffer::TEXT_BUFFER );
-		Serialize( buf, time );
-
-		DmeTime_t test;
-		if ( !Unserialize( buf, test ) )
-		{
-			Msg( "TestUnserialize: %d failed\n", time.GetTenthsOfMS() );
-			return;
-		}
-
-		if ( time != test )
-		{
-			Msg( "TestUnserialize: %d != %d\n", test.GetTenthsOfMS(), time.GetTenthsOfMS() );
-		}
-	}
-
-	void TestSerialization( const char *pStr, const char *pExpectedStr = NULL, bool bExpectedSuccess = true )
-	{
-		CUtlBuffer buf( pStr, V_strlen( pStr ) + 1, CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY );
-		DmeTime_t time;
-		if ( !Unserialize( buf, time ) )
-		{
-			if ( bExpectedSuccess )
-			{
-				Msg( "TestUnserialize: %s failed\n", pStr );
-			}
-			return;
-		}
-
-		CUtlBuffer testbuf( 0, 20, CUtlBuffer::TEXT_BUFFER );
-		Serialize( testbuf, time );
-
-		char pTestStr[ 20 ];
-		testbuf.GetString( pTestStr, sizeof( pTestStr ) );
-
-		if ( !pExpectedStr )
-		{
-			pExpectedStr = pStr;
-		}
-
-		if ( V_strcmp( pTestStr, pExpectedStr ) )
-		{
-			Msg( "TestUnserialize: %s != %s\n", pTestStr, pExpectedStr );
-		}
-	}
-};
-
-CTestTimeSerialization g_testTimeSerialization;
-
-#endif

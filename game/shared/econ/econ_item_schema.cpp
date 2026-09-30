@@ -3024,14 +3024,6 @@ bool CEconCraftingRecipeDefinition::ItemListMatchesInputs( const CUtlVector< CEc
 	{
 		CEconItem *pEconItem = vecCraftingItems[ nItem ];
 
-#if 0	// Relaxing set restriction on crafting
-		if ( nSet >= 0 && pEconItem->GetItemSetIndex() != nSet )
-		{
-			bResult = false;
-			break;
-		}
-#endif
-
 		// Any items at the top rarity of their set are illegal in crafting
 		if ( GetFilter() == CRAFT_FILTER_TRADEUP )
 		{

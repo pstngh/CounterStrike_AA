@@ -482,16 +482,6 @@ void CHostState::State_LoadGame()
 		return;
 	}
 
-#if 0
-	if ( IsX360() )
-	{
-		// On the 360 we need to return to the background map
-		g_ServerGlobalVariables.bMapLoadFailed = true;
-		Cbuf_Clear( Cbuf_GetCurrentPlayer() );
-		Cbuf_AddText( Cbuf_GetCurrentPlayer(), "startupmenu force" );
-		Cbuf_Execute();
-	}
-#endif
 }
 
 
@@ -921,11 +911,6 @@ void CHostState::OnClientConnected()
 		g_pFileSystem->FPrintf( fp, "vidmem total: %0.3fMB\n", total );
 #endif
 
-#if 0
-		g_pFileSystem->FPrintf( fp, "hunk total: %0.3fMB\n", Cache_TotalUsed() * ( 1.0f / ( 1024.0f * 1024.0f ) ) );
-		g_pFileSystem->FPrintf( fp, "hunk sound: %0.3fMB\n", Cache_TotalUsed_Sound() * ( 1.0f / ( 1024.0f * 1024.0f ) ) );
-		g_pFileSystem->FPrintf( fp, "hunk models: %0.3fMB\n", Cache_TotalUsed_Models() * ( 1.0f / ( 1024.0f * 1024.0f ) ) );
-#endif
 		g_pFileSystem->FPrintf( fp, "---------------------------------\n" );
 		g_pFileSystem->Close( fp );
 		Cbuf_AddText( Cbuf_GetCurrentPlayer(), "quit\n" );

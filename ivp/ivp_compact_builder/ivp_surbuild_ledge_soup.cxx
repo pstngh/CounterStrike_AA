@@ -126,11 +126,7 @@ IVP_Compact_Surface *IVP_SurfaceBuilder_Ledge_Soup::compile(IVP_Template_Surbuil
 
     // To be called after all ledges are inserted.
     // Builds tree.
-#if 0
-    this->ledges_to_spheres();
-#else
     this->ledges_to_boxes_and_spheres();
-#endif
 
 #ifdef IVP_CLUSTER_SHORTRANGE_BOTTOMUP    
     this->cluster_spheres_bottomup(1.1f);
@@ -576,27 +572,6 @@ void IVP_SurfaceBuilder_Ledge_Soup::combine_spheres_in_vector(IVV_Cluster_Min_Ha
 	    if ( x == y ) continue;
 	    IVV_Sphere *sphere_2 = this->overlapping_spheres.element_at(y);
 
-#if 0	    
-	    IVP_DOUBLE qdistance = sphere_1->center.quad_distance_to(&sphere_2->center);
-	    IVP_DOUBLE qdiff_radius = sphere_1->radius - sphere_2->radius;
-	    qdiff_radius *= qdiff_radius;
-
-	    // sort spheres: larger sphere is always left (i.e. position 1 :)
-	    if ( sphere_1->radius < sphere_2->radius ) {
-		IVV_Sphere *sphere_buf = sphere_1;
-		sphere_1 = sphere_2;
-		sphere_2 = sphere_buf;
-	    }
-	    
-	    IVP_DOUBLE radius;
-	    if ( qdistance <= qdiff_radius ) { // sphere 2 completely within sphere 1
-		radius = sphere_1->radius;
-	    }else {
-		IVP_DOUBLE distance_2 = sqrt(qdistance) * 0.5f;
-		IVP_DOUBLE r1r2_2 = IVP_Inline_Math::fabsd(sphere_1->radius - sphere_2->radius) * 0.5f;
-		radius = distance_2 + sphere_1->radius - r1r2_2;
-	    }
-#else
  	    IVP_DOUBLE work1 = IVP_COMPACT_BOUNDINGBOX_STEP_SIZE * sphere_1->radius;
 	    IVP_DOUBLE work2 = IVP_COMPACT_BOUNDINGBOX_STEP_SIZE * sphere_2->radius;
 	
@@ -625,7 +600,6 @@ void IVP_SurfaceBuilder_Ledge_Soup::combine_spheres_in_vector(IVV_Cluster_Min_Ha
 	    center.set_interpolate(&max, &min, 0.5f); // use center of bounding box as center of sphere
 	    rad.subtract(&max, &center);
 	    IVP_DOUBLE radius = rad.real_length(); // calculate radius of box-enclosing sphere
-#endif	    
 
 	    newkey.spheres.s1 = sphere_1->number;
 	    newkey.spheres.s2 = sphere_2->number;
@@ -679,29 +653,6 @@ IVV_Sphere *IVP_SurfaceBuilder_Ledge_Soup::build_minimal_sphere(IVV_Sphere *sphe
     
     IVV_Sphere *new_sphere = new IVV_Sphere();
 
-#if 0    
-    IVP_U_Point dist_vec;
-    IVP_DOUBLE distance, distance_2;
-    IVP_DOUBLE r1r2_2;
-    IVP_DOUBLE interpolation_factor;
-    
-    // calculate the new mothersphere
-    dist_vec.subtract(&sphere_1->center, &sphere_2->center);
-    distance = dist_vec.fast_real_length();
-
-    if ( distance + sphere_2->radius <= sphere_1->radius ) {
-	new_radius = sphere_1->radius;
-	new_center = sphere_1->center;
-    }
-    else {
-	distance_2 = distance * 0.5f;
-	r1r2_2 = IVP_Inline_Math::fabsd(sphere_1->radius - sphere_2->radius) * 0.5f;
-	new_radius = distance_2 + sphere_1->radius - r1r2_2;
-	
-	interpolation_factor = ( distance_2 - r1r2_2 ) / distance;
-	new_center.set_interpolate(&sphere_1->center, &sphere_2->center, interpolation_factor);
-    }
-#else
     IVP_DOUBLE work1 = IVP_COMPACT_BOUNDINGBOX_STEP_SIZE * sphere_1->radius;
     IVP_DOUBLE work2 = IVP_COMPACT_BOUNDINGBOX_STEP_SIZE * sphere_2->radius;
 	
@@ -735,7 +686,6 @@ IVV_Sphere *IVP_SurfaceBuilder_Ledge_Soup::build_minimal_sphere(IVV_Sphere *sphe
     new_sphere->box_sizes[0] = int((max.k[0]-new_center.k[0])/work)+1;
     new_sphere->box_sizes[1] = int((max.k[1]-new_center.k[1])/work)+1;
     new_sphere->box_sizes[2] = int((max.k[2]-new_center.k[2])/work)+1;
-#endif    
     
     // initialize new mothersphere
     new_sphere->number = sphere_1->number; // replace sphere_1 (left sphere) with mothersphere

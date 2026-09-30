@@ -1398,16 +1398,6 @@ void qh_makeridges(facetT *facet) {
         ridge->top= neighbor;
         ridge->bottom= facet;
       }
-#if 0 /* this also works */
-      flip= (facet->toporient ^ neighbor->toporient)^(skip1 & 0x1) ^ (skip2 & 0x1);
-      if (facet->toporient ^ (skip1 & 0x1) ^ flip) {
-        ridge->top= neighbor;
-        ridge->bottom= facet;
-      }else {
-        ridge->top= facet;
-        ridge->bottom= neighbor;
-      }
-#endif
       qh_setappend(&(facet->ridges), ridge);
       qh_setappend(&(neighbor->ridges), ridge);
     }

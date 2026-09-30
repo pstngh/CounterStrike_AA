@@ -297,13 +297,6 @@ CSharedObjectTypeCache *CSharedObjectCache::CreateBaseTypeCache( int nClassID )
 	//nope, need to create one
 	CSharedObjectTypeCache* pTypeCache = AllocateTypeCache( nClassID );
 	m_mapObjects.Insert( nClassID, pTypeCache );
-#if 0
-	// Kyle says: this is the newer way of managing caches on Dota but we haven't
-	//			  brought any of it over yet
-	m_CacheObjects.AddToTail( pTypeCache );
-	//sort this cache for faster access
-	std::sort( m_CacheObjects.begin(), m_CacheObjects.end(), SortCacheByTypeID );
-#endif
 	return pTypeCache;
 }
 

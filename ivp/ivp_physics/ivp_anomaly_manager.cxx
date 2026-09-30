@@ -125,7 +125,6 @@ void IVP_Anomaly_Manager::inter_penetration(IVP_Mindist *mindist, IVP_Real_Objec
 	//solve_inter_penetration_simple( obj0, obj1 );
 	//return;
 
-#if 1
 	if( mindist->synapse[swapped].get_status() > IVP_ST_TRIANGLE ) {
 	    solve_inter_penetration_simple( obj0, obj1 );
 		return;
@@ -182,7 +181,6 @@ void IVP_Anomaly_Manager::inter_penetration(IVP_Mindist *mindist, IVP_Real_Objec
 		moving_obj->async_add_speed_object_ws( &world_push_vec );
     }
 
-#endif
 }
 
 IVP_FLOAT IVP_Anomaly_Manager::get_push_speed_penetration( IVP_Real_Object *obj0, IVP_Real_Object *obj1) {

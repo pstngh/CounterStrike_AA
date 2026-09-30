@@ -1893,11 +1893,7 @@ FORCEINLINE void CVertexBuilder::Color4Packed( int packedColor )
 
 FORCEINLINE int CVertexBuilder::PackColor4( unsigned char r, unsigned char g, unsigned char b, unsigned char a )
 {
-#if 0 && defined( CELL_GCM_SWAP_COLORS ) // TODO: do we need to swap this, too? PS3 order is RGBA, big endian, because we treat it as a simple UN8 vector
-	return ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | a;
-#else
 	return b | (g << 8) | (r << 16) | (a << 24);
-#endif
 }
 
 

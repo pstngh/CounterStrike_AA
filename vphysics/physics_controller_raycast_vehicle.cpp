@@ -76,20 +76,6 @@ void CPhysics_Car_System_Raycast_Wheels::do_raycasts( IVP_Event_Sim *es,
     IVP_Ray_Solver_Min *solvers[4] = { &ray_solver0, &ray_solver1, &ray_solver2, &ray_solver3 };
     IVP_Ray_Solver_Group rs_group( n_wheels, (IVP_Ray_Solver **)solvers );
 
-#if 0
-	// Debug!
-	IVP_CarSystemDebugData_t carSystemDebugData;
-	GetCarSystemDebugData( carSystemDebugData );
-	carSystemDebugData.wheelRaycasts[0][0] = ray_solver0.ray_start_point;
-	carSystemDebugData.wheelRaycasts[0][1] = ray_solver0.ray_end_point;
-	carSystemDebugData.wheelRaycasts[1][0] = ray_solver1.ray_start_point;
-	carSystemDebugData.wheelRaycasts[1][1] = ray_solver1.ray_end_point;
-	carSystemDebugData.wheelRaycasts[2][0] = ray_solver2.ray_start_point;
-	carSystemDebugData.wheelRaycasts[2][1] = ray_solver2.ray_end_point;
-	carSystemDebugData.wheelRaycasts[3][0] = ray_solver3.ray_start_point;
-	carSystemDebugData.wheelRaycasts[3][1] = ray_solver3.ray_end_point;
-#endif
-
     // check which objects are hit	    
     rs_group.check_ray_group_against_all_objects_in_sim(es->environment);
 
@@ -101,27 +87,15 @@ void CPhysics_Car_System_Raycast_Wheels::do_raycasts( IVP_Event_Sim *es,
 			hits_out[i] = *hit;
 			friction_of_object_out[i] = hit->hit_real_object->l_default_material->get_friction_factor();
 
-#if 0
-			// Debug!
-			carSystemDebugData.wheelRaycastImpacts[i] = ( hit->hit_distance / solvers[i]->ray_length );
-#endif
 		}
 		else
 		{
 			memset( &hits_out[i], 0, sizeof(IVP_Ray_Hit) );
 			friction_of_object_out[i] = 0;
 
-#if 0
-			// Debug!
-			carSystemDebugData.wheelRaycastImpacts[i] = 0.0f;
-#endif
 		}
     }
 
-#if 0 
-	// Debug!
-	SetCarSystemDebugData( carSystemDebugData );
-#endif
 }
 
 void CPhysics_Car_System_Raycast_Wheels::update_wheel_positions( void )

@@ -1598,39 +1598,6 @@ void CConPanel::Paint()
 void CConPanel::PaintBackground()
 {
 	// Rendering this information is not interesting and gives away server IP when streaming
-#if 0
-	if ( !Con_IsVisible() )
-		return;
-
-	int wide = GetWide();
-	char ver[ 100 ];
-	Q_snprintf(ver, sizeof( ver ), "Source Engine %i (build %d)", GetHostVersion(), build_number() );
-	wchar_t unicode[ 200 ];
-	g_pVGuiLocalize->ConvertANSIToUnicode( ver, unicode, sizeof( unicode ) );
-
-	vgui::surface()->DrawSetTextColor( Color( 255, 255, 255, 255 ) );
-	int x = wide - DrawTextLen( m_hFont, unicode ) - 2;
-	DrawText( m_hFont, x, 0, unicode );
-
-	if ( GetBaseLocalClient().IsActive() )
-	{
-		if ( GetBaseLocalClient().m_NetChannel->IsLoopback() || cl_hideserverip.GetInt()>0 )
-		{
-			Q_snprintf(ver, sizeof( ver ), "Map '%s'", GetBaseLocalClient().m_szLevelNameShort );
-		}
-		else
-		{
-			Q_snprintf(ver, sizeof( ver ), "Server '%s' Map '%s'", GetBaseLocalClient().m_NetChannel->GetAddress(), GetBaseLocalClient().m_szLevelNameShort );
-		}
-		wchar_t unicode[ 200 ];
-		g_pVGuiLocalize->ConvertANSIToUnicode( ver, unicode, sizeof( unicode ) );
-
-		int tall = vgui::surface()->GetFontTall( m_hFont );
-
-		int x = wide - DrawTextLen( m_hFont, unicode ) - 2;
-		DrawText( m_hFont, x, tall + 1, unicode );
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

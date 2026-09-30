@@ -1,18 +1,9 @@
 
 
 DLL_IMPORT CLinkedMiniProfiler *g_pPhysicsMiniProfilers;
-#if 0
-#define BONE_PROFILE(ID)   static CLinkedMiniProfiler s_miniprofiler_##ID(#ID, &g_pPhysicsMiniProfilers);		\
-	CMiniProfilerGuard mpguard_##ID(&s_miniprofiler_##ID);
-#define BONE_PROFILE_LOOP(ID,COUNT)   static CLinkedMiniProfiler s_miniprofiler_##ID(#ID, &g_pPhysicsMiniProfilers);		\
-	CMiniProfilerGuard mpguard_##ID(&s_miniprofiler_##ID,(COUNT));
-#define BONE_PROFILE_FUNC()   static CLinkedMiniProfiler s_miniprofiler_FUNC(__FUNCTION__, &g_pPhysicsMiniProfilers);		\
-	CMiniProfilerGuard mpguard_##ID(&s_miniprofiler_FUNC);
-#else
 #define BONE_PROFILE(ID)   
 #define BONE_PROFILE_LOOP(ID,COUNT)
 #define BONE_PROFILE_FUNC()  
-#endif
 
 
 

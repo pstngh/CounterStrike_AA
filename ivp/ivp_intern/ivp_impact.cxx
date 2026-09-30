@@ -341,18 +341,11 @@ void IVP_Impact_Solver::get_world_push_direction()
 
     if(two_friction_values==IVP_FALSE) {
 
-#if 0	
-	percent_deformation=1.0f;
-#endif	
 	if((angle>-cos_friction)) //negativ value
 	    {
 		//angle less cos_friction degree -> no more friction
 		//devide world_push_direction in parts in direction of surface and surface normal
 		//direction in surface normal is kept. direction in surface is shortened in a way the angle is border-angle
-#if 0
-//not used at the moment -> needed by single_impact
-		percent_deformation=angle/-cos_friction;
-#endif
 		IVP_DOUBLE mangle = - angle;
 		part_in_direction_surf.add_multiple(&world_push_direction,surf_normal,mangle);
 		part_in_direction_surf.normize();
@@ -376,9 +369,6 @@ void IVP_Impact_Solver::get_world_push_direction()
 // when allowed length is shorter, we have to take the shorter value
 void IVP_Impact_Solver::get_world_push_direction_two_friction(IVP_DOUBLE part_direction_surf_normal) {
         IVP_U_Float_Point part_in_direction_surf; //decomposition of velo vec in direction normal and rest (this is the rest)
-#if 0	
-	percent_deformation=1.0f;
-#endif	
 	IVP_DOUBLE mangle = - part_direction_surf_normal;
 	part_in_direction_surf.add_multiple(&world_push_direction,surf_normal,mangle);
 	//existing length
@@ -399,16 +389,6 @@ void IVP_Impact_Solver::get_world_push_direction_two_friction(IVP_DOUBLE part_di
 	    //the combined friction values are too low to allow existing push direction
 	    IVP_FLOAT allowed_len = IVP_Inline_Math::ivp_sqrtf(quad_len_allowed);
 
-#if 0	    
-	    IVP_FLOAT factor_length;
-	    if(length_direction_surf>P_DOUBLE_EPS) {
-		factor_length=allowed_len/length_direction_surf;
-	    } else {
-		factor_length=0.0f;
-	    }
-	    percent_deformation=factor_length;
-#endif
-	    
 	    IVP_FLOAT length_angle = IVP_Inline_Math::asind(allowed_len);
 	    IVP_FLOAT cos_part= IVP_Inline_Math::approx5_cos(length_angle);
 	    IVP_U_Float_Point world_push_dir_fl;
@@ -506,38 +486,6 @@ void IVP_Impact_Solver::do_rescue_push(IVP_U_Float_Point *push_dir_norm,IVP_BOOL
 	if(desired_velo_change<0.0f) {
 	    return;
 	}
-#if 0
-	//new version with translation only -> seems to be no good
-	IVP_IF(1) {
-	    if(panic_mode) {
-		core[0]->environment->impact_hard_rescue_counter++;
-	    } else {
-		core[0]->environment->impact_rescue_after_counter++;
-	    }
-	}
-	
-	IVP_DOUBLE speed_change_scalar=0.0f;
-	if(!core[0]->physical_unmoveable) {
-	    speed_change_scalar+=core[0]->inv_mass;
-	}
-	if(!core[1]->physical_unmoveable) {
-	    speed_change_scalar+=core[1]->inv_mass;
-	}
-	
-	IVP_DOUBLE resulting_push=desired_velo_change/speed_change_scalar;
-	
-	if(!core[0]->physical_unmoveable) {
-	    trans_speed_change[0].set_multiple(push_dir_norm,resulting_push*core[0]->inv_mass);
-	    trans_speed[0].add(&trans_speed_change[0]); // if push has to be undone, values are subtracted later
-	}	    
-
-	if(!core[1]->physical_unmoveable) {
-	    trans_speed_change[1].set_multiple(push_dir_norm,-resulting_push*core[1]->inv_mass);
-	    trans_speed[1].add(&trans_speed_change[1]); // if push has to be undone, values are subtracted later
-	}	    
-	
-	
-#else //old version: translation and rotation	
 	IVP_U_Float_Point push_vec_obj;
 	IVP_U_Float_Point push_vec_world;
 	IVP_U_Float_Point rotation_vec;
@@ -616,7 +564,6 @@ void IVP_Impact_Solver::do_rescue_push(IVP_U_Float_Point *push_dir_norm,IVP_BOOL
 	    rot_speed[1].add(&rot_speed_change[1]); // ...speed0 has sum of pushes and beginning speed before impact
 	    trans_speed[1].add(&trans_speed_change[1]); // if push has to be undone, values are subtracted later
 	}
-#endif	
 }
 
 void IVP_Impact_Solver::do_push_on_core(IVP_U_Float_Point *push_vec_world,int num_core) {
@@ -1134,26 +1081,6 @@ void IVP_Impact_Solver_Long_Term::do_impact_of_two_objects(IVP_Mindist *mindist,
 }
 
 
-#if 0
-    if(0) { //merge example!!
-        IVP_Core *core_to_merge=mindist->get_synapse(0)->get_object()->physical_core;
-	IVP_Core *other_core0=mindist->get_synapse(1)->get_object()->physical_core;
-
-	if(core_to_merge->physical_unmoveable){
-	    IVP_Core *h = core_to_merge; core_to_merge = other_core0; other_core0 = h;
-	}
-	IVP_ASSERT(core_to_merge->physical_unmoveable == IVP_FALSE);
-
-	IVP_Core *other_core1;
-	other_core1=IVP_Impact_Solver_Long_Term::find_second_critical_impact_core(core_to_merge,other_core0);
-	
-	if(other_core1!=NULL){
-	    IVP_Core *best_other_core = IVP_Impact_Solver_Long_Term::get_best_merge_core(core_to_merge,other_core0,other_core1);
-	    core_to_merge->create_collision_merged_core_with(best_other_core);
-	}
-    }
-#endif
-
 //lwss add
 void IVP_Contact_Point::recompute_friction()
 {
@@ -1474,17 +1401,6 @@ void IVP_Impact_System::init_and_solve_impact_system(IVP_Mindist *mindist, IVP_F
 
     IVP_IF(sum_of_pushes>1) {
 	//printf("did_impact_sys %d pushes at %f\n",sum_of_pushes,l_environment->get_current_time());
-#if 0
-	for(IVP_Friction_Core_Pair *my_pair=get_first_impact_pair();my_pair;my_pair=get_next_impact_pair())
-	{
-	    printf(" paair %lx ",(long)my_pair&0x0000ffff);
-	    for(IVP_Contact_Point *my_fr=my_pair->get_first_fr_dist_obj_pairs();my_fr;my_fr=my_pair->get_next_fr_dist_obj_pairs())
-	    {
-		printf("md %lx ",(long)my_fr&0x0000ffff);
-	    }
-	}
-	printf("\n");
-#endif
     }
     IVP_IF(1) {
         debug_check_all_dists_at_end();
@@ -1503,14 +1419,6 @@ void IVP_Impact_System::init_and_solve_impact_system(IVP_Mindist *mindist, IVP_F
 void IVP_Impact_System::add_pair_to_impact_system(IVP_Friction_Core_Pair *new_pair)
 {
     i_s_pairs.add(new_pair);
-#if 0 /* this is done now at recalc_friction_s_vals */   
-    for (int i = new_pair->fr_dists.len()-1; i>=0; i--){
-	IVP_Contact_Point *my_dist = new_pair->fr_dists.element_at(i);
-	my_dist->tmp_contact_info->rescue_factor=1.0f;
-	my_dist->tmp_contact_info->impacts_while_system=0;
-	my_dist->tmp_contact_info->coll_time_is_valid=IVP_FALSE;
-    }
-#endif    
 }
 
 void IVP_Impact_System::synchronize_core_for_impact_system(IVP_Core *new_core) {
@@ -1688,7 +1596,6 @@ void  IVP_Impact_Solver::get_world_direction_second_friction(IVP_Contact_Point *
     int i;
     for(i=0;i<2;i++) {
         if(mtl[i]->second_friction_x_enabled) {
-#if 1	    
 	      //following is copy-paste from function 'two_values_friction'
 	      //-> maybe make common structure and fill it
 		IVP_U_Float_Point x_direction;
@@ -1706,7 +1613,6 @@ void  IVP_Impact_Solver::get_world_direction_second_friction(IVP_Contact_Point *
 		IVP_DOUBLE using_friction=other_factor*second_friction_val;
 		IVP_DOUBLE difference_in_friction=cp->real_friction_factor - using_friction;
 		IVP_FLOAT effective_friction_second=cp->real_friction_factor - difference_in_friction * relevance_factor;
-#endif	    
 
 	    if(relevance_factor<P_DOUBLE_EPS) {
 	        continue;
@@ -1743,13 +1649,6 @@ IVP_FLOAT IVP_Contact_Point::get_rot_speed_uncertainty() {
 		      //printf("clippingrottan %f to %f\n",sqrt(tan_quad),sqrt(max_tan_quad));
 		      tan_quad = max_tan_quad;
 		  }
-#if 0		  
-		  IVP_DOUBLE under_root = 1.0f + tan_quad;
-		  under_root = sqrtf( under_root );
-
-		  under_root = under_root - 1.0f;
-		  IVP_DOUBLE uncertain_way = under_root * my_core->upper_limit_radius; //this->long_term_impact_info.contact_point_cs[i].real_length();
-#endif
 		  IVP_DOUBLE alpha = IVP_Inline_Math::ivp_sqrtf(tan_quad);
 		  IVP_DOUBLE uncertain_way= (1.0f - IVP_Inline_Math::cosd(alpha))*my_core->upper_limit_radius;
 		  

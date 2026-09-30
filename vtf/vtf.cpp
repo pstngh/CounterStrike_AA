@@ -2237,11 +2237,6 @@ static void CalcHemisphereColor( SphereCalc_t *pCalc, float x, float y )
 
 	int iFace = CalcFaceIndex( normal );
 	CalcColor( pCalc, iFace, normal, pCalc->m_pColor );
-#if 0
-	pCalc->m_pColor[0] = normal[0] * 127 + 127;
-	pCalc->m_pColor[1] = normal[1] * 127 + 127;
-	pCalc->m_pColor[2] = normal[2] * 127 + 127;
-#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -656,18 +656,11 @@ void DelayLowPass_Opt2 ( const int nDelaySize, const int tdelay, CircularBufferS
 	{
 		// delay output is filter input
 		CircularBufferSample_t *pInputSampleDelay = pDelaySample + tdelay;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op).
 		// Re-use our own version of isel() as there is an optimization we can do
 		int nMask1 = (pSampsPDelaySize - pInputSampleDelay) >> 31;					// 0xffffffff if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		nMask1 &= nDelaySizeP1;														// nDelaySizeP1 if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		pInputSampleDelay -= nMask1;
-#else
-		if ( pInputSampleDelay > pSampsPDelaySize)
-		{
-			pInputSampleDelay -= nDelaySizeP1;
-		}
-#endif
 
 		int sD = *pInputSampleDelay;
 
@@ -686,17 +679,10 @@ void DelayLowPass_Opt2 ( const int nDelaySize, const int tdelay, CircularBufferS
 		// when *ppsamp = psamps-1, it wraps around to *ppsamp = psamps+dlysize
 
 		--pDelaySample;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op)
 		int nMask2 = (pDelaySample - psamps) >> 31;									// 0xffffffff if pDelaySample < psamps, 0 otherwise
 		nMask2 &= nDelaySizeP1;														// nDelaySizeP1 if pDelaySample < psamps, 0 otherwise
 		pDelaySample += nMask2;
-#else
-		if ( pDelaySample < psamps )
-		{
-			pDelaySample += nDelaySizeP1;
-		}
-#endif
 		// output with gain
 		*pOut++ += ( (out * outgain) >> PBITS );
 
@@ -1059,18 +1045,11 @@ void DelayLinearLowPass_Opt2 ( const int nDelaySize, const int tdelay, CircularB
 	{
 		// delay output is filter input
 		CircularBufferSample_t *pInputSampleDelay = pDelaySample + tdelay;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op).
 		// Re-use our own version of isel() as there is an optimization we can do
 		int nMask1 = (pSampsPDelaySize - pInputSampleDelay) >> 31;					// 0xffffffff if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		nMask1 &= nDelaySizeP1;														// nDelaySizeP1 if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		pInputSampleDelay -= nMask1;
-#else
-		if ( pInputSampleDelay > pSampsPDelaySize)
-		{
-			pInputSampleDelay -= nDelaySizeP1;
-		}
-#endif
 
 		int sD = *pInputSampleDelay;
 
@@ -1088,18 +1067,11 @@ void DelayLinearLowPass_Opt2 ( const int nDelaySize, const int tdelay, CircularB
 		// when *ppsamp = psamps-1, it wraps around to *ppsamp = psamps+dlysize
 
 		--pDelaySample;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op)
 		int nMask2 = (pDelaySample - psamps) >> 31;									// 0xffffffff if pDelaySample < psamps, 0 otherwise
 		nMask2 &= nDelaySizeP1;														// nDelaySizeP1 if pDelaySample < psamps, 0 otherwise
 		pDelaySample += nMask2;
 
-#else
-		if ( pDelaySample < psamps )
-		{
-			pDelaySample += nDelaySizeP1;
-		}
-#endif
 		// output with gain
 		*pOut++ += ( (nFilteredOutput * outgain) >> PBITS );
 
@@ -1394,18 +1366,11 @@ inline void DelayAllpass_Opt2 ( int nDelaySize, int tdelay, CircularBufferSample
 	{
 		// delay output is filter input
 		CircularBufferSample_t *pInputDelaySample = pDelaySample + tdelay;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op).
 		// Re-use our own version of isel() as there is an optimization we can do
 		int nMask1 = (pSampsPDelaySize - pInputDelaySample) >> 31;					// 0xffffffff if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		nMask1 &= nDelaySizeP1;														// nDelaySizeP1 if pInputSampleDelay > pSampsPDelaySize, 0 otherwise
 		pInputDelaySample -= nMask1;
-#else
-		if ( pInputDelaySample > pSampsPDelaySize)
-		{
-			pInputDelaySample -= nDelaySizeP1;
-		}
-#endif
 
 		int sD = *pInputDelaySample;
 		int s0 = *pIn + (( fbgain * sD ) >> PBITS);
@@ -1420,17 +1385,10 @@ inline void DelayAllpass_Opt2 ( int nDelaySize, int tdelay, CircularBufferSample
 		// when *ppsamp = psamps-1, it wraps around to *ppsamp = psamps+dlysize
 
 		--pDelaySample;
-#if 1
 		// 4 ops instead of 1 op + 1 branch (and potentially one more op)
 		int nMask2 = (pDelaySample - psamps) >> 31;									// 0xffffffff if pDelaySample < psamps, 0 otherwise
 		nMask2 &= nDelaySizeP1;														// nDelaySizeP1 if pDelaySample < psamps, 0 otherwise
 		pDelaySample += nMask2;
-#else
-		if ( pDelaySample < psamps )
-		{
-			pDelaySample += nDelaySizeP1;
-		}
-#endif
 		// output with gain
 		int nValue = ( (out * outgain) >> PBITS );
 		if ( MODE == MM_ADD )
@@ -4153,16 +4111,7 @@ inline void RVA_GetNext_Opt( rva_t *pRva, portable_samplepair_t * pBuffer, int n
 		for ( int i = 0; i < m; i++ )
 		{
 			dly_t * pDelay = pRva->pdlys[i];
-#if 0
-			for ( int j = 0 ; j < nCount ; ++j )
-			{
-				int nSampleIn = pInputSample[j * 2];			// *2 because the input has both left AND right
-				int nSampleOut = DLY_GetNext( pDelay, nSampleIn );
-				pOutputSample[j] += nSampleOut;					// First operation could actually only write '=' instead of '+='
-			}
-#else
 			DLY_GetNext_Opt( pDelay, pInputSample, pOutputSample, nCount );
-#endif
 		}
 	}
 
@@ -4447,12 +4396,7 @@ void CheckCloneAccuracy( rva_t *prva, portable_samplepair_t *pbuffer, int nSampl
 
 	// This will break the input buffer content, if this test is executed the sound will be off (esp. for reverberations and delays)
 	LocalRandomSeed();		// Some of the filters are using Random, so we can see some divergence in some cases. Force the same seed.
-#if 0
-	// Use this method so it will compare sample by sample (help track more complex desyncs, but will slow the game down by a ton
-	RVA_GetNextN2( prva, pbuffer, pTempRva3, pTempBuffer3, nSampleCount, op );
-#else
 	RVA_GetNextN( prva, pbuffer, nSampleCount, op );
-#endif
 	RVA_Compare( *prva, *pTempRva1 );
 
 	bFailed = ( memcmp( pTempBuffer1, pbuffer, nSampleCount * sizeof( portable_samplepair_t ) ) != 0 );
@@ -5375,12 +5319,7 @@ void CheckCloneAccuracy( dfr_t *pDfr, portable_samplepair_t *pbuffer, int nSampl
 
 	// This will break the input buffer content, if this test is executed the sound will be off (esp. for reverberations and delays)
 	LocalRandomSeed();		// Some of the filters are using Random, so we can see some divergence in some cases. Force the same seed.
-#if 0
-	// Use this method so it will compare sample by sample (help track more complex desyncs, but will slow the game down by a ton
-	DFR_GetNextN2( prva, pbuffer, pTempRva3, pTempBuffer3, nSampleCount, op );
-#else
 	DFR_GetNextN( pDfr, pbuffer, nSampleCount, op );
-#endif
 	DFR_Compare( *pDfr, *pTempDfr1 );
 
 	bFailed = ( memcmp( pTempBuffer1, pbuffer, nSampleCount * sizeof( portable_samplepair_t ) ) != 0 );
@@ -8890,23 +8829,6 @@ void DSP_SetPreset( int idsp, int ipsetnew, const char * pDspName)
 	
 	pdsp->ipsetprev = pdsp->ipset;
 	pdsp->ipset = ipsetnew;
-
-#if 0
-	if ( pdsp->ppsetprev )
-	{
-		uint nCurrentTime = Plat_MSTime();
-		if ( nCurrentTime > pdsp->ppsetprev[0]->nLastUpdatedTimeInMilliseconds + snd_dsp_cancel_old_preset_after_N_milliseconds.GetInt() )
-		{
-			if ( snd_dsp_spew_changes.GetBool() )
-			{
-				DevMsg( "[Sound DSP] For Dsp %d, %s previous preset %d has not been updated for a while. Do not cross-fade form it.\n", idsp, pDspName, pdsp->ipsetprev );
-			}
-			// The preset that we are going to cross from is actually quite old.
-			// Let's cancel it too, so we can only hear the new preset. This case does not happen often but avoid some old sounds to be played. 
-			DSP_FreePrevPreset( pdsp );
-		}
-	}
-#endif
 
 	if ( idsp == idsp_room || idsp == idsp_automatic )
 	{

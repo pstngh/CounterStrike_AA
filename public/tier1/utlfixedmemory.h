@@ -305,17 +305,12 @@ void CUtlFixedMemory<T>::Grow( int num )
 	}
 	else
 	{
-#if 1	// IsIdxAfter assumes that newly allocated blocks are at the end
 		BlockHeader_t *  RESTRICT  pbh = m_pBlocks;
 		while ( pbh->m_pNext )
 		{
 			pbh = pbh->m_pNext;
 		}
 		pbh->m_pNext = pBlockHeader;
-#else
-		pBlockHeader = m_pBlocks;
-		pBlockHeader->m_pNext = m_pBlocks;
-#endif
 	}
 }
 

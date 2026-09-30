@@ -3232,11 +3232,6 @@ void qh_printvdiagram (FILE *fp, int format, facetT *facetlist, setT *facets, bo
   fprintf (fp, "%d\n", totcount);
   totcount= qh_printvdiagram2 (fp, printvridge, vertices, innerouter, True /* inorder*/);
   qh_settempfree (&vertices);
-#if 0  /* for testing qh_eachvoronoi_all */
-  fprintf (fp, "\n");
-  totcount= qh_eachvoronoi_all(fp, printvridge, qh UPPERdelaunay, innerouter, True /* inorder*/);
-  fprintf (fp, "%d\n", totcount);
-#endif
 } /* printvdiagram */
   
 /*-<a                             href="qh-c.htm#io"

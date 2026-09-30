@@ -62,36 +62,6 @@
 */
 char qh_version[] = "ipion 99/07/10";  /* used for error messages */
 
-#if 0
-{
-  int dim;	            /* dimension of points */
-  int numpoints;            /* number of points */
-  coordT *points;           /* array of coordinates for each point */
-  boolT ismalloc;           /* True if qhull should free points in qh_freeqhull() or reallocation */
-  char flags[]= "qhull Tv"; /* option flags for qhull, see qh_opt.htm */
-  FILE *outfile= stdout;    /* output from qh_produce_output()
-			       use NULL to skip qh_produce_output() */
-  FILE *errfile= stderr;    /* error messages from qhull code */
-  int exitcode;             /* 0 if no error from qhull */
-  facetT *facet;	    /* set by FORALLfacets */
-  int curlong, totlong;	    /* memory remaining after qh_memfreeshort */
-
-  /* initialize dim, numpoints, points[], ismalloc here */
-  exitcode= qh_new_qhull (dim, numpoints, points, ismalloc,
-                      flags, outfile, errfile); 
-  if (!exitcode) {                  /* if no error */
-    /* 'qh facet_list' contains the convex hull */
-    FORALLfacets {
-       /* ... your code ... */
-    }
-  }
-  qh_freeqhull(!qh_ALL);
-  qh_memfreeshort (&curlong, &totlong);
-  if (curlong || totlong) 
-    ivp_message( "qhull internal warning (main): did not free %d bytes of long memory (%d pieces)\n", totlong, curlong);
-}
-#endif
-
 /*-<a                             href="qh-c.htm#user"
   >-------------------------------</a><a name="new_qhull">-</a>
 
@@ -158,13 +128,6 @@ int qh_new_qhull (int dim, int numpoints, coordT *points, boolT ismalloc,
     }
     qh_init_B (new_points, numpoints, hulldim, new_ismalloc);
     qh_qhull();
-#if 0    
-    qh_check_output();
-    if (outfile)
-      qh_produce_output(); 
-    if (qh VERIFYoutput && !qh STOPpoint && !qh STOPcone)
-      qh_check_points();
-#endif    
   }
   qh NOerrexit = True;
   return exitcode;

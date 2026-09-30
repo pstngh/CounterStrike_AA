@@ -18,21 +18,6 @@ void Pickup_ForcePlayerToDropThisObject( CBaseEntity *pTarget )
 {
 	Warning ( "Failing to force player to drop object.\n" );
 	AssertMsg( 0, "This function is assumed to not be needed in portal 2, if this assert fires we need to fix it." );
-#if 0
-	if ( pTarget == NULL )
-		return;
-
-	IPhysicsObject *pPhysics = pTarget->VPhysicsGetObject();
-	
-	if ( pPhysics == NULL )
-		return;
-
-	if ( pPhysics->GetGameFlags() & FVPHYSICS_PLAYER_HELD )
-	{
-		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-		pPlayer->ForceDropOfCarriedPhysObjects( pTarget );
-	}
-#endif 
 }
 
 

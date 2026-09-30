@@ -1257,9 +1257,6 @@ CConCommandHash::CCommandHashHandle_t CConCommandHash::Find( const ConCommandBas
 	// or something similarly nonfatally bad. With this #if 1, we'll search
 	// by name instead of by pointer, which is more robust in the face
 	// of double registered commands, but obviously slower.
-#if 0 
-	return Find(cmd->GetName());
-#else
 	HashKey_t hashkey = Hash(cmd);
 	int iBucket = hashkey & kBUCKETMASK;
 
@@ -1288,7 +1285,6 @@ CConCommandHash::CCommandHashHandle_t CConCommandHash::Find( const ConCommandBas
 		"ConCommand %s couldn't be found by pointer, but was found by name!", cmd->GetName() );
 #endif
 	return InvalidHandle();
-#endif
 }
 
 

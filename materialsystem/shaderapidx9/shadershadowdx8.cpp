@@ -603,32 +603,6 @@ void CShaderShadowDX8::EnableSRGBRead( Sampler_t sampler, bool bEnable )
 {
 }
 
-#if 0
-void CShaderShadowDX8::SetShadowDepthFiltering( Sampler_t stage )
-{
-	int nMask = ( 1 << stage );
-	if ( stage < m_pHardwareConfig->GetSamplerCount() )
-	{
-#if ( defined ( POSIX ) )
-//		m_ShadowState.m_ShadowFilterEnable |= nMask;
-#else
-		if ( !m_pHardwareConfig->SupportsFetch4() )
-		{
-			m_ShadowState.m_nFetch4Enable &= ~nMask;
-		}
-		else
-		{
-			m_ShadowState.m_nFetch4Enable |= nMask;
-		}
-#endif
-	}
-	else
-	{
-		Warning( "Attempting set shadow filtering state on an invalid sampler (%d)!\n", stage );
-	}
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Compute the vertex format from vertex descriptor flags
 //-----------------------------------------------------------------------------

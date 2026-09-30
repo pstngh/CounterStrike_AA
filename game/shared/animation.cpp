@@ -289,15 +289,6 @@ void VerifySequenceIndex( CStudioHdr *pstudiohdr )
 		// this model's sequences have not yet been indexed by activity
 		IndexModelSequences( pstudiohdr );
 	}
-#if 0
-	else if ( pstudiohdr->GetActivityListVersion( ) != g_nActivityListVersion )
-	{
-		if ( !DebugValidateActivityIndexes( pstudiohdr ) )
-		{
-			Warning( "Client and server activity index numbers differ for %s\n", pstudiohdr->pszName() );
-		}
-	}
-#endif
 }
 
 

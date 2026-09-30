@@ -108,44 +108,11 @@ public:
 	// gets the in-game name of another user, returns NULL if that user doesn't exists
 	virtual const char *GetPlayerName(int trackerID)
 	{
-#if 0// DDK: this code could very likely cause a crash
-		Assert(false); 
-		// find the player by their friendsID
-		player_info_t pi;
-		for (int i = 0; i < engine->GetMaxClients(); i++)
-		{
-			if  (engine->GetPlayerInfo(i, &pi ))
-			{
-				if (pi.friendsID == (uint)trackerID)
-				{
-					return pi.name;
-				}
-			}
-		}
-
-#endif
 		return NULL;
 	}
 
 	virtual const char *GetPlayerFriendsName(int trackerID)
 	{
-#if 0// DDK: this code could very likely cause a crash
-
-		Assert(false); 
-		// find the player by their friendsID
-		player_info_t pi;
-		for (int i = 0; i < engine->GetMaxClients(); i++)
-		{
-			if  (engine->GetPlayerInfo(i, &pi ))
-			{
-				if (pi.friendsID == (uint)trackerID)
-				{
-					return pi.friendsName;
-				}
-			}
-		}
-
-#endif
 		return NULL;
 	}
 

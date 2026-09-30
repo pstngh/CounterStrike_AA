@@ -736,20 +736,6 @@ void CL_PreprocessEntities( void )
 		int number_of_commands_executed = ( GetBaseLocalClient().command_ack - GetBaseLocalClient().last_command_ack );
 		int number_of_simulation_ticks = ( GetBaseLocalClient().GetServerTickCount() - GetBaseLocalClient().last_server_tick );
 
-#if 0
-		COM_Log( "GetBaseLocalClient().log", "Receiving frame acknowledging %i commands\n",
-			number_of_commands_executed );
-
-		COM_Log( "GetBaseLocalClient().log", "  last command number executed %i\n",
-			GetBaseLocalClient().command_ack );
-
-		COM_Log( "GetBaseLocalClient().log", "  previous last command number executed %i\n",
-			GetBaseLocalClient().last_command_ack );
-
-		COM_Log( "GetBaseLocalClient().log", "  current world frame %i\n",
-			GetBaseLocalClient().m_nCurrentSequence );
-#endif
-
 		// Copy last set of changes right into current frame.
 		g_pClientSidePrediction->PreEntityPacketReceived( number_of_commands_executed, GetBaseLocalClient().m_nCurrentSequence, number_of_simulation_ticks );
 	}

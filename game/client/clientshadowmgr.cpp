@@ -1714,27 +1714,6 @@ void CClientShadowMgr::InitDepthTextureShadows()
 			m_DepthTextureCacheLocks.AddToTail( bFalse );
 		}
 
-#if 0 // 7LTODO #ifdef _PS3
-		AssertFatalEquals( m_nMaxDepthTextureShadows, 1 );
-		for( int i=0; i < m_nMaxDepthTextureShadows; i++ )
-		{
-			CTextureReference depthTex;	// Depth-stencil surface
-			bool bFalse = false;
-
-			char strRTName[64];
-			Q_snprintf( strRTName, ARRAYSIZE( strRTName ), "_rt_ShadowDepthTexture_Cache%d", i );
-
-			int nTextureResolution = ( i < MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS ? m_nDepthTextureResolutionHigh : m_nDepthTextureResolution );
-
-			depthTex.InitRenderTarget( nTextureResolution, nTextureResolution, sizeMode, dstFormat, MATERIAL_RT_DEPTH_NONE, false, strRTName );
-
-			m_DepthTextureCache.AddToTail( depthTex );
-			m_DepthTextureCacheLocks.AddToTail( bFalse );
-
-			g_ps3_ShadowDepth_TextureCache = m_uiDepthTextureCache = materials->EstablishGpuDataTransferCache( PS3GPU_DATA_TRANSFER_CREATECACHELINK, m_DepthTextureCache[0], depthTex );
-		}
-#endif
-
 		materials->EndRenderTargetAllocation();
 	}
 }

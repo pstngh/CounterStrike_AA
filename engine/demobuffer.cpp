@@ -559,12 +559,7 @@ public:
 					AssertValidReadPtr( m_pDemobuffer->m_pSignonData );
 					buf.Put( m_pDemobuffer->m_pSignonData->pData, m_pDemobuffer->m_pSignonData->nSize );
 
-#if 1
 					Iterator_t itStart = m_pDemobuffer->m_lstFrames.Head();
-#else
-					// TEST: Skip the first one
-					Iterator_t itStart = m_pDemobuffer->m_lstFrames.Next( m_lstFrames.Head() );
-#endif
 
 					// Get first recording tick (NOTE: not start global tick).  Recording ticks start at 0 but
 					// when we remove stale frames the first recording tick becomes greater than zero.  We use

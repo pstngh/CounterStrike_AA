@@ -40,7 +40,7 @@ void IVP_PerformanceCounter_Simple::reset_and_print_performance_counters(IVP_Tim
 		counter[IVP_PE_PSI_CRITICAL_MINDISTS][1] * factor,
 		counter[IVP_PE_USR1][0] * factor,
 		counter[IVP_PE_USR1][1] * factor);
-#elif 1
+#else
 
 		ivp_message(	"TOT %2.1f%% %2.2f COLL %2.2f  DYN %2.2f     det:  UNIV: %2.2f CONTR: %2.2f INTEGR: %2.2f "
 				"HULL: %2.2f SHORT: %2.2f CRITIC: %2.2f AT %2.2f\n",

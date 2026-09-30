@@ -133,13 +133,6 @@ void CJob::WaitForThreadFuncWorkItemBlocking()
 			m_pWaitingOnWorkItem = NULL;
 			break;
 
-#if 0 // not used in gcsdk
-		case k_EJobPauseReasonGeneric:
-			AssertMsg1( ( !m_pWaitingForGeneric || ( m_pWaitingForGeneric == ( void * ) 1 ) ), "CJob::WaitForThreadFuncWorkItemBlocking job %s will leak generic heap object", GetName() );
-			// Let another assert fire later, don't null-out: m_pWaitingForGeneric = NULL;
-			break;
-#endif
-
 		default:
 			AssertMsg1( false, "CJob::WaitForThreadFuncWorkItemBlocking job %s has unexpected work item state", GetName() );
 		}

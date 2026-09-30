@@ -259,9 +259,6 @@ END_SHADER_PARAMS
 			pShaderShadow->EnableSRGBWrite( true );
 
 			int nLightingPreviewMode = 0;
-#if 0
-			int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 ) + 2 * IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER1 );
-#endif
 
 #if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->HasFastVertexTextures() )

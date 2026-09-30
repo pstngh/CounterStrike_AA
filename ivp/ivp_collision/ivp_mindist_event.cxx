@@ -468,18 +468,6 @@ void IVP_Mindist_Event_Solver::calc_next_event_KK(const IVP_Compact_Edge *K,
 	    IVP_U_Point H;
 	    H.calc_cross_product(&k_vec_world_now, &l_vec_world_now);
 	    IVP_DOUBLE val  = -H.dot_product(&mindist->contact_plane);
-#if 0	    
-	    IVP_IF(1){
-		IVP_U_Point l_startp_world_now, k_startp_world_now;
-		IVP_CLS.give_world_coords_AT(L, m_cache_L,&l_startp_world_now);
-		IVP_CLS.give_world_coords_AT(K, m_cache_K,&k_startp_world_now);
-
-		IVP_U_Point diff_l_k;
-		diff_l_k.subtract(&l_startp_world_now, &k_startp_world_now);
-		IVP_DOUBLE val2 = diff_l_k.dot_product(&H);
-		IVP_ASSERT( val * val2 >= 0);
-	    }
-#endif
 
 
 	    if(val>0.0f){   //
@@ -624,17 +612,6 @@ void IVP_Mindist_Event_Solver::calc_next_event_PP(const IVP_Compact_Edge *P,
 	solver_pp_coll.B_object.set( p2_object);
 
 	solver_pp_coll.normized_direction_world_at_t0.set_multiple( & mindist->contact_plane, -1);
-#if 0
-	IVP_IF(1){
-	  IVP_U_Point check_dir;
-	  const IVP_U_Point       p_world; IVP_CLS.give_world_coords_AT(P,m_cache_P,&p_world);
-	  const IVP_U_Point       p2_world;IVP_CLS.give_world_coords_AT(P2,m_cache_P2,&p2_world);
-	  check_dir.subtract(&p2_world, &p_world);
-	  check_dir.normize();
-	  IVP_DOUBLE val = -mindist->contact_plane.dot_product( &check_dir );
-	  IVP_ASSERT(  IVP_Inline_Math::fabsd(val - 1.0f) < 0.0001f );
-	}
-#endif	
 	solver_pp_coll.set_max_deviation(this->max_coll_speed);
 	IVP_FLOAT radius = mindist->sum_extra_radius;
 	ivp_u_bool found =
@@ -744,17 +721,6 @@ void IVP_Mindist_Event_Solver::calc_next_event_BP(IVP_Ball * ball,const  IVP_Com
 	solver_pp_coll.B_object.set( p2_object);
 
 	solver_pp_coll.normized_direction_world_at_t0.set_multiple( &mindist->contact_plane, -1);
-#if 0	
-	IVP_IF(1){
-	  IVP_U_Point check_dir;
-	  const IVP_U_Point       *p_world  =  m_cache_B->m_world_f_object.get_position();
-	  const IVP_U_Point       p2_world; IVP_CLS.give_world_coords_AT(P2,m_cache_P2,&p2_world);
-	  check_dir.subtract(&p2_world, p_world);
-	  check_dir.normize();
-	  IVP_DOUBLE val = -mindist->contact_plane.dot_product( &check_dir );
-	  IVP_ASSERT(  IVP_Inline_Math::fabsd(val - 1.0f) < 0.0001f );
-	}
-#endif
 	
 	solver_pp_coll.set_max_deviation(this->max_coll_speed);
 	IVP_FLOAT radius = mindist->sum_extra_radius;

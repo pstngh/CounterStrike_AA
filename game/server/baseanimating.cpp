@@ -63,101 +63,6 @@ class CIKSaveRestoreOps : public CClassPtrSaveRestoreOps
 	}
 };
 
-#if 0
-//-----------------------------------------------------------------------------
-// Relative lighting entity
-//-----------------------------------------------------------------------------
-class CInfoLightingRelative : public CBaseEntity
-{
-public:
-	DECLARE_CLASS( CInfoLightingRelative, CBaseEntity );
-	DECLARE_DATADESC();
-	DECLARE_SERVERCLASS();
-
-	virtual void Activate();
-	virtual void SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways );
-	virtual int  UpdateTransmitState( void );
-
-private:
-	CNetworkHandle( CBaseEntity, m_hLightingLandmark );
-	string_t		m_strLightingLandmark;
-};
-
-LINK_ENTITY_TO_CLASS( info_lighting_relative, CInfoLightingRelative );
-
-BEGIN_DATADESC( CInfoLightingRelative )
-	DEFINE_KEYFIELD( m_strLightingLandmark, FIELD_STRING, "LightingLandmark" ),
-	DEFINE_FIELD( m_hLightingLandmark, FIELD_EHANDLE ),
-END_DATADESC()
-
-IMPLEMENT_SERVERCLASS_ST(CInfoLightingRelative, DT_InfoLightingRelative)
-	SendPropEHandle( SENDINFO( m_hLightingLandmark ) ),
-END_SEND_TABLE()
-
-
-//-----------------------------------------------------------------------------
-// Activate!
-//-----------------------------------------------------------------------------
-void CInfoLightingRelative::Activate()
-{
-	BaseClass::Activate();
-	if ( m_strLightingLandmark == NULL_STRING )
-	{
-		m_hLightingLandmark = NULL;
-	}
-	else
-	{
-		m_hLightingLandmark = gEntList.FindEntityByName( NULL, m_strLightingLandmark );
-		if ( !m_hLightingLandmark )
-		{
-			DevWarning( "%s: Could not find lighting landmark '%s'!\n", GetClassname(), STRING( m_strLightingLandmark ) );
-		}
-		else
-		{
-			// Set a force transmit because we do not have a model.
-			m_hLightingLandmark->AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
-		}
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Force our lighting landmark to be transmitted
-//-----------------------------------------------------------------------------
-void CInfoLightingRelative::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
-{
-	// Are we already marked for transmission?
-	if ( pInfo->m_pTransmitEdict->Get( entindex() ) )
-		return;
-
-	BaseClass::SetTransmit( pInfo, bAlways );
-	
-	// Force our constraint entity to be sent too.
-	if ( m_hLightingLandmark )
-	{
-		if ( m_hLightingLandmark->GetMoveParent() )
-		{
-			// Set a full check because we have a move parent.
-			m_hLightingLandmark->SetTransmitState( FL_EDICT_FULLCHECK );
-		}
-		else
-		{
-			m_hLightingLandmark->SetTransmitState( FL_EDICT_ALWAYS );
-		}
-
-		m_hLightingLandmark->SetTransmit( pInfo, bAlways );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose Force our lighting landmark to be transmitted
-//-----------------------------------------------------------------------------
-int CInfoLightingRelative::UpdateTransmitState( void )
-{
-	return SetTransmitState( FL_EDICT_ALWAYS );
-}
-
-#endif
 static CIKSaveRestoreOps s_IKSaveRestoreOp;
 
 
@@ -592,21 +497,6 @@ void CBaseAnimating::SetLightingOriginRelative( string_t strLightingOriginRelati
 			DevWarning( "%s: Could not find info_lighting_relative '%s'!\n", GetClassname(), STRING( strLightingOriginRelative ) );
 			return;
 		}
-#if 0
-		else if ( !dynamic_cast<CInfoLightingRelative *>(pLightingOrigin) )
-		{
-			if( !pLightingOrigin )
-			{
-				DevWarning( "%s: Cannot find Lighting Origin named: %s\n", GetEntityName().ToCStr(), STRING(strLightingOriginRelative) );
-			}
-			else
-			{
-				DevWarning( "%s: Specified entity '%s' must be a info_lighting_relative!\n", 
-					pLightingOrigin->GetClassname(), pLightingOrigin->GetEntityName().ToCStr() );
-			}
-			return;
-		}			
-#endif
 
 		SetLightingOriginRelative( pLightingOrigin );
 	}

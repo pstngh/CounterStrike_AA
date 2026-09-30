@@ -17,20 +17,6 @@
  * DEFINES
  ******************************************************************************/ 
 
-#if 0
-#define IVP_CLUSTERING_SHORTRANGE_VISUALIZER_ASSERT(errortext) \
-{ \
-    if ( !this->valid_instance ) { \
-	IVP_IF(1) { \
-	    IVP_IFDEBUG(IVP_DM_CLUSTERING_SHORTRANGE_VISUALIZER) { \
-		ivp_debugmanager.dprint(IVP_DM_CLUSTERING_SHORTRANGE_VISUALIZER, errortext); \
-	    } \
-	} \
-	return; \
-    } \
-}
-#endif
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -244,16 +230,6 @@ void IVP_BetterStatisticsmanager::print() {
     if ( !this->enabled ) return;
     if ( this->update_delayed ) return;
 
-#if 0    
-    static IVP_DOUBLE time_of_last_update = 0.0;
-    if ( (simulation_time - time_of_last_update) < this->update_interval ) {
-	this->update_delayed = IVP_TRUE;
-	return;
-    }
-    time_of_last_update = this->simulation_time;
-    this->update_delayed = IVP_FALSE;
-#endif
-    
     int i;
     for (i=0; i<this->output_callbacks.len(); i++) {
 	IVP_BetterStatisticsmanager_Callback_Interface *callback = this->output_callbacks.element_at(i);

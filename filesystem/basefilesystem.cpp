@@ -8891,11 +8891,7 @@ bool CFiosConfiguration::Setup()
 
 	// To remove one potential cause for a CERT issue, let's remove the usage of this flag (#if 0)
 	// This is a speculative fix for crashes that would not exist for the end user (although SONY states that we should not ship with this setting turned on).
-#if defined(_CERT) && 0
-	const bool bCheckModification = false;	// No need to scan for modifications at release time (faster)
-#else
 	const bool bCheckModification = true;	// But we want to double-check during development to avoid stale data
-#endif
 
 	m_SchedulerCache = new cell::fios::schedulercache( m_DevBdvdMedia, m_SchedulerForHDD,
 		"FILECACHE",					// Cache directory
@@ -8976,42 +8972,7 @@ void CFiosConfiguration::FlushCache()
 
 bool CFiosConfiguration::PrefetchFile( const char * pFileName, int nPriority, bool bPersist )
 {
-#if 0
-	// Because prefetching a big file is going to block all the other prefetches (and mess up the priorities if we need some prefetch done ASAP)
-	// We are going to split a big prefetch in smaller pieces.
-
-	// This is not necessary anymore:
-	// If we cancel a prefetch in the middle and restart it, all the file portion that have been already prefetched before the cancellation
-	// will be directly accounted for. I.e. there is not a lot of overhead to cancel and restart a prefetch.
-
-	int64 nFileSize;
-	cell::fios::err_t err = cell::fios::scheduler::getDefaultScheduler()->getFileSizeSync( NULL, pFileName, &nFileSize );
-	if ( err < 0 )
-	{
-		Warning( "Can't retrieve size of file '%s'.\n", pFileName );
-		return false;
-	}
-
-	const int MAX_PREFETCH_BLOCK_SIZE = 16 * 1024 * 1024;		// We prefetch 16 Mb at a time max
-																// This is around 2 seconds of prefetching at the BluRay speed.
-																// A 1.2 Gb file (like the sound zip file on Portal 2) will use 75 prefetch commands.
-																// And will take a little bit more than 2 minutes to be prefetched.
-	int64 nOffset = 0;
-	int64 nRemainingSize = nFileSize;
-	while ( nRemainingSize != 0 )
-	{
-		int64 nPrefetchSize = MIN( nRemainingSize, MAX_PREFETCH_BLOCK_SIZE );
-		if ( PrefetchFile( pFileName, nPriority, bPersist, nOffset, nPrefetchSize ) == false)
-		{
-			return false;
-		}
-		nRemainingSize -= nPrefetchSize;
-		nOffset += nPrefetchSize;
-	}
-	return true;
-#else
 	return PrefetchFile( pFileName, nPriority, bPersist, 0, FIOS_OFF_T_MAX );
-#endif
 }
 
 bool CFiosConfiguration::PrefetchFile( const char * pFileName, int nPriority, bool bPersist, int64 nOffset, int64 nSize )

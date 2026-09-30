@@ -1073,44 +1073,6 @@ FORCEINLINE fltx4 UnsignedIntConvertToFltSIMD( const u32x4 &vSrcA )
 }
 
 
-#if 0				/* pc has no such op */
-// Take a fltx4 containing fixed-point sints and 
-// return them as single precision floats. No 
-// fixed point conversion is done.
-FORCEINLINE fltx4 SignedIntConvertToFltSIMD( const i32x4 &vSrcA )
-{
-	fltx4 retval;
-	SubFloat( retval, 0 ) = ( (float) (reinterpret_cast<int32 *>(&vSrcA.m128_s32[0])) );
-	SubFloat( retval, 1 ) = ( (float) (reinterpret_cast<int32 *>(&vSrcA.m128_s32[1])) );
-	SubFloat( retval, 2 ) = ( (float) (reinterpret_cast<int32 *>(&vSrcA.m128_s32[2])) );
-	SubFloat( retval, 3 ) = ( (float) (reinterpret_cast<int32 *>(&vSrcA.m128_s32[3])) );
-	return retval;
-}
-
-
-/*
-  works on fltx4's as if they are four uints.
-  the first parameter contains the words to be shifted,
-  the second contains the amount to shift by AS INTS
-
-  for i = 0 to 3
-  shift = vSrcB_i*32:(i*32)+4
-  vReturned_i*32:(i*32)+31 = vSrcA_i*32:(i*32)+31 << shift
-*/
-FORCEINLINE i32x4 IntShiftLeftWordSIMD(const i32x4 &vSrcA, const i32x4 &vSrcB)
-{
-	i32x4 retval;
-	SubInt(retval, 0) = SubInt(vSrcA, 0) << SubInt(vSrcB, 0);
-	SubInt(retval, 1) = SubInt(vSrcA, 1) << SubInt(vSrcB, 1);
-	SubInt(retval, 2) = SubInt(vSrcA, 2) << SubInt(vSrcB, 2);
-	SubInt(retval, 3) = SubInt(vSrcA, 3) << SubInt(vSrcB, 3);
-
-
-	return retval;
-}
-
-#endif
-
 #elif ( defined( _PS3 ) )
 #define SN_IMPROVED_INTRINSICS ( (( __GNUC__ == 4 ) && ( __GNUC_MINOR__ == 1 ) && ( __GNUC_PATCHLEVEL__ == 1 )) ||\
 							     (defined(__SN_VER__) && (__SN_VER__ > 25002)) )
@@ -1270,28 +1232,6 @@ FORCEINLINE bi32x4 AndSIMD( const bi32x4 & a, const bi32x4 & b )				// a & b
 	return vec_and( a, b );
 }
 
-#if 0
-FORCEINLINE fltx4 AndNotSIMD( const fltx4 & a, const fltx4 & b )			// ~a & b
-{
-	// NOTE: a and b are swapped in the call: SSE complements the first argument, VMX the second
-	return vec_andc( b, a);
-}
-FORCEINLINE fltx4 AndNotSIMD( const bi32x4 & a, const fltx4 & b )			// ~a & b
-{
-	// NOTE: a and b are swapped in the call: SSE complements the first argument, VMX the second
-	return vec_andc( b, (fltx4)a);
-}
-FORCEINLINE fltx4 AndNotSIMD( const fltx4 & a, const bi32x4 & b )			// ~a & b
-{
-	// NOTE: a and b are swapped in the call: SSE complements the first argument, VMX the second
-	return (fltx4)vec_andc( b, (bi32x4)a);
-}
-FORCEINLINE bi32x4 AndNotSIMD( const bi32x4 & a, const bi32x4 & b )			// ~a & b
-{
-	// NOTE: a and b are swapped in the call: SSE complements the first argument, VMX the second
-	return vec_andc( b, a);
-}
-#else
 template< typename T, typename U >
 FORCEINLINE T AndNotSIMD( const T &a, const U &b ) // ~a & b
 {
@@ -1303,7 +1243,6 @@ FORCEINLINE fltx4 AndNotSIMD( const bi32x4 &a, const fltx4 &b ) // ~a & b
 {
 	return vec_andc( b, (fltx4)a );
 }
-#endif
 
 FORCEINLINE fltx4 XorSIMD( const fltx4 & a, const fltx4 & b )				// a ^ b
 {
@@ -4209,20 +4148,6 @@ inline bool IsVector4LessThan(const fltx4 &v1, const fltx4 &v2 )
 // ------------------------------------
 
 
-#if 0				/* pc does not have these ops */
-// splat all components of a vector to a signed immediate int number.
-FORCEINLINE fltx4 IntSetImmediateSIMD(int to)
-{
-	//CHRISG: SSE2 has this, but not SSE1. What to do?
-	fltx4 retval;
-	SubInt( retval, 0 ) = to;
-	SubInt( retval, 1 ) = to;
-	SubInt( retval, 2 ) = to;
-	SubInt( retval, 3 ) = to;
-	return retval;
-}
-#endif
-
 // Load 4 aligned words into a SIMD register
 FORCEINLINE i32x4 LoadAlignedIntSIMD( const void * RESTRICT pSIMD)
 {
@@ -4336,22 +4261,6 @@ FORCEINLINE fltx4 SignedIntConvertToFltSIMD( const shortx8 &vSrcA )
 	return  _mm_cvtepi32_ps( vSrcA );
 }
 
-#if 0
-// Take a fltx4 containing fixed-point sints and 
-// return them as single precision floats. No 
-// fixed point conversion is done.
-FORCEINLINE fltx4 SignedIntConvertToFltSIMD( const i32x4 &vSrcA )
-{
-	fltx4 retval;
-	SubFloat( retval, 0 ) = ( (float) (reinterpret_cast<const int32 *>(&vSrcA)[0]));
-	SubFloat( retval, 1 ) = ( (float) (reinterpret_cast<const int32 *>(&vSrcA)[1]));
-	SubFloat( retval, 2 ) = ( (float) (reinterpret_cast<const int32 *>(&vSrcA)[2]));
-	SubFloat( retval, 3 ) = ( (float) (reinterpret_cast<const int32 *>(&vSrcA)[3]));
-	return retval;
-}
-
-#endif
-
 /*
   works on fltx4's as if they are four uints.
   the first parameter contains the words to be shifted,
@@ -4414,7 +4323,6 @@ FORCEINLINE void RotateLeftDoubleSIMD( fltx4 &a, fltx4 &b )
 // // Some convenience operator overloads, which are just aliasing the functions above.
 // Unneccessary on 360, as you already have them from xboxmath.h (same for PS3 PPU and SPU)
 #if !defined(PLATFORM_PPC) && !defined( POSIX ) && !defined(SPU)
-#if 1  // TODO: verify generation of non-bad code. 
 // Componentwise add
 FORCEINLINE fltx4 operator+( FLTX4 a, FLTX4 b )
 {
@@ -4459,7 +4367,6 @@ FORCEINLINE fltx4 operator-( FLTX4 a )
 {
 	return NegSIMD( a );
 }
-#endif // 0
 #endif
 
 #if defined(_X360) || defined(_PS3)
@@ -5820,69 +5727,6 @@ FORCEINLINE bool KDop32_t::IsEmpty( void ) const
 extern const fltx4 g_KDop32XDirs[4];
 extern const fltx4 g_KDop32YDirs[4];
 extern const fltx4 g_KDop32ZDirs[4];
-#endif
-
-#if 0
-
-// FIXME!!!  If we need a version of this that runs on 360, this is a work-in-progress version that hasn't been debugged.
-
-#define _VEC_SWIZZLE_QUAT48_UNPACK (__vector unsigned char)		{ 16, 17, 0, 1, 16, 17, 2, 3, 16, 17, 4, 5, 16, 17, 6, 7 }
-#define _VEC_SWIZZLE_QUAT48_UNPACK_SHIFT (__vector unsigned int )		{ 0, 0, 1, 0 }
-
-// unpack a single Quaternion48 at the pointer into the x,y,z,w components of a fltx4
-FORCEINLINE fltx4 UnpackQuaternion48SIMD( const Quaternion48 * RESTRICT pVec )
-{
-	// A quaternion 48 stores the x and y components as 0..65535 , which is almost mapped onto -1.0..1.0 via (x - 32768) / 32768.5 .
-	// z is stored as 0..32767, which is almost mapped onto -1..1 via (z - 16384) / 16384.5 .
-	// w is inferred from 1 - the dot product of the other tree components. the top bit of what would otherwise be the 16-bit z is
-	// w's sign bit.
-//	fltx4 q16s = XMLoadVector3((const void *)pVec);
-	fltx4 q16s = LoadUnaligned3SIMD( (const float * )pVec);
-
-//	fltx4 shift = *( fltx4 * )&g_SIMD_Quat48_Unpack_Shift; // load the aligned shift mask that we use to shuffle z.
-//	fltx4 permute = *( fltx4 * )&g_SIMD_Quat48_Unpack_Permute0; // load the permute word that shuffles x,y,z into their own words
-	bool wneg = pVec->wneg; // loading pVec into two different kinds of registers -- but not shuffling between (I hope!) so no LHS.
-
-	//	q16s = __vperm( q16s, Four_Threes, permute ); // permute so that x, y, and z are now each in their own words. The top half is the floating point rep of 3.0f
-	q16s = vec_perm( q16s, Four_Threes, _VEC_SWIZZLE_QUAT48_UNPACK ); // permute so that x, y, and z are now each in their own words. The top half is the floating point rep of 3.0f
-
-	//	q16s = __vslh(q16s, shift); // shift the z component left by one bit, tossing out the wneg sign bit and mapping z from [0..2^15) to [0..2^16)
-//	q16s = vec_sl( *( u32x4 * )( void * )( &q16s ), _VEC_SWIZZLE_QUAT48_UNPACK_SHIFT ); // shift the z component left by one bit, tossing out the wneg sign bit and mapping z from [0..2^15) to [0..2^16)
-	u32x4 tmp = IntShiftLeftWordSIMD( *( u32x4 * )&q16s, _VEC_SWIZZLE_QUAT48_UNPACK_SHIFT );
-	q16s = *( fltx4 * )&tmp;
-
-	// each word of q16s contains 3.0 + n * 2^-22 -- convert this so that we get numbers on the range -1..1
-	const fltx4 vUpkMul = SplatXSIMD(g_SIMD_Quat48_Unpack_Magic_Constants); // { UnpackMul16s, UnpackMul16s, UnpackMul16s, UnpackMul16s };
-	const fltx4 vUpkAdd = SplatYSIMD(g_SIMD_Quat48_Unpack_Magic_Constants);
-
-	/*
-	fltx4 ret = __vcfux( q16s, 0 ); // convert from uint16 to floats.
-
-	// scale from 0..65535 to -1..1 : tmp.x = ((int)x - 32768) * (1 / 32768.0);
-	ret = __vmaddfp( ret, g_SIMD_Quat48_DivByU15, Four_NegativeOnes  );
-	*/
-//	fltx4 ret = __vmaddfp( q16s, vUpkMul, vUpkAdd );
-	fltx4 ret = vec_madd( q16s, vUpkMul, vUpkAdd );
-
-	// now, work out what w must be. 
-	fltx4 dotxyz = Dot3SIMD( ret, ret ); // all components are dot product of ret w/ self.
-	dotxyz = ClampVectorSIMD( dotxyz, Four_Zeros, Four_Ones );
-
-	fltx4 ww = SubSIMD( Four_Ones, dotxyz ); // all components are 1 - dotxyz
-	ww = SqrtSIMD(ww); // all components are sqrt(1-dotxyz)
-	if ( wneg )
-	{
-		ret = SetWSIMD( ret, NegSIMD( ww ) );
-//		ret = __vrlimi( ret, NegSIMD(ww), 1, 0 ); // insert one element from the ww vector into the w component of ret
-	}
-	else
-	{
-		ret = SetWSIMD( ret, ww );
-//		ret = __vrlimi( ret, ww, 1, 0 ); // insert one element from the ww vector into the w component of ret
-	}
-	return ret;
-}
-
 #endif
 
 // These are not optimized right now for some platforms. We should be able to shuffle the values in some platforms.

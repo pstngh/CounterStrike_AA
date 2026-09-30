@@ -139,34 +139,6 @@ void CEntityFlame::Activate()
 	BaseClass::Activate();
 
 #ifdef HL2_EP3
-#if 0
-	// Mark nearby links as dangerous
-	const Vector &vecOrigin = GetAbsOrigin();
-	float flMaxDistSqr = m_flSize * m_flSize;
-	m_hObstacle = CAI_LocalNavigator::AddGlobalObstacle( vecOrigin, m_flSize, AIMST_AVOID_DANGER );
-	for ( int i = 0; i < g_pBigAINet->NumNodes(); i++ )
-	{
-		CAI_Node *pSrcNode = g_pBigAINet->GetNode( i );
-		int nSrcNodeId = pSrcNode->GetId();
-		for ( int j = 0; j < pSrcNode->NumLinks(); j++ )
-		{
-			CAI_Link *pLink = pSrcNode->GetLinkByIndex( j );
-			int nDstNodeId = pLink->DestNodeID( nSrcNodeId );
-
-			// Eliminates double-checking of links
-			if ( nDstNodeId < nSrcNodeId )
-				continue;
-
-			CAI_Node *pDstNode = g_pBigAINet->GetNode( nDstNodeId );
-			float flDistSqr = CalcDistanceSqrToLineSegment( vecOrigin, pSrcNode->GetOrigin(), pDstNode->GetOrigin() );
-			if ( flDistSqr > flMaxDistSqr )
-				continue;
-
-			++pLink->m_nDangerCount;
-			m_DangerLinks.AddToTail( pLink );
-		}
-	}
-#endif
 #endif // HL2_EP3
 }
 

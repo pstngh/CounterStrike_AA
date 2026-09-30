@@ -901,13 +901,6 @@ void DataTable_Warning( const char *pInMessage, ... )
 	char msg[4096];
 	va_list marker;
 	
-#if 0
-	#if !defined(_DEBUG)
-		if(!g_CV_DTWarning.GetInt())
-			return;
-	#endif
-#endif
-
 	va_start(marker, pInMessage);
 	Q_vsnprintf( msg, sizeof( msg ), pInMessage, marker);
 	va_end(marker);

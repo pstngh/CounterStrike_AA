@@ -282,18 +282,6 @@ public:
 		return m_ulLastDispatchedSequenceNumber;
 	}
 
-#if 0
-	uint64 GetAveExecutionTime() const
-	{
-		return m_StatExecutionTime.GetUlAvg();
-	}
-	uint64 GetAveWaitTime() const
-	{
-		return m_StatWaitTime.GetUlAvg();
-	}
-	uint64 GetCurrentBacklogTime() const;
-#endif
-
 	int CountCompletedSuccess() const { return m_cSuccesses; }
 	int CountRetries() const { return m_cRetries; }
 	int CountCompletedFailed() const { return m_cFailures; }
@@ -368,10 +356,6 @@ protected:
 	int m_cSuccesses;
 	int m_cFailures;
 	int m_cRetries;
-#if 0
-	CStat m_StatExecutionTime;
-	CStat m_StatWaitTime;
-#endif
 	CLimitTimer m_LimitTimerCreateNewThreads;
 
 #ifdef DBGFLAG_VALIDATE

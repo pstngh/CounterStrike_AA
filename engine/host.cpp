@@ -2403,7 +2403,6 @@ void Host_AccumulateTime( float dt )
 	}
 #endif
 
-#if 1
 	if ( host_framerate.GetFloat() != 0 
 #if !defined(DEDICATED)
 		&& ( CanCheat() || demoplayer->IsPlayingBack() ) 
@@ -2468,7 +2467,6 @@ void Host_AccumulateTime( float dt )
 		host_frametime = MAX( host_frametime, MIN_FRAMETIME );
 		host_frametime_unscaled = host_frametime;
 	}
-#endif // 1
 
 	// Adjust the client clock very slightly to keep it in line with the server clock.
 #ifndef DEDICATED

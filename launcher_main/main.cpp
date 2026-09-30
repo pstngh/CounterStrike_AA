@@ -352,13 +352,6 @@ void TestThreads( int nLevel = 0)
 int MainImpl( int argc, char *argv[] )
 {
 // #ifdef _CERT // possibly enable it for ship to disable command line cheating?
-#if 0
-	// Disable command line support for shipping unless -certcmdline specified
-	if ( ( argc > 1 ) && !strcmp( argv[1], "-certcmdline" ) )
-	{
-		argc = 1;
-	}
-#endif
 
 	// this is the very first timing message, before tier0 is even initialized and we can use any 
 	// logging or timing facilities; this is the baseline to measure loading times

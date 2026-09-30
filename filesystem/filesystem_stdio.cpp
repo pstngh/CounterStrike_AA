@@ -64,24 +64,6 @@ bool ShouldFailIo()
 #include <dirent.h>
 #include <cell/fios.h>
 
-#if 0 // defined( _PS3 )
-
-#include "MemMgr/inc/MemMgr.h"
-#include "FileGroup.h"
-#include "const.h"
-#include <sys/sys_time.h>
-#include "memmgr\inc\PS3VirtualAlloc.h"
-
-char gSrcGameDataPath[MAX_PATH];
-bool g_bUseBdvdGameData = false;
-
-extern uint g_ioThreadId;
-
-CFileGroupSystem g_fileGroupSystem;
-int g_levelLoadGroup = -1;
-
-#endif //_PS3
-
 #endif 
 
 
@@ -349,19 +331,6 @@ bool FindClose(HANDLE handle)
 }
 
 #endif
-
-#if 0 // defined(_PS3)
-
-#define DebugPrint(fmt, ...)	Msg( fmt, ## __VA_ARGS__ )
-
-static bool ThreadInIoThread()
-{
-    return( ThreadGetCurrentId() == g_ioThreadId );
-}
-
-
-
-#endif //_PS3
 
 // Modern macOS always uses 64-bit inode types.  The filesystem implementation
 // below only relies on the public POSIX interfaces, so the old SDK tripwires

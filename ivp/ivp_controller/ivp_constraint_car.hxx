@@ -81,12 +81,6 @@ public:
 	int										z_idx;				// specifies the axis which points forward
 	IVP_FLOAT								angle_sign;			// 1.0f or -1.0f depending on right/left hand system
 
-#if 0
-	// Debugging!
-	IVP_FLOAT								m_wheelRotationTorque[4][3];
-	IVP_FLOAT								m_wheelTranslationTorque[4][3];
-#endif
-
 protected:
 
     void					core_is_going_to_be_deleted_event( IVP_Core *core );

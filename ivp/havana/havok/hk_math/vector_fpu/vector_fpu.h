@@ -14,30 +14,6 @@
 #define hk_VecFPU_MEMSHIFT_FLOAT 2 //4 Bytes per Floating Point Number
 
 
-#if 0
-#if defined( IVP_WILLAMETTE ) || defined( IVP_WMT_ALIGN )
-    #define hk_VecFPU_SIZE 2  
-    #define IVP_VECFPU_LD 1
-    #define IVP_VECFPU_MASK 0xfffffffe 
-
-    #define IVP_VECFPU_MEM_MASK 0xfffffff0 //16Byte per Block
-    #define IVP_VECFPU_MEMSHIFT 3 //8 Bytes per Floating Point Number
-#else
-    #define IVP_VECFPU_SIZE 4  
-    #define IVP_VECFPU_LD 2
-    #define IVP_VECFPU_MASK 0xfffffffc 
-
-    #ifdef IVP_NO_DOUBLE
-    #	define IVP_VECFPU_MEM_MASK 0xfffffff0 //16Byte
-    #	define IVP_VECFPU_MEMSHIFT 2 //4 Bytes per Floating Point Number
-    #else
-    #	define IVP_VECFPU_MEM_MASK 0xffffffe0 //32Byte
-    #	define IVP_VECFPU_MEMSHIFT 3 //8 Bytes per Floating Point Number
-    #endif
-#endif
-#endif
-
-
 
 // assumption: the memory is always allocated aligned to the block size
 //             otherwise -> failure

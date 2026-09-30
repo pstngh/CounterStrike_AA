@@ -148,13 +148,6 @@ volatile static char s_ShaderCompileString[]="dynamic_shader_compile_is_on";
 static void MatFlushShaders( void );
 #endif
 
-#if 0
-#ifndef _PS3
-// D3D to OpenGL translator
-static D3DToGL sg_D3DToOpenGLTranslator;
-#endif
-#endif // !_PS3
-
 #ifdef PROFILE_SHADER_CREATE
 static FILE *GetDebugFileHandle( void )
 {
@@ -2940,33 +2933,6 @@ bool CShaderManager::CreateDynamicCombos_Ver5( void *pContext, uint8 *pComboBuff
 				if ( pFileCache->m_bVertexShader )
 				{
 
-#if 0
-					// this is all test code
-					CUtlBuffer bufGLSLCode( 1000, 50000, CUtlBuffer::TEXT_BUFFER );
-					bool bVertexShader;
-
-					uint32 nOptions = 0;
-					nOptions |= D3DToGL_OptionUseEnvParams;
-					nOptions |= D3DToGL_OptionDoFixupZ;
-					nOptions |= D3DToGL_OptionDoFixupY;					
-					//options |= D3DToGL_OptionSpew;
-
-					// GLSL options
-					nOptions |= D3DToGL_OptionGLSL;// | D3DToGL_OptionAllowStaticControlFlow | D3DToGL_AddHexComments | D3DToGL_PutHexCommentsAfterLines;
-					sg_NewD3DToOpenGLTranslator.TranslateShader( (uint32 *) pReadPtr, &bufGLSLCode, &bVertexShader, nOptions, -1, 0, debugLabel );
-					nOptions |= D3DToGL_OptionGLSL; // | D3DToGL_AddHexComments | D3DToGL_PutHexCommentsAfterLines;
-					//if ( !IsOSX() )
-					{
-						nOptions |= D3DToGL_OptionAllowStaticControlFlow;
-					}
-					sg_NewD3DToOpenGLTranslator.TranslateShader( (uint32 *) pReadPtr, &bufGLSLCode, &bVertexShader, nOptions, -1, 0, debugLabel );
-					nOptions |= D3DToGL_OptionGLSL;// | D3DToGL_AddHexComments | D3DToGL_PutHexCommentsAfterLines;
-					sg_D3DToOpenGLTranslator.TranslateShader( (uint32 *) pReadPtr, &bufGLSLCode, &bVertexShader, nOptions, -1, 0, debugLabel );
-					Assert( bVertexShader );
-
-					WriteTranslatedFile( pLookup, iIndex, (char *)bufGLSLCode.Base(), "glsl_v" );	// GLSL
-#endif
-
 #ifdef DX_TO_GL_ABSTRACTION
 					// munge the debug label a bit to aid in decoding... catenate the iIndex on the end
 					char temp[1024];
@@ -2978,24 +2944,6 @@ bool CShaderManager::CreateDynamicCombos_Ver5( void *pContext, uint8 *pComboBuff
 				}
 				else
 				{
-#if 0
-					// this is all test code
-					CUtlBuffer bufGLSLCode( 1000, 50000, CUtlBuffer::TEXT_BUFFER );
-					bool bVertexShader;
-
-					uint32 nOptions = D3DToGL_OptionUseEnvParams;
-
-					// GLSL options
-					nOptions |= D3DToGL_OptionGLSL; // | D3DToGL_OptionSRGBWriteSuffix | D3DToGL_AddHexComments | D3DToGL_PutHexCommentsAfterLines;
-					//if ( !IsOSX() )
-					{
-						nOptions |= D3DToGL_OptionAllowStaticControlFlow;
-					}
-					sg_D3DToOpenGLTranslator.TranslateShader( (uint32 *) pReadPtr, &bufGLSLCode, &bVertexShader, nOptions, -1, 0, debugLabel );
-					Assert( !bVertexShader );
-
-					WriteTranslatedFile( pLookup, iIndex, (char *)bufGLSLCode.Base(), "glsl_p" );	// GLSL
-#endif
 
 #ifdef DX_TO_GL_ABSTRACTION
 					// munge the debug label a bit to aid in decoding... catenate the iIndex on the end
@@ -3467,185 +3415,6 @@ bool CShaderManager::LoadAndCreateShaders( ShaderLookup_t &lookup, bool bVertexS
 
 //----------------------------------------------------------------------------------old code
 
-#if 0
-
-// Set this convar internally to build or add to the shader cache file
-// We really only expect this to work on POSIX
-ConVar mat_cacheshaders( "mat_cacheshaders", "0", FCVAR_DEVELOPMENTONLY );
-
-#define SHADER_CACHE_FILE "shader_cache.cfg"
-#define PROGRAM_CACHE_FILE "program_cache.cfg"
-
-static void WriteToShaderCache( const char *pShaderName, const int nIndex )
-{
-#ifndef DX_TO_GL_ABSTRACTION
-	return;
-#endif
-
-	KeyValues *pShaderCache = new KeyValues( "shadercache" );
-	// we don't load anything, it starts empty..  pShaderCache->LoadFromFile( g_pFullFileSystem, SHADER_CACHE_FILE, "MOD" );
-
-	if ( !pShaderCache )
-	{
-		DevWarning( "Could not write to shader cache file!\n" );
-		return;
-	}
-
-	// Subkey for specific shader
-	KeyValues *pShaderKey = pShaderCache->FindKey( pShaderName, true );
-	Assert( pShaderKey );
-
-	bool bFound = false;
-	int nKeys = 0;
-	char szIndex[8];
-	FOR_EACH_VALUE( pShaderKey, pValues )
-	{
-		if ( pValues->GetInt() == nIndex )
-		{
-			bFound = true;
-		}
-		nKeys++;
-	}
-
-	if ( !bFound )
-	{
-		V_snprintf( szIndex, 8, "%d", nKeys );
-		pShaderKey->SetInt( szIndex, nIndex );
-	}
-
-	pShaderCache->SaveToFile( g_pFullFileSystem, SHADER_CACHE_FILE, "MOD" );
-	pShaderCache->deleteThis();
-}
-
-void CShaderManager::WarmShaderCache()
-{
-#ifndef DX_TO_GL_ABSTRACTION
-	return;
-#endif
-
-	// Don't access the cache if we're building it!
-	if ( mat_cacheshaders.GetBool() )
-		return;
-
-	// Don't warm the cache if we're just going to monkey with the shaders anyway
-#ifdef DYNAMIC_SHADER_COMPILE
-	return;
-#endif
-
-	double st = Sys_FloatTime();
-
-
-	//
-	// First we warm SHADERS  ===============================================
-	//
-
-	KeyValues *pShaderCache = new KeyValues( "shadercache" );
-	pShaderCache->LoadFromFile( g_pFullFileSystem, SHADER_CACHE_FILE, "MOD" );
-
-	if ( !pShaderCache )
-	{
-		DevWarning( "Could not find shader cache file!\n" );
-		return;
-	}
-
-	// Run through each shader in the cache
-	FOR_EACH_SUBKEY( pShaderCache, pShaderKey )
-	{
-		const char *pShaderName = pShaderKey->GetName();
-		bool bVertexShader = Q_stristr( pShaderName, "_vs20" ) || Q_stristr( pShaderName, "_vs30" );
-
-		FOR_EACH_VALUE( pShaderKey, pValue )
-		{
-			char	temp[1024];
-			int		staticIndex = pValue->GetInt();
-
-			if ( bVertexShader )
-			{
-				V_snprintf( temp, sizeof(temp), "vs-file %s vs-index %d", pShaderName, staticIndex );
-				CreateVertexShader( pShaderName, staticIndex, temp );
-			}
-			else
-			{
-				V_snprintf( temp, sizeof(temp), "ps-file %s ps-index %d", pShaderName, staticIndex );
-				CreatePixelShader( pShaderName, staticIndex, temp );
-			}
-		}
-	}
-
-	pShaderCache->deleteThis();
-
-
-	//
-	// Next, we warm PROGRAMS (which are pairs of shaders)  =================
-	//
-
-	KeyValues *pProgramCache = new KeyValues( "programcache" );
-	pProgramCache->LoadFromFile( g_pFullFileSystem, PROGRAM_CACHE_FILE, "MOD" );
-
-	if ( !pProgramCache )
-	{
-		DevWarning( "Could not find program cache file!\n" );
-		return;
-	}
-
-	// Run through each program in the cache
-	FOR_EACH_SUBKEY( pProgramCache, pProgramKey )
-	{
-		KeyValues *pValue = pProgramKey->GetFirstValue();
-		const char *pVertexShaderName = pValue->GetString();
-		pValue = pValue->GetNextValue();
-		const char *pPixelShaderName = pValue->GetString();
-		pValue = pValue->GetNextValue();
-		int nVertexShaderStaticIndex = pValue->GetInt();
-		pValue = pValue->GetNextValue();
-		int nPixelShaderStaticIndex = pValue->GetInt();
-		pValue = pValue->GetNextValue();
-		int nVertexShaderDynamicIndex = pValue->GetInt();
-		pValue = pValue->GetNextValue();
-		int nPixelShaderDynamicIndex = pValue->GetInt();
-
-		ShaderLookup_t vshLookup;
-		vshLookup.m_Name = m_ShaderSymbolTable.AddString( pVertexShaderName ); // TODO: use String() here and catch this odd case
-		vshLookup.m_nStaticIndex = nVertexShaderStaticIndex;
-		VertexShader_t vertexShader = m_VertexShaderDict.Find( vshLookup );
-
-		ShaderLookup_t pshLookup;
-		pshLookup.m_Name = m_ShaderSymbolTable.AddString( pPixelShaderName );
-		pshLookup.m_nStaticIndex = nPixelShaderStaticIndex;
-		PixelShader_t pixelShader = m_PixelShaderDict.Find( pshLookup );
-
-		// If we found both shaders, do the link!
-		if ( ( vertexShader != m_VertexShaderDict.InvalidIndex() ) && ( pixelShader != m_PixelShaderDict.InvalidIndex() ) )
-		{
-#ifdef DX_TO_GL_ABSTRACTION
-			//HardwareShader_t hardwareVertexShader = vshLookup.m_ShaderStaticCombos.m_pHardwareShaders[nVertexShaderDynamicIndex];
-			//HardwareShader_t hardwarePixelShader = pshLookup.m_ShaderStaticCombos.m_pHardwareShaders[nPixelShaderDynamicIndex];
-
-			HardwareShader_t hardwareVertexShader = m_VertexShaderDict[vertexShader].m_ShaderStaticCombos.m_pHardwareShaders[nVertexShaderDynamicIndex];
-			HardwareShader_t hardwarePixelShader = m_PixelShaderDict[pixelShader].m_ShaderStaticCombos.m_pHardwareShaders[nPixelShaderDynamicIndex];
-
-			if ( ( hardwareVertexShader != INVALID_HARDWARE_SHADER ) && ( hardwarePixelShader != INVALID_HARDWARE_SHADER ) )
-			{
-				if ( S_OK != Dx9Device()->LinkShaderPair( (IDirect3DVertexShader9 *)hardwareVertexShader, (IDirect3DPixelShader9 *)hardwarePixelShader ) )
-				{
-					DevWarning( "Could not link OpenGL shaders: %s (%d, %d) : %s (%d, %d)\n", pVertexShaderName, nVertexShaderStaticIndex, nVertexShaderDynamicIndex, pPixelShaderName, nPixelShaderStaticIndex, nPixelShaderDynamicIndex );
-				}
-			}
-#endif
-		}
-		else
-		{
-			DevWarning( "Invalid shader linkage: %s (%d, %d) : %s (%d, %d)\n", pVertexShaderName, nVertexShaderStaticIndex, nVertexShaderDynamicIndex, pPixelShaderName, nPixelShaderStaticIndex, nPixelShaderDynamicIndex );
-		}
-	}
-
-	pProgramCache->deleteThis();
-
-	float elapsed = ( float )( Sys_FloatTime() - st ) * 1000.0;
-	DevMsg( "WarmShaderCache took %.3f msec\n", elapsed );
-}
-
-#endif
 //----------------------------------------------------------------------------------old code
 
 

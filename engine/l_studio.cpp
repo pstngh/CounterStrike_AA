@@ -369,7 +369,6 @@ float Engine_WorldLightDistanceFalloff( const dworldlight_t *wl, const Vector& d
 	switch (wl->type)
 	{
 		case emit_surface:
-#if 1
 			// Cull out stuff that's too far
 			if (wl->radius != 0)
 			{
@@ -378,14 +377,6 @@ float Engine_WorldLightDistanceFalloff( const dworldlight_t *wl, const Vector& d
 			}
 
 			return InvRSquared(delta);
-#else
-			// 1/r*r
-			falloff = DotProduct( delta, delta );
-			if (falloff < 1)
-				return 1.f;
-			else
-				return 1.f / falloff;
-#endif
 
 			break;
 

@@ -57,11 +57,7 @@ CInterlockedInt VmmMsgFlag = 0; // Prevents re-entrancy within VmmMsg (printf al
 #define VmmMsg( mutex, ... ) ((void)0)
 #endif
 
-#if 0
-#define TRACE_CALL( ... ) do { FILE *fPs3Trace = fopen( "/app_home/tracevmm.txt", "a+" ); if( fPs3Trace ) { fprintf( fPs3Trace, __VA_ARGS__ ); fclose( fPs3Trace ); } } while( 0 )
-#else
 #define TRACE_CALL( ... ) ((void)0)
-#endif
 
 #ifdef _PS3
 #define VIRTUAL_MEMORY_MANAGER_SUPPORTED

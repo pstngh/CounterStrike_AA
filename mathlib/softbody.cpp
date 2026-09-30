@@ -2851,21 +2851,6 @@ matrix3x4a_t* CSoftbody::GetParticleTransforms( const VectorAligned *pInputNodeP
 			for ( uint nBase = 0; nBase < m_pFeModel->m_nNodeBaseCount; ++nBase )
 			{
 				const FeNodeBase_t &basis = m_pFeModel->m_pNodeBases[ nBase ];
-#if 0
-				Vector vAxisX = ( pNodePos[ basis.nNodeX1 ] - pNodePos[ basis.nNodeX0 ] ).NormalizedSafe( Vector( 0, 0, -1 ) );
-				Vector vAxisY = ( pNodePos[ basis.nNodeY1 ] - pNodePos[ basis.nNodeY0 ] );
-				vAxisY = ( vAxisY - DotProduct( vAxisY, vAxisX ) * vAxisX );
-				float flAxisYlen = vAxisY.Length();
-				if ( flAxisYlen > 0.001f )
-				{
-					vAxisY /= flAxisYlen;
-				}
-				else
-				{
-					// there's no useful direction for Y, just pick an orthogonal direction. Best if it's stable
-					VectorPerpendicularToVector( vAxisX, &vAxisY );
-				}
-#else
 				// this version is more consistent with Source1 bone normal/matrix computation
 				Vector vAxisX = ( pNodePos[ basis.nNodeX1 ] - pNodePos[ basis.nNodeX0 ] );
 				Vector vAxisY = ( pNodePos[ basis.nNodeY1 ] - pNodePos[ basis.nNodeY0 ] ).NormalizedSafe( Vector( 0, 0, -1 ) );
@@ -2880,7 +2865,6 @@ matrix3x4a_t* CSoftbody::GetParticleTransforms( const VectorAligned *pInputNodeP
 					// there's no useful direction for Y, just pick an orthogonal direction. Best if it's stable
 					VectorPerpendicularToVector( vAxisY, &vAxisX );
 				}
-#endif
 
 				matrix3x4a_t tmPredicted;
 				tmPredicted.InitXYZ( vAxisX, vAxisY, CrossProduct( vAxisX, vAxisY ), pNodePos[ basis.nNode ] ); // in source1 it's down(-up), forward, right. Forward computed first and the others are going from it

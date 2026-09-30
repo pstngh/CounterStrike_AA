@@ -880,15 +880,6 @@ void GLMContext::ProcessTextureDeletes()
 
 			GLMDebugPrintf("GLMContext::DelTex: Leaking tex %08x [ %s ] - was attached for drawing at time of delete",tex, tex->m_layout->m_layoutSummary );
 
-			#if 0
-				// can't actually do this yet as the draw calls will tank
-				FOR_EACH_VEC( m_fboTable, i )
-				{
-					CGLMFBO *fbo = m_fboTable[i];
-					fbo->TexScrub( tex );
-				}
-				tex->m_rtAttachCount = 0;
-			#endif
 		}
 		else
 		{	
@@ -1169,7 +1160,6 @@ void GLMContext::Blit2( CGLMTex *srcTex, GLMRect *srcRect, int srcFace, int srcM
 	}
 	else
 	{
-#if 1
         if ( ( blitMask == GL_DEPTH_BUFFER_BIT ) && ( srcTex->m_pBlitSrcFBO != NULL ) && ( dstTex->m_pBlitDstFBO != NULL ) )
         {
             // ensure fbo completeness for both src and dst buffers
@@ -1203,20 +1193,6 @@ void GLMContext::Blit2( CGLMTex *srcTex, GLMRect *srcRect, int srcFace, int srcM
 		{
 			BindFBOToCtx		( srcTex->m_pBlitSrcFBO, GL_READ_FRAMEBUFFER_EXT );
 		}
-#else
-		// arrange source surface on FBO1 for blit directly to dest (which could be FBO0 or BACK)
-		BindFBOToCtx( m_scratchFBO[1], GL_READ_FRAMEBUFFER_EXT );
-		glScrubFBO( GL_READ_FRAMEBUFFER_EXT );
-		GLMCheckError();
-		if (blitResolves)
-		{
-			glAttachRBOtoFBO( GL_READ_FRAMEBUFFER_EXT, formatClass, srcTex->m_rboName );
-		}
-		else
-		{
-			glAttachTex2DtoFBO( GL_READ_FRAMEBUFFER_EXT, formatClass, srcTex->m_texName, srcMip );
-		}
-#endif
 
 		if ( blitMask != GL_DEPTH_BUFFER_BIT )
 		{
@@ -1246,7 +1222,6 @@ void GLMContext::Blit2( CGLMTex *srcTex, GLMRect *srcRect, int srcFace, int srcM
 	{
 		// not going to GL_BACK - use FBO0. set up dest tex or RBO on it.  i.e. it's OK to blit from MSAA to MSAA if needed, though unlikely.
 		Assert( dstTex != NULL );
-#if 1
 		if (dstTex->m_pBlitDstFBO == NULL) 
 		{
 			dstTex->m_pBlitDstFBO = NewFBO();
@@ -1269,21 +1244,6 @@ void GLMContext::Blit2( CGLMTex *srcTex, GLMRect *srcRect, int srcFace, int srcM
                 gGL->glDrawBuffer( GL_NONE );
             }
 		}
-#else
-		BindFBOToCtx( m_scratchFBO[0], GL_DRAW_FRAMEBUFFER_EXT );							GLMCheckError();								
-		glScrubFBO( GL_DRAW_FRAMEBUFFER_EXT );
-
-		if (dstTex->m_rboName)
-		{
-			glAttachRBOtoFBO( GL_DRAW_FRAMEBUFFER_EXT, formatClass, dstTex->m_rboName );		
-		}
-		else
-		{
-			glAttachTex2DtoFBO( GL_DRAW_FRAMEBUFFER_EXT, formatClass, dstTex->m_texName, dstMip );
-		}	
-
-		gGL->glDrawBuffer		( glAttachFromClass[formatClass] );										GLMCheckError();
-#endif							
 	}
 
 
@@ -1358,12 +1318,6 @@ void GLMContext::BlitTex( CGLMTex *srcTex, GLMRect *srcRect, int srcFace, int sr
 		case GL_ALPHA:
 		case GL_LUMINANCE:
 		case GL_LUMINANCE_ALPHA:
-			#if 0
-				if (GLMKnob("caps-key",NULL) > 0.0)
-				{
-					useBlitFB = false;
-				}
-			#endif
 
 			if ( m_caps.m_cantBlitReliably )	// this is referring to a problem with the x3100..
 			{
@@ -3575,32 +3529,6 @@ void GLMContext::DebugDump( GLMDebugHookInfo *info, uint options, uint vertDumpM
 		// VP stage still, if in GLSL mode, find the bound pair and see if it has live i0, b0-b3 uniforms
 		if (m_pBoundPair)	// should only be non-NULL in GLSL mode
 		{
-#if 0
-			if (m_pBoundPair->m_locVertexBool0>=0)
-			{
-				GLMPRINTF(("-D- GLSL 'b0': %d",  m_programParamsB[kGLMVertexProgram].m_values[0] ));
-			}
-
-			if (m_pBoundPair->m_locVertexBool1>=0)
-			{
-				GLMPRINTF(("-D- GLSL 'b1': %d",  m_programParamsB[kGLMVertexProgram].m_values[1] ));
-			}
-
-			if (m_pBoundPair->m_locVertexBool2>=0)
-			{
-				GLMPRINTF(("-D- GLSL 'b2': %d",  m_programParamsB[kGLMVertexProgram].m_values[2] ));
-			}
-
-			if (m_pBoundPair->m_locVertexBool3>=0)
-			{
-				GLMPRINTF(("-D- GLSL 'b3': %d",  m_programParamsB[kGLMVertexProgram].m_values[3] ));
-			}
-
-			if (m_pBoundPair->m_locVertexInteger0>=0)
-			{
-				GLMPRINTF(("-D- GLSL 'i0': %d",  m_programParamsI[kGLMVertexProgram].m_values[0][0] ));
-			}
-#endif
 		}
 
 		GLMPRINTF(("-D-"));
@@ -3671,30 +3599,6 @@ void GLMContext::DebugDump( GLMDebugHookInfo *info, uint options, uint vertDumpM
 		GLMPRINTF(( "-D-" ));
 		GLMPRINTF(( "-D- Texture / Sampler setup" ));
 		GLMPRINTF(( "-D- TODO" ));
-#if 0
-		for( int i=0; i<GLM_SAMPLER_COUNT; i++ )
-		{
-			if (m_samplers[i].m_pBoundTex)
-			{
-				GLMTexSamplingParams *samp = &m_samplers[i].m_samp;
-				GLMPRINTF(( "-D-" ));
-				GLMPRINTF(("-D- Sampler %-2d tex %08x  layout %s", i, m_samplers[i].m_pBoundTex, m_samplers[i].m_pBoundTex->m_layout->m_layoutSummary ));
-
-				GLMPRINTF(("-D-           addressMode[ %s %s %s ]",
-					GLMDecode( eGL_ENUM, samp->m_addressModes[0] ),
-					GLMDecode( eGL_ENUM, samp->m_addressModes[1] ),
-					GLMDecode( eGL_ENUM, samp->m_addressModes[2] )
-				));
-					
-				GLMPRINTF(("-D-           magFilter    [ %s ]", GLMDecode( eGL_ENUM, samp->m_magFilter ) ));
-				GLMPRINTF(("-D-           minFilter    [ %s ]", GLMDecode( eGL_ENUM, samp->m_minFilter ) ));
-				GLMPRINTF(("-D-           srgb         [ %s ]", samp->m_srgb ? "T" : "F" ));
-				GLMPRINTF(("-D-           shadowFilter [ %s ]", samp->m_compareMode == GL_COMPARE_R_TO_TEXTURE_ARB ? "T" : "F" ));
-				
-				// add more as needed later..
-			}
-		}		
-#endif
 	}
 
 	if ( (options & (1<<eDumpVertexAttribSetup)) && is_draw )
@@ -4018,17 +3922,6 @@ char *g_knobnames[] =
 /*0*/	"dummy",
 
 /*1*/	"FB-SRGB",
-	#if 0
-		/*1*/	"tex-U0-bias",	// src left
-		/*2*/	"tex-V0-bias",	// src upper
-		/*3*/	"tex-U1-bias",	// src right
-		/*4*/	"tex-V1-bias",	// src bottom
-
-		/*5*/	"pos-X0-bias",	// dst left
-		/*6*/	"pos-Y0-bias",	// dst upper
-		/*7*/	"pos-X1-bias",	// dst right
-		/*8*/	"pos-Y1-bias",	// dst bottom
-	#endif
 
 };
 int g_knobcount = sizeof( g_knobnames ) / sizeof( g_knobnames[0] );
@@ -5359,23 +5252,6 @@ void GLMContext::DrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsize
 
 #endif // #ifndef OSX
 
-
-#if 0
-// helper function to do enable or disable in one step
-void glSetEnable( GLenum which, bool enable )
-{
-	if (enable)
-		gGL->glEnable(which);
-	else
-		gGL->glDisable(which);
-}
-
-// helper function for int vs enum clarity
-void glGetEnumv( GLenum which, GLenum *dst )
-{
-	gGL->glGetIntegerv( which, (int*)dst );
-}
-#endif
 
 //===============================================================================
 

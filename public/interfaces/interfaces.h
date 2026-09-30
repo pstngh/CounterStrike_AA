@@ -22,23 +22,11 @@ typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 //-----------------------------------------------------------------------------
 // Macros to declare interfaces appropriate for various tiers
 //-----------------------------------------------------------------------------
-#if 1 || defined( TIER1_LIBRARY ) || defined( TIER2_LIBRARY ) || defined( TIER3_LIBRARY ) || defined( TIER4_LIBRARY ) || defined( APPLICATION )
 #define DECLARE_TIER1_INTERFACE( _Interface, _Global )	extern _Interface * _Global;
-#else
-#define DECLARE_TIER1_INTERFACE( _Interface, _Global )
-#endif
 
-#if 1 || defined( TIER2_LIBRARY ) || defined( TIER3_LIBRARY ) || defined( TIER4_LIBRARY ) || defined( APPLICATION )
 #define DECLARE_TIER2_INTERFACE( _Interface, _Global )	extern _Interface * _Global;
-#else
-#define DECLARE_TIER2_INTERFACE( _Interface, _Global )
-#endif
 
-#if 1 || defined( TIER3_LIBRARY ) || defined( TIER4_LIBRARY ) || defined( APPLICATION )
 #define DECLARE_TIER3_INTERFACE( _Interface, _Global )	extern _Interface * _Global;
-#else
-#define DECLARE_TIER3_INTERFACE( _Interface, _Global )
-#endif
 
 
 //-----------------------------------------------------------------------------

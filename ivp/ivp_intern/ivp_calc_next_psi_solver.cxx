@@ -107,49 +107,6 @@ inline void IVP_Calc_Next_PSI_Solver::calc_rotation_matrix(IVP_FLOAT delta_sim_t
 }
 
 // returns the next simulation slot and the extra time step for faster simulation ( 0 means no extra time step )
-#if 0
-void IVP_Core::get_next_simulation_slot(IVP_DOUBLE next_lowest_psi,int *next_used_slot,int *time_step)
-{
-    IVP_DOUBLE current_rot_speed = this->rot_speed.real_length();
-    IVP_DOUBLE max_time_step_to_simulate = ( MAX_OBJECT_ROT_SPEED / (current_rot_speed + DOUBLE_EPS) );
-    
-    IVP_DOUBLE rotation_estimate = current_rot_speed * this->max_surface_deviation * IVP_SAFETY_FACTOR_HULL; //1.01f for safety (an error in this one can cause hangup)
-    IVP_DOUBLE gradient_estimate=  rotation_estimate + this->current_speed; 
-	
-    for(int c = objects.len()-1;c>=0;c--){
-	IVP_Real_Object *r_obj=this->objects.element_at(c);
-	IVP_Hull_Manager *h_manager = r_obj->get_hull_manager();
-
-	IVP_DOUBLE obj_time_max = h_manager->get_highest_time_before_event(time_of_last_psi, gradient_estimate);
-	if(obj_time_max < max_time_step_to_simulate) {
-	    max_time_step_to_simulate = obj_time_max;
-	}
-    }
-	
-    IVP_DOUBLE time_step_forward = max_time_step_to_simulate + time_of_last_psi - next_lowest_psi; //offset
-    
-    int time_step_multiplier=(int)( time_step_forward * environment->get_inv_delta_PSI_time() );
-    if(time_step_multiplier<1) {
-	goto no_sim_speedup;
-    }
-    if(time_step_multiplier>= IVP_DEBRIS_DELAY_NUM-1) {
-	time_step_multiplier= IVP_DEBRIS_DELAY_NUM-2;    // do not use full possible ahead entry, because debris_sim_index is pointing to it right now 
-    }
-    {
-	int next_sim_man_slot = this->environment->get_core_sim_manager()->next_debris_sim_slot + time_step_multiplier; 
-	if(next_sim_man_slot>= IVP_DEBRIS_DELAY_NUM) {
-	    next_sim_man_slot-= IVP_DEBRIS_DELAY_NUM;
-	}
-	next_sim_man_slot++; // debris slots begin with 1
-	*next_used_slot=next_sim_man_slot;
-	*time_step=time_step_multiplier;
-	return;
-    }
-no_sim_speedup:
-    *next_used_slot=0; //simulate in next PSI
-    *time_step=0;
-}
-#endif
 
 
 /*new version*/
@@ -219,10 +176,6 @@ void IVP_Calc_Next_PSI_Solver::calc_psi_rotation_axis(const IVP_U_Quat *q_core_f
 	IVP_FLOAT abs_angle;			// absolute rotation angle interpolated movement
 	abs_angle  = IVP_Inline_Math::upper_limit_asin( qlen * ilen );
 	IVP_IF(1){
-#if defined(DEBUG) && 0
-	    IVP_DOUBLE ref_angle = asin( sqrt(qlen)) - 1E9f; //@@@ was P_DOUBLE_RES; difference between old and new (fast) calculation should not be too great;
-	    IVP_ASSERT( abs_angle >= ref_angle );
-#endif
 	}
 	core->abs_omega =  2.0f * abs_angle * core->i_delta_time;
 

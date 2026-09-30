@@ -213,35 +213,7 @@ void hk_Vector3::_set_rotated_dir(const hk_Rotation& r, const hk_Vector3& v)
 
 void hk_Vector3::_set_transformed_pos(const hk_Transform& r, const hk_Vector3& v)
 {
-#if 0 /* a not working try to use inline assembler */
-	__asm {
-            mov         eax,r
-			mov         ecx,v
-            movaps      xmm1,xmmword ptr [eax + 0h]
-            movaps      xmm2,xmmword ptr [eax + 10h]
-            movaps      xmm3,xmmword ptr [eax + 20h]
-            movaps      xmm4,xmmword ptr [eax + 30h]
-
-			movaps      xmm5,xmmword ptr [ecx]
-			movaps		xmm6,xmm5
-			movaps		xmm7,xmm5
-
-			shufps      xmm5,xmm5,0
-			shufps      xmm6,xmm6,55h
-			shufps      xmm7,xmm7,0AAh
-
-			mulps       xmm5,xmm1
-			mulps       xmm6,xmm2
-			mulps       xmm7,xmm3
-
-			mov			eax, this
-			addps       xmm7,xmm5
-			addps       xmm7,xmm6
-			addps       xmm5,xmm4
-			movaps      xmmword ptr [eax],xmm7
-	}
-
-#elif 1 && defined(PIII_SIMD_ENABLE)
+#if defined(PIII_SIMD_ENABLE)
 	const hk_real *pm = &r.get_column(0).x;
 	//__m128 c0 = _mm_load_ps( &r.get_column(0).x );
 	__m128 vec = _mm_load_ps( &v.x );

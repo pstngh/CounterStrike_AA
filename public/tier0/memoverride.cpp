@@ -1359,67 +1359,6 @@ char * __cdecl _strdup ( const char * string )
 
 #endif
 
-#if 0
-_TSCHAR * __cdecl _tfullpath_dbg ( _TSCHAR *UserBuf, const _TSCHAR *path, size_t maxlen, int nBlockUse, const char * szFileName, int nLine )
-{
-	Assert(0);
-	return NULL;
-}
-
-_TSCHAR * __cdecl _tfullpath ( _TSCHAR *UserBuf, const _TSCHAR *path, size_t maxlen )
-{
-	Assert(0);
-	return NULL;
-}
-
-_TSCHAR * __cdecl _tgetdcwd_lk_dbg ( int drive, _TSCHAR *pnbuf, int maxlen, int nBlockUse, const char * szFileName, int nLine )
-{
-	Assert(0);
-	return NULL;
-}
-
-_TSCHAR * __cdecl _tgetdcwd_nolock ( int drive, _TSCHAR *pnbuf, int maxlen )
-{
-	Assert(0);
-	return NULL;
-}
-
-errno_t __cdecl _tdupenv_s_helper ( _TSCHAR **pBuffer, size_t *pBufferSizeInTChars, const _TSCHAR *varname, int nBlockUse, const char * szFileName, int nLine )
-{
-	Assert(0);
-	return 0;
-}
-
-errno_t __cdecl _tdupenv_s_helper ( _TSCHAR **pBuffer, size_t *pBufferSizeInTChars, const _TSCHAR *varname )
-{
-	Assert(0);
-	return 0;
-}
-
-_TSCHAR * __cdecl _ttempnam_dbg ( const _TSCHAR *dir, const _TSCHAR *pfx, int nBlockUse, const char * szFileName, int nLine )
-{
-	Assert(0);
-	return 0;
-}
-
-_TSCHAR * __cdecl _ttempnam ( const _TSCHAR *dir, const _TSCHAR *pfx )
-{
-	Assert(0);
-	return 0;
-}
-
-wchar_t * __cdecl _wcsdup_dbg ( const wchar_t * string, int nBlockUse, const char * szFileName, int nLine )
-{
-	Assert(0);
-	return 0;
-}
-
-wchar_t * __cdecl _wcsdup ( const wchar_t * string )
-{
-	Assert(0);
-	return 0;
-}
-#endif
 } // end extern "C"
 
 #if _MSC_VER >= 1400

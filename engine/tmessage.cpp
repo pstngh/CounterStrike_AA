@@ -112,17 +112,7 @@ int IsEndOfText( char *pText )
 }
 
 
-#if 0
-int IsWhiteSpace( char space )
-{
-	if ( space == ' ' || space == '\t' || space == '\r' || space == '\n' )
-		return 1;
-	return 0;
-}
-#else
-
 #define IsWhiteSpace(space)		IN_CHARACTERSET( g_WhiteSpace, space )
-#endif
 
 
 const char *SkipSpace( const char *pText )

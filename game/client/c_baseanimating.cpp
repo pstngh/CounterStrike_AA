@@ -1511,20 +1511,6 @@ void C_BaseAnimating::GetPoseParameters( CStudioHdr *pStudioHdr, float poseParam
 	}
 
 
-#if 0 // _DEBUG
-	if (r_sequence_debug.GetInt() == entindex())
-	{
-		DevMsgRT( "%s\n", pStudioHdr->pszName() );
-		DevMsgRT( "%6.2f : ", gpGlobals->curtime );
-		for( i=0; i < pStudioHdr->GetNumPoseParameters(); i++)
-		{
-			const mstudioposeparamdesc_t &Pose = pStudioHdr->pPoseParameter( i );
-
-			DevMsgRT( "%s %6.2f ", Pose.pszName(), poseParameter[i] * Pose.end + (1 - poseParameter[i]) * Pose.start );
-		}
-		DevMsgRT( "\n" );
-	}
-#endif
 }
 
 
@@ -2053,12 +2039,10 @@ void C_BaseAnimating::MaintainSequenceTransitions( IBoneSetup &boneSetup, float 
 		flCycle = blend->GetCycle() + dt * blend->GetPlaybackRate() * GetSequenceCycleRate( boneSetup.GetStudioHdr(), blend->GetSequence() );
 		flCycle = ClampCycle( flCycle, IsSequenceLooping( boneSetup.GetStudioHdr(), blend->GetSequence() ) );
 
-#if 1 // _DEBUG
 		if (r_sequence_debug.GetInt() == entindex())
 		{
 			DevMsgRT( "%8.4f : %30s : %5.3f : %4.2f  +\n", gpGlobals->curtime, boneSetup.GetStudioHdr()->pSeqdesc( blend->GetSequence() ).pszLabel(), flCycle, (float)blend->GetWeight() );
 		}
-#endif
 
 		boneSetup.AccumulatePose( pos, q, blend->GetSequence(), flCycle, blend->GetWeight(), gpGlobals->curtime, m_pIk );
 	}
@@ -2147,12 +2131,10 @@ void C_BaseAnimating::StandardBlendingRules( CStudioHdr *hdr, BoneVector pos[], 
 	// build root animation
 	float fCycle = GetCycle();
 
-#if 1 //_DEBUG
 	if (r_sequence_debug.GetInt() == entindex())
 	{
 		DevMsgRT( "%8.4f : %30s(%d) : %5.3f : %4.2f\n", currentTime, hdr->pSeqdesc( GetSequence() ).pszLabel(), GetSequence(), fCycle, 1.0 );
 	}
-#endif
 
 	IBoneSetup boneSetup( hdr, boneMask, poseparam );
 	boneSetup.InitPose( pos, q );
@@ -7316,13 +7298,6 @@ void C_BaseAnimating::StudioFrameAdvance()
 	SetCycle( flNewCycle );
 
 	m_flGroundSpeed = GetSequenceGroundSpeed( hdr, GetSequence() );
-
-#if 0
-	// I didn't have a test case for this, but it seems like the right thing to do.  Check multi-player!
-
-	// Msg("%s : %s : %5.1f\n", GetClassname(), GetSequenceName( GetSequence() ), GetCycle() );
-	InvalidatePhysicsRecursive( ANIMATION_CHANGED );
-#endif
 
 	if ( watch )
 	{

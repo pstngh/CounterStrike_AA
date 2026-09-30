@@ -214,18 +214,6 @@ void SendProxy_VectorXYToVectorXY( const SendProp *pProp, const void *pStruct, c
 	pOut->m_Vector[1] = v[1];
 }
 
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
-void SendProxy_QuaternionToQuaternion( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
-{
-	Quaternion& q = *(Quaternion*)pData;
-	Assert( q.IsValid() );
-	pOut->m_Vector[0] = q[0];
-	pOut->m_Vector[1] = q[1];
-	pOut->m_Vector[2] = q[2];
-	pOut->m_Vector[3] = q[3];
-}
-#endif
-
 void SendProxy_Int8ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
 {
 	pOut->m_Int = *((char*)pData);

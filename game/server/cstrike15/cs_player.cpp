@@ -4291,23 +4291,6 @@ void CCSPlayer::PostThink()
 
 
 
-#if 0
-	if ( m_iNumFollowers > 0 && IsAlive() )
-	{
-		ShortestPathCost cost = ShortestPathCost();
-		float dist = NavAreaTravelDistance( this->GetLastKnownArea(),
-						TheNavMesh->GetNearestNavArea( TheCSBots()->GetZone(0)->m_center ),
-						cost );
-
-		if( dist < cs_hostage_near_rescue_music_distance.GetFloat() )
-		{
-			CBroadcastRecipientFilter filter;
-			PlayMusicSelection( filter, "Music.HostageNearRescue" );
-			//DevMsg("***DISTANCE TO RESCUE: %f: FOLLOWERS: %i\n", dist, m_iNumFollowers );
-		}
-	}
-#endif
-	
 	// Store the eye angles pitch so the client can compute its animation state correctly.
 	QAngle eyeAngles = EyeAngles();
 	Vector &angEyeAngles = m_angEyeAngles.GetForModify();
@@ -15110,13 +15093,6 @@ void CCSPlayer::SendGunGameWeaponUpgradeAlert( void )
 
 void CCSPlayer::OnPreResetRound()
 {
-#if 0 // removed this achievement
-	//Check headshot survival achievement
-	if (IsAlive() && m_bSurvivedHeadshotDueToHelmet && CSGameRules()->IsPlayingAnyCompetitiveStrictRuleset() )
-	{
-		AwardAchievement(CSSurvivedHeadshotDueToHelmet );
-	}
-#endif
 
 	if (IsAlive() && m_grenadeDamageTakenThisRound > AchievementConsts::SurviveGrenade_MinDamage )
 	{

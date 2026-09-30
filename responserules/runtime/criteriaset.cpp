@@ -404,17 +404,7 @@ void CriteriaSet::Reset()
 
 void CriteriaSet::WriteToEntity( CBaseEntity *pEntity )
 {
-#if 0
-	if ( GetCount() < 1 )
-		return;
-
-	for ( int i = Head() ; IsValidIndex(i); i = Next(i) )
-	{
-		pEntity->AddContext( GetName(i), GetValue(i), 0 );
-	}
-#else
 	AssertMsg( false, "CriteriaSet::WriteToEntity has not been ported from l4d2.\n" );
-#endif
 }
 
 int CriteriaSet::InterceptWorldSetContexts( CriteriaSet * RESTRICT pFrom, CriteriaSet * RESTRICT pSetOnWorld )

@@ -33,7 +33,6 @@ void IVP_Collision_Delegator_Root_Mindist::collision_is_going_to_be_deleted_even
 IVP_Collision *IVP_Collision_Delegator_Root_Mindist::delegate_collisions_for_object(IVP_Real_Object *obj0, IVP_Real_Object *obj1) {
 
   IVP_Collision *coll;
-#if 1
   const IVP_Compact_Ledge *l0 = obj0->get_surface_manager()->get_single_convex();
   const IVP_Compact_Ledge *l1 = obj1->get_surface_manager()->get_single_convex();
   
@@ -54,10 +53,6 @@ IVP_Collision *IVP_Collision_Delegator_Root_Mindist::delegate_collisions_for_obj
   }else{      
     coll = new IVP_OO_Watcher(this,obj0,obj1);
   }
-  
-#else
-    coll = new IVP_OO_Watcher(this,obj0,obj1);
-#endif  
   
   IVP_OV_Element *ov0 = obj0->get_ov_element();
   IVP_OV_Element *ov1 = obj1->get_ov_element();

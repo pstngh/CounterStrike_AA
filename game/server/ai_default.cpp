@@ -255,16 +255,6 @@ bool CAI_BaseNPC::LoadDefaultSchedules(void)
 int CAI_BaseNPC::TranslateSchedule( int scheduleType )
 {
 	// FIXME: Where should this go now?
-#if 0
-	if (scheduleType >= LAST_SHARED_SCHEDULE)
-	{
-		char errMsg[256];
-		Q_snprintf(errMsg,sizeof(errMsg),"ERROR: Subclass Schedule (%s) Hitting Base Class!\n",ScheduleName(scheduleType));
-		DevMsg( errMsg );
-		AddTimedOverlay( errMsg, 5);
-		return SCHED_FAIL;
-	}
-#endif
 
 	switch( scheduleType )
 	{

@@ -1075,27 +1075,6 @@ void	GLMDisplayDB::PopulateRenderers( void )
 									fields.m_atiR8xx = true;
 								}
 
-								#if 0
-										// turned off, but we could use this for cross check.
-										// we could also use the bit encoding of the renderer ID to ferret out a geberation clue.
-										
-										// string-scan for each generation
-										// this could be a lot better if we got the precise PCI ID's used and/or cross-ref'd that against the driver name
-										if (strstr("X1600", fields.m_pciModelString) || strstr("X1900", fields.m_pciModelString) || strstr("X1950", fields.m_pciModelString) )
-										{
-											fields.m_atiR5xx = true;
-										}
-
-										if (strstr("2600", fields.m_pciModelString) || strstr("3870", fields.m_pciModelString) || strstr("X2000", fields.m_pciModelString) )
-										{
-											fields.m_atiR6xx = true;
-										}
-
-										if (strstr("4670", fields.m_pciModelString) || strstr("4650", fields.m_pciModelString) || strstr("4850", fields.m_pciModelString)|| strstr("4870", fields.m_pciModelString) )
-										{
-											fields.m_atiR7xx = true;
-										}
-								#endif
 							}
 							break;
 							

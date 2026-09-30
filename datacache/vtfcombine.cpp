@@ -140,28 +140,6 @@ int CSimpleTexturePacker::TextureSizeCompare( const void *elem1, const void *ele
 		return 1;
 	}
 
-#if 0
-	int index1 = *(byte *)elem1;
-	int index2 = *(byte *)elem2;
-
-	if ( SimpleTexturePacker.m_Textures[ index1 ].m_Location.height > SimpleTexturePacker.m_Textures[ index2 ].m_Location.height )
-	{
-		return -1;
-	}
-	else if ( SimpleTexturePacker.m_Textures[ index1 ].m_Location.height < SimpleTexturePacker.m_Textures[ index2 ].m_Location.height )
-	{
-		return 1;
-	}
-	else if ( SimpleTexturePacker.m_Textures[ index1 ].m_Location.width > SimpleTexturePacker.m_Textures[ index2 ].m_Location.width )
-	{
-		return -1;
-	}
-	else if ( SimpleTexturePacker.m_Textures[ index1 ].m_Location.width < SimpleTexturePacker.m_Textures[ index2 ].m_Location.width )
-	{
-		return 1;
-	}
-#endif
-
 	return 0;
 }
 
@@ -245,13 +223,6 @@ void CSimpleTexturePacker::Resolve( )
 		{
 			if ( ResolveBrute() )
 			{
-#if 0
-				for( int nTexture = 0; nTexture < m_nNumTextures; nTexture++ )
-				{
-					Msg( "ID %d: x=%d y=%d width=%d height=%d\n", m_TextureOrder[ nTexture ]->m_nID, m_TextureOrder[ nTexture ]->m_Location.x, m_TextureOrder[ nTexture ]->m_Location.y, 
-						 m_TextureOrder[ nTexture ]->m_Location.width, m_TextureOrder[ nTexture ]->m_Location.height );
-				}
-#endif
 				return;
 			}
 

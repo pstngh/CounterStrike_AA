@@ -194,34 +194,6 @@ bool CPhysicsHook::Init( void )
 
 
 // a little debug wrapper to help fix bugs when entity pointers get trashed
-#if 0
-struct physcheck_t
-{
-	IPhysicsObject *pPhys;
-	char			string[512];
-};
-
-CUtlVector< physcheck_t > physCheck;
-
-void PhysCheckAdd( IPhysicsObject *pPhys, const char *pString )
-{
-	physcheck_t tmp;
-	tmp.pPhys = pPhys;
-	Q_strncpy( tmp.string, pString ,sizeof(tmp.string));
-	physCheck.AddToTail( tmp );
-}
-
-const char *PhysCheck( IPhysicsObject *pPhys )
-{
-	for ( int i = 0; i < physCheck.Size(); i++ )
-	{
-		if ( physCheck[i].pPhys == pPhys )
-			return physCheck[i].string;
-	}
-
-	return "unknown";
-}
-#endif
 
 ConVar sv_phys_props_block_movers( "sv_phys_props_block_movers", "0" );
 
@@ -251,28 +223,12 @@ void CPhysicsHook::LevelInitPreEntity()
 
 	physenv->SetObjectEventHandler( &g_Collisions );
 	
-#if 0
-	float fTickInterval = gpGlobals->interval_per_tick;
-	const float kFloorRate = 63.0f; // physics simulation must run at a rate GREATER than this
-
-	// adjust the tick interval so that it produces an integral multiple of the tick rate to guarantee at least kFloorRate simulation ticks per second
-	// Examples:
-	// 32.0 tick game -> 64.0 tick physics 
-	// 51.2 tick game -> 102.4 tick physics ;
-	// 64.0 tick game -> 64.0 tick physics 
-	// 102.4 tick game -> 102.4 tick physics 
-	// 128.0 tick game -> 128.0 tick physics 
-	// 256.0 tick game -> 256.0 tick physics 
-
-	fTickInterval /= 1.0f + floorf(kFloorRate * fTickInterval);
-#else
 	// always run 64 tick physics
 	// we haven't done enough testing here and with really small timestpes (1/128, 1/256) some things can become unstable
 	// this results in behaviors like guns bouncing for example
 	// Also we would normally try to sync the game & physics sim rates for player vphysics (which csgo doesn't use) and 
 	// blocking moving objects (e.g. elevators) with physics objects
 	float fTickInterval = 1.0f / 64.0f;
-#endif
 	physenv->SetSimulationTimestep( fTickInterval );
 
 	// HL Game gravity, not real-world gravity
@@ -2245,20 +2201,6 @@ void CCollisionEvent::UpdateDamageEvents( void )
 		int iEntBits = event.pEntity->IsAlive() ? 0x0001 : 0;
 		iEntBits |= event.pEntity->IsMarkedForDeletion() ? 0x0002 : 0;
 		iEntBits |= (event.pEntity->GetSolidFlags() & FSOLID_NOT_SOLID) ? 0x0004 : 0;
-#if 0
-		// Go ahead and compute the current static stress when hit by a large object (with a force high enough to do damage).  
-		// That way you die from the impact rather than the stress of the object resting on you whenever possible. 
-		// This makes the damage effects cleaner.
-		if ( event.pInflictorPhysics && event.pInflictorPhysics->GetMass() > VPHYSICS_LARGE_OBJECT_MASS )
-		{
-			CBaseCombatCharacter *pCombat = event.pEntity->MyCombatCharacterPointer();
-			if ( pCombat )
-			{
-				vphysics_objectstress_t stressOut;
-				event.info.AddDamage( pCombat->CalculatePhysicsStressDamage( &stressOut, pCombat->VPhysicsGetObject() ) );
-			}
-		}
-#endif
 
 #ifdef PORTAL2
 		if ( event.pEntity->IsPlayer() )
@@ -2984,54 +2926,4 @@ void DebugDrawContactPoints(IPhysicsObject *pPhysics)
 }
 
 
-
-#if 0
-
-#include "filesystem.h"
-//-----------------------------------------------------------------------------
-// Purpose: This will append a collide to a glview file.  Then you can view the 
-//			collisionmodels with glview.
-// Input  : *pCollide - collision model
-//			&origin - position of the instance of this model
-//			&angles - orientation of instance
-//			*pFilename - output text file
-//-----------------------------------------------------------------------------
-// examples:
-// world:
-//	DumpCollideToGlView( pWorldCollide->solids[0], vec3_origin, vec3_origin, "jaycollide.txt" );
-// static_prop:
-//	DumpCollideToGlView( info.m_pCollide->solids[0], info.m_Origin, info.m_Angles, "jaycollide.txt" );
-//
-//-----------------------------------------------------------------------------
-void DumpCollideToGlView( CPhysCollide *pCollide, const Vector &origin, const QAngle &angles, const char *pFilename )
-{
-	if ( !pCollide )
-		return;
-
-	printf("Writing %s...\n", pFilename );
-	Vector *outVerts;
-	int vertCount = physcollision->CreateDebugMesh( pCollide, &outVerts );
-	FileHandle_t fp = filesystem->Open( pFilename, "ab" );
-	int triCount = vertCount / 3;
-	int vert = 0;
-	VMatrix tmp = SetupMatrixOrgAngles( origin, angles );
-	int i;
-	for ( i = 0; i < vertCount; i++ )
-	{
-		outVerts[i] = tmp.VMul4x3( outVerts[i] );
-	}
-	for ( i = 0; i < triCount; i++ )
-	{
-		filesystem->FPrintf( fp, "3\n" );
-		filesystem->FPrintf( fp, "%6.3f %6.3f %6.3f 1 0 0\n", outVerts[vert].x, outVerts[vert].y, outVerts[vert].z );
-		vert++;
-		filesystem->FPrintf( fp, "%6.3f %6.3f %6.3f 0 1 0\n", outVerts[vert].x, outVerts[vert].y, outVerts[vert].z );
-		vert++;
-		filesystem->FPrintf( fp, "%6.3f %6.3f %6.3f 0 0 1\n", outVerts[vert].x, outVerts[vert].y, outVerts[vert].z );
-		vert++;
-	}
-	filesystem->Close( fp );
-	physcollision->DestroyDebugMesh( vertCount, outVerts );
-}
-#endif
 

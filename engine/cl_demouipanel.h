@@ -175,8 +175,4 @@ protected:
 	bool		m_bIsInForeground;
 };
 
-#if 0 //!defined( LINUX )
-extern CDemoUIPanel2 *g_pDemoUI2;
-#endif
-
 #endif // CL_DEMOUIPANEL_H

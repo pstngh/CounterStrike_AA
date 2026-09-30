@@ -270,13 +270,6 @@ uint CCSMParallelSplit::ComputeCullingVolumePlanes( VPlane *pOutPlanes, Vector v
 	upperPlane.m_Dist = static_cast< float >( flPlaneDist );
 		
 //#ifdef _DEBUG
-#if 0
-	for ( int i = 0; i < CCSMFrustumDefinition::NUM_FRUSTUM_VERTS * 2; ++i )
-	{
-		float flDist = upperPlane.DistTo( vWorldFrustumVerts[i] );
-		Assert( flDist >= 0.0f );
-	}
-#endif
 
 	Assert( upperPlane.DistTo( vFrustumCenter ) >= 0.0f );
 	pOutPlanes[nNumCullingPlanes++] = upperPlane;
@@ -587,22 +580,9 @@ void CCSMParallelSplit::CalculateShadowFrustaParallelSplits(
 			vShadowFocusRegionMax.z = MAX( vShadowFocusRegionMax.z, vLightPoint.z );
 		}
 
-#if 1
 		// Set all cascades to the same MinZ/MaxZ so we only need to transform into ortho Z once in the shader (not per cascade). This is doable with 24-bit Z.
 		vShadowFocusRegionMin.z = flCascadeShadowViewMinZ;
 		vShadowFocusRegionMax.z = flCascadeShadowViewMaxZ;
-#else				
-		// This is tricky - push "back" the max shadow view Z of the cascades to be at least as far back (or away) as cascade 0's.
-		// This is so the Z [0,1] transitioning in the sun shadow shader can safely assume that it's always possible to transition to the next sequential cascade when Z is out of range.
-		if ( !nCascadeIndex )
-		{
-			flCascade0ShadowViewMinZ = vShadowFocusRegionMin.z;
-		}
-		else
-		{
-			vShadowFocusRegionMin.z = MIN( vShadowFocusRegionMin.z, flCascade0ShadowViewMinZ );
-		}
-#endif
 		
 		// Push "back" the shadow camera towards the light, so the NearZ used to construct the projection matrix can be set to 0.
 		// X, Y MUST be 0,0 here for the UV continuity solution to work.
@@ -666,22 +646,6 @@ void CCSMParallelSplit::CalculateShadowFrustaParallelSplits(
 		pDebugInfo[nCascadeIndex].m_flZNear = zNear;
 		pDebugInfo[nCascadeIndex].m_flZFar = zFar;
 
-#if 0
-		VMatrix shadowProjToView;
-		shadowViewToProj.InverseGeneral( shadowProjToView );
-		Vector vCornerPoints[2];
-		shadowProjToView.V3Mul( Vector( -1.0f,  1.0f, 0.0f ), vCornerPoints[0] );	// left/bottom
-		shadowProjToView.V3Mul( Vector(  1.0f, -1.0f, 0.0f ), vCornerPoints[1] );	// right/top
-		
-		// testing
-		VMatrix shadowWorldToProj( shadowViewToProj * shadowWorldToView );
-		Vector vTestVerts[NUM_WORLD_FOCUS_POINTS];
-		for ( uint i = 0; i < NUM_WORLD_FOCUS_POINTS; ++i )
-		{
-			shadowWorldToProj.V3Mul( vSubfrustumWorldPoints[i], vTestVerts[i] );
-		}
-#endif
-
 		CascadeParams_t &params = cascadeParams[nCascadeIndex];
 		params.m_ShadowWorldToView = shadowWorldToView;
 		params.m_ShadowViewToProj = shadowViewToProj;
@@ -708,13 +672,6 @@ void CCSMParallelSplit::CalculateShadowFrustaParallelSplits(
 
 		pOutFrustum->BuildShadowFrustum( params.m_ShadowWorldToView, params.m_ShadowViewToProj );
 
-#if 0
-		pOutFrustum->SetView( params.m_ShadowWorldToView );
-		pOutFrustum->SetProj( params.m_ShadowViewToProj );
-		pOutFrustum->CalcViewProj();
-		pOutFrustum->UpdateCameraAndFrustumFromOrthoViewProjMatrices();
-#endif
-								
 		// Compute exclusion frustum planes, taking into account smooth cascade transitioning.
 		// The exclusion volume must completely fit inside the "inner" circle defining the beginning of the cascade transition region.
 		float flLerpAmount = cl_csm_shadow_split_lerp_factor_range.GetFloat();
@@ -780,14 +737,6 @@ void CCSMParallelSplit::ComputeCascadeProjToTexMatrices( SunLightState_t &lightS
 		{
 			flBiasVal = 1.0f - flBiasVal;
 		}
-
-#if 0
-		// This is a transposed matrix because CFrustum::GetViewProj() returns a transposed matrix.
-		VMatrix texScaleBiasMat( 0.5f,     0.0f,     0.0f,      0.0f,
-								 0.0f,    -0.5f,     0.0f,      0.0f,
-								 0.0f,     0.0f,     frange,	0.0f,
-								 fOffsetX, fOffsetY, flBiasVal,	1.0f );
-#endif
 
 		VMatrix texScaleBiasMat( 
 			0.5f,     0.0f,     0.0f,		fOffsetX,
@@ -891,20 +840,12 @@ bool CCSMParallelSplit::Update( const SunLightViewState_t &viewState )
 	m_lightState.m_SunLightShaderParams.m_TexParams2.m_flSplitLerpFactorBase = .5f - cl_csm_shadow_split_lerp_factor_range.GetFloat();
 	m_lightState.m_SunLightShaderParams.m_TexParams2.m_flSplitLerpFactorInvRange = 1.0f / cl_csm_shadow_split_lerp_factor_range.GetFloat();
 
-#if 0
-	// old linear distance fade (requires recip sqrt and sqrt in shader)
-	float flZLerpStartDist = m_lightState.m_flActualMaxShadowDist * cl_csm_shadow_split_radial_dist_lerp_factor_multiplier.GetFloat();
-	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorBase = flZLerpStartDist;
-	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorInvRange = 1.0f / ( m_lightState.m_flActualMaxShadowDist - flZLerpStartDist );
-	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorBase *= -m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorInvRange;
-#else
 	// cheaper quadratic distance fade 
 	float flZLerpStartDist = m_lightState.m_flActualMaxShadowDist * cl_csm_shadow_split_radial_dist_lerp_factor_multiplier.GetFloat();
 	float flZLerpEndDist = m_lightState.m_flActualMaxShadowDist;
 	float flQ = 1.0f / ( flZLerpEndDist * flZLerpEndDist - flZLerpStartDist * flZLerpStartDist );
 	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorBase = - ( ( flZLerpStartDist * flZLerpStartDist ) * flQ );
 	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flDistLerpFactorInvRange = flQ;
-#endif
 
 	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flUnused0 = 0.0f;
 	m_lightState.m_SunLightShaderParams.m_TexParams3.m_flUnused1 = 0.0f;

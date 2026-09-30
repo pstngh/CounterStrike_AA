@@ -1458,16 +1458,6 @@ int CEngineAPI::RunListenServer()
 	return nRunResult;
 }
 
-#if 0
-CON_COMMAND( bigalloc, "huge alloc crash" )
-{
-	Msg( "pre-crash %d\n", g_pMemAlloc->MemoryAllocFailed() );
-	void *buf = malloc( UINT_MAX );
-	Msg( "post-alloc %d\n", g_pMemAlloc->MemoryAllocFailed() );
-	*(int *)buf = 0;
-}
-#endif
-
 #if defined( _PS3 ) && !defined(NO_STEAM) && !defined(_CERT)
 CON_COMMAND_F( steam_login_new_acct, "logs in and creates a new account if necessary", FCVAR_DEVELOPMENTONLY )
 {

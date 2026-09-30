@@ -400,31 +400,7 @@ void CAI_Expresser::GatherCriteria( AI_CriteriaSet * RESTRICT outputSet, const A
 	// Always include the concept name
 	outputSet->AppendCriteria( "concept", concept, CONCEPT_WEIGHT );
 
-#if 1
 	outputSet->Merge( modifiers );
-#else
-	// Always include any optional modifiers
-	if ( modifiers != NULL )
-	{
-		char copy_modifiers[ 255 ];
-		const char *pCopy;
-		char key[ 128 ] = { 0 };
-		char value[ 128 ] = { 0 };
-
-		Q_strncpy( copy_modifiers, modifiers, sizeof( copy_modifiers ) );
-		pCopy = copy_modifiers;
-
-		while( pCopy )
-		{
-			pCopy = SplitContext( pCopy, key, sizeof( key ), value, sizeof( value ), NULL, modifiers );
-
-			if( *key && *value )
-			{
-				outputSet->AppendCriteria( key, value, CONCEPT_WEIGHT );
-			}
-		}
-	}
-#endif
 
 	// include any global criteria
 	ModifyOrAppendGlobalCriteria( outputSet );
@@ -464,51 +440,12 @@ bool CAI_Expresser::FindResponse( AI_Response &outResponse, AIConcept_t &concept
 		return false;
 	}
 
-#if 0 // this is the old technique, where we always gathered criteria in this function
-	AI_CriteriaSet set;
-	// Always include the concept name
-	set.AppendCriteria( "concept", concept, CONCEPT_WEIGHT );
-
-	// Always include any optional modifiers
-	if ( modifiers != NULL )
-	{
-		char copy_modifiers[ 255 ];
-		const char *pCopy;
-		char key[ 128 ] = { 0 };
-		char value[ 128 ] = { 0 };
-
-		Q_strncpy( copy_modifiers, modifiers, sizeof( copy_modifiers ) );
-		pCopy = copy_modifiers;
-
-		while( pCopy )
-		{
-			pCopy = SplitContext( pCopy, key, sizeof( key ), value, sizeof( value ), NULL, modifiers );
-
-			if( *key && *value )
-			{
-				set.AppendCriteria( key, value, CONCEPT_WEIGHT );
-			}
-		}
-	}
-
-	// Let our outer fill in most match criteria
-	GetOuter()->ModifyOrAppendCriteria( set );
-
-	// Append local player criteria to set, but not if this is a player doing the talking
-	if ( !GetOuter()->IsPlayer() )
-	{
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-		if( pPlayer )
-			pPlayer->ModifyOrAppendPlayerCriteria( set );
-	}
-#else
 	AI_CriteriaSet localCriteriaSet; // put it on the stack so we don't deal with new/delete
 	if (criteria == NULL)
 	{
 		GatherCriteria( &localCriteriaSet, concept, NULL );
 		criteria = &localCriteriaSet;
 	}
-#endif 
 
 	/// intercept any deferred criteria that are being sent to world
 	AI_CriteriaSet worldWritebackCriteria;
@@ -565,115 +502,6 @@ bool CAI_Expresser::FindResponse( AI_Response &outResponse, AIConcept_t &concept
 		return true;
 	}
 }
-
-#if 0
-//-----------------------------------------------------------------------------
-// Purpose: Searches for a possible response; writes it into a response passed as
-//			parameter rather than new'ing one up.
-// Input  : concept - 
-//			NULL - 
-// Output : bool : true on success, false on fail 
-//-----------------------------------------------------------------------------
-AI_Response *CAI_Expresser::SpeakFindResponse( AI_Response *result, AIConcept_t &concept, AI_CriteriaSet *criteria )
-{
-	Assert(response);
-
-	IResponseSystem *rs = GetOuter()->GetResponseSystem();
-	if ( !rs )
-	{
-		Assert( !"No response system installed for CAI_Expresser::GetOuter()!!!" );
-		return NULL;
-	}
-
-#if 0
-	AI_CriteriaSet set;
-	// Always include the concept name
-	set.AppendCriteria( "concept", concept, CONCEPT_WEIGHT );
-
-	// Always include any optional modifiers
-	if ( modifiers != NULL )
-	{
-		char copy_modifiers[ 255 ];
-		const char *pCopy;
-		char key[ 128 ] = { 0 };
-		char value[ 128 ] = { 0 };
-
-		Q_strncpy( copy_modifiers, modifiers, sizeof( copy_modifiers ) );
-		pCopy = copy_modifiers;
-
-		while( pCopy )
-		{
-			pCopy = SplitContext( pCopy, key, sizeof( key ), value, sizeof( value ), NULL, modifiers );
-
-			if( *key && *value )
-			{
-				set.AppendCriteria( key, value, CONCEPT_WEIGHT );
-			}
-		}
-	}
-
-	// Let our outer fill in most match criteria
-	GetOuter()->ModifyOrAppendCriteria( set );
-
-	// Append local player criteria to set, but not if this is a player doing the talking
-	if ( !GetOuter()->IsPlayer() )
-	{
-		CBasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-		if( pPlayer )
-			pPlayer->ModifyOrAppendPlayerCriteria( set );
-	}
-#else
-	AI_CriteriaSet &set = *criteria;
-#endif 
-
-	// Now that we have a criteria set, ask for a suitable response
-	bool found = rs->FindBestResponse( set, *result, this );
-
-	if ( rr_debugresponses.GetInt() == 4 )
-	{
-		if ( ( GetOuter()->MyNPCPointer() && GetOuter()->m_debugOverlays & OVERLAY_NPC_SELECTED_BIT ) || GetOuter()->IsPlayer() )
-		{
-			const char *pszName;
-			if ( GetOuter()->IsPlayer() )
-			{
-				pszName = ((CBasePlayer*)GetOuter())->GetPlayerName();
-			}
-			else
-			{
-				pszName = GetOuter()->GetDebugName();
-			}
-
-			if ( found )
-			{
-				char response[ 256 ];
-				result->GetResponse( response, sizeof( response ) );
-
-				Warning( "RESPONSERULES: %s spoke '%s'. Found response '%s'.\n", pszName, concept, response );
-			}
-			else
-			{
-				Warning( "RESPONSERULES: %s spoke '%s'. Found no matching response.\n", pszName, concept );
-			}
-		}
-	}
-
-	if ( !found )
-	{
-		//Assert( !"rs->FindBestResponse: Returned a NULL AI_Response!" );
-		return false;
-	}
-
-	char response[ 256 ];
-	result->GetResponse( response, sizeof( response ) );
-
-	if ( !response[0] )
-	{
-		return false;
-	}
-
-	return true;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Dispatches the result

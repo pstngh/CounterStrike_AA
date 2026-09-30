@@ -140,32 +140,4 @@ int CGenericClassmap< T >::GetClassSize( const char *classname )
 	return -1;
 }
 
-#if 0
-// example
-
-// to hold the database:
-static				CGenericClassmap< CAI_BehaviorBase >	m_BehaviorClasses;
-
-// macro for easy factory creation / use:
-#define LINK_BEHAVIOR_TO_CLASS( localName, className )													\
-	static CAI_BehaviorBase *C##className##Factory( void )												\
-	{																									\
-		return static_cast< CAI_BehaviorBase * >( new className );										\
-	};																									\
-	class C##localName##Foo																				\
-	{																									\
-	public:																								\
-		C##localName##Foo( void )																		\
-		{																								\
-			CAI_BehaviorBase::m_BehaviorClasses.Add( #localName, #className,							\
-				sizeof( className ),&C##className##Factory );											\
-		}																								\
-	};																									\
-	static C##localName##Foo g_C##localName##Foo;
-
-// example of macro use:
-LINK_BEHAVIOR_TO_CLASSNAME( CAI_ASW_ScuttleBehavior );
-
-#endif
-
 #endif // ASW_GENERIC_CLASSMAP_H

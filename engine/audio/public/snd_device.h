@@ -14,11 +14,7 @@
 #include "snd_mix_buf.h"
 
 // sound engine rate defines
-#if 0 // def _PS3
-#define SOUND_DMA_SPEED		48000		// hardware playback rate
-#else
 #define SOUND_DMA_SPEED		44100		// hardware playback rate
-#endif
 
 #define SOUND_11k			11025		// 11khz sample rate
 #define SOUND_22k			22050		// 22khz sample rate

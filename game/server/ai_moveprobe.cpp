@@ -165,14 +165,6 @@ void CAI_MoveProbe::TraceHull(
 	else
 	{
 		enginetrace->TraceRayAgainstLeafAndEntityList( ray, (const_cast<CAI_MoveProbe *>(this)->m_pTraceListData), mask, &traceFilter, pResult );
-#if 0
-		trace_t verificationTrace;
-		enginetrace->TraceRay( ray, mask, &traceFilter, &verificationTrace );
-		Assert( fabsf(verificationTrace.fraction - pResult->fraction) < 0.01 &&
-				VectorsAreEqual( verificationTrace.endpos, pResult->endpos, 0.01 ) &&
-				verificationTrace.m_pEnt == pResult->m_pEnt );
-
-#endif
 	}
 
 	if ( r_visualizetraces.GetBool() )
@@ -562,10 +554,6 @@ bool CAI_MoveProbe::Confirm3DConnectivity( AIMoveTrace_t *pMoveTrace, unsigned f
 	float threshold = MAX( 0.5f * GetHullHeight(), StepHeight() + 0.1 );
 	if ( fabs( pMoveTrace->vEndPosition.z - vecDesiredEnd.z ) > threshold )
 	{
-#if 0
-		NDebugOverlay::Cross3D( vecDesiredEnd, 8, 0, 255, 0, false, 0.1 );
-		NDebugOverlay::Cross3D( pMoveTrace->vEndPosition, 8, 255, 0, 0, false, 0.1 );
-#endif
 		// Ok, we ended up on a ledge above or below the desired destination
 		pMoveTrace->pObstruction = GetContainingEntity( INDEXENT(0) );
 		pMoveTrace->vHitNormal	 = vec3_origin;

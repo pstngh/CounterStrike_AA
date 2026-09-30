@@ -95,7 +95,6 @@ void IVP_Template_Anchor::set_anchor_position_os(IVP_Real_Object *obj, const IVP
     cache->transform_position_to_world_coords(&coords_os, &this->coords_world);
 }
 
-#if 1
 void IVP_Template_Anchor::set_anchor_position_cs(IVP_Real_Object *obj, const IVP_U_Float_Point *coords_cs)
 {
     this->object = obj;
@@ -123,8 +122,6 @@ void IVP_Template_Anchor::set_anchor_position_cs(IVP_Real_Object *obj, const IVP
 	this->set_anchor_position_os(obj, &coords_os);
 	return;
 }
-
-#endif
 
 void IVP_Anchor::init_anchor(IVP_Actuator *ac, IVP_Template_Anchor *ta){
     this->l_anchor_object = ta->object;

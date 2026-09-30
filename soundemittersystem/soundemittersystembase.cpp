@@ -224,11 +224,6 @@ bool CSoundEmitterSystemBase::LoadGameSoundManifest()
 	CRC32_t crc;
 	CRC32_Init( &crc );
 
-#if 0
-	AccumulateFileNameAndTimestampIntoChecksum( &crc, "scripts/game_sounds_music/game_sounds_music_deathcams.txt" );
-	AddSoundsFromFile( "scripts/game_sounds_music/game_sounds_music_deathcams.txt", true, true );
-#endif
-
 
 	KeyValues *manifest = new KeyValues( MANIFEST_FILE );
 	if ( g_pFullFileSystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDEMITTER, MANIFEST_FILE, "GAME" ) )
@@ -425,9 +420,6 @@ int	CSoundEmitterSystemBase::FindBestSoundForGender( SoundFile *pSoundnames, int
 {
 	// Check for recycling of random sounds...
 	EnsureAvailableSlotsForGender( pSoundnames, c, gender );
-#if 0
-	Msg( "nRandomSeed(1) %i : ", nRandomSeed );
-#endif
 
 	// because this random int / index came across the network as a 6 bit uint
 	// we utilize the 0 slot as "undefined", however 0 is a valid index
@@ -481,9 +473,6 @@ int	CSoundEmitterSystemBase::FindBestSoundForGender( SoundFile *pSoundnames, int
 				nRandomSum -= c;
 			}
 			nRandomSeed = nRandomSum;
-#if 0
-			Msg( "nRandomIndex %i : nRandomMSB %i : nRandomSum %i : ", nRandomIndex, nRandomMSB, nRandomSum );
-#endif
 		}
 		else
 		{
@@ -492,9 +481,6 @@ int	CSoundEmitterSystemBase::FindBestSoundForGender( SoundFile *pSoundnames, int
 		}
 	}
 
-#if 0
-		Msg( "nRandomSeed %i : nAdjRandomSeed %i : nRandomLSB %i : idx %i : %i\n", nRandomSeed, nAdjRandomSeed, nRandomLSB, idx );
-#endif
 	return idx;
 
 

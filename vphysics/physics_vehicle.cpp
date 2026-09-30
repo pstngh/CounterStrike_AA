@@ -709,11 +709,6 @@ void CVehicleController::InitCarSystemBody( IVP_Template_Car_System &ivpVehicleD
 	ivpVehicleData.extra_gravity_force_value = m_vehicleData.body.addGravity * m_gravityLength * m_bodyMass;
 	ivpVehicleData.extra_gravity_height_offset = 0;
 
-#if 0
-	// HACKHACK: match example
-	ivpVehicleData.extra_gravity_force_value = 1.2;
-	ivpVehicleData.body_down_force_vertical_offset = 2;
-#endif
 }
 
 //-----------------------------------------------------------------------------

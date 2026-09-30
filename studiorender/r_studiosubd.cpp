@@ -598,24 +598,6 @@ void CStudioRender::SoftwareProcessQuadMesh( mstudiomesh_t* pmesh, CMeshBuilder&
 	{
 		int patchCorner = 0;
 
-#if 0
-		Vector4D debugTangent[4];
-		for ( int j=0; j < 4; ++j )
-		{
-			int idx = quad.oneRing[patchCorner];
-			memcpy( &debugTangent[j], &pStudioTangentS[idx], sizeof( Vector4D ) );
-			patchCorner += quad.vtx1RingSize[j];
-		}
-
-		// These should be the same sign for a given patch.
-		// If they're not, that's bad
-		Assert( ( debugTangent[0].w == debugTangent[1].w ) &&
-				( debugTangent[1].w == debugTangent[2].w ) &&
-				( debugTangent[2].w == debugTangent[3].w ) );
-
-		patchCorner = 0;
-#endif
-
 		for ( int j=0; j < 4; ++j )							// Four verts per face
 		{
 			int idx = quad.oneRing[patchCorner];

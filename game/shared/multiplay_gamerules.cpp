@@ -1457,36 +1457,6 @@ CMultiplayRules::CMultiplayRules()
 
 			return true;
 		}
-#if 0	// disabled this in CS:GO due to exploit
-		else if ( FStrEq( pcmd, "achievement_earned" ) )
-		{
-			CBaseMultiplayerPlayer *pPlayer = static_cast<CBaseMultiplayerPlayer*>( pEdict );
-			if ( pPlayer && pPlayer->ShouldAnnounceAchievement() )
-			{
-				// let's check this came from the client .dll and not the console
-				unsigned short mask = UTIL_GetAchievementEventMask();
-				int iPlayerID = pPlayer->GetUserID();
-
-				int iAchievement = atoi( args[1] ) ^ mask;
-				int code = ( iPlayerID ^ iAchievement ) ^ mask;
-
-				if ( code == atoi( args[2] ) )
-				{
-					IGameEvent * event = gameeventmanager->CreateEvent( "achievement_earned" );
-					if ( event )
-					{
-						event->SetInt( "player", pEdict->entindex() );
-						event->SetInt( "achievement", iAchievement );
-						gameeventmanager->FireEvent( event );
-					}
-
-					pPlayer->OnAchievementEarned( iAchievement );
-				}
-			}
-
-			return true;
-		}
-#endif
 
 		return BaseClass::ClientCommand( pEdict, args );
 

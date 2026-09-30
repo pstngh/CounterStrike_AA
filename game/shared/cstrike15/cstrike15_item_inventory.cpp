@@ -1514,25 +1514,7 @@ int CCSPlayerInventory::GetPreviewItemDef( void ) const
 //-----------------------------------------------------------------------------
 bool CCSPlayerInventory::CanPurchaseItems( int iItemCount ) const
 {
-#if 1
 	return BaseClass::CanPurchaseItems( iItemCount );
-#else
-	// If we're not a free trial account, we fall back to our default logic of "do
-	// we have enough empty slots?".
-	CEconGameAccountClient *pGameAccountClient = GetSOCacheGameAccountClient( m_pSOCache );
-	if ( !pGameAccountClient || !pGameAccountClient->Obj().trial_account() )
-		return BaseClass::CanPurchaseItems( iItemCount );
-
-	// We're a free trial account, so when we purchase these items, our inventory
-	// will actually expand. We check to make sure that we have room for these
-	// items against what will be our new maximum backpack size, not our current
-	// backpack limit.
-	int iNewItemCount			   = GetItemCount() + iItemCount,
-		iAfterPurchaseMaxItemCount = DEFAULT_NUM_BACKPACK_SLOTS
-								   + (pGameAccountClient ? pGameAccountClient->Obj().additional_backpack_slots() : 0);
-
-	return iNewItemCount <= iAfterPurchaseMaxItemCount;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1545,13 +1527,6 @@ int	CCSPlayerInventory::GetMaxItemCount( void ) const
 	CEconGameAccountClient *pGameAccountClient = GetSOCacheGameAccountClient( m_pSOCache );
 	if ( pGameAccountClient )
 	{
-#if 0
-		if ( pGameAccountClient->Obj().trial_account() )
-		{
-			// Currently it thinks everyone is a trial account, so just give everyone the full space!
-			//iMaxItems = DEFAULT_NUM_BACKPACK_SLOTS_FREE_TRIAL_ACCOUNT;
-		}
-#endif
 		iMaxItems += pGameAccountClient->Obj().additional_backpack_slots();
 	}
 	return Min( iMaxItems, MAX_NUM_BACKPACK_SLOTS );
@@ -1795,13 +1770,5 @@ void CCSPlayerInventory::ItemIsBeingRemoved( CEconItemView *pItem )
 
 bool CCSPlayerInventory::IsMissionRefuseAllowed( void ) const
 {
-#if 1
 	return false;
-#else
-	CEconGameAccountClient *pGameAccountClient = GetSOCacheGameAccountClient( m_pSOCache );
-	if ( !pGameAccountClient  )
-		return false;
-
-	return ( 1 == pGameAccountClient->Obj().mission_refuse_allowed() );
-#endif
 }

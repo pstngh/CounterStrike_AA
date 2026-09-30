@@ -873,32 +873,6 @@ CGLMTex::CGLMTex( GLMContext *ctx, GLMTexLayout *layout, uint levels, const char
 	// after a lot of pain with texture completeness...
 	// always push black into all slices of all newly created textures.
 	
-	#if 0
-		bool pushRenderableSlices = (m_layout->m_key.m_texFlags & kGLMTexRenderable) != 0;
-		bool pushTexSlices = true;	// just do it everywhere  (m_layout->m_mipCount>1) && (m_layout->m_format->m_chunkSize !=1) ;
-		if (pushTexSlices)
-		{
-			// fill storage with mostly-opaque purple
-			
-			GLMGenTexelParams genp;
-			memset( &genp, 0, sizeof(genp) );
-			
-			genp.m_format = m_layout->m_format->m_d3dFormat;
-			const GLMTexFormatDesc *format = GetFormatDesc( genp.m_format );
-			
-			genp.m_dest				= m_backing;		// dest addr
-			genp.m_chunkCount		= m_layout->m_storageTotalSize / format->m_bytesPerSquareChunk; // fill the whole slab
-			genp.m_byteCountLimit	= m_layout->m_storageTotalSize;	// limit writes to this amount
-
-			genp.r = 1.0;
-			genp.g = 0.0;
-			genp.b = 1.0;
-			genp.a = 0.75;
-			
-			GLMGenTexels( &genp );
-		}
-	#endif
-	
 	//if (pushRenderableSlices || pushTexSlices)
     	if ( !( ( layout->m_key.m_texFlags & kGLMTexMipped ) && ( levels == m_layout->m_mipCount ) ) )
 	{
@@ -1812,16 +1786,6 @@ void CGLMTex::HandleSRGBMismatch( bool srgb, int &srgbFlipCount )
 			}
 #endif
 		}
-
-#if GLMDEBUG && 0
-		//"toi" = texture of interest
-		static char s_toi[256] = "colorcorrection";
-		if (strstr( texname, s_toi ))
-		{
-			// breakpoint on this if you like
-			GLMPRINTF(( "srgb change %d for %s", m_srgbFlipCount, texname ));
-		}
-#endif
 
 		// re-submit the tex unless we're stifling it
 		if (!CommandLine()->FindParm( "-glmnosrgbflips" ))

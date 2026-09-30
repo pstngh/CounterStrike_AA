@@ -229,8 +229,6 @@ inline fltx4 Quaternion64::LoadUnalignedSIMD() const
 {
 #ifdef _PS3 // assume little endian packing
 
-#if 1
-
 	const static u32x4 xmask = { 0x00000000, 0x001fffff, 0, 0 }; // bottom 21 bits ( 0 .. 20 ) true
 	const static u32x4 ymask = { 0x000003ff, 0xffe00000, 0, 0 }; // bits 21 .. 41 true
 	const static u32x4 zmask = { 0x7ffffC00, 0x00000000, 0, 0 }; // bits 42 .. 62 true
@@ -284,83 +282,6 @@ inline fltx4 Quaternion64::LoadUnalignedSIMD() const
 
 
 
-#else 
-	// original version 
-
-	/*
-	union Qmask {
-	struct qq {
-	Quaternion64 mask;
-	uint64 padding;
-	} asQ ;
-	u32x4 asVec;
-
-	Qmask( const Quaternion64 &m ) : mask(m) {}
-	};
-	*/
-	const static u32x4 xmask = { 0xfffff800, 0x00000000, 0, 0 }; // top 21 bits ( 0 .. 20 ) true
-	const static u32x4 ymask = { 0x000007ff, 0xffc00000, 0, 0 }; // bits 21 .. 41 true
-	const static u32x4 zmask = { 0x00000000, 0x003ffffe, 0, 0 }; // bits 42 .. 62 true
-	const static u32x4 wmask = { 0x00000000, 0x00000001, 0, 0 }; // only bit 63 is true
-
-	const u32x4 qbits = (u32x4)( ::LoadUnalignedSIMD( this ) ) ;
-	// fish x, y, and z and put them into the the first words of their respective vec registers
-	// the end type for these registers must be signed for the following subtract, BUT!
-	// the shift has to happen as an UNSIGNED type so that it doesn't sign-extend.
-	// the code as present assumes that the fused multiply-add operation has an intermediate
-	// precision higher than 32 bits -- otherwise, we'll need to perform the initial subtract as an 
-	// int op because of course 21 bits is right at the limit of floating point precision.
-	i32x4 ix =  (i32x4) (ShiftRightByBits<11>(vec_and( qbits, xmask ))); // shift x by eleven bits so its 21 bits of precision are sitting at the low end of the first word
-	i32x4 iy =  (i32x4) (ShiftLeftByBits<10>(vec_and( qbits, ymask ))); // shift y, which straddles the first two words, left by 10 bits so its 21 bits of precision are sitting at the low end of the first word
-	i32x4 iz =  (i32x4) (ShiftLeftByBits<31>(vec_and( qbits, zmask ))); // shift z, which straddles the first two words, left by 31 bits so its 21 bits of precision are sitting at the low end of the first word
-	/* // this is how to put them into their respective words instead (but we don't want to do that because we need a dot product) 
-	i32x4 iy =  (i32x4) (ShiftRightByBits<22>(vec_and( qbits, ymask ))); // shift y, which straddles the first two words, right by 22 bits so its 21 bits of precision are sitting at the low end of the second word
-	i32x4 iz =  (i32x4) (ShiftRightByBits<33>(vec_and( qbits, zmask ))); // shift z right by 33 bits so its 21 bits of precision are sitting at the low end of the third word
-	*/
-	i32x4 wsignbit = (i32x4) (ShiftRightByBits<33>(vec_and( qbits, wmask ))); // shift the w bit RIGHT so that it sits at the sign bit of the LAST word.
-
-	// convert each of the vectors from int to float. (because of the way the pipeline is organized, 
-	// it's as fast to do this as it would have been to do by combining them into one register above
-	// and converting all at once.) Also, we can do the fixed point conversion in the vcfsx op. It'll
-	// map us onto [0,2] which we'll shift to [-1,1] -- it includes the endpoints of unlike the float-
-	// by-float conversion above, but the better stability of the vector quaternion ops makes that okay.
-	const fltx4 ONE = LoadOneSIMD();
-#if defined(__SPU__)
-	fltx4 fx = SubSIMD( vec_ctf( ix, 20 ), ONE);
-	fltx4 fy = SubSIMD( vec_ctf( iy, 20 ), ONE);
-	fltx4 fz = SubSIMD( vec_ctf( iz, 20 ), ONE);
-#else
-	fltx4 fx = SubSIMD( vec_vcfsx( ix, 20 ), ONE);
-	fltx4 fy = SubSIMD( vec_vcfsx( iy, 20 ), ONE);
-	fltx4 fz = SubSIMD( vec_vcfsx( iz, 20 ), ONE);
-#endif
-
-	// compute the dot product
-	fltx4 fw = MsubSIMD( ONE, fz, fz ); // 1 - z*z
-	fltx4 fxsqysq = MaddSIMD( fy, fy, MulSIMD( fx,fx ) ); // x*x + y*y
-	fw = SubSIMD( fw, fxsqysq ); // 1 - x*x - y*y - z*z
-	fw = SqrtSIMD( fw ); // unfortunately we really do need full precision here
-
-	fltx4 result = Compress4SIMD( fx, fy, fz, fw );
-	// and for the coup de grace, set the sign bit of fw appropriately
-	result = OrSIMD( result, (fltx4)wsignbit );
-
-	return result;
-
-#endif
-
-#elif 0 // basic C implementation (which ends up being slower than writing the whole Q onto the stack and then reading it back at once)
-	struct { float x; float y; float z; float w; } tmp;
-
-	tmp.x = ((int)x - 1048576) * (1 / 1048576.5f);
-	tmp.y = ((int)y - 1048576) * (1 / 1048576.5f);
-	tmp.z = ((int)z - 1048576) * (1 / 1048576.5f);
-	tmp.w = sqrt( 1 - tmp.x * tmp.x - tmp.y * tmp.y - tmp.z * tmp.z );
-	if (wneg)
-		tmp.w = -tmp.w;
-	
-	fltx4 ret = { tmp.x, tmp.y, tmp.z, tmp.w };
-	return ret;
 #else // naive implementation (which ends up being faster than the explicit c imp above)
 	const QuaternionAligned q(Quaternion(*this)) ;
 	return LoadAlignedSIMD( &q );
@@ -481,18 +402,6 @@ inline fltx4 Quaternion48::LoadUnalignedSIMD() const
 	return result;
 
 
-#elif 0 // basic C implementation (which ends up being slower than writing the whole Q onto the stack and then reading it back at once)
-	struct { float x; float y; float z; float w; } tmp;
-
-	tmp.x = ((int)x - 32768) * (1 / 32768.5);
-	tmp.y = ((int)y - 32768) * (1 / 32768.5);
-	tmp.z = ((int)z - 16384) * (1 / 16384.5);
-	tmp.w = sqrt( 1 - tmp.x * tmp.x - tmp.y * tmp.y - tmp.z * tmp.z );
-	if (wneg)
-		tmp.w = -tmp.w;
-	
-	fltx4 ret = { tmp.x, tmp.y, tmp.z, tmp.w };
-	return ret;
 #else // naive implementation (which ends up being faster than the explicit c imp above)
 	const QuaternionAligned q(Quaternion(*this)) ;
 	return LoadAlignedSIMD( &q );
@@ -616,18 +525,6 @@ inline Quaternion48S::operator fltx4 ()	const RESTRICT
 	// also hoist the offset into an int word. Hopefully this executes in parallel with the vector ops thanks to SUPERSCALAR!
 	const unsigned int offset = offsetL | ( offsetH << 1 );
 	const bi32x4 vDMask = (bi32x4) LoadAlignedSIMD( g_SIMD_ComponentMask[(offset+3)%4] ); // lets vsel poke D into the right word
-
-#if 0 // This code can be used to deal with a situation where LoadUnalignedSIMD() fails to properly load
-    // vectors starting on halfword boundaries (rather than 32-bit aligned). Because this is a 48-bit
-	// structure, sometimes it'll only be 16-bit aligned. I expected that lvlx would always load from
-	// a word boundary, requiring me to shift misaligned vectors over by 16 bits, but  evidently,
-	// lvlx actually works even on halfword boundaries. Who knew!
-	// Anyway, this code is still here in case the problem crops up, as a hint to both cause and solution.
-	if ( ((unsigned int) this) & 2 ) 
-	{
-		source = ShiftLeftByBits<16>(source);
-	}
-#endif
 
 	// mask out the offset and dneg bits. Because of the packing #pragmas, the one-bit fields are actually at the MSB
 	// of the halfwords, not the LSB as you might expect.
@@ -950,77 +847,6 @@ public:
 // The uses of isel below are malformed because the first expression is unsigned and thus always >= 0,
 // so this whole expression maps to a simple assignment. This was found through a noisy clang
 // warning. I am preprocessing this out until it is needed.
-#if 0
-inline void float16::ConvertFourFloatsTo16BitsAtOnce( float16 * RESTRICT pOut,
-											const float *a, const float *b, const float *c, const float *d  )
-{
-	COMPILE_TIME_ASSERT( sizeof(float) == 4 );
-	// being meant for use on the PPC, this is tuned for that. 
-	// it is mostly branchless, except for the large outer for loop,
-	// since there's enough instructions inside that unrolling is
-	// a bad idea. This fucntion is four-at-once to simplify SIMDifying in the
-	// future should a convenient SIMD way to decimate emerge
-	// Also, because this is only used for the special case of converting
-	// float arrays into float16 GPU textures, this turns denorms into zeroes
-	// and infinities into MAXFLTs, since the shader can't deal with nonfinite
-	// numbers anyway.
-
-	// alias the input floats onto a union giving their mantissa etc
-	const float32bits * const inFloat[4] = {  
-		reinterpret_cast<const float32bits *>(a),
-		reinterpret_cast<const float32bits *>(b),
-		reinterpret_cast<const float32bits *>(c),
-		reinterpret_cast<const float32bits *>(d) };
-
-	const static unsigned int maxfloat16bitsAsInt = 0x477FE000; // 65504.0f
-
-	const static unsigned int SIGNBIT = 0x80000000;
-
-	
-	for ( int i = 0 ; i < 4 ; ++i ) // performs better not unrolled (less stack spilling)
-	{	
-		unsigned int onGPR = inFloat[i]->rawAsInt;
-
-		// make a mask for each word; will be all 1's if the float is 
-		// negative, all 0s if it is positive. Can do this just by
-		// using arithmetic shift to smear out the sign bit.
-		int isNegative = ((int) onGPR) >> 31;
-
-		// clamp to be within -maxfloat16bits, maxfloat16bits
-		// can't just use isel because IEEE754 floats are sign-magnitude, not two's comp. However,
-		// positive IEEE754s can be compared as if they were ints. So, we need to do a little extra
-		// work to test the negative case efficiently.
-		// clamp to -maxfloat16
-#error See above for explanation of why this and other uses of isel in this file are broken.
-		int clampedNeg = isel( ((int)(onGPR & ~SIGNBIT)) -  maxfloat16bitsAsInt, // -in >= maxfloatbits so in <= -maxfloat
-			maxfloat16bitsAsInt | SIGNBIT, // -65504.0f
-			onGPR	);
-		// clamp to +maxfloat16
-		int clampedPos = isel( ((int)(onGPR)) -  maxfloat16bitsAsInt, // in >= maxfloatbits 
-			maxfloat16bitsAsInt , // -65504.0f
-			onGPR	);
-
-		// take advantage of PPC's andc operator to effectively do a masked-move
-		onGPR = ( clampedNeg & isNegative ) | ( clampedPos & ~isNegative );
-	
-
-		// fish out the input exponent and mantis fields directly (using the union induces an LHS)
-		int inExponent = (onGPR & 0x7f800000) >> 23;
-		unsigned int inMantissa = (onGPR & 0x007FFFFF);
-
-		int exponent = inExponent - 127 + 15; // rebias the exponent
-		unsigned int mantissa = isel( exponent, inMantissa >> 13, (unsigned) 0 ); // squash the mantissa to zero if the number is too small to represent (no denorms)
-
-		float16bits output;
-		// saturate the mantissa if rebiased exponent >= 31 (too big to store) 
-		output.bits.mantissa = isel( exponent - 31, (unsigned) 0x3ff, mantissa );
-		// clamp the exponent to 0..30
-		output.bits.biased_exponent = isel( exponent, isel( exponent - 31, 30, exponent ), 0 );
-		output.bits.sign = isNegative; //  this doesn't lhs, but instead issues the insrdi op to a word on GPR
-		pOut[i].m_storage.rawWord = output.rawWord;
-	}
-}
-#endif
 
 #ifdef _X360
 #define __cntlzw _CountLeadingZeros
@@ -1158,15 +984,9 @@ inline unsigned short float16::ConvertFloatTo16bitsNonDefault( float input )
 		}
 		else if (new_exp>15) 
 		{ 
-#if 0
-			// map this value to infinity
-			output.bits.mantissa = 0;
-			output.bits.biased_exponent = 31;
-#else
 			// to big. . . maps to maxfloat
 			output.bits.mantissa = 0x3ff;
 			output.bits.biased_exponent = 0x1e;
-#endif
 		}
 		else 
 		{

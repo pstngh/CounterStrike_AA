@@ -755,83 +755,6 @@ void VectorXY_SkipProp( const SendProp *pProp, bf_read *pIn )
 	Float_SkipProp(pProp, pIn);
 }
 
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
-
-// ---------------------------------------------------------------------------------------- //
-// Quaternion type abstraction.
-// ---------------------------------------------------------------------------------------- //
-
-void Quaternion_Encode( const unsigned char *pStruct, DVariant *pVar, const SendProp *pProp, bf_write *pOut, int objectID )
-{
-	EncodeFloat(pProp, pVar->m_Vector[0], pOut, objectID);
-	EncodeFloat(pProp, pVar->m_Vector[1], pOut, objectID);
-	EncodeFloat(pProp, pVar->m_Vector[2], pOut, objectID);
-	EncodeFloat(pProp, pVar->m_Vector[3], pOut, objectID);
-}
-
-
-void Quaternion_Decode(DecodeInfo *pInfo)
-{
-	DecodeQuaternion( pInfo->m_pProp, pInfo->m_pIn, pInfo->m_Value.m_Vector );
-	
-	if( pInfo->m_pRecvProp )
-	{
-		pInfo->m_pRecvProp->GetProxyFn()( pInfo, pInfo->m_pStruct, pInfo->m_pData );
-	}
-}
-
-
-int	Quaternion_CompareDeltas( const SendProp *pProp, bf_read *p1, bf_read *p2 )
-{
-	int c1 = Float_CompareDeltas( pProp, p1, p2 );
-	int c2 = Float_CompareDeltas( pProp, p1, p2 );
-	int c3 = Float_CompareDeltas( pProp, p1, p2 );
-	int c4 = Float_CompareDeltas( pProp, p1, p2 );
-	return c1 | c2 | c3 | c4;
-}
-
-const char* Quaternion_GetTypeNameString()
-{
-	return "DPT_Quaternion";
-}
-
-
-bool Quaternion_IsZero( const unsigned char *pStruct, DVariant *pVar, const SendProp *pProp )
-{
-	return ( pVar->m_Vector[0] == 0 ) && ( pVar->m_Vector[1] == 0 ) && ( pVar->m_Vector[2] == 0 ) && ( pVar->m_Vector[3] == 0 );
-}
-
-
-void Quaternion_DecodeZero( DecodeInfo *pInfo )
-{
-	pInfo->m_Value.m_Vector[0] = 0;
-	pInfo->m_Value.m_Vector[1] = 0;
-	pInfo->m_Value.m_Vector[2] = 0;
-	pInfo->m_Value.m_Vector[3] = 0;
-	if ( pInfo->m_pRecvProp )
-	{
-		pInfo->m_pRecvProp->GetProxyFn()( pInfo, pInfo->m_pStruct, pInfo->m_pData );
-	}
-}
-
-bool Quaternion_IsEncodedZero( const SendProp *pProp, bf_read *pIn )
-{
-	float v[4];
-	
-	DecodeQuaternion( pProp, pIn, v );
-
-	return ( v[0] == 0 ) && ( v[1] == 0 ) && ( v[2] == 0 ) && ( v[3] == 0 );
-}
-
-void Quaternion_SkipProp( const SendProp *pProp, bf_read *pIn )
-{
-	Float_SkipProp(pProp, pIn);
-	Float_SkipProp(pProp, pIn);
-	Float_SkipProp(pProp, pIn);
-	Float_SkipProp(pProp, pIn);
-}
-#endif
-
 
 // ---------------------------------------------------------------------------------------- //
 // String type abstraction.
@@ -1433,21 +1356,6 @@ PropTypeFns g_PropTypeFns[DPT_NUMSendPropTypes] =
 		NULL,
 		NULL,
 	},
-#if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
-
-	// DPT_Quaternion
-	{
-		Quaternion_Encode,
-		Quaternion_Decode,
-		Quaternion_CompareDeltas,
-		Generic_FastCopy,
-		Quaternion_GetTypeNameString,
-		Quaternion_IsZero,
-		Quaternion_DecodeZero,
-		Quaternion_IsEncodedZero,
-		Quaternion_SkipProp,
-	},
-#endif
 
 	// DPT_Int64
 	{

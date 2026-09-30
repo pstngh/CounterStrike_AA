@@ -1693,39 +1693,6 @@ void CFeModel::FitTransform( matrix3x4a_t*pOut, const FeFitMatrix_t &fm, const V
 	u.SetColumn( CrossProduct( vMainAxis, vMedAxis ) * flSmallAxisParity, ( MatrixAxisType_t )nSmall );
 	u.SetOrigin( vec3_origin );
 
-#if 0
-	// U matrix columns are the axes we need; some of them will be Zero
-	fltx4 uRow0 = LoadUnaligned3SIMD( us.m[ 0 ] );
-	fltx4 uRow1 = LoadUnaligned3SIMD( us.m[ 1 ] );
-	fltx4 uRow2 = LoadUnaligned3SIMD( us.m[ 2 ] );
-
-	fltx4 uLengthSqr = uRow0 * uRow0 + uRow1 * uRow1 + uRow2 * uRow2;
-	fltx4 uLengthInv = ReciprocalSqrtSIMD( MaxSIMD( uLengthSqr, Four_Epsilons ) );
-
-	// When/if we support non-orthouniform animation matrices, we should clamp the length, not set it to 1. That will make for much nicer softbody
-	matrix3x4a_t u;
-	u.SIMDRow( 0 ) = /*SetWToZeroSIMD*/( uRow0 * uLengthInv );
-	u.SIMDRow( 1 ) = /*SetWToZeroSIMD*/( uRow1 * uLengthInv );
-	u.SIMDRow( 2 ) = /*SetWToZeroSIMD*/( uRow2 * uLengthInv );
-
-#ifdef _DEBUG
-	fltx4 sSqr = { svd.ata.m00(), svd.ata.m11(), svd.ata.m22(), 0.0f };	NOTE_UNUSED( sSqr );
-	fltx4 sInv = ReciprocalSqrtSIMD( MaxSIMD( sSqr, Four_Epsilons ) ); NOTE_UNUSED( sInv );// reciprocal estimate is actually fine here, but may produce slightly non-orthonormal matrices (error < 1%) which assert in a bunch of places
-	// ( SVD::RsqrtEst( Max( us.ColLenSqr( 0 ), 1e-30f ) ), SVD::RsqrtEst( Max( us.ColLenSqr( 1 ), 1e-30f ) ), SVD::RsqrtEst( Max( us.ColLenSqr( 2 ), 1e-30f ) ) );
-	// TODO: implement QR or some other recovery from near-0 singular values
-#endif
-	float det = u.GetDeterminant();
-
-	if ( det < 0 )
-	{
-		// this is a mirror matrix;
-		int nColumn = AsVector( uLengthSqr ).SmallestComponent(); //smallest sigma, largest sigma^-1
-		u[ 0 ][ nColumn ] = -u[ 0 ][ nColumn ];
-		u[ 1 ][ nColumn ] = -u[ 1 ][ nColumn ];
-		u[ 2 ][ nColumn ] = -u[ 2 ][ nColumn ];
-	}
-#endif
-	
 	matrix3x4_t vt = AsMatrix3x4_Transposed( v, vec3_origin ), uvt;
 	ConcatTransforms( u, vt, uvt );
 	uvt.SetOrigin( vDynCenter );

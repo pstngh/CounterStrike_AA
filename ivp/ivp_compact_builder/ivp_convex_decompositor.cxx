@@ -215,61 +215,6 @@ int IVP_Convex_Decompositor::perform_convex_decomposition_on_concave_polyhedron(
 	    subparts_offsets.add(subpart_work);
 
 	}
-#if 0
-FILE *fp = fopen("log.txt", "w");
-	fprintf(fp, "VCL (vertex coordinate list)\n");
-	for (i=1; i<=nvc_out; i++) {
-	    fprintf(fp, "#%d : \t", i);
-	    int j;
-	    for (j=1; j<=3; j++) {
-		fprintf(fp, "%f\t", vcl_out[j+(i*3)-4]);
-	    }
-	    fprintf(fp, "\n");
-	}
-	fprintf(fp, "\n");
-
-
-	for (i=1; i<=nface_out; i++) {
-	    fprintf(fp, "i=%d\tfacep={", i);
-	    int j;
-	    for (j=1; j<=3; j++) {
-		fprintf(fp, "%d\t", facep_out[j+(i*3)-4]);
-	    }
-	    fprintf(fp, "\n");
-	}
-	fprintf(fp, "\n\n");
-	fprintf(fp, "FaceVertexList >>FVL<<\n");
-	for (i=1; i<=nvert_out; i++) {
-	    fprintf(fp, "#%d\t", i);
-	    int j;
-	    for (j=1; j<=6; j++) {
-		switch (j) {
-		case 1:
-		    fprintf(fp, "LOC = ");
-		    break;
-		case 2:
-		    fprintf(fp, "FACN = ");
-		    break;
-		case 3:
-		    fprintf(fp, "SUCC = ");
-		    break;
-		case 4:
-		    fprintf(fp, "PRED = ");
-		    break;
-		case 5:
-		    fprintf(fp, "EDGA = ");
-		    break;
-		case 6:
-		    fprintf(fp, "EDGC = ");
-		    break;
-		}
-		fprintf(fp, "%d\t", fvl_out[j+(i*6)-7]);
-	    }
-	    fprintf(fp, "\n");
-	}
-	fprintf(fp, "\n\n");
-fclose(fp);
-#endif
 	// fill subpart offsets lists with offsets
 	for (i=0; i<nvert_out; i++) {
 	    int face_number = fvl_out[(i*6)+1]-1;

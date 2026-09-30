@@ -17,14 +17,7 @@ public:
 // returns IVP_TRUEif mindist is interesting
 IVP_BOOL ivp_check_debug_mindist( IVP_Mindist *md );
 
-#if 0
-#define IVP_DEBUG_OBJECT0 "box0_5"
-#define IVP_DEBUG_OBJECT1 "box2_4"
-#define IVP_DEBUG_TIME 4.3
-#else
-
 #define IVP_DEBUG_OBJECT0 0
 #define IVP_DEBUG_OBJECT1 0
 #define IVP_DEBUG_TIME 0
 
-#endif

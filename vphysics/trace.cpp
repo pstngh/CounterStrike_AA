@@ -817,24 +817,6 @@ int CTraceIVP::SupportMap( const Vector &dir, Vector *pOut ) const
 		}
 
 		// code to do the brute force method with no hill-climbing
-#if 0
-		for ( i = 0; i < triCount; i++ )
-		{
-			pTri = m_pLedge->get_first_triangle() + i;
-			for ( int j = 0; j < 3; j++ )
-			{
-				pEdge = pTri->get_edge( j );
-				int test = pEdge->get_start_point_index();
-				dot = pPoints[test].dot_product( &mapdir );
-				if ( dot > bestDot )
-				{
-					Assert(0);		// shouldn't hit this unless the hill-climb is broken
-					bestDot = dot;
-					best = test;
-				}
-			}
-		}
-#endif
 		TransformPositionFromLocal( pPoints[best], *pOut ); // transform point position to world space
 
 		return best;
@@ -1928,22 +1910,6 @@ bool simplex_t::SolveGJKSet( const simplexvert_t &w, Vector *pOut )
 {
 	VPROF("TraceSolver::simplex::SolveGJKSet");
 
-#if 0
-	for ( int v = 0; v < vertCount; v++ )
-	{
-		for ( int v2 = v+1; v2 < vertCount; v2++ )
-		{
-			if ( (verts[v].obstacleIndex == verts[v2].obstacleIndex) &&
-				(verts[v].sweepIndex == verts[v2].sweepIndex) &&
-				(verts[v].testIndex == verts[v2].testIndex) )
-			{
-				// same vert in the list twice!  degenerate
-				Assert(0);
-			}
-		}
-	}
-#endif
-
 	switch( vertCount )
 	{
 	case 0:
@@ -2390,11 +2356,6 @@ void CPhysicsTrace::GetAABB( Vector *pMins, Vector *pMaxs, const CPhysCollide *p
 	}
 	// JAY: Disable this here, do it in the engine instead.  That way the tools get
 	// accurate bboxes
-#if 0
-	const float radius = g_PhysicsUnits.collisionSweepEpsilon;
-	mins -= Vector(radius,radius,radius);
-	maxs += Vector(radius,radius,radius);
-#endif
 }
 
 void TraceGetExtent_r( const IVP_Compact_Ledgetree_Node *node, CTraceIVP &ivp, const Vector &dir, float &dot, Vector &point )

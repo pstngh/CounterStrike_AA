@@ -47,13 +47,6 @@ void hk_Gauss_Elm_Solver::find_pivot_in_column(int col)
 void hk_Gauss_Elm_Solver::exchange_rows(int a,int b)
 {
     hk_gauss_real h;
-#if 0 /* without Vector FPU */   
-    for(int i=m_n_columns-1;i>=0;i--) {
-	h=m_A[a*m_aligned_row_len+i];
-	m_A[a*m_aligned_row_len+i]=m_A[b*m_aligned_row_len+i];
-	m_A[b*m_aligned_row_len+i]=h;
-    }
-#endif
     hk_VecFPU::fpu_exchange_rows(&m_A[b*m_aligned_row_len],&m_A[a*m_aligned_row_len],m_n_columns,HK_TRUE);
     
     h=m_b[a];
@@ -73,17 +66,6 @@ void hk_Gauss_Elm_Solver::transform_to_lower_null_triangle()
     for(j=0;j<m_n_columns;j++)
     {
 	hk_gauss_real diagonal_elem,negativ_inv_diagonal;
-#if 0
-	//not always pivot search
-	diagonal_elem=m_A[j*m_aligned_row_len+j];
-	if(hk_Math::fabs(diagonal_elem)<hk_GAUSS_ELM_EPS) {
-	    find_pivot_in_column(j);
-	    diagonal_elem=m_A[j*m_aligned_row_len+j];
-	    if(hk_Math::fabs(diagonal_elem)<hk_GAUSS_ELM_EPS) {
-		goto column_done;
-	    }
-	}
-#endif
 	//always pivot search
 	find_pivot_in_column(j);
 	diagonal_elem=m_A[j*m_aligned_row_len+j];

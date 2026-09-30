@@ -279,12 +279,6 @@ void CHudMessage::MessageScanNextChar( void )
 	m_parms.g = ((srcGreen * (255-blend)) + (destGreen * blend)) >> 8;
 	m_parms.b = ((srcBlue * (255-blend)) + (destBlue * blend)) >> 8;
 
-#if 0
-	if ( m_parms.pMessage->effect == 1 && m_parms.charTime != 0 )
-	{
-		textmessage->AddChar( m_parms.pMessage->r2, m_parms.pMessage->g2, m_parms.pMessage->b2, 255, m_parms.text );
-	}
-#endif
 }
 
 

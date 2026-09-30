@@ -44,10 +44,6 @@ public:
 	FORCEINLINE void *GetPixelMemory() { return m_pBase; }
 
 	// this is no longer used:
-#if 0 // defined( _X360 )
-	// set after SetPixelMemory() 
-	FORCEINLINE void ActivateByteSwapping( bool bSwap );
-#endif
 
 	FORCEINLINE void Seek( int x, int y );
 	FORCEINLINE void* SkipBytes( int n ) RESTRICT;
@@ -405,38 +401,6 @@ FORCEINLINE_PIXEL void CPixelWriter::SetPixelMemory( ImageFormat format, void* p
 		break;
 	}
 }
-
-#if 0 // defined( _X360 )
-FORCEINLINE void CPixelWriter::ActivateByteSwapping( bool bSwap )
-{
-	// X360TBD: Who is trying to use this?
-	// Purposely not hooked up because PixelWriter has been ported to read/write native pixels only
-	Assert( 0 );
-
-	if ( bSwap && !(m_nFlags & PIXELWRITER_SWAPBYTES ) )
-	{
-		m_nFlags |= PIXELWRITER_SWAPBYTES;
-
-		// only tested with 4 byte formats
-		Assert( m_Size == 4 );
-	}
-	else if ( !bSwap && (m_nFlags & PIXELWRITER_SWAPBYTES ) )
-	{
-		m_nFlags &= ~PIXELWRITER_SWAPBYTES;
-	}
-	else
-	{
-		// same state
-		return;
-	}
-
-	// swap the shifts
-	m_RShift = 24-m_RShift;
-	m_GShift = 24-m_GShift;
-	m_BShift = 24-m_BShift;
-	m_AShift = 24-m_AShift;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Sets where we're writing to

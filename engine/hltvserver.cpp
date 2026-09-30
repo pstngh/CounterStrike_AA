@@ -3228,28 +3228,6 @@ static char const *Helper_HLTV_GenerateUniquePassword()
 	return "HLTV Official Password Must Be Encrypted";
 }
 
-#if 0
-CON_COMMAND( debug_make_hltv_encrypted_password, "" )
-{
-	char const *szPasswordProvidedByClient = args.Arg( 1 );
-	if ( !szPasswordProvidedByClient || !*szPasswordProvidedByClient || ( Q_strlen( szPasswordProvidedByClient ) != 32 ) )
-	{
-		Warning( "Bad password!\n" );
-		return;
-	}
-
-	char chClientHash[64]={0};
-	Q_snprintf( chClientHash, ARRAYSIZE( chClientHash ), "%08X%08X%08X",
-		CRC32_ProcessSingleBuffer( szPasswordProvidedByClient, 32 ),
-		CRC32_ProcessSingleBuffer( szPasswordProvidedByClient + 10, 22 ),
-		CRC32_ProcessSingleBuffer( szPasswordProvidedByClient + 20, 12 ) );
-	Q_snprintf( chClientHash + 24, ARRAYSIZE( chClientHash ) - 24, "%08X",
-		CRC32_ProcessSingleBuffer( chClientHash, 24 ) );
-
-	Msg( "{%s}->{%s}\n", szPasswordProvidedByClient, chClientHash );
-}
-#endif
-
 bool CHLTVServer::CheckHltvPasswordMatch( const char *szPasswordProvidedByClient, const char *szServerRequiredPassword, CSteamID steamidClient )
 {
 	// Official servers must have a special encrypted password

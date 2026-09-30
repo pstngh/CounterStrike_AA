@@ -26,15 +26,6 @@ static void Physics_TraceHull( C_BaseEntity* pBaseEntity, const Vector &vecStart
 	// The TraceHull code below for shots will make sure the object passes
 	// through shields which do not block that damage type. It will also 
 	// send messages to the shields that they've been hit.
-#if 0
-	if (pBaseEntity->GetDamageType() != DMG_GENERIC)
-	{
-		GameRules()->WeaponTraceHull( vecStart, vecEnd, hullMin, hullMax, 
-			mask, pBaseEntity, pBaseEntity->GetCollisionGroup(), 
-			pBaseEntity, ptr );
-	}
-	else
-#endif
 	{
 		UTIL_TraceHull( vecStart, vecEnd, hullMin, hullMax, mask, 
 			pBaseEntity, pBaseEntity->GetCollisionGroup(), ptr );
@@ -326,15 +317,6 @@ void C_BaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 		float time = ( Plat_FloatTime() - startTime ) * 1000.0f;
 		if ( time > thinkLimit )
 		{
-#if 0
-			// If its an NPC print out the shedule/task that took so long
-			CAI_BaseNPC *pNPC = MyNPCPointer();
-			if (pNPC && pNPC->GetCurSchedule())
-			{
-				pNPC->ReportOverThinkLimit( time );
-			}
-			else
-#endif
 			{
 #ifdef WIN32
 				Msg( "CLIENT:  %s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).raw_name(), time );

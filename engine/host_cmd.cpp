@@ -1089,42 +1089,7 @@ CON_COMMAND( vx_mapinfo, "" )
 
 CON_COMMAND( vx_screenshot, "" )
 {
-#if 1
 	g_pMaterialSystem->TransmitScreenshotToVX( );
-#else
-	// COMPILE_TIME_ASSERT( sizeof(g_pfnSwapBufferMarker) == 8);
-	union FunctionPointerIsReallyADescriptor
-	{
-		void (*pFunc_t)();
-		struct
-		{
-			uint32 funcaddress;
-			int32 iToc;
-		} fn8;
-	};
-	
-	FunctionPointerIsReallyADescriptor *pBreakpoint = (FunctionPointerIsReallyADescriptor *)g_pfnSwapBufferMarker;
-
-	// breakpoint.pFunc_t = g_pfnSwapBufferMarker;
-
-	uint64	uBPAddress;
-	/// Address of a pointer that points to the image in memory
-	char *		pFrameBuffer;
-	/// Width of image
-	uint32		uWidth;
-	/// Height of image
-	uint32		uHeight;
-	/// Image pitch (as described in CellGCMSurface) - in bytes
-	uint32		uPitch;
-	/// Image colour settings (0 = X8R8G8B8, 1 = X8B8G8R8, 2 = R16G16B16X16)
-	IMaterialSystem::VRAMScreenShotInfoColor_t		colour	;
-
-	// get one of the screen buffers. Since we breakpoint the game anyway I don't think 
-	// it really matters if we're two out of date. (For this test, anyway.)
-	g_pMaterialSystem->GetVRAMScreenShotInfo( &pFrameBuffer, &uWidth, &uHeight, &uPitch, &colour );
-	g_pValvePS3Console->VRAMDumpingInfo( (uint64)pBreakpoint->fn8.funcaddress,
-		(uint64)pFrameBuffer, uWidth, uHeight, uPitch, colour );
-#endif
 }	
 #endif
 
@@ -3033,21 +2998,6 @@ CON_COMMAND_F( ss_disconnect, "If connected with available split screen slots, c
 }
 
 #endif
-#endif
-
-#if 0
-CON_COMMAND_F( infinite_loop, "Hang server with an infinite loop to test crash recovery.", FCVAR_CHEAT )
-{
-	for(;;)
-	{
-		ThreadSleep( 500 );
-	}
-}
-
-CON_COMMAND_F( null_ptr_references, "Produce a null ptr reference.", FCVAR_CHEAT )
-{
-	*((int *) 0 ) = 77;
-}
 #endif
 
 

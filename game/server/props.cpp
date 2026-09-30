@@ -1105,15 +1105,6 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		return 0;
 
 	// UNDONE: Do this?
-#if 0
-	// Make a shard noise each time func breakable is hit.
-	// Don't play shard noise if being burned.
-	// Don't play shard noise if cbreakable actually died.
-	if ( ( bitsDamageType & DMG_BURN ) == false )
-	{
-		DamageSound();
-	}
-#endif
 
 	// don't take damage on the same frame you were created 
 	// (avoids a set of explosions progressively vaporizing a compound breakable)
@@ -2994,13 +2985,6 @@ bool CPhysicsProp::CreateVPhysics()
 		{
 			PhysSetGameFlags( pPhysicsObject, FVPHYSICS_DMG_SLICE );
 
-#if 0
-			if( g_pDeveloper->GetInt() )
-			{
-				// Highlight them in developer mode.
-				m_debugOverlays |= (OVERLAY_TEXT_BIT|OVERLAY_BBOX_BIT);
-			}
-#endif
 		}
 	}
 

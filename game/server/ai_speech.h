@@ -403,40 +403,6 @@ inline void CAI_ExpresserHost<BASE_NPC>::GatherCriteria( AI_CriteriaSet *outputC
 }
 
 
-#if 0
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-template <class BASE_NPC>
-inline AI_Response *CAI_ExpresserHost<BASE_NPC>::SpeakFindResponse( AIConcept_t concept, const char *modifiers /*= NULL*/ )
-{
-	return this->GetExpresser()->SpeakFindResponse( concept, modifiers );
-}
-#endif
-
-#if 0
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-template <class BASE_NPC>
-inline AI_Response *CAI_ExpresserHost<BASE_NPC>::SpeakFindResponse( AIConcept_t concept, AI_CriteriaSet *criteria /*= NULL*/ )
-{
-	return this->GetExpresser()->SpeakFindResponse( concept, criteria );
-}
-
-
-//-----------------------------------------------------------------------------
-// In this case we clearly don't care to hang on to the criteria, so make a convenience
-// class that generates a one off.
-//-----------------------------------------------------------------------------
-template <class BASE_NPC>
-inline AI_Response * CAI_ExpresserHost<BASE_NPC>::SpeakFindResponse( AIConcept_t concept )
-{
-	AI_CriteriaSet criteria;
-	GatherCriteria( &criteria, concept, NULL );
-	return this->GetExpresser()->SpeakFindResponse( concept, &criteria );
-}
-#endif
-
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 template <class BASE_NPC>

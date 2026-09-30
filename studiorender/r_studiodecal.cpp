@@ -1038,15 +1038,7 @@ void CStudioRender::RetireDecalAtAddress( DecalModelList_t &list, DecalLRUListIn
 				pMaterial->m_Decals.Remove( pDecalHistory->m_Decal );
 				if ( pMaterial->m_Decals.Count() == 0)
 				{
-#if 1
 					pMaterial->m_Decals.Purge();
-#else
-					if ( list.m_pLod[iLOD].m_FirstMaterial == pDecalHistory->m_Material )
-					{
-						list.m_pLod[iLOD].m_FirstMaterial = m_DecalMaterial.Next( pDecalHistory->m_Material );
-					}
-					m_DecalMaterial.Free( pDecalHistory->m_Material );
-#endif
 				}
 			}
 
@@ -1548,22 +1540,6 @@ void CStudioRender::DrawSingleBoneDecals( CMeshBuilder& meshBuilder, const Decal
 		
 		meshBuilder.Position3fv( vertex.m_Position.Base() );
 		meshBuilder.Normal3fv( GetVecNormal( vertex.m_Normal ).Base() );
-#if 0
-		if ( decalMaterial.m_pMaterial->InMaterialPage() )
-		{
-			float offset[2], scale[2];
-			decalMaterial.m_pMaterial->GetMaterialOffset( offset );
-			decalMaterial.m_pMaterial->GetMaterialScale( scale );
-
-			Vector2D vecTexCoord( vertex.m_TexCoord.x, vertex.m_TexCoord.y );
-			vecTexCoord.x = clamp( vecTexCoord.x, 0.0f, 1.0f );
-			vecTexCoord.y = clamp( vecTexCoord.y, 0.0f, 1.0f );
-			meshBuilder.TexCoordSubRect2f( 0, vecTexCoord.x, vecTexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-
-//			meshBuilder.TexCoordSubRect2f( 0, vertex.m_TexCoord.x, vertex.m_TexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-		}
-		else
-#endif
 		{
 			meshBuilder.TexCoord2fv( 0, GetVecTexCoord(vertex.m_TexCoord).Base() );
 		}
@@ -1608,22 +1584,6 @@ void CStudioRender::DrawSingleBoneFlexedDecals( IMatRenderContext *pRenderContex
 			meshBuilder.Normal3fv( GetVecNormal( vertex.m_Normal ).Base() );
 		}
 
-#if 0
-		if ( decalMaterial.m_pMaterial->InMaterialPage() )
-		{
-			float offset[2], scale[2];
-			decalMaterial.m_pMaterial->GetMaterialOffset( offset );
-			decalMaterial.m_pMaterial->GetMaterialScale( scale );
-
-			Vector2D vecTexCoord( vertex.m_TexCoord.x, vertex.m_TexCoord.y );
-			vecTexCoord.x = clamp( vecTexCoord.x, 0.0f, 1.0f );
-			vecTexCoord.y = clamp( vecTexCoord.y, 0.0f, 1.0f );
-			meshBuilder.TexCoordSubRect2f( 0, vecTexCoord.x, vecTexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-
-//			meshBuilder.TexCoordSubRect2f( 0, vertex.m_TexCoord.x, vertex.m_TexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-		}
-		else
-#endif
 		{
 			meshBuilder.TexCoord2fv( 0, GetVecTexCoord(vertex.m_TexCoord).Base() );
 		}
@@ -1715,22 +1675,6 @@ bool CStudioRender::DrawMultiBoneDecals( CMeshBuilder& meshBuilder, DecalMateria
 			meshBuilder.Normal3fv( pCachedVert->m_Normal.Base() );
 		}
 
-#if 0
-		if ( decalMaterial.m_pMaterial->InMaterialPage() )
-		{
-			float offset[2], scale[2];
-			decalMaterial.m_pMaterial->GetMaterialOffset( offset );
-			decalMaterial.m_pMaterial->GetMaterialScale( scale );
-
-			Vector2D vecTexCoord( vertex.m_TexCoord.x, vertex.m_TexCoord.y );
-			vecTexCoord.x = clamp( vecTexCoord.x, 0.0f, 1.0f );
-			vecTexCoord.y = clamp( vecTexCoord.y, 0.0f, 1.0f );
-			meshBuilder.TexCoordSubRect2f( 0, vecTexCoord.x, vecTexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-
-//			meshBuilder.TexCoordSubRect2f( 0, vertex.m_TexCoord.x, vertex.m_TexCoord.y, offset[0], offset[1], scale[0], scale[1] );
-		}
-		else
-#endif
 		{
 			meshBuilder.TexCoord2fv( 0, GetVecTexCoord(vertex.m_TexCoord).Base() );
 		}

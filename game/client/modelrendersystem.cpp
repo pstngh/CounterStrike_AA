@@ -852,29 +852,6 @@ void CModelRenderSystem::ComputeLightingOrigin( ModelListByType_t &list, Lightin
 		pLightingQuery->m_bAmbientBoost = bAmbientBoost;
 	}
 
-#if 0
-	// NOTE: This is more expensive, but hopefully is uncommon
-	// Bonemerged models will copy the lighting environment from their parent entity.
-	// This fixes issues with L4D2 infected wounds where the wounds would sometimes receive different lighting
-	// than the body they're embedded in.
-	if ( nBoneMergeCount > 0 )
-	{
-		pLightingQuery = pLightingQueryBase;
-		for ( int j = 0; j < list.m_nCount; ++j, pLightingQuery = (LightingQuery_t*)( (unsigned char*)pLightingQuery + nQueryStride ) )
-		{
-			RenderModelInfo_t *pModel = &list.m_pRenderModels[j];
-			if ( !pModel->m_bBoneMerge )
-				continue;
-
-			C_BaseEntity *pEnt = pModel->m_Entry.m_pRenderable->GetIClientUnknown()->GetBaseEntity();
-			C_BaseEntity *pParent = pEnt->GetMoveParent();
-			if ( !pParent )
-				continue;
-
-			pLightingQuery->m_ParentInstanceHandle = pParent->GetModelInstance();
-		}
-	}
-#endif
 }
 
 
@@ -1223,15 +1200,7 @@ void CModelRenderSystem::SetupPerInstanceColorModulation( int nModelTypeCount, M
 		{
 			RenderModelInfo_t *pModel = &list.m_pRenderModels[j];
 			IClientRenderable *pRenderable = pModel->m_Entry.m_pRenderable;
-#if 0 
-			Vector diffuseModulation;
-			pRenderable->GetColorModulation( diffuseModulation.Base() );
-			pModel->m_DiffuseModulation.x = diffuseModulation.x;
-			pModel->m_DiffuseModulation.y = diffuseModulation.y;
-			pModel->m_DiffuseModulation.z = diffuseModulation.z;
-#else		// preferred to do it this way, because it avoids a load-hit-store on 360
 			pRenderable->GetColorModulation( pModel->m_DiffuseModulation.AsVector3D().Base() );
-#endif
 			pModel->m_DiffuseModulation.w = pModel->m_Entry.m_InstanceData.m_nAlpha * ( 1.0f / 255.0f );
 		}
 	}
@@ -1336,19 +1305,6 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 	{
 		// shouldn't get here unless the code is ported from l4d2 to drive this properly.
 		Assert(0);
-#if 0
-		// HACK: Assume all models in this batch use the same material. This only works because we submit batches of 1 model from the client shadow manager at the moment
-		IMaterial* pShadowDrawMaterial = pModelList[0].m_pFirstNode->m_Entry.m_pRenderable->GetShadowDrawMaterial();
-		g_pStudioRender->ForcedMaterialOverride( pShadowDrawMaterial ? pShadowDrawMaterial : m_ShadowBuild, OVERRIDE_BUILD_SHADOWS );
-
-		for ( int i = 0; i < nModelTypeCount; ++i )
-		{
-			ModelListByType_t &list = pModelList[i];
-			g_pStudioRender->DrawModelArray( list, list.m_nCount, list.m_pRenderModels, sizeof(RenderModelInfo_t), STUDIORENDER_DRAW_OPAQUE_ONLY );
-		}
-
-		g_pStudioRender->ForcedMaterialOverride( NULL );
-#endif
 	}
 }
 

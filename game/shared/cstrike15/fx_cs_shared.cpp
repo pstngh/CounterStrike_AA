@@ -506,11 +506,6 @@ void FX_FireBullets(
 				}
 				else if ( m_rbHsPlayers.Find( pVictim ) != m_rbHsPlayers.InvalidIndex() )
 				{
-#if 0
-					DevMsg( "DMG: Pellet modified for headshot visualization %s -> %s = (0x%08X +hs)\n",
-						m_pPlayerShooting ? m_pPlayerShooting->GetPlayerName() : "[unknown]",
-						pVictim->GetPlayerName(), infoTweakable.GetDamageType() );
-#endif
 					infoTweakable.SetDamageType( infoTweakable.GetDamageType() | DMG_HEADSHOT );	// since previous pellets hit a headshot we visualize it as a headshot
 				}
 

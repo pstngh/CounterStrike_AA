@@ -1609,16 +1609,6 @@ void CAsyncFileSystem::KickOffFileJobs()
 		return;
 	}
 
-#if 0
-	// Are the too many requests already being serviced?
-	// TODO - throttle at 2 jobs?
-	if ( m_nJobsInflight >= 1 )
-	{	
-		return;
-	}
-
-#endif
-
 	m_AsyncStateUpdateMutex.Lock();
 
 	// are there any requests waiting to be submitted?

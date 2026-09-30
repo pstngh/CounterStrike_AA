@@ -1383,13 +1383,8 @@ void CPhysicsObject::BecomeHinged( int localAxis )
 
 		SetMass( VPHYSICS_MAX_MASS );
 		IVP_U_Float_Hesse tmp = *iri;
-#if 0
-		for ( i = 0; i < 3; i++ )
-			tmp.k[i] = savedRI[i];
-#else
 		int localAxisIVP = ConvertCoordinateAxisToIVP(localAxis);
 		tmp.k[localAxisIVP] = savedRI[localAxisIVP];
-#endif
 
 		SetMass( savedMass );
 		*iri = tmp;

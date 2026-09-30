@@ -399,46 +399,6 @@ int CVideoMode_Common::FindVideoMode( int nDesiredWidth, int nDesiredHeight, boo
 	// If we want to scale the 3D portion of the game and leave the UI at the same res, then
 	//	re-enable this code. Not that on retina displays the UI will be super small and that
 	//	should probably be fixed.
-#if 0
-	static ConVarRef mat_viewportscale( "mat_viewportscale" );
-
-	if ( !bWindowed )
-	{
-		m_nRenderWidth = nDesiredWidth;
-		m_nRenderHeight = nDesiredHeight;
-
-		uint nWidth, nHeight, nRefreshHz;
-
-		g_pLauncherMgr->GetNativeDisplayInfo( -1, nWidth, nHeight, nRefreshHz );
-
-		for ( int i = 0; i < m_nNumModes; i++)
-		{
-			if ( m_rgModeList[i].width != ( int )nWidth )
-			{
-				continue;
-			}
-
-			if ( m_rgModeList[i].height != ( int )nHeight )
-			{
-				continue;
-			}
-
-			if ( m_rgModeList[i].refreshRate != ( int )nRefreshHz )
-			{
-				continue;
-			}
-
-			mat_viewportscale.SetValue( ( float )nDesiredWidth / ( float )nWidth );
-			return i;
-		}
-
-		Assert( 0 );	// we should have found our native resolution, why not???
-	}
-	else
-	{
-		mat_viewportscale.SetValue( 1.0f );
-	}
-#endif // 0
 
 #endif // USE_SDL
 
@@ -556,18 +516,6 @@ bool CVideoMode_Common::CreateGameWindow( int nWidth, int nHeight, bool bWindowe
         // Set the mode and let the materialsystem take over
 		if ( !SetMode( GetModeWidth(), GetModeHeight(), IsWindowedMode(), NoWindowBorder() ) )
             return false;
-
-#if defined( USE_SDL ) && 0
-		static ConVarRef mat_viewportscale( "mat_viewportscale" );
-
-		if ( !bWindowed )
-		{
-			m_nRenderWidth = nWidth;
-			m_nRenderHeight = nHeight;
-
-			mat_viewportscale.SetValue(  ( float )nWidth / ( float )GetModeWidth() );
-		}
-#endif
 
 		if( IsPS3QuitRequested() )
 			return false;

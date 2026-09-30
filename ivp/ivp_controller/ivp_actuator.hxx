@@ -61,10 +61,8 @@ public:
 	void set_anchor_position_ws(IVP_Real_Object *obj, const IVP_DOUBLE x, const IVP_DOUBLE y, const IVP_DOUBLE z);
 	void set_anchor_position_os(IVP_Real_Object *obj, const IVP_U_Float_Point *coords_os);
 	void set_anchor_position_os(IVP_Real_Object *obj, const IVP_DOUBLE x, const IVP_DOUBLE y, const IVP_DOUBLE z);
-#if 1
 	void set_anchor_position_cs(IVP_Real_Object *obj, const IVP_U_Float_Point *coords_cs);
 	void set_anchor_position_cs(IVP_Real_Object *obj, const IVP_DOUBLE x, const IVP_DOUBLE y, const IVP_DOUBLE z);
-#endif
     const IVP_U_Point *get_anchor_position_ws() const { return & coords_world; };
 };
 

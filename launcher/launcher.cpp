@@ -1694,21 +1694,6 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	}
 
 	// Uncomment the following code to allow multiplayer on the Xbox 360 for trade shows.
-#if 0
-#if defined( CSTRIKE15 ) && defined( _X360 ) && !defined( _CERT )
-	if ( CommandLine()->FindParm( "-xnet_bypass_security" ) == 0 )
-	{
-		CommandLine()->AppendParm( "-xnet_bypass_security", "" );
-		Warning( "adding -xnet_bypass_security to command line. Remove this for shipping!\n" );
-	}
-
-	if ( CommandLine()->FindParm( "-demo_pressbuild_play_addr" ) == 0 )
-	{
-		CommandLine()->AppendParm( "-demo_pressbuild_play_addr", "192.168.1.100:27015" );
-		Warning( "adding -demo_pressbuild_play_addr to command line. Remove this for shipping!\n" );
-	}
-#endif
-#endif
 
 #ifdef SIXENSE
 	// If the game arg is currently portal2

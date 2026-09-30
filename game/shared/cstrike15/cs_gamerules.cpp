@@ -3919,118 +3919,6 @@ ConVar cl_autohelp(
 
 		// Halloween
 		m_nHalloweenMaskListSeed = RandomInt( 0, 30 );
-#if 0
-		//
-		// Setting a bunch of overrides
-		//
-		sm_QueuedServerReservation.mutable_tournament_event()->set_event_name( "ESL One Katowice 2015 Vitaliy Test Championship" );
-		sm_QueuedServerReservation.mutable_tournament_event()->set_event_stage_name( "Group Stage | Decider Match" );
-		TournamentTeam *pTeam;
-		pTeam = sm_QueuedServerReservation.add_tournament_teams();
-		pTeam->set_team_tag( "NiP" );
-		pTeam->set_team_flag( "SE" );
-		pTeam->set_team_name( "Ninjas in Pyjamas" );
-		// pTeam->set_team_clantag( "NiP.Trig" );
-		if ( TournamentPlayer *pPlayer = pTeam->add_players() )
-		{
-			pPlayer->set_account_id( 102003 );
-			pPlayer->set_player_nick( "GeT_RiGhT" );
-			pPlayer->set_player_name( "Vitaliy Genkin" );
-		}
-		pTeam = sm_QueuedServerReservation.add_tournament_teams();
-		pTeam->set_team_tag( "NAVI" );
-		pTeam->set_team_flag( "UA" );
-		pTeam->set_team_name( "Natus Vincere" );
-		// pTeam->set_team_clantag( "NA'VI" );
-		if ( TournamentPlayer *pPlayer = pTeam->add_players() )
-		{
-			pPlayer->set_account_id( 102003 );
-			pPlayer->set_player_nick( "GeT_RiGhT" );
-			pPlayer->set_player_name( "Vitaliy Genkin" );
-		}
-		sm_QueuedServerReservation.mutable_pre_match_data()->set_predictions_pct( 72 );
-		CPreMatchInfoData_TeamStats *pTS;
-#if 0 // Group A | Decider Match
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_37}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_26}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossVs{team=#CSGO_TeamID_24}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossVs{team=#CSGO_TeamID_31}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_Group2{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinAdvan" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossElim" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_Group2{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossElim" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinAdvan" );
-#endif
-#if 0 // Quarterfinal | Match 1 of 3
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_Series2{name=#CSGO_MatchInfo_Stage_Quarterfinal}{idx=1}{count=3}" );
-		pTS->add_match_info_teams()->assign( "0" );
-		pTS->add_match_info_teams()->assign( "0" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos1{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos2{name=#CSGO_MatchInfo_Stage_GroupB}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_37}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_26}" );
-#endif
-#if 0 // Quarterfinal | Match 2 of 3
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_Series2{name=#CSGO_MatchInfo_Stage_Quarterfinal}{idx=2}{count=3}" );
-		pTS->add_match_info_teams()->assign( "1" );
-		pTS->add_match_info_teams()->assign( "0" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_JustPlayedMap{map=#SFUI_Map_de_cbble}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinScoreMap{map=#SFUI_Map_de_cbble}{high=16}{low=3}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_Loss{map=#SFUI_Map_de_cbble}{high=16}{low=3}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos1{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos2{name=#CSGO_MatchInfo_Stage_GroupB}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_37}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_26}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_Series2{name=#CSGO_MatchInfo_Stage_Quarterfinal}{idx=2}{count=3}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinAdvan" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossElim" );
-#endif
-#if 1 // Quarterfinal | Match 3 of 3
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_BracketDecider{name=#CSGO_MatchInfo_Stage_Quarterfinal}" );
-		pTS->add_match_info_teams()->assign( "1" );
-		pTS->add_match_info_teams()->assign( "1" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_JustPlayedMaps" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinScoreMap{map=#SFUI_Map_de_cbble}{high=16}{low=3}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinScoreMap{map=#SFUI_Map_de_mirage}{high=23}{low=21}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos1{name=#CSGO_MatchInfo_Stage_GroupA}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_QualPos2{name=#CSGO_MatchInfo_Stage_GroupB}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_PreviouslyIn{name=#CSGO_MatchInfo_Stage_Groups}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_37}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinVs{team=#CSGO_TeamID_26}" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_BracketDecider{name=#CSGO_MatchInfo_Stage_Quarterfinal}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinAdvan" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossElim" );
-		pTS = sm_QueuedServerReservation.mutable_pre_match_data()->add_stats();
-		pTS->set_match_info_txt( "#CSGO_MatchInfoTxt_BracketDecider{name=#CSGO_MatchInfo_Stage_Quarterfinal}" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_LossElim" );
-		pTS->add_match_info_teams()->assign( "#CSGO_MatchInfoTeam_WinAdvan" );
-#endif
-#endif
 
 		if ( m_bIsQueuedMatchmaking )
 		{
@@ -4273,15 +4161,6 @@ ConVar cl_autohelp(
         if ( !pPlayer )
             return;
 
-#if 0
-        // If a client sends up their medal rankings (based on achievements completed so far)
-        // store them in CSPlayer for display on the scoreboard.
-        if ( 0 == Q_strcmp( pKeyValues->GetName(), "player_medal_ranking" ) )
-        {
-            pPlayer->UpdateRankFromKV( pKeyValues );
-        }
-        else
-#endif
 		if ( ( 0 == Q_strcmp( pKeyValues->GetName(), "ClanTagChanged" ) ) &&
 			// When we have tournament system enabled then players cannot change their clan tags from client
 			CanClientCustomizeOwnIdentity() )
@@ -10082,18 +9961,10 @@ void ServerThinkReplayUploader()
 						for ( int i = 1; i <= MAX_PLAYERS; i++ )
 						{
 							CCSPlayer *pPlayer = ToCSPlayer( UTIL_PlayerByIndex( i ) );
-#if 0 // #ifdef _DEBUG	// cause everybody even bots that didn't vote to random vote in debug
-							if ( pPlayer )
-							{
-								int nVoteNum = pPlayer->GetEndMatchNextMapVote();
-								if ( nVoteNum < 0 )
-									nVoteNum = RandomInt( 0, MAX_ENDMATCH_VOTE_PANELS - 1 );
-#else
 							if ( pPlayer && !pPlayer->IsBot() && ( pPlayer->GetTeamNumber() != TEAM_SPECTATOR ) )
 							{
 								// players store the keybind list index that displays on the client
 								int nVoteNum = pPlayer->GetEndMatchNextMapVote();
-#endif
 								if ( (nVoteNum < 0) || (nVoteNum >= MAX_ENDMATCH_VOTE_PANELS) || (m_nEndMatchMapGroupVoteOptions[nVoteNum] < 0) )
 								{
 									if ( mp_verbose_changelevel_spew.GetInt() >= 2 )

@@ -176,32 +176,6 @@ float PixelVisibility_DrawProxy( IMatRenderContext *pRenderContext, OcclusionQue
 	pMesh->Draw();
 
 	// sprite/quad proxy
-#if 0
-	meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
-
-	VectorMA (origin, -scale, CurrentViewUp(), point);
-	VectorMA (point, -scale, CurrentViewRight(), point);
-	meshBuilder.Position3fv (point.Base());
-	meshBuilder.AdvanceVertex();
-
-	VectorMA (origin, scale, CurrentViewUp(), point);
-	VectorMA (point, -scale, CurrentViewRight(), point);
-	meshBuilder.Position3fv (point.Base());
-	meshBuilder.AdvanceVertex();
-
-	VectorMA (origin, scale, CurrentViewUp(), point);
-	VectorMA (point, scale, CurrentViewRight(), point);
-	meshBuilder.Position3fv (point.Base());
-	meshBuilder.AdvanceVertex();
-
-	VectorMA (origin, -scale, CurrentViewUp(), point);
-	VectorMA (point, scale, CurrentViewRight(), point);
-	meshBuilder.Position3fv (point.Base());
-	meshBuilder.AdvanceVertex();
-	
-	meshBuilder.End();
-	pMesh->Draw();
-#endif
 	pRenderContext->EndOcclusionQueryDrawing( queryHandle );
 
 	// fraction clipped by frustum
@@ -489,16 +463,6 @@ void CPixelVisibilityQuery::IssueCountingQuery( IMatRenderContext *pRenderContex
 	if ( !m_failed )
 	{
 		Assert( IsValid() );
-#if 0
-		// this centers it on the screen.
-		// This is nice because it makes the glows fade as they get partially clipped by the view frustum
-		// But it introduces sub-pixel errors (off by one row/column of pixels) so the glows shimmer
-		// UNDONE: Compute an offset center coord that matches sub-pixel coords with the real glow position
-		// UNDONE: Or frustum clip the sphere/geometry and fade based on proxy size
-		Vector origin = m_origin - CurrentViewOrigin();
-		float dot = DotProduct(CurrentViewForward(), origin);
-		origin = CurrentViewOrigin() + dot * CurrentViewForward();
-#endif
 		PixelVisibility_DrawProxy( pRenderContext, m_queryHandleCount, m_origin, proxySize, proxyAspect, pMaterial, sizeIsScreenSpace );
 	}
 }

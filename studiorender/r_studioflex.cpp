@@ -68,12 +68,6 @@ void CStudioRender::R_StudioEyeballPosition( const mstudioeyeball_t *peyeball, e
 
 	VectorMA( pstate->forward, peyeball->zoffset + dz, pstate->right, pstate->forward );
 
-#if 0
-	// add random jitter
-	VectorMA( forward, RandomFloat( -0.02, 0.02 ), right, forward );
-	VectorMA( forward, RandomFloat( -0.02, 0.02 ), up, forward );
-#endif
-
 	VectorNormalize( pstate->forward );
 	// re-aim eyes 
 	CrossProduct( pstate->forward, pstate->up, pstate->right );
@@ -430,23 +424,6 @@ void CStudioRender::AddGlint( CPixelWriter &pixelWriter, float x, float y, const
 //-----------------------------------------------------------------------------
 
 // test/stub code
-#if 0
-class CEmptyTextureRegen : public ITextureRegenerator
-{
-public:
-	virtual void RegenerateTextureBits( ITexture *pTexture, IVTFTexture *pVTFTexture, Rect_t *pRect )
-	{
-		// get the texture
-		unsigned char *pTextureData = pVTFTexture->ImageData( 0, 0, 0 );
-		int nImageSize = pVTFTexture->ComputeMipSize( 0 );
-		memset( pTextureData, 0, nImageSize );
-	}
-
-	// We've got a global instance, no need to delete it
-	virtual void Release() {}
-};
-static CEmptyTextureRegen s_GlintTextureRegen;
-#endif
 
 class CGlintTextureRegenerator : public ITextureRegenerator
 {

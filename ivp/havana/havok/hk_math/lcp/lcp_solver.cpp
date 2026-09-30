@@ -108,13 +108,6 @@ void hk_LCP_Solver::mult_active_x_for_accel() {
 }
 
 void hk_LCP_Solver::mult_x_with_full_A_minus_b() {
-#if 0
-    for(int i=0;i<n_variables;i++) {
-	    IVP_DOUBLE *base_a=&full_A[i*aligned_size];
-	    IVP_DOUBLE sum=IVP_VecFPU::fpu_large_dot_product(base_a,full_x,n_variables,HK_TRUE);
-	    temp[i] = sum-full_b[i];
-    }
-#endif
     input_struct->m_A->mult_vector(full_x,temp);
     hk_VecFPU::fpu_add_multiple_row(temp,full_b,-1.0f,n_variables,HK_TRUE);
 }
@@ -198,14 +191,6 @@ hk_result hk_LCP_Solver::solve_lcp(hk_LCP_Input &in,hk_LCP_Temp &tmp,hk_LCP_Outp
     debug_no_lu_count=0;
     debug_lcs = 0;
 
-#if 0 //only for debug
-    HK_LCP_IF(debug_lcs)
-	{
-		hk_Console::get_instance()->printf("\n***********************************************************\n");
-		start_debug_lcs();
-    }
-#endif
-
     startup_setup( in.m_n_actives_at_start );
     hk_result ret_val = solve_lc();
 
@@ -247,11 +232,6 @@ void hk_LCP_Solver::decrement_sub_solver( int sub_pos ) {
     if(sub_solver_status==0) {
 	HK_ASSERT( lu_sub_solver.m_n_sub == r_actives + 1 );
 	if( lu_sub_solver.decrement_l_u( sub_pos ) != HK_OK ) {
-#if 0
-	    HK_LCP_IF(1) {
-		hk_Console::get_instance()->printf("\n\ndecrement_lu_failed_need_setup\n\n");
-	    }
-#endif
 	    sub_solver_status=2;
 	}
     } else {
@@ -834,55 +814,6 @@ hk_result hk_LCP_Solver::get_xdirection() {
 	}
 	lu_sub_solver.solve_lin_equ();
 	ret_val = HK_OK;
-#if 0	
-	HK_LCP_IF(debug_lcs) {
-	    sub_solver_mat.columns = r_actives;
-	    sub_solver_mat.calc_aligned_row_len();
-	    sub_solver_mat.MATRIX_EPS = GAUSS_EPS * 0.001f; //we know our matrix is stable, so it is save to raise EPS
-	    inv_mat.columns = r_actives;
-	    debug_mat.columns = r_actives;
-	    
-	    for(i=0;i<r_actives;i++) {
-		int index=actives_inactives_ignored[i];
-		sub_solver_mat.desired_vector[i]= - this->full_A[index * aligned_size + ignored_index];
-		debug_mat.desired_vector[i]= - this->full_A[index * aligned_size + ignored_index];
-		int j;
-		for(j=0;j<r_actives;j++) {
-		    int index2=actives_inactives_ignored[j];
-		    sub_solver_mat.matrix_values[i*sub_solver_mat.aligned_row_len + j] = this->full_A[ index * aligned_size + index2 ];
-		    inv_mat.matrix_values[i*r_actives + j] = this->full_A[ index * aligned_size + index2 ];
-		}
-	    }
-	    hk_result ret_val2 = sub_solver_mat.solve_great_matrix_many_zero();
-	    hk_result ret_val3 = HK_FAULT; //inv_mat.invert(&debug_mat);
-	    if( ret_val2 == HK_OK ) {
-		for( i=0;i<r_actives;i++ ) {
-		    IVP_DOUBLE diff=lu_sub_solver.out_vec[i]-sub_solver_mat.result_vector[i];
-		    if(hk_Math::fabs(diff) > 0.001f) {
-		      HK_LCP_IF(debug_lcs) {
-			hk_Console::get_instance()->printf("gauss_lu_test_fail %f %f should be equal\n",lu_sub_solver.out_vec[i],sub_solver_mat.result_vector[i]);
-		      }
-		    }
-		}
-	    } else {
-	      HK_LCP_IF(debug_lcs) {
-		hk_Console::get_instance()->printf("gauss_lu_test_gauss_invalid\n");
-	      }
-	    }
-	    if( ret_val3 == HK_OK ) {
-		debug_mat.mult();
-		for( i=0;i<r_actives;i++ ) {
-		    IVP_DOUBLE diff=lu_sub_solver.out_vec[i]-debug_mat.result_vector[i];
-		    if(hk_Math::fabs(diff) > 0.001f) {
-		      HK_LCP_IF(debug_lcs) {
-			hk_Console::get_instance()->printf("inv_lu_test_fail %f %f should be equal\n",lu_sub_solver.out_vec[i],debug_mat.result_vector[i]);
-		      }
-		    }
-		}
-	    }
-	    sub_solver_mat.MATRIX_EPS = GAUSS_EPS;
-	}
-#endif
     } else {
 	HK_LCP_IF((debug_lcs)) {
 	    hk_Console::get_instance()->printf("sub_lu_is_off %d\n",r_actives);
@@ -968,18 +899,6 @@ void hk_LCP_Solver::debug_out_lcs() {
     }
     hk_Console::get_instance()->printf("\n");
 
-#if 0
-    full_solver_mat.desired_vector = full_x;
-    full_solver_mat.mult_aligned(); // temporary missuse
-    full_solver_mat.desired_vector = delta_x;
-    
-    hk_Console::get_instance()->printf("accel1 ");
-    for(i=0;i<n_variables;i++) {
-	hk_Console::get_instance()->printf("%.4f ",full_solver_mat.result_vector[i] - full_b[i]);
-    }
-    hk_Console::get_instance()->printf("\n");
-#endif
-
     hk_Console::get_instance()->printf("incr_accel ");
     for(i=0;i<n_variables;i++) {
 	hk_Console::get_instance()->printf("%.4f ",accel[i]);
@@ -1041,13 +960,6 @@ void hk_LCP_Solver::lcs_bubble_sort_x_vals() {
 
 // fills accel and full_x vectors
 void hk_LCP_Solver::get_values_when_setup() {
-#if 0
-    full_solver_mat.result_vector=accel;
-    full_solver_mat.desired_vector=full_x; //temporary misuse
-    full_solver_mat.mult_aligned();
-    full_solver_mat.result_vector=delta_accel;
-    full_solver_mat.desired_vector=delta_x;
-#endif
 
     input_struct->m_A->mult_vector( full_x, accel );
 
@@ -1264,38 +1176,4 @@ int hk_LCP_Solver::full_setup_test_ranges() {
 
 void hk_LCP_Solver::debug_test_all_values() {
     //TL: doesn't make sense, because reset_x and reset_accel have been removed 
-#if 0
-    int i;
-
-    for(i=0;i<aligned_size;i++) {
-	full_x[i] = full_x[i];
-    }
-
-    input_struct->m_A->mult_vector(full_x,accel);
-
-#if 0
-    full_solver_mat.result_vector = accel;
-    full_solver_mat.desired_vector = full_x; //temporary misuse
-    full_solver_mat.mult_aligned();
-    full_solver_mat.result_vector = delta_accel;
-    full_solver_mat.desired_vector = delta_x;
-#endif
-
-    for(i=0;i<aligned_size;i++) {
-	accel[i]-=full_b[i];
-    }
-
-    HK_LCP_IF(debug_lcs) {
-	for(i=0;i<n_variables;i++) {
-	    hk_real diff=hk_Math::fabs( accel[i] - accel[i] );
-	    if( diff > 0.001f ) {
-		hk_Console::get_instance()->printf("accel_violated at %d %f should be %f\n",i,accel[i],accel[i]);
-	    }
-	    diff=hk_Math::fabs( full_x[i] - full_x[i] );
-	    if( diff > 0.001f ) {
-		hk_Console::get_instance()->printf("x_violated at %d\n",i);
-	    }
-	}
-    }
-#endif
 }

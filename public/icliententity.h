@@ -45,9 +45,6 @@ public:
 	virtual bool			GetSoundSpatialization( SpatializationInfo_t& info ) = 0;
 
 	virtual bool			IsBlurred( void ) = 0;
-#if 0	
-	virtual string_t		GetModelName( void ) const = 0;
-#endif
 
 };
 

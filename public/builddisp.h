@@ -726,18 +726,6 @@ public:
 		   NORTHWEST = 6,
 		   NORTHEAST = 7 };
 
-#if 0
-	//
-	// building parameters
-	//
-	enum { BUILD_NORMALS      = 0x1,
-		   BUILD_TEXCOORDS    = 0x2,
-		   BUILD_LIGHTCOORDS  = 0x4,
-		   BUILD_LODTREE      = 0x8,
-		   BUILD_COLLISION    = 0x10,
-		   BUILD_TANGENTSPACE = 0x20 };
-#endif
-
 	//
 	// surface info flags
 	//

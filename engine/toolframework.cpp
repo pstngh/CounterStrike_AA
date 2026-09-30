@@ -278,7 +278,6 @@ InitReturnVal_t CToolFrameworkInternal::Init()
 	m_ClientFactory = m_ServerFactory = NULL;
 
 // Disabled in REL for now
-#if 1
 #ifndef DEDICATED
 	EngineTool_InstallQuitHandler( this, CToolFrameworkInternal_QuitHandler );
 
@@ -309,7 +308,6 @@ InitReturnVal_t CToolFrameworkInternal::Init()
 		 	LoadToolsFromEngineToolsManifest();
 		}
 	}
-#endif
 #endif
 	return INIT_OK;
 }

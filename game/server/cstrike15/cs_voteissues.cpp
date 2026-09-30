@@ -1630,10 +1630,6 @@ bool CSurrender::CanTeamCallVote( int iTeam ) const
 		}
 	}
 
-#if 0
-	return true; // Allow in debug mode
-#endif
-
 	return false;
 }
 

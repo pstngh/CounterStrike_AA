@@ -976,45 +976,6 @@ CON_COMMAND_F( bot_goto_selected, "Sends a bot to the selected nav area (useful 
 }
 
 //--------------------------------------------------------------------------------------------------------------
-#if 0
-CON_COMMAND_F( bot_memory_usage, "Reports on the bots' memory usage", FCVAR_GAMEDLL )
-{
-	if ( !UTIL_IsCommandIssuedByServerAdmin() )
-		return;
-
-	Msg( "Memory usage:\n" );
-
-	Msg( "  %d bytes per bot\n", sizeof(CCSBot) );
-
-	Msg( "  %d Navigation Areas @ %d bytes each = %d bytes\n", 
-					TheNavMesh->GetNavAreaCount(),
-					sizeof( CNavArea ),
-					TheNavMesh->GetNavAreaCount() * sizeof( CNavArea ) );
-
-	Msg( "  %d Hiding Spots @ %d bytes each = %d bytes\n", 
-					TheHidingSpotList.Count(),
-					sizeof( HidingSpot ),
-					TheHidingSpotList.Count() * sizeof( HidingSpot ) );
-
-/*
-	unsigned int encounterMem = 0;
-	FOR_EACH_LL( TheNavAreaList, it )
-	{
-		CNavArea *area = TheNavAreaList[ it ];
-
-		FOR_EACH_LL( area->m_spotEncounterList, it )
-		{
-			SpotEncounter *se = area->m_spotEncounterList[ it ];
-
-			encounterMem += sizeof( SpotEncounter );
-			encounterMem += se->spotList.Count() * sizeof( SpotOrder );
-		}
-	}
-
-	Msg( "  Encounter Spot data = %d bytes\n", encounterMem );
-*/
-}
-#endif
 
 
 bool CCSBotManager::ServerCommand( const char *cmd )

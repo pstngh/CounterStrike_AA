@@ -1387,12 +1387,6 @@ void CModelCombine::WriteModel( int nModel )
 							V_sprintf_safe( m_pCombinedStudioData->m_Results.m_szErrorMessage, "model has anim wrinkle" );
 							throw( COMBINE_RESULT_FLAG_UNSUPPORTED_FEATURE );
 
-#if 0
-							for( int nVert = 0; nVert < pOrigFlex->numverts; nVert++ )
-							{
-								mstudiovertanim_wrinkle_t	*pNewVertAnimWrinkle = pNewFlex->pVertanimWrinkle( nVert );
-							}
-#endif
 						}
 						else
 						{
@@ -1441,14 +1435,6 @@ void CModelCombine::CombineMDL_Model( )
 		studiohdr_t *pStudioHdr = m_pStudioHdr[ nModel ];
 		if ( pStudioHdr->numflexdesc )
 		{
-#if 0
-			if ( pFlexStudioHdr )
-			{
-				Assert( 0 );
-				V_sprintf_safe( m_pCombinedStudioData->m_Results.m_szErrorMessage, "model %s and %s both have flex specifications", pFlexStudioHdr->pszName(), pStudioHdr->pszName() );
-				throw( COMBINE_RESULT_FLAG_UNSUPPORTED_FEATURE );
-			}
-#endif
 			pFlexStudioHdr = pStudioHdr;
 			m_nFlexModelSource = nModel;
 			break;
@@ -2749,38 +2735,6 @@ void CModelCombine::CombineVVD( )
 	CombineVVD_OffsetVerts();
 }
 
-#if 0
-void CModelCombine::Test( )
-{
-	studiohdr_t			*pStudioHdr = m_pStudioHdr[ 0 ];
-	vertexFileHeader_t	*pVertexHeader = ( vertexFileHeader_t * )VVD_Data[ 0 ]->PeekGet();
-	const mstudiovertex_t		*pVertex = pVertexHeader->GetVertexData();
-
-	int nTotalModels = 0;
-	for ( int nBodyPart = 0; nBodyPart < pStudioHdr->numbodyparts; nBodyPart++ )
-	{
-		mstudiobodyparts_t	*pOrigBodyPart = pStudioHdr->pBodypart( nBodyPart );
-
-		for( int nModel = 0; nModel < pOrigBodyPart->nummodels; nModel++ )
-		{
-			mstudiomodel_t	*pOrigModel = pOrigBodyPart->pModel( nModel );
-
-			for( int nMesh = 0; nMesh < pOrigModel->nummeshes; nMesh++ )
-			{
-				mstudiomesh_t	*pOrigMesh = pOrigModel->pMesh( nMesh );
-
-				for( int nVert = 0; nVert < pOrigMesh->numvertices; nVert++ )
-				{
-					const mstudiovertex_t	*pOrigVert = &pVertex[ nVert + pOrigMesh->vertexoffset ];
-
-					Msg("");
-				}
-			}
-		}
-	}
-}
-#endif
-
 
 void CModelCombine::CombineTextures( )
 {
@@ -2788,21 +2742,6 @@ void CModelCombine::CombineTextures( )
 
 	for( int nModel = 0; nModel < m_pCombinedStudioData->m_nNumModels; nModel++ )
 	{
-#if 0
-		for( int nSkin = 0; nSkin < m_pStudioHdr[ nModel ]->numskinfamilies; nSkin++ )
-		{
-			short *pSkinRef = m_pStudioHdr[ nModel ]->pSkinref( 0 );
-			pSkinRef += ( nSkin * m_pStudioHdr[ nModel ]->numskinref );
-
-			for( int nReference = 0; nReference < m_pStudioHdr[ nModel ]->numskinref; nReference++, pSkinRef++ )
-			{
-				int			nTextureIndex = *pSkinRef;
-				const char *pszTextureName = m_pStudioHdr[ nModel ]->pTexture( nTextureIndex )->pszName();
-
-				Msg( "SKin %d, Reference %d: %s\n", nSkin, nReference, pszTextureName );
-			}
-		}
-#endif
 
 		int nSkin = m_pCombinedStudioData->m_ModelInputData[ nModel ].m_nSkinFamily;
 

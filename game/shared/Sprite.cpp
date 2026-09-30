@@ -695,10 +695,6 @@ void CSprite::GetRenderBounds( Vector &vecMins, Vector &vecMaxs )
 	vecMins.Init( -flScale, -flScale, -flScale );
 	vecMaxs.Init(  flScale,  flScale,  flScale );
 
-#if 0
-	// Visualize the bounds
-	debugoverlay->AddBoxOverlay( GetRenderOrigin(), vecMins, vecMaxs, GetRenderAngles(), 255, 255, 255, 0, 0.01f );
-#endif
 }
 
 //-----------------------------------------------------------------------------

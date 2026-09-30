@@ -2304,9 +2304,7 @@ void CSnowFallManager::FindSnowVolumes( Vector const &vecCenter, float flRadius,
 //-----------------------------------------------------------------------------
 void CSnowFallManager::CreateSnowFall( void )
 {
-#if 1
 	VPROF_BUDGET( "SnowFall", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
-#endif
 
 	ASSERT_LOCAL_PLAYER_RESOLVABLE();
 	// Check to see if we have a local player before starting the snow around a local player.

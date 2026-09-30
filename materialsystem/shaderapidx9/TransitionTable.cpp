@@ -1097,14 +1097,6 @@ void CTransitionTable::UseDefaultState( )
 	{
 		SetSamplerState( i, D3DSAMP_SRGBTEXTURE, SamplerState(i).m_SRGBReadEnable );
 
-#if 0
-		// Set default Fetch4 state on parts which support it
-		if ( HardwareConfig()->SupportsFetch4() )
-		{
-			SetSamplerState( i, ATISAMP_FETCH4, SamplerState(i).m_Fetch4Enable ? ATI_FETCH4_ENABLE : ATI_FETCH4_DISABLE );
-		}
-#endif
-		
 #ifdef DX_TO_GL_ABSTRACTION
 		SetSamplerState( i, D3DSAMP_SHADOWFILTER, SamplerState(i).m_ShadowFilterEnable );
 #endif

@@ -522,11 +522,6 @@ void CDemoActionCDTrackStart::FireAction( void )
 {
 	if ( GetTrack() != -1 )
 	{
-#if 0
-		char szCommand[ 256 ];
-		Q_snprintf( szCommand, sizeof( szCommand ), "cd stop\ncd play %i\n", GetTrack() );
-		Cbuf_AddText( szCommand );
-#endif
 	}
 	SetFinishedAction( true );
 }
@@ -553,9 +548,6 @@ DECLARE_DEMOACTION( DEMO_ACTION_PLAYCDTRACK_START, CDemoActionCDTrackStart );
 //-----------------------------------------------------------------------------
 void CDemoActionCDTrackStop::FireAction( void )
 {
-#if 0
-	Cbuf_AddText( "cd stop\n" );
-#endif
 	SetFinishedAction( true );
 }
 

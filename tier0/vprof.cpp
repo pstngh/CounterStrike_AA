@@ -222,30 +222,6 @@ bool CVProfNode::ExitScope()
 				// Spew time info for file to allow figuring it out later
 				g_VProfCurrentProfile.LatchMultiFrame( m_CurFrameTime.GetLongCycles() );
 				
-#if 0 // This doesn't want to work on the xbox360-- MoveFile not available or file still being put down to disk?
-				char suffix[ 32 ];
-				_snprintf( suffix, sizeof( suffix ), "_%.3f_msecs", flMsecs );
-
-				char fn[ 512 ];
-
-				strncpy( fn, g_VProfCurrentProfile.GetCPUTraceFilename(), sizeof( fn ) );
-
-				char *p = strrchr( fn, '.' );
-				if ( *p )
-				{	
-					*p = 0;
-				}
-				strncat( fn, suffix, sizeof( fn ) );
-				strncat( fn, ".pix2", sizeof( fn ) );
-			
-				BOOL bSuccess = MoveFile( g_VProfCurrentProfile.GetCPUTraceFilename(), fn );
-				if ( !bSuccess )
-				{
-					DWORD eCode = GetLastError();
-					Msg( "Error %d\n", eCode );
-				}
-#endif
-
 				// we're still recording until the frame is done.
 				// but, increment the index.
 				g_VProfCurrentProfile.IncrementMultiTraceIndex();
@@ -1932,18 +1908,6 @@ static bool TelemetryInitialize()
 	return true;
 }
 
-#if 0
-
-//an instance of TM_API_STRUCT that points to stubbed out functions
-class CTM_API_STRUCT_Stub : public TM_API_STRUCT
-{
-public:
-	inline CTM_API_STRUCT_Stub( void ) {}; //this empty default constructor works around warning C4701 "potentially uninitialized local variable * used" in code below. We initialize it and use it in 2 different scopes that use the same boolean
-	const CTM_API_STRUCT_Stub &operator=( const TM_API_STRUCT &Existing );
-	void LinkToStubs( void ); //replaces all known function pointers with stubbed versions
-};
-#endif
-
 static void TelemetryShutdown( bool InDtor = false )
 {
 	if( g_tmContext )
@@ -1958,40 +1922,12 @@ static void TelemetryShutdown( bool InDtor = false )
 		if( status == TMCS_CONNECTED || status == TMCS_CONNECTING )
 			TM_CLOSE( g_tmContext );
 
-#if 0
-		CTM_API_STRUCT_Stub stubbedApiStruct;
-
-		//Tm__Zone usage saves off a copy of g_tmContext and will attempt to use that pointer when leaving scope.
-		//This include threads that we're not especially great at shutting down yet.
-		//If we happen to own the memory that the context points at, we'll just stub out the pointers instead of completely deleting the memory
-		const bool bUseLazyShutdownStubs = IsPlatformWindowsPC() && 			
-			( ( g_tmContext >= ( HTELEMETRY ) g_pTmMemoryArena ) && ( g_tmContext < ( HTELEMETRY )( g_pTmMemoryArena + TELEMETRY_ARENA_SIZE ) ) ); //we completely own the memory that the context points at
-
-		if ( bUseLazyShutdownStubs )
-		{
-			if( !InDtor )
-			{
-				Msg( "Using lazy telemetry shutdown stub functions\n\tArena: %p, Context: %p\n", g_pTmMemoryArena, g_tmContext ); //previous testing has shown that the context is at the start of the arena
-			}
-			stubbedApiStruct = *(TM_API_STRUCT *)g_tmContext; // a bit of future proofing to ensure that we'll use whatever was in the old struct if we fail to initialize a particular stub
-			stubbedApiStruct.LinkToStubs();
-		}
-#endif
-
 		//discontinue new usage of the context before shutting it down (multithreading)
 		memset( g_Telemetry.tmContext, 0, sizeof( g_Telemetry.tmContext ) );
 		HTELEMETRY hShutdown = g_tmContext;
 		g_tmContext = NULL;
 
 		TM_SHUTDOWN_CONTEXT( hShutdown ); 
-#if 0
-		if ( bUseLazyShutdownStubs )
-		{
-			//there's a window where this context will be in an unknown state
-			memcpy( hShutdown, &stubbedApiStruct, sizeof( TM_API_STRUCT ) );
-		}
-		else
-#endif
             if ( !IsPlatformWindowsPC() ) //actual test should be "do we probably have outstanding threads"
 		{
 			delete [] g_pTmMemoryArena;
@@ -2200,220 +2136,5 @@ PLATFORM_INTERFACE void TelemetryTick()
 		//	TM_ENABLE( g_tmContext, TMO_SUPPORT_PLOT, 0 );
 	}
 }
-
-#if 0
-
-const CTM_API_STRUCT_Stub &CTM_API_STRUCT_Stub::operator=( const TM_API_STRUCT &Existing )
-{
-	memcpy( this, &Existing, sizeof( TM_API_STRUCT ) );
-	return *this;
-}
-
-#undef TM_API
-
-typedef char const * tmStubCSTR;
-#define tmStubRETURN_TmErrorCode			return TM_OK;
-#define tmStubRETURN_TmU32					return 0;
-#define tmStubRETURN_void					return;
-#define tmStubRETURN_TmConnectionStatus		return TMCS_DISCONNECTED;
-#define tmStubRETURN_TmU64					return 0;
-#define tmStubRETURN_int					return 0;
-#define tmStubRETURN_char					return 0;
-#define tmStubRETURN_TmI32					return 0;
-#define tmStubRETURN_tmStubCSTR				return "";
-#define TM_API( ret, name, params ) inline ret RADEXPLINK name##Stub params { tmStubRETURN_##ret }
-
-#if defined TM_PPU
-#define TM_NUM_SPUS 6
-TM_API( TmErrorCode, tmPPUCoreGetListener, ( HTELEMETRY cx, int const kNdx, TmU32 *pListener ) );
-TM_API( TmErrorCode, tmPPUCoreRegisterSPUProgram, ( HTELEMETRY cx, TmU64 const kGuid, void const *imagebase, unsigned int const kImageSize, int const kRdOnlyOffset ) );
-#endif
-
-#if defined TM_IPC_HOST && defined __RADWIN__
-TM_API( TmErrorCode, tmWin32CoreListenSHAREDMEM, ( HTELEMETRY cx, char const *name ) );
-#endif
-
-#if defined TM_SPU
-TM_API( TmErrorCode, tmSPUCoreBindContextToListener, ( HTELEMETRY *pcx, void * mem, TmU32 kPPUListener, char const *imagename, ...) );
-TM_API( TmErrorCode, tmSPUCoreUpdateTime, ( HTELEMETRY cx ) );
-TM_API( TmErrorCode, tmSPUCoreFlushImage, ( HTELEMETRY cx ) );
-#endif
-
-TM_API( TmU32, tmCoreGetVersion, ( void ) );
-TM_API( TmErrorCode, tmCoreCheckVersion, ( HTELEMETRY cx, TmU32 const major, TmU32 const minor, TmU32 const build, TmU32 const cust ) );
-TM_API( TmErrorCode, tmCoreGetPlatformInformation, ( void* obj, TmPlatformInformation const kInfo, void* dst, TmU32 const kDstSize ) );
-TM_API( TmErrorCode, tmCoreGetLastError, ( HTELEMETRY cx ) );
-#ifndef TM_SPU
-TM_API( TmErrorCode, tmCoreStartup, ( void ) );
-TM_API( TmErrorCode, tmCoreInitializeContext, ( EXPOUT HTELEMETRY * pcx, void * pArena, TmU32 const kArenaSize ) );
-TM_API( void, tmCoreShutdownContext, ( HTELEMETRY cx ) );
-TM_API( void, tmCoreShutdown, ( void ) ); 
-#endif
-TM_API( TmErrorCode, tmCoreGetSessionName, ( HTELEMETRY cx, char *dst, int const kDstSize ) );
-
-TM_API( TmConnectionStatus, tmCoreGetConnectionStatus, ( HTELEMETRY cx ) );
-#ifndef TM_SPU
-TM_API( TmErrorCode, tmCoreOpen, ( HTELEMETRY cx, char const * kpAppName,  
-	char const * kpBuildInfo,
-	char const * kpServerAddress, 
-	TmConnectionType const kConnection,
-	TmU16 const kServerPort,
-	TmU32 const kFlags,
-	int const kTimeoutMS ) );
-#endif
-
-TM_API( void, tmCoreClose, ( HTELEMETRY cx ) );
-
-TM_API( void , tmCoreSetDebugZoneLevel, ( HTELEMETRY cx, int const v ) );
-TM_API( void , tmCoreCheckDebugZoneLevel, ( HTELEMETRY cx, int const v ) );
-TM_API( void , tmCoreUnwindToDebugZoneLevel, ( HTELEMETRY cx, int const v ) );
-
-TM_API( tmStubCSTR, tmCoreDynamicString, ( HTELEMETRY cx, char const * s ) );
-TM_API( void, tmCoreClearStaticString, ( HTELEMETRY cx, char const * s ) );
-
-TM_API( void, tmCoreSetVariable, ( HTELEMETRY cx, char const *kpKey, TmU32* pFormatCode, char const *kpValueFmt, ... ) );
-TM_API( void, tmCoreSetTimelineSectionName, ( HTELEMETRY cx, TmU32 *pFormatCode, char const * kpFmt, ... ) );
-TM_API( void, tmCoreThreadName, ( HTELEMETRY cx, TmU32 const kThreadID, TmU32 *pFormatCode, char const * kpFmt, ... ) ); 
-TM_API( void, tmCoreGetFormatCode, ( TmU32* pCode, char const * kpFmt ) );
-
-TM_API( void, tmCoreEnable, ( HTELEMETRY cx, TmOption const kOption, int const kValue ) );
-TM_API( int , tmCoreIsEnabled, ( HTELEMETRY cx, TmOption const kOption ) );
-
-TM_API( void, tmCoreSetParameter, ( HTELEMETRY cx, TmParameter const kParam, void const *kpValue ) );
-
-TM_API( void, tmCoreTick, ( HTELEMETRY cx ) );
-TM_API( void, tmCoreFlush, ( HTELEMETRY cx ) );
-TM_API( void, tmCorePause, ( HTELEMETRY cx, int const kPause ) );
-TM_API( int, tmCoreIsPaused, ( HTELEMETRY cx ) );
-TM_API( void, tmCoreEnter, (HTELEMETRY cx, TmU64 *matchid, TmU32 const kThreadId, TmU64 const kThreshold, TmU32 const kFlags, char const *kpLocation, TmU32 const kLine, TmU32* pFmtCode, char const *kpFmt, ... ) );
-TM_API( void, tmCoreLeave, ( HTELEMETRY cx, TmU64 const kMatchID, TmU32 const kThreadId, char const *kpLocation, int const kLine ) ); 
-
-TM_API( void,  tmCoreEmitAccumulationZone, ( HTELEMETRY cx, TmU64 * pAccum, TmU64 const kZoneTotal, TmU32 const kCount, TmU32 const kZoneFlags, char const *kpLocation, TmU32 const kLine, TmU32 *pFmtCode, char const * kpFmt, ... ) );
-
-TM_API( TmU64, tmCoreGetLastContextSwitchTime, (HTELEMETRY cx) );
-
-TM_API( void, tmCoreLockName, ( HTELEMETRY cx, void const *kpPtr, TmU32* pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCoreSetLockState, ( HTELEMETRY cx, void const *kpPtr, TmLockState const kState, char const * kLocation, TmU32 const kLine, TmU32 *pFormatCode, char const *kpFmt, ... ) );
-TM_API( int, tmCoreSetLockStateMinTime, ( HTELEMETRY cx, void* buf, void const *kpPtr, TmLockState const kState, char const * kLocation, TmU32 const kLine, TmU32 *pFormatCode, char const *kpFmt, ... ) );
-
-TM_API( void, tmCoreBeginTimeSpan, ( HTELEMETRY cx, TmU64 const kId, TmU32 const kFlags, TmU64 const kTime, char const *kpLocation, TmU32 const kLine, TmU32 *pFmtCode, char const *kpFmt, ... ) );
-TM_API( void, tmCoreEndTimeSpan, ( HTELEMETRY cx, TmU64 const kId, TmU32 const kFlags, TmU64 const kTime, char const *kpLocation, TmU32 const kLine, TmU32 *pFmtCode, char const *kpFmt, ... ) );
-
-TM_API( void, tmCoreSignalLockCount, ( HTELEMETRY cx, char const *kpLocation, TmU32 const kLine, void const * kPtr, TmU32 const kCount, TmU32* pFmtCode, char const *kpName, ... ) );
-TM_API( void, tmCoreTryLock,   ( HTELEMETRY cx, TmU64 *matchid, TmU64 const kThreshold, char const *kpLocation, TmU32 const kLine, void const * kPtr, TmU32* pFmtCode, char const *kpFmt, ... ) );
-TM_API( void, tmCoreEndTryLock, ( HTELEMETRY cx, TmU64 const kMatchId, char const *kpLocation, int const kLine, TmU32* pFmt, void const * kPtr, TmLockResult const kResult ) );
-
-TM_API( TmI32, tmCoreGetStati, ( HTELEMETRY cx, TmStat const kStat ) );
-
-TM_API( void, tmCoreMessage, ( HTELEMETRY cx, TmU32 const kFlags, TmU32* pFmtCode, char const * kpFmt, ... ) );
-
-TM_API( void, tmCoreAlloc, ( HTELEMETRY cx, void const * kPtr, TmU64 const kSize, char const *kpLocation, TmU32 const kLine, TmU32 *pFmtCode, char const *kpFmt, ... ) );
-TM_API( void, tmCoreFree, ( HTELEMETRY cx, void const * kpPtr, char const *kpLocation, int const kLine, TmU32 *pFmtCode ) );
-
-TM_API( void, tmCorePlot, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, float const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCorePlotI32, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, TmI32 const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCorePlotU32, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, TmU32 const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCorePlotI64, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, TmI64 const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCorePlotU64, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, TmU64 const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCorePlotF64, ( HTELEMETRY cx, TmPlotType const kType, TmU32 const kFlags, double const kValue,  TmU32 *pFmtCode, char const * kpFmt, ... ) );
-
-TM_API( void, tmCoreBlob, ( HTELEMETRY cx,   void const * kpData, int const kDataSize, char const *kpPluginIdentifier, TmU32* pFmtCode, char const * kpFmt, ... ) );
-TM_API( void, tmCoreDisjointBlob, ( HTELEMETRY cx, int const kNumPieces, void const ** kpData, int const *kDataSize, char const *kpPluginIdentifier, TmU32* pFmtCode, char const * kpFmt, ... ) );
-
-TM_API( void, tmCoreUpdateSymbolData, ( HTELEMETRY cx ) );
-
-TM_API( int, tmCoreSendCallStack, ( HTELEMETRY cx, TmCallStack const * kpCallStack, int const kSkip ) );
-TM_API( int, tmCoreGetCallStack, ( HTELEMETRY cx, TmCallStack * pCallStack ) );
-
-#undef TM_API
-
-void CTM_API_STRUCT_Stub::LinkToStubs( void )
-{
-#if defined( TM_API_S )
-#undef TM_API_S
-#endif
-
-	//#define TM_API_S(name) name = GenerateStubFunction( TM_FUNCTION_TYPE(name)(NULL) );
-#define TM_API_S(name) name = name##Stub;
-
-#if ( TelemetryBuildNumber != 31 )
-#error This section needs to get updated with the latest TM_API_STRUCT definitions whenever we update to a new telemetry sdk.
-#endif
-
-	//======================================================================================================================
-	// Copy/paste the TM_API_S(*) contents of TM_API_STRUCT (from Rad's telemetry.h) here to stub out each of the functions
-	//======================================================================================================================
-	TM_API_S( tmCoreCheckVersion );
-	TM_API_S( tmCoreUpdateSymbolData );
-	TM_API_S( tmCoreGetLastContextSwitchTime );    
-#ifndef __RADSPU__
-	TM_API_S( tmCoreTick );
-#endif
-	TM_API_S( tmCoreFlush );
-	TM_API_S( tmCoreDynamicString );
-	TM_API_S( tmCoreClearStaticString );
-	TM_API_S( tmCoreSetVariable );
-	TM_API_S( tmCoreGetFormatCode );
-	TM_API_S( tmCoreGetSessionName );
-	TM_API_S( tmCoreGetLastError );
-	TM_API_S( tmCoreShutdownContext );
-	TM_API_S( tmCoreGetConnectionStatus );
-	TM_API_S( tmCoreSetTimelineSectionName );
-	TM_API_S( tmCoreEnable );
-	TM_API_S( tmCoreIsEnabled );
-#ifndef __RADSPU__
-	TM_API_S( tmCoreOpen );
-#endif
-	TM_API_S( tmCoreClose );
-	TM_API_S( tmCorePause );
-	TM_API_S( tmCoreIsPaused );
-	TM_API_S( tmCoreEnter );
-	TM_API_S( tmCoreLeave );
-
-	TM_API_S( tmCoreThreadName );
-	TM_API_S( tmCoreLockName );
-	TM_API_S( tmCoreTryLock );
-	TM_API_S( tmCoreEndTryLock );
-	TM_API_S( tmCoreSignalLockCount );
-	TM_API_S( tmCoreSetLockState );
-
-	TM_API_S( tmCoreAlloc );
-	TM_API_S( tmCoreFree );
-	TM_API_S( tmCoreGetStati );
-
-	TM_API_S( tmCoreBeginTimeSpan );
-	TM_API_S( tmCoreEndTimeSpan );
-
-	TM_API_S( tmCorePlot );
-	TM_API_S( tmCorePlotI32 );
-	TM_API_S( tmCorePlotU32 );
-	TM_API_S( tmCorePlotI64 );
-	TM_API_S( tmCorePlotU64 );
-	TM_API_S( tmCorePlotF64 );
-
-	TM_API_S( tmCoreBlob );
-	TM_API_S( tmCoreDisjointBlob );
-	TM_API_S( tmCoreMessage );
-
-	TM_API_S( tmCoreSendCallStack );
-	TM_API_S( tmCoreGetCallStack );
-
-	TM_API_S( tmCoreSetDebugZoneLevel );
-	TM_API_S( tmCoreCheckDebugZoneLevel );
-	TM_API_S( tmCoreUnwindToDebugZoneLevel );
-
-	TM_API_S( tmCoreEmitAccumulationZone );
-
-	TM_API_S( tmCoreSetLockStateMinTime );
-	TM_API_S( tmCoreSetParameter );
-
-#if defined __RADPS3__ && !defined TM_API_STATIC
-	TM_API_S( tmPPUCoreGetListener );
-	TM_API_S( tmPPUCoreRegisterSPUProgram );
-#endif
-
-#undef TM_API_S
-}
-#endif
 
 #endif // RAD_TELEMETRY_ENABLED

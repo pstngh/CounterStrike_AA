@@ -1397,37 +1397,6 @@ void R_PlayerDecalShoot( IMaterial *material, void *userdata, int entity, const 
 	// it cannot be zero
 	Assert( userdata != 0 );
 
-#if 0 // <vitaliy>: decals are implemented differently in CS:GO and time out by game rules
-	//
-	// Linear search through decal pool to retire any other decals this
-	// player has sprayed.  It appears that multiple decals can be
-	// allocated for a single spray due to the way they are mapped to
-	// surfaces.  We need to run through and clean them all up.  This
-	// seems like the cleanest way to manage this - especially since
-	// it doesn't happen that often.
-	//
-	int i;
-	CUtlVector<decal_t *> decalVec;
-
-	for ( i = 0; i<s_aDecalPool.Count(); i++ )
-	{
-		decal_t * decal = s_aDecalPool[i];
-
-		if( decal &&
-			decal->flags & FDECAL_PLAYERSPRAY &&
-			decal->userdata == userdata )
-		{
-			decalVec.AddToTail( decal );
-		}
-	}
-
-	// remove all the sprays we found
-	for ( i = 0; i < decalVec.Count(); i++ )
-	{
-		R_DecalUnlink( decalVec[i], host_state.worldbrush );
-	}
-#endif
-
 	// set this to be a player spray so it is timed out appropriately.
 	flags |= FDECAL_PLAYERSPRAY;
 	flags |= R_ConvertToPrivateDecalFlags( nAdditionalDecalFlags );

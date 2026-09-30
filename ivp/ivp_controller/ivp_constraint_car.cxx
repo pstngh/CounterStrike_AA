@@ -238,15 +238,6 @@ void IVP_Constraint_Solver_Car::do_simulation_controller_rotation( IVP_Event_Sim
 	  
 			tcb.exert_angular_impulse_dim2(core_B, core_A, rot_impulse_ds);
 
-#if 0
-			// 4-wheel - debugging!
-			if ( app_cnt >= 0 && app_cnt < 4 )
-			{
-				m_wheelRotationTorque[app_cnt][0] = rot_impulse_ds.k[0];
-				m_wheelRotationTorque[app_cnt][1] = rot_impulse_ds.k[1];
-				m_wheelRotationTorque[app_cnt][2] = rot_impulse_ds.k[2];
-			}
-#endif
 		}	
 	}
 }
@@ -363,7 +354,6 @@ void IVP_Constraint_Solver_Car::do_simulation_controller( IVP_Event_Sim *es,
 	}
 
 
-#if 1
         // appendices are too far away -> start plan B (solve problem with local constraints)
         init_local_translation = 0;
 	int app_nr;
@@ -391,36 +381,11 @@ void IVP_Constraint_Solver_Car::do_simulation_controller( IVP_Event_Sim *es,
 	    this->c_local_ballsocket[app_nr] = env->create_constraint(&templ);
 	}
 	this->local_translation_in_use = IVP_TRUE;
-#endif
     }
 
 
-#if 0
-    {
-	int k;
-	printf("Inputvector:\n");
-	for(k=0; k<co_matrix.columns; k++){
-	    if(k%4 == 0)printf("(%d)", k);
-	    printf("%2.2f  ", co_matrix.desired_vector[k]);
-	}
-	printf("\n");
-    }
-#endif
-    
     // calc pushes that have to be performed
     co_matrix.mult();
-
-#if 0
-    {
-	int k;
-	printf("Outputvector:\n");
-	for(k=0; k<co_matrix.columns; k++){
-	    if(k%4 == 0)printf("(%d)", k);
-	    printf("%2.2f  ", co_matrix.result_vector[k]);
-	}
-	printf("\n\n");
-    }
-#endif    
 
     if(this->local_translation_in_use == IVP_FALSE){
 	/*** now push objects ***/
