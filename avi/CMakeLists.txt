@@ -18,8 +18,6 @@ endif()
 #source files
 if( OSXALL )
     target_sources(${OUTBINNAME} PRIVATE "avi_osx.cpp")
-else()
-    target_sources(${OUTBINNAME} PRIVATE "bink.cpp")
 endif()
 
 target_link_libraries(${OUTBINNAME} tier2_client tier3_client libvstdlib_client)
