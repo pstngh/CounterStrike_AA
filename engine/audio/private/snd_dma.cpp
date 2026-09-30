@@ -2866,9 +2866,6 @@ bool SND_IsLongWave( const channel_t *pChannel )
 	// force it to look like everything is streaming, like on the consoles
 	// this gets used in 2 places, if the volume is 0.0 for some reason
 	// and to test if getgainobscured should function
-#ifdef PORTAL2 
-	return true;
-#endif
 
 	CAudioSource *pSource = pChannel->sfx ? pChannel->sfx->pSource : NULL;
 	if ( pSource )
@@ -3879,11 +3876,7 @@ void DAS_SetRoomBounds( das_room_t *proom, Vector &hit, bool bheight )
 // returns false if room parameters are not in good location to place a node
 // note: false occurs if up vector doesn't hit sky, but one or more up diagonal vectors do hit sky
 
-#ifdef PORTAL2
-ConVar  das_process_overhang_spaces( "das_process_overhang_spaces", "1" );
-#else
 ConVar  das_process_overhang_spaces( "das_process_overhang_spaces", "0" );
-#endif
 
 bool DAS_CalcRoomProps( das_room_t *proom )
 {
@@ -4212,11 +4205,7 @@ void DAS_SetTraceHeight( das_room_t *proom, trace_t *ptrU, trace_t *ptrD )
 
 
 // we still want to test for new dsp even if jumping in portal2
-#ifdef PORTAL2
-ConVar das_max_z_trace_length( "das_max_z_trace_length", "100000", FCVAR_NONE, "Maximum height of player and still test for adsp" );
-#else
 ConVar das_max_z_trace_length( "das_max_z_trace_length", "72", FCVAR_NONE, "Maximum height of player and still test for adsp"  );
-#endif
 
 // prepare room struct for new round of checks:
 // clear out struct,
@@ -7252,16 +7241,6 @@ int S_StartSound( StartSoundParams_t& params )
 		float rate = params.pSfx->pSource->SampleRate();
 		int nSamplePosition = (int)( -params.delay * rate * params.pitch * 0.01f );
 
-#ifdef PORTAL2
-		// We only use this for Portal 2, as we may want to keep the other behavior when there are machine guns involved.
-		const int DONT_SKIP_N_SAMPLES = (int)( rate / 20.0f );		// Let's not skip if less than 1/20th of a second
-		if ( nSamplePosition <= DONT_SKIP_N_SAMPLES)
-		{
-			// Nothing to skip
-			params.delay = 0;
-		}
-		else
-#endif
 		{
 			int nResult = params.pSfx->pSource->SampleToStreamPosition( nSamplePosition );
 

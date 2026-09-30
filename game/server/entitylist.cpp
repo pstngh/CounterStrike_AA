@@ -19,15 +19,6 @@
 #include "datacache/imdlcache.h"
 #include "tier1/utlhash.h"
 
-#ifdef PORTAL2
-#include "team.h"
-#include "portal_mp_gamerules.h"
-#endif // PORTAL2
-
-#ifdef HL2_DLL
-#include "npc_playercompanion.h"
-#endif // HL2_DLL
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -689,38 +680,6 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 		{
 			return pSearchingEntity;
 		}
-#ifdef PORTAL2
-		else if ( FStrEq( pName, "player_orange" ) )
-		{
-			CTeam *pTeam = GetGlobalTeam( TEAM_RED );
-			Assert( pTeam );
-			if ( pTeam == NULL )
-				return NULL;
-
-			for ( int i = 0; i < pTeam->GetNumPlayers(); i++ )
-			{
-				if ( pTeam->GetPlayer( i ) != NULL )
-				{
-					return (CBaseEntity *) pTeam->GetPlayer( i );
-				}
-			}
-		}
-		else if ( FStrEq( pName, "player_blue" ) )
-		{
-			CTeam *pTeam = GetGlobalTeam( TEAM_BLUE );
-			Assert( pTeam );
-			if ( pTeam == NULL )
-				return NULL;
-
-			for ( int i = 0; i < pTeam->GetNumPlayers(); i++ )
-			{
-				if ( pTeam->GetPlayer( i ) != NULL )
-				{
-					return (CBaseEntity *) pTeam->GetPlayer( i );
-				}
-			}
-		}
-#endif // PORTAL2
 		else 
 		{
 			Warning( "Invalid entity search name %s\n", szName );
@@ -1764,9 +1723,6 @@ public:
 		g_TouchManager.LevelInitPreEntity();
 		g_AimManager.LevelInitPreEntity();
 		g_SimThinkManager.LevelInitPreEntity();
-#ifdef HL2_DLL
-		OverrideMoveCache_LevelInitPreEntity();
-#endif	// HL2_DLL
 	}
 	void LevelShutdownPreEntity()
 	{
@@ -1778,9 +1734,6 @@ public:
 		g_AimManager.LevelShutdownPostEntity();
 		g_PostClientManager.LevelShutdownPostEntity();
 		g_SimThinkManager.LevelShutdownPostEntity();
-#ifdef HL2_DLL
-		OverrideMoveCache_LevelShutdownPostEntity();
-#endif // HL2_DLL
 		CBaseEntityClassList *pClassList = s_pClassLists;
 		while ( pClassList )
 		{

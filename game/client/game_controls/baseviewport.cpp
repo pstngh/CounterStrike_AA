@@ -50,11 +50,6 @@
 #include "iclientmode.h"
 #include "vgui_int.h"
 
-#ifdef PORTAL2
-#include "radialmenu.h"
-#include "vgui/portal_stats_panel.h"
-#endif // PORTAL2
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -230,9 +225,6 @@ void CBaseViewport::OnScreenSizeChanged(int iOldWide, int iOldTall)
 
 void CBaseViewport::CreateDefaultPanels( void )
 {
-#ifdef PORTAL2
-	AddNewPanel( CreatePanelByName( PANEL_RADIAL_MENU ), "PANEL_RADIAL_MENU" );
-#endif // PORTAL2
 
 	AddNewPanel( CreatePanelByName( PANEL_SCOREBOARD ), "PANEL_SCOREBOARD" );
 	AddNewPanel( CreatePanelByName( PANEL_INFO ), "PANEL_INFO" );
@@ -281,12 +273,6 @@ IViewPortPanel* CBaseViewport::CreatePanelByName(const char *szPanelName)
 	{
 		newpanel = new CNavProgress( this );
 	}
-#ifdef PORTAL2
-	else if ( Q_strcmp( PANEL_RADIAL_MENU, szPanelName ) == 0 )
-	{
-		newpanel = new CRadialMenuPanel( this );
-	}
-#endif // PORTAL2
 
 	if ( Q_strcmp(PANEL_COMMENTARY_MODELVIEWER, szPanelName) == 0 )
 	{
@@ -441,9 +427,6 @@ void CBaseViewport::ShowPanel( IViewPortPanel* pPanel, bool state )
 		{
 			// don't show input panels during normal demo playback
 			if ( engine->IsPlayingDemo() && !g_bEngineIsHLTV
-#if defined( REPLAY_ENABLED )
-				&& !engine->IsReplay()
-#endif
 				)
 				return;
 
@@ -816,9 +799,6 @@ void CBaseViewport::FireGameEvent( IGameEvent * event)
 		ShowPanel( PANEL_ALL, false );
 
 		if ( g_bEngineIsHLTV
-#if defined( REPLAY_ENABLED )
-			|| engine->IsReplay()
-#endif
 			)
 		{
 			ShowPanel( PANEL_SPECGUI, true );

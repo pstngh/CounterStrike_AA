@@ -20,10 +20,6 @@
 #include "tier1/callqueue.h"
 #include "engine/ivdebugoverlay.h"
 
-#ifdef PORTAL
-	#include "portal_util_shared.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -610,9 +606,6 @@ void CBaseEntity::PhysicsCheckForEntityUntouch( void )
 	touchlink_t *root = ( touchlink_t * )GetDataObject( TOUCHLINK );
 	if ( root )
 	{
-#ifdef PORTAL
-		CPortalTouchScope scope;
-#endif
 		bool saveCleanup = g_bCleanupDatObject;
 		g_bCleanupDatObject = false;
 
@@ -723,9 +716,6 @@ void CBaseEntity::PhysicsRemoveToucher( CBaseEntity *otherEntity, touchlink_t *l
 //-----------------------------------------------------------------------------
 void CBaseEntity::PhysicsRemoveTouchedList( CBaseEntity *ent )
 {
-#ifdef PORTAL
-	CPortalTouchScope scope;
-#endif
 
 	touchlink_t *link, *nextLink;
 
@@ -985,10 +975,6 @@ touchlink_t *CBaseEntity::PhysicsMarkEntityAsTouched( CBaseEntity *other )
 		return NULL;
 	}
 
-#ifdef PORTAL
-	CPortalTouchScope scope;
-#endif
-
 	// check if the edict is already in the list
 	touchlink_t *root = ( touchlink_t * )GetDataObject( TOUCHLINK );
 	if ( root )
@@ -1133,12 +1119,8 @@ unsigned int CBaseEntity::PhysicsSolidMaskForEntity( void ) const
 
 static inline int GetWaterContents( const Vector &point )
 {
-#ifdef HL2_DLL
-	return UTIL_PointContents(point, MASK_WATER);
-#else
 	// left 4 dead doesn't support moveable water brushes, only world water
 	return enginetrace->GetPointContents_WorldOnly(point, MASK_WATER);
-#endif
 }
 //-----------------------------------------------------------------------------
 // Computes the water level + type

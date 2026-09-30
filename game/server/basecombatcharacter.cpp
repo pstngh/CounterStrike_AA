@@ -39,24 +39,8 @@
 #include "saverestoretypes.h"
 #include "nav_mesh.h"
 
-#ifdef HL2_DLL
-#include "weapon_physcannon.h"
-#include "hl2_gamerules.h"
-#endif
-
-#ifdef PORTAL
-	#include "portal_util_shared.h"
-	#include "portal_base2d_shared.h"
-	#include "portal_shareddefs.h"
-	#include "npc_portal_turret_floor.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-#if defined( HL2_DLL )
-extern int	g_interactionBarnacleVictimReleased;
-#endif //HL2_DLL
 
 extern ConVar weapon_showproficiency;
 
@@ -256,24 +240,6 @@ int	CBaseCombatCharacter::GetInteractionID(void)
 // ============================================================================
 bool CBaseCombatCharacter::HasHumanGibs( void )
 {
-#if defined( HL2_DLL )
-	Class_T myClass = Classify();
-	if ( myClass == CLASS_CITIZEN_PASSIVE   ||
-		 myClass == CLASS_CITIZEN_REBEL		||
-		 myClass == CLASS_COMBINE			||
-		 myClass == CLASS_CONSCRIPT			||
-		 myClass == CLASS_METROPOLICE		||
-		 myClass == CLASS_PLAYER )	
-		 return true;
-
-#elif defined( CSPORT_DLL )
-	Class_T myClass = Classify();
-	if (	 myClass == CLASS_PLAYER )	
-	{
-		return true;
-	}
-
-#endif
 
 	return false;
 }
@@ -281,18 +247,6 @@ bool CBaseCombatCharacter::HasHumanGibs( void )
 
 bool CBaseCombatCharacter::HasAlienGibs( void )
 {
-#if defined( HL2_DLL )
-	Class_T myClass = Classify();
-	if ( myClass == CLASS_BARNACLE		 || 
-		 myClass == CLASS_STALKER		 ||
-		 myClass == CLASS_ZOMBIE		 ||
-		 myClass == CLASS_VORTIGAUNT	 ||
-		 myClass == CLASS_HEADCRAB )
-	{
-		 return true;
-	}
-
-#endif
 
 	return false;
 }
@@ -340,9 +294,6 @@ bool CBaseCombatCharacter::FVisible( CBaseEntity *pEntity, int traceMask, CBaseE
 	VPROF( "CBaseCombatCharacter::FVisible" );
 
 	if ( traceMask != MASK_BLOCKLOS || !ShouldUseVisibilityCache() || pEntity == this
-#if defined(HL2_DLL)
-		 || Classify() == CLASS_BULLSEYE || pEntity->Classify() == CLASS_BULLSEYE 
-#endif
 		 )
 	{
 		return BaseClass::FVisible( pEntity, traceMask, ppBlocker );
@@ -450,64 +401,6 @@ void CBaseCombatCharacter::ResetVisibilityCache( CBaseCombatCharacter *pBCC )
 	}
 }
 
-#ifdef PORTAL
-bool CBaseCombatCharacter::FVisibleThroughPortal( const CPortal_Base2D *pPortal, CBaseEntity *pEntity, int traceMask, CBaseEntity **ppBlocker )
-{
-	VPROF( "CBaseCombatCharacter::FVisible" );
-
-	if ( pPortal && IsPlayerNearTargetPortal( pPortal->m_hLinkedPortal.Get() ) == false )
-		return false;
-
-	if ( pEntity->GetFlags() & FL_NOTARGET )
-		return false;
-
-	Vector vecLookerOrigin = EyePosition();//look through the caller's 'eyes'
-	Vector vecTargetOrigin = pEntity->EyePosition();
-
-	// Use the custom LOS trace filter
-	CTraceFilterLOS traceFilter( this, COLLISION_GROUP_NONE, pEntity );
-
-	Vector vecTranslatedTargetOrigin;
-	UTIL_Portal_PointTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecTargetOrigin, vecTranslatedTargetOrigin );
-	Ray_t ray;
-	ray.Init( vecLookerOrigin, vecTranslatedTargetOrigin );
-
-	trace_t tr;
-
-	// If we're doing an opaque search, include NPCs.
-	if ( traceMask == MASK_BLOCKLOS )
-	{
-		traceMask = MASK_BLOCKLOS_AND_NPCS;
-	}
-
-	UTIL_Portal_TraceRay_Bullets( pPortal, ray, traceMask, &traceFilter, &tr );
-
-	if (tr.fraction != 1.0 || tr.startsolid )
-	{
-		// If we hit the entity we're looking for, it's visible
-		if ( tr.m_pEnt == pEntity )
-			return true;
-
-		// Got line of sight on the vehicle the player is driving!
-		if ( pEntity && pEntity->IsPlayer() )
-		{
-			CBasePlayer *pPlayer = assert_cast<CBasePlayer*>( pEntity );
-			if ( tr.m_pEnt == pPlayer->GetVehicleEntity() )
-				return true;
-		}
-
-		if (ppBlocker)
-		{
-			*ppBlocker = tr.m_pEnt;
-		}
-
-		return false;// Line of sight is not established
-	}
-
-	return true;// line of sight is valid.
-}
-#endif
-
 //-----------------------------------------------------------------------------
 
 //=========================================================
@@ -533,112 +426,6 @@ bool CBaseCombatCharacter::FInViewCone( const Vector &vecSpot )
 
 	return PointWithinViewAngle( eyepos, vecSpot, EyeDirection2D(), m_flFieldOfView );
 }
-
-#ifdef PORTAL
-//=========================================================
-// FInViewCone - returns true is the passed ent is in
-// the caller's forward view cone. The dot product is performed
-// in 2d, making the view cone infinitely tall. 
-//=========================================================
-CPortal_Base2D* CBaseCombatCharacter::FInViewConeThroughPortal( CBaseEntity *pEntity )
-{
-	return FInViewConeThroughPortal( pEntity->WorldSpaceCenter() );
-}
-
-//=========================================================
-// FInViewCone - returns true is the passed Vector is in
-// the caller's forward view cone. The dot product is performed
-// in 2d, making the view cone infinitely tall. 
-//=========================================================
-CPortal_Base2D* CBaseCombatCharacter::FInViewConeThroughPortal( const Vector &vecSpot )
-{
-	int iPortalCount = CPortal_Base2D_Shared::AllPortals.Count();
-	if( iPortalCount == 0 )
-		return NULL;
-
-	const Vector ptEyePosition = EyePosition();
-
-	float fDistToBeat = 1e20; //arbitrarily high number
-	CPortal_Base2D *pBestPortal = NULL;
-
-	CPortal_Base2D **pPortals = CPortal_Base2D_Shared::AllPortals.Base();
-
-	// Check through both portals
-	for ( int iPortal = 0; iPortal < iPortalCount; ++iPortal )
-	{
-		CPortal_Base2D *pPortal = pPortals[iPortal];
-
-		// Check if this portal is active, linked, and in the view cone
-		if( pPortal->IsActivedAndLinked() && FInViewCone( pPortal ) )
-		{
-			// The facing direction is the eye to the portal to set up a proper FOV through the relatively small portal hole
-			Vector facingDir = pPortal->GetAbsOrigin() - ptEyePosition;
-
-			// If the portal isn't facing the eye, bail
-			if ( facingDir.Dot( pPortal->m_plane_Origin.normal ) > 0.0f )
-				continue;
-
-			// If the point is behind the linked portal, bail
-			if ( ( vecSpot - pPortal->m_hLinkedPortal->GetAbsOrigin() ).Dot( pPortal->m_hLinkedPortal->m_plane_Origin.normal ) < 0.0f )
-				continue;
-
-			// Remove height from the equation
-			facingDir.z = 0.0f;
-			float fPortalDist = VectorNormalize( facingDir );
-
-			// Translate the target spot across the portal
-			Vector vTranslatedVecSpot;
-			UTIL_Portal_PointTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecSpot, vTranslatedVecSpot );
-
-			// do this in 2D
-			Vector los = ( vTranslatedVecSpot - ptEyePosition );
-			los.z = 0.0f;
-			float fSpotDist = VectorNormalize( los );
-
-			if( fSpotDist > fDistToBeat )
-				continue; //no point in going further, we already have a better portal
-
-			// If the target point is closer than the portal (banana juice), bail
-			// HACK: Extra 32 is a fix for the player who's origin can be on one side of a portal while his center mirrored across is closer than the portal.
-			if ( fPortalDist > fSpotDist + 32.0f )
-				continue;
-
-			// Get the worst case FOV from the portal's corners
-			float fFOVThroughPortal = 1.0f;
-
-			for ( int i = 0; i < 4; ++i )
-			{
-				//Vector vPortalCorner = pPortal->GetAbsOrigin() + vPortalRight * PORTAL_HALF_WIDTH * ( ( i / 2 == 0 ) ? ( 1.0f ) : ( -1.0f ) ) + 
-				//												 vPortalUp * PORTAL_HALF_HEIGHT * ( ( i % 2 == 0 ) ? ( 1.0f ) : ( -1.0f ) );
-
-				Vector vEyeToCorner = pPortal->m_vPortalCorners[i] - ptEyePosition;
-				vEyeToCorner.z = 0.0f;
-				VectorNormalize( vEyeToCorner );
-
-				float flCornerDot = DotProduct( vEyeToCorner, facingDir );
-
-				if ( flCornerDot < fFOVThroughPortal )
-					fFOVThroughPortal = flCornerDot;
-			}
-
-			float flDot = DotProduct( los, facingDir );
-
-			// Use the tougher FOV of either the standard FOV or FOV clipped to the portal hole
-			if ( flDot > MAX( fFOVThroughPortal, m_flFieldOfView ) )
-			{
-				float fActualDist = ptEyePosition.DistToSqr( vTranslatedVecSpot );
-				if( fActualDist < fDistToBeat )
-				{
-					fDistToBeat = fActualDist;
-					pBestPortal = pPortal;
-				}
-			}
-		}
-	}
-
-	return pBestPortal;
-}
-#endif
 
 
 //=========================================================
@@ -686,14 +473,6 @@ bool CBaseCombatCharacter::FInAimCone( const Vector &vecSpot )
 //-----------------------------------------------------------------------------
 bool CBaseCombatCharacter::HandleInteraction( int interactionType, void *data, CBaseCombatCharacter* sourceEnt )
 {
-#if defined( HL2_DLL )
-	if ( interactionType == g_interactionBarnacleVictimReleased )
-	{
-		// For now, throw away the NPC and leave the ragdoll.
-		UTIL_Remove( this );
-		return true;
-	}
-#endif // HL2_DLL
 	return false;
 }
 
@@ -1471,41 +1250,6 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 	CTakeDamageInfo newinfo = info;
 	newinfo.SetDamageForce( forceVector );
 
-#ifdef HL2_EPISODIC
-	// Burning corpses are server-side in episodic, if we're in darkness mode
-	if ( IsOnFire() && HL2GameRules()->IsAlyxInDarknessMode() )
-	{
-		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_DEBRIS );
-		FixupBurningServerRagdoll( pRagdoll );
-		RemoveDeferred();
-		return true;
-	}
-#endif
-
-#if defined( HL2_DLL )
-	// Mega physgun requires everything to be a server-side ragdoll
-	if ( m_bForceServerRagdoll == true || ( HL2GameRules()->MegaPhyscannonActive() == true ) && !IsPlayer() && Classify() != CLASS_PLAYER_ALLY_VITAL && Classify() != CLASS_PLAYER_ALLY )
-	{
-		if ( CanBecomeServerRagdoll() == false )
-			return false;
-
-		//FIXME: This is fairly leafy to be here, but time is short!
-		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
-		FixupBurningServerRagdoll( pRagdoll );
-		PhysSetEntityGameFlags( pRagdoll, FVPHYSICS_NO_SELF_COLLISIONS );
-		RemoveDeferred();
-
-		return true;
-	}
-
-	if( hl2_episodic.GetBool() && Classify() == CLASS_PLAYER_ALLY_VITAL )
-	{
-		CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
-		RemoveDeferred();
-		return true;
-	}
-#endif //HL2_DLL
-
 	return BecomeRagdollOnClient( forceVector );
 }
 
@@ -1586,15 +1330,6 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 				pDroppedWeapon->Dissolve( NULL, gpGlobals->curtime, false, nDissolveType );
 			}
 		}
-#ifdef HL2_DLL
-		else if ( PlayerHasMegaPhysCannon() )
-		{
-			if ( pDroppedWeapon )
-			{
-				pDroppedWeapon->Dissolve( NULL, gpGlobals->curtime, false, ENTITY_DISSOLVE_NORMAL );
-			}
-		}
-#endif
 
 		if ( !bRagdollCreated && ( info.GetDamageType() & DMG_REMOVENORAGDOLL ) == 0 )
 		{
@@ -2016,16 +1751,6 @@ void CBaseCombatCharacter::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 	// If gun doesn't use clips, just give ammo
 	if ( !pWeapon->UsesClipsForAmmo1() )
 	{
-#ifdef HL2_DLL
-		if( FStrEq(STRING(gpGlobals->mapname), "d3_c17_09") && FClassnameIs(pWeapon, "weapon_rpg") && pWeapon->NameMatches("player_spawn_items") )
-		{
-			// !!!HACK - Don't give any ammo with the spawn equipment RPG in d3_c17_09. This is a chapter
-			// start and the map is way to easy if you start with 3 RPG rounds. It's fine if a player conserves
-			// them and uses them here, but it's not OK to start with enough ammo to bypass the snipers completely.
-			GiveAmmo( 0, pWeapon->m_iPrimaryAmmoType); 
-		}
-		else
-#endif // HL2_DLL
 		{
 			// non-clip, exhaustible ammo ( such as grenades ) is still held on player.
 			CBaseCombatCharacter * pOwner = NULL;
@@ -3042,17 +2767,6 @@ CBaseEntity *CBaseCombatCharacter::Weapon_FindUsable( const Vector &range )
 {
 	bool bConservative = false;
 
-#ifdef HL2_DLL
-	if( hl2_episodic.GetBool() && !GetActiveWeapon() )
-	{
-		// Unarmed citizens are conservative in their weapon finding
-		if ( Classify() != CLASS_PLAYER_ALLY_VITAL )
-		{
-			bConservative = true;
-		}
-	}
-#endif
-
 	CBaseCombatWeapon *weaponList[64];
 	CBaseCombatWeapon *pBestWeapon = NULL;
 
@@ -3217,13 +2931,11 @@ int CBaseCombatCharacter::GiveAmmo( int iCount, const char *szName, bool bSuppre
 
 ConVar	phys_stressbodyweights( "phys_stressbodyweights", "5.0" );
 // disabled stress damage to save CPU, none of the NPCs really use it and the player has a different codepath
-#if !defined( PORTAL2 )
 void CBaseCombatCharacter::VPhysicsUpdate( IPhysicsObject *pPhysics )
 {
 	ApplyStressDamage( pPhysics, false );
 	BaseClass::VPhysicsUpdate( pPhysics );
 }
-#endif
 
 float CBaseCombatCharacter::CalculatePhysicsStressDamage( vphysics_objectstress_t *pStressOut, IPhysicsObject *pPhysics )
 {
@@ -3246,14 +2958,6 @@ float CBaseCombatCharacter::CalculatePhysicsStressDamage( vphysics_objectstress_
 
 void CBaseCombatCharacter::ApplyStressDamage( IPhysicsObject *pPhysics, bool bRequireLargeObject )
 {
-#ifdef HL2_DLL
-	if( Classify() == CLASS_PLAYER_ALLY || Classify() == CLASS_PLAYER_ALLY_VITAL )
-	{
-		// Bypass stress completely for allies and vitals.
-		if( hl2_episodic.GetBool() )
-			return;
-	}
-#endif//HL2_DLL
 
 	vphysics_objectstress_t stressOut;
 	float damage = CalculatePhysicsStressDamage( &stressOut, pPhysics );
@@ -3309,13 +3013,6 @@ void CBaseCombatCharacter::VPhysicsShadowCollision( int index, gamevcollisioneve
 	// Player can't damage himself if he's was physics attacker *on this frame*
 	// which can occur owing to ordering issues it appears.
 	float flOtherAttackerTime = 0.0f;
-
-#if defined( HL2_DLL )
-	if ( HL2GameRules()->MegaPhyscannonActive() == true )
-	{
-		flOtherAttackerTime = 1.0f;
-	}
-#endif
 
 	if ( this == pOther->HasPhysicsAttacker( flOtherAttackerTime ) )
 		return;

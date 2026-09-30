@@ -263,9 +263,6 @@ enum eEconItemFlags
 	kEconItemFlag_NonEconomy				= 1 << 3,		// used for items that are meant to not interact in the economy -- these can't be traded, gift-wrapped, crafted, etc.
 
 #ifdef CLIENT_DLL
-#ifdef TF_CLIENT_DLL
-	kEconItemFlagClient_ForceBlueTeam		= 1 << 5,
-#endif // TF_CLIENT_DLL
 	kEconItemFlagClient_StoreItem			= 1 << 6,
 	kEconItemFlagClient_Preview				= 1 << 7,		// only set on the client; means "this item is being previewed"
 #endif // CLIENT_DLL

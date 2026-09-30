@@ -527,24 +527,6 @@ void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, co
 {
 	vec_t const *qa = (vec_t *)pData;
 
-#ifdef TF_DLL
-	CFuncRotating *entity = (CFuncRotating*)pStruct;
-	Assert( entity );
-
-	vec_t const *ea = entity->GetLocalAngles().Base();
-
-	// Assert its actually an index into m_angRotation if not this won't work
-	Assert( (uintp)qa >= (uintp)ea && (uintp)qa < (uintp)ea + sizeof( QAngle ));
-
-	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
-	{
-		const QAngle *a = &entity->m_vecClientAngles;
-
-		pOut->m_Float = anglemod( (*a)[ qa - ea ] );
-		return;
-	}
-#endif
-
 	pOut->m_Float = anglemod( *qa );
 
 	Assert( IsFinite( pOut->m_Float ) );
@@ -554,15 +536,6 @@ void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, co
 extern void SendProxy_SimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingSimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
-#ifdef TF_DLL
-	CFuncRotating *entity = (CFuncRotating*)pStruct;
-	Assert( entity );
-	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
-	{
-		pOut->m_Int = 0;
-		return;
-	}
-#endif
 
 	SendProxy_SimulationTime( pProp, pStruct, pVarData, pOut, iElement, objectID );
 }
@@ -610,9 +583,6 @@ bool CFuncRotating::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 void CFuncRotating::Spawn( )
 {
-#if defined(TF_DLL)
-	AddSpawnFlags( SF_BRUSH_ROTATE_CLIENTSIDE );
-#endif
 
 	//
 	// Maintain compatibility with previous maps.
@@ -742,13 +712,6 @@ void CFuncRotating::Spawn( )
 		SetSolid( SOLID_BSP );
 	}
 
-#ifdef TF_DLL
-	if ( HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
-	{
-		m_vecClientOrigin = GetLocalOrigin();
-		m_vecClientAngles = GetLocalAngles();
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

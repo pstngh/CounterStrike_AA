@@ -124,9 +124,6 @@ public:
 
 	// various player flags
 	virtual bool IsHLTV() = 0;
-#if defined( REPLAY_ENABLED )
-	virtual bool IsReplay() = 0;
-#endif
 	virtual bool IsPlayer() = 0;
 	virtual bool IsFakeClient() = 0;
 	virtual bool IsDead() = 0;

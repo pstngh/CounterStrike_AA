@@ -36,9 +36,6 @@
 #include "hltvcamera.h"
 #include "hltvreplaysystem.h"
 #include "netmessages.h"
-#if defined( REPLAY_ENABLED )
-#include "replaycamera.h"
-#endif
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 #include "view_scene.h"
@@ -469,9 +466,7 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 END_PREDICTION_DATA()
 
-#if !defined( PORTAL2 )
 LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
-#endif
 
 // -------------------------------------------------------------------------------- //
 // Functions.
@@ -692,13 +687,6 @@ bool C_BasePlayer::AudioStateIsUnderwater( Vector vecMainViewOrigin )
 	return ( GetWaterLevel() >= WL_Eyes );
 }
 
-#if defined( REPLAY_ENABLED )
-bool C_BasePlayer::IsReplay() const
-{
-	return ( IsLocalPlayer( const_cast< C_BasePlayer * >( this ) ) && engine->IsReplay() );
-}
-#endif
-
 bool C_BasePlayer::IsBot( void ) const 
 { 
 	IGameResources* pGR = GameResources();
@@ -713,12 +701,6 @@ CBaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players targer o
 	{
 		return HLTVCamera()->GetPrimaryTarget();
 	}
-#if defined( REPLAY_ENABLED )
-	if ( IsReplay() )
-	{
-		return ReplayCamera()->GetPrimaryTarget();
-	}
-#endif
 	
 	return m_hObserverTarget;
 }
@@ -817,12 +799,6 @@ int C_BasePlayer::GetObserverMode() const
 	{
 		return HLTVCamera()->GetMode();
 	}
-#if defined( REPLAY_ENABLED )
-	if ( IsReplay() )
-	{
-		return ReplayCamera()->GetMode();
-	}
-#endif
 
 	return m_iObserverMode; 
 }
@@ -1896,14 +1872,8 @@ bool C_BasePlayer::ShouldInterpolate()
 		return true;
 
 	// always interpolate entity if followed by HLTV/Replay
-#if defined( REPLAY_ENABLED )
-	if ( HLTVCamera()->GetCameraMan() == this ||
-		 ReplayCamera()->GetCameraMan() == this )
-		return true;
-#else
 	if ( HLTVCamera()->GetCameraMan() == this )
 		return true;
-#endif
 
 	return BaseClass::ShouldInterpolate();
 }
@@ -2356,11 +2326,7 @@ void C_BasePlayer::CalcInEyeCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 	// Apply aim punch angle
 	VectorAdd( eyeAngles, GetAimPunchAngle() * view_recoil_tracking.GetFloat(), eyeAngles );
 
-#if defined( REPLAY_ENABLED )
-	if( g_bEngineIsHLTV || engine->IsReplay() )
-#else
 	if( g_bEngineIsHLTV )
-#endif
 	{
 		if ( target->GetFlags() & FL_DUCKING )
 		{
@@ -2533,11 +2499,6 @@ bool C_BasePlayer::ShouldDrawLocalPlayer()
 
 #if !defined( SPLIT_SCREEN_STUBS )
 	nSlot = GetSplitScreenPlayerSlot();
-#endif
-
-#ifdef PORTAL2
-	if( !IsLocalSplitScreenPlayer( (nSlot == -1) ? GET_ACTIVE_SPLITSCREEN_SLOT() : nSlot ) ) //HACKHACK: shortcut, avoid going into input and getting a bunch of asserts if the splitscreen view is not a local player
-		return false;
 #endif
 
 	return ( GetPlayerRenderMode(nSlot) == PLAYER_RENDER_THIRDPERSON ) || input->CAM_IsThirdPerson() || ( ToolsEnabled() && ToolFramework_IsThirdPersonCamera() );
@@ -3653,23 +3614,6 @@ bool C_BasePlayer::ShouldRegenerateOriginFromCellBits() const
 {
 	// Don't use cell bits for local players
 	if ( 
-#ifdef PORTAL2
-		// HACK: In Portal 2, when we start recording a demo, the player is removed and recreated.
-		//		 There's a brief window where there is no local player and the non-local data table
-		//		 is sent across for the newly created player, containing the cell origin. This is
-		//		 incorrectly interpreted and copied to the network origin. The new network origin
-		//		 is copied to the local origin, which, among other things, screws up the player's eye
-		//		 position until she moves enough for a network update to fix her position. During this
-		//		 brief time, if we correctly regenerate the origin from the cell bits we received, it
-		//		 prevents this problem. At this point, changing the portal player's network tables
-		//		 could have a significant impact on perf and require a PS3 fix to maintain crossplay
-		//		 compatibility, so this is less risky.
-		//		 - Ted Rivera (2/25/2011)
-		( C_BasePlayer::HasAnyLocalPlayer() ||
-			( !engine->IsPlayingDemo() &&		
-			  !engine->IsRecordingDemo() &&		
-			  !engine->IsPlayingTimeDemo() ) ) &&	
-#endif
 		 (IsLocalPlayer( this ) ||
 		  (!g_pGameRules->IsMultiplayer()) ) ) //SP load fails the IsLocalPlayer() test while creating the player. Resulting in a bad origin until you move
 	{

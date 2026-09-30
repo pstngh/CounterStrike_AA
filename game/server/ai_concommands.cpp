@@ -36,9 +36,6 @@ void EnableAI()
 
 void DisableAI()
 {
-#ifdef PORTAL2
-	return;
-#endif // PORTAL2
 
 	CAI_BaseNPC::m_nDebugBits |= bits_debugDisableAI;
 	DevMsg("AI Disabled.\n");

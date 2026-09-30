@@ -106,13 +106,7 @@ static CBaseEntity *AscertainSpeechSubjectFromContext( AI_Response *response, AI
 	const char *subject = criteria.GetValue( criteria.FindCriterionIndex( pContextName ) );
 	if (subject)
 	{
-#if defined( TERROR )
-		// try looking up "namvet", etc. if not one of those, then look up by name.
-		CBaseEntity *pSurvivor = TerrorGetPlayerPointerFromCharacterName(subject);
-		return pSurvivor ? pSurvivor : gEntList.FindEntityByName( NULL, subject );
-#else
 		return gEntList.FindEntityByName( NULL, subject );
-#endif
 	}
 	else
 	{
@@ -123,10 +117,6 @@ static CBaseEntity *AscertainSpeechSubjectFromContext( AI_Response *response, AI
 // TODO: Currently uses awful stricmp. Use symbols! Once I know which ones we want, that is. 
 static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AIConcept_t &concept, AI_CriteriaSet &criteria, const char * RESTRICT szTarget, AI_Response * RESTRICT response = NULL )
 {
-
-#if defined(TERROR)
-	SurvivorCharacterType surv;
-#endif
 
 	if ( Q_stricmp(szTarget, "self") == 0 )
 	{
@@ -148,12 +138,6 @@ static CResponseQueue::CFollowupTargetSpec_t ResolveFollowupTargetToEntity( AICo
 	{
 		return CResponseQueue::CFollowupTargetSpec_t( kDRT_ALL );
 	}
-#if defined(TERROR)
-	else if ( ( surv = GetCharacterFromName( szTarget ) ) < NUM_SURVIVOR_CHARACTERS )
-	{
-		return CResponseQueue::CFollowupTargetSpec_t( CTerrorPlayer::GetPlayerByCharacter( surv ) );
-	}
-#endif
 	// last resort, try a named lookup
 	else if ( CBaseEntity *pSpecific = gEntList.FindEntityByName(NULL, szTarget) ) // it could be anything
 	{
@@ -196,19 +180,7 @@ bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifie
 	{
 		if (chet_debug_idle.GetBool())
 		{
-#ifdef TERROR
-			const char *name;
-			if ( CTerrorPlayer *pPlayer = ToTerrorPlayer(GetOuter()) )
-			{
-				name = SurvivorCharacterName(pPlayer->GetCharacter());
-			}
-			else
-			{
-				name = GetOuter()->GetDebugName();
-			}
-#else
 			const char *name = GetOuter()->GetDebugName();
-#endif
 			Msg( "TLK_IDLE: %s did not FindResponse\n", name );
 		}	
 		return false;
@@ -218,19 +190,7 @@ bool CAI_ExpresserWithFollowup::Speak( AIConcept_t &concept, const char *modifie
 		if (chet_debug_idle.GetBool())
 		{
 
-#ifdef TERROR
-			const char *name;
-			if ( CTerrorPlayer *pPlayer = ToTerrorPlayer(GetOuter()) )
-			{
-				name = SurvivorCharacterName(pPlayer->GetCharacter());
-			}
-			else
-			{
-				name = GetOuter()->GetDebugName();
-			}
-#else
 			const char *name = GetOuter()->GetDebugName();
-#endif
 			Msg( "TLK_IDLE: %s SUCCESSFUL FindResponse\n", name );
 		}
 	}
@@ -387,22 +347,7 @@ void CAI_ExpresserWithFollowup::DispatchFollowupThroughQueue( const AIConcept_t 
 {
 	AI_CriteriaSet criteria;
 	// Don't add my own criteria! GatherCriteria( &criteria, followup.followup_concept, followup.followup_contexts );
-#ifdef TERROR
-	CTerrorPlayer *ptplayer = ToTerrorPlayer(pOuter);
-	AssertMsg(ptplayer || dynamic_cast<CFlexExpresser *>(pOuter) , "Non-CTerrorPlayer tried to dispatch a followup concept");
-	if (ptplayer)
-	{
-		const char * const RESTRICT survName = GetResponseName( ptplayer );
-		criteria.AppendCriteria( "Subject", survName );
-		criteria.AppendCriteria( "From", survName );
-	}
-	else
-	{
-		criteria.AppendCriteria( "From", STRING( pOuter->GetEntityName() ) );
-	}
-#else
 	criteria.AppendCriteria( "From", STRING( pOuter->GetEntityName() ) );
-#endif
 	criteria.Merge( criteriaStr );
 	g_ResponseQueueManager.GetQueue()->Add( concept, &criteria, gpGlobals->curtime + delay, target, pOuter );
 }
@@ -415,19 +360,6 @@ void CAI_ExpresserWithFollowup::SpeakDispatchFollowup( AI_ResponseFollowup &foll
 	if ( !m_followupTarget.IsValid() )
 		return;
 
-#ifdef TERROR
-	// If a specific entity target is given, use the old pathway for now
-	if ( m_followupTarget.m_iTargetType == kDRT_SPECIFIC && followup.followup_delay == 0 )
-	{
-		CBaseEntity *pTarget = m_followupTarget.m_hHandle.Get();
-		if (!pTarget)
-		{
-			return;
-		}
-		DispatchComeback( this, GetOuter(), pTarget, followup );
-	}
-	else
-#endif
 	{
 		DispatchFollowupThroughQueue( followup.followup_concept, followup.followup_contexts, m_followupTarget, followup.followup_delay, GetOuter() );
 	}
@@ -471,7 +403,4 @@ static ConCommand rr_forceconcept( "rr_forceconcept", CC_RR_ForceConcept_f,
 								  "fire a response concept directly at a given character.\n"
 								  "USAGE: rr_forceconcept <target> <concept> \"criteria1:value1,criteria2:value2,...\"\n"
 								  "criteria values are optional.\n"
-#ifdef TERROR
-								  "target may also be 'any', 'all', etc."
-#endif
 								  , FCVAR_CHEAT );

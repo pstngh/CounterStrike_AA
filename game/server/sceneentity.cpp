@@ -43,14 +43,6 @@
 #include "eiface.h"
 #include "usermessages.h"
 
-#ifdef HL2_EPISODIC
-#include "npc_alyx_episodic.h"
-#endif // HL2_EPISODIC
-
-#ifdef PORTAL2
-#include "portal/weapon_physcannon.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1731,10 +1723,6 @@ void CSceneEntity::DispatchStartSpeak( CChoreoScene *scene, CBaseFlex *actor, CC
 		// Right now we need to broadcast GLaDOS to all players and then selectively mute the channels
 		// if she's only speaking with one player.  Because this isn't a general pattern, we've encased
 		// it here in an ifdef
-#ifdef PORTAL2
-		filter.AddAllPlayers();
-		filter.MakeReliable();
-#endif // PORTAL2
 
 		if ( m_pRecipientFilter )
 		{
@@ -1856,15 +1844,6 @@ void CSceneEntity::DispatchStartSpeak( CChoreoScene *scene, CBaseFlex *actor, CC
 
 				es.m_nFlags |= SND_CHANGE_PITCH;
 			}
-
-#if defined ( PORTAL2 )
-			if ( GameRules()->IsMultiplayer() == false && GetPlayerHoldingEntity( actor ) )
-			{
-				// HACK: Don't attenuate player held object sounds
-				// This is to fix bugs when walking through portals with the sphere npc.
-				es.m_SoundLevel = SNDLVL_NONE;		
-			}
-#endif
 
 			int nGuid = EmitSound( filter2, actor->entindex(), es );
 			if ( nGuid == 0 )
@@ -2451,17 +2430,6 @@ bool CSceneEntity::CheckActors()
 						bShouldWait = true;
 					}
 					
-#ifdef HL2_EPISODIC
-					// HACK: Alyx cannot play scenes when she's in the middle of transitioning					
-					if ( pActor->IsInAVehicle() )
-					{
-						CNPC_Alyx *pAlyx = dynamic_cast<CNPC_Alyx *>(pActor);
-						if ( pAlyx != NULL && ( pAlyx->GetPassengerState() == PASSENGER_STATE_ENTERING || pAlyx->GetPassengerState() == PASSENGER_STATE_EXITING ) )
-						{
-							bShouldWait = true;
-						}
-					}
-#endif // HL2_EPISODIC
 				}
 
 				if ( pActor->GetExpresser() && pActor->GetExpresser()->IsSpeaking() )
@@ -2889,14 +2857,6 @@ void CSceneEntity::PitchShiftPlayback( float fPitch )
 			params.m_pSoundName = szBuff;
 			params.m_nPitch = 100.0f * fPitch;
 			params.m_nFlags = SND_CHANGE_PITCH;
-#if defined ( PORTAL2 )
-			if ( GameRules()->IsMultiplayer() == false && GetPlayerHoldingEntity( pTestActor ) )
-			{
-				// HACK: Don't attenuate player held object sounds
-				// This is to fix bugs when walking through portals with the sphere npc.
-				params.m_SoundLevel = SNDLVL_NONE;		
-			}
-#endif
 			pTestActor->EmitSound( filter, pTestActor->entindex(), params );
 		}
 	}
@@ -3347,10 +3307,8 @@ void CSceneEntity::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEv
 
 	case CChoreoEvent::STOPPOINT:
 		{
-#ifndef PORTAL2
 			if ( IsMultiplayer() )
 				break;
-#endif
 
 			DispatchStopPoint( scene, event->GetParameters() );
 		}
@@ -4803,11 +4761,9 @@ public:
 								if (PassThrough( actor )) BaseClass::DispatchEndFace( scene, actor, event ); 
 							};
 
-#if !defined( PORTAL2 )
 	virtual void			DispatchStartSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event )  { /* suppress */ };
 	virtual void			DispatchEndSequence( CChoreoScene *scene, CBaseFlex *actor, CChoreoEvent *event ) { /* suppress */ };
 	virtual void			DispatchPauseScene( CChoreoScene *scene, const char *parameters ) { /* suppress */ };
-#endif // !PORTAL2
 
 	void OnRestore();
 
@@ -5514,14 +5470,6 @@ void CSceneManager::OnClientActive( CBasePlayer *player )
 		es.m_SoundLevel = sound->soundlevel;
 		es.m_flSoundTime = gpGlobals->curtime - sound->time_in_past;
 
-#if defined ( PORTAL2 )
-		if ( GameRules()->IsMultiplayer() == false && GetPlayerHoldingEntity( sound->actor ) )
-		{
-			// HACK: Don't attenuate player held object sounds
-			// This is to fix bugs when walking through portals with the sphere npc.
-			es.m_SoundLevel = SNDLVL_NONE;		
-		}
-#endif
 		EmitSound( filter, sound->actor->entindex(), es );
 	}
 

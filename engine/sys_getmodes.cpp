@@ -591,11 +591,7 @@ bool CVideoMode_Common::SetupStartupGraphic()
 	}
 
 	buf.Clear();
-#if defined( PORTAL2 )
-	const char *pTitleName = "materials/vgui/portal2logo.vtf";
-#else
 	const char *pTitleName = "materials/console/logo.vtf";
-#endif
 		
 	m_pTitleTexture = LoadVTF( buf, pTitleName );
 	if ( !m_pTitleTexture )
@@ -744,11 +740,7 @@ void CVideoMode_Common::DrawStartupGraphic()
 #if !defined( CSTRIKE15 )
 
 	pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-#if defined( PORTAL2 )
-	pVMTKeyValues->SetString( "$basetexture", "vgui/portal2logo.vtf" );
-#else
 	pVMTKeyValues->SetString( "$basetexture", "console/logo.vtf" );
-#endif // defined( PORTAL2 )
 	pVMTKeyValues->SetInt( "$translucent", 1 );
 	pVMTKeyValues->SetInt( "$ignorez", 1 );
 	pVMTKeyValues->SetInt( "$nofog", 1 );

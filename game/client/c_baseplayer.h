@@ -109,10 +109,6 @@ public:
 
 	virtual float GetPlayerMaxSpeed();
 	
-#ifdef PORTAL2
-	bool			ClearUseEntity();
-#endif
-
 	void	SetAnimationExtension( const char *pExtension );
 
 	C_BaseViewModel				*GetViewModel( int viewmodelindex = 0 ) const;
@@ -154,12 +150,6 @@ public:
 	CBaseEntity		*FindUseEntity( void );
 	virtual bool	IsUseableEntity( CBaseEntity *pEntity, unsigned int requiredCaps );
 
-#ifdef PORTAL2
-	virtual bool	CanPickupObject( CBaseEntity *pObject, float massLimit, float sizeLimit );
-	virtual float	GetHeldObjectMass( IPhysicsObject *pHeldObject );
-	virtual void	ForceDropOfCarriedPhysObjects(){};
-#endif
-
 	// Data handlers
 	virtual bool	IsPlayer( void ) const { return true; }
 	virtual int		GetHealth() const { return m_iHealth; }
@@ -178,9 +168,6 @@ public:
 	bool IsCameraMan() const;
 	bool IsActiveCameraMan() const { return m_bActiveCameraMan; }
 	bool IsHLTV() const;
-#if defined( REPLAY_ENABLED )
-	bool IsReplay() const;
-#endif
 	void ResetObserverMode();
 	bool IsBot( void ) const; 
 

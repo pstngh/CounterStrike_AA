@@ -59,10 +59,6 @@ extern ConVar hl2_episodic;
 #else
 #include "baseentity.h"
 
-#ifdef HL2_EPISODIC
-	#include "info_darknessmode_lightsource.h"
-#endif // HL2_EPISODIC
-
 #endif
 
 #include "vscript/ivscript.h"
@@ -202,16 +198,6 @@ inline int CBaseEntity::GetEffects( void ) const
 inline void CBaseEntity::RemoveEffects( int nEffects ) 
 { 
 #if !defined( CLIENT_DLL )
-#ifdef HL2_EPISODIC
-	if ( nEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT) )
-	{
-		// Hack for now, to avoid player emitting radius with his flashlight
-		if ( !IsPlayer() )
-		{
-			RemoveEntityFromDarknessCheck( this );
-		}
-	}
-#endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
 	m_fEffects &= ~nEffects;
@@ -239,16 +225,6 @@ inline void CBaseEntity::RemoveEffects( int nEffects )
 inline void CBaseEntity::ClearEffects( void ) 
 { 
 #if !defined( CLIENT_DLL )
-#ifdef HL2_EPISODIC
-	if ( m_fEffects & (EF_BRIGHTLIGHT|EF_DIMLIGHT) )
-	{
-		// Hack for now, to avoid player emitting radius with his flashlight
-		if ( !IsPlayer() )
-		{
-			RemoveEntityFromDarknessCheck( this );
-		}
-	}
-#endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
 #ifdef CLIENT_DLL

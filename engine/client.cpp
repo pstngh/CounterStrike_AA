@@ -120,9 +120,6 @@ CClientState::CClientState()
 	insimulation = false;
 	oldtickcount = 0;
 	ishltv = false;
-#if defined( REPLAY_ENABLED )
-	isreplay = false;
-#endif
 	ResetHltvReplayState();
 }
 
@@ -212,9 +209,6 @@ void CClientState::SendClientInfo( void )
 	info.set_send_table_crc( SendTable_GetCRC() );
 	info.set_server_count( m_nServerCount );
 	info.set_is_hltv( false );
-#if defined( REPLAY_ENABLED )
-	info.set_is_replay( false );
-#endif
 
 #if !defined( NO_STEAM )
 	info.set_friends_id( Steam3Client().SteamUser() ? Steam3Client().SteamUser()->GetSteamID().GetAccountID() : 0 );
@@ -754,9 +748,6 @@ void CClientState::Clear( void )
 	memset(model_precache, 0, sizeof(model_precache));
 	memset(sound_precache, 0, sizeof(sound_precache));
 	ishltv = false;
-#if defined( REPLAY_ENABLED )
-	isreplay = false;
-#endif
 	cdtrack = 0;
 	serverCRC = 0;
 	serverClientSideDllCRC = 0;

@@ -30,10 +30,6 @@
 
 #include "materialsystem/MaterialSystemUtil.h"
 
-#if defined(TF_DLL)
-#include "tf_item_schema.h"
-#endif //#if defined(TF_DLL)
-
 #if defined(CLIENT_DLL) 
 #define CEconItemView C_EconItemView
 

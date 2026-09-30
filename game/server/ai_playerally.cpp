@@ -478,39 +478,10 @@ void CAI_PlayerAlly::GatherEnemyConditions( CBaseEntity *pEnemy )
 	BaseClass::GatherEnemyConditions( pEnemy );
 	if ( GetLastEnemyTime() == 0 || gpGlobals->curtime - GetLastEnemyTime() > 30 )
 	{
-#ifdef HL2_DLL
-		if ( HasCondition( COND_SEE_ENEMY ) && ( pEnemy->Classify() != CLASS_BULLSEYE ) )
-		{
-			if( Classify() == CLASS_PLAYER_ALLY_VITAL && hl2_episodic.GetBool() )
-			{
-				CBasePlayer *pPlayer = AI_GetSinglePlayer();
-
-				if( pPlayer )
-				{
-				
-					// If I can see the player, and the player would see this enemy if he turned around...
-					if( !pPlayer->FInViewCone(pEnemy) && FVisible( pPlayer ) && pPlayer->FVisible(pEnemy) )
-					{
-						Vector2D vecPlayerView = pPlayer->EyeDirection2D().AsVector2D();
-						Vector2D vecToEnemy = ( pEnemy->GetAbsOrigin() - pPlayer->GetAbsOrigin() ).AsVector2D();
-						Vector2DNormalize( vecToEnemy );
-						
-						if( DotProduct2D(vecPlayerView, vecToEnemy) <= -0.75 )
-						{
-							SpeakIfAllowed( TLK_WATCHOUT, "dangerloc:behind" );
-							return;
-						}
-					}
-				}
-			}
-			SpeakIfAllowed( TLK_STARTCOMBAT );
-		}
-#else
 		if ( HasCondition( COND_SEE_ENEMY ) )
 		{
 			SpeakIfAllowed( TLK_STARTCOMBAT );
 		}
-#endif //HL2_DLL
 	}
 }
 
@@ -541,52 +512,6 @@ void CAI_PlayerAlly::PrescheduleThink( void )
 {
 	BaseClass::PrescheduleThink();
 
-#ifdef HL2_DLL
-	// Vital allies regenerate
-	if( GetHealth() >= GetMaxHealth() )
-	{
-		// Avoid huge deltas on first regeneration of health after long period of time at full health.
-		m_flTimeLastRegen = gpGlobals->curtime;
-	}
-	else if ( ShouldRegenerateHealth() )
-	{
-		float flDelta = gpGlobals->curtime - m_flTimeLastRegen;
-		float flHealthPerSecond = 1.0f / sk_ally_regen_time.GetFloat();
-
-		float flHealthRegen = flHealthPerSecond * flDelta;
-
-		if ( g_pGameRules->IsSkillLevel(SKILL_HARD) )
-			flHealthRegen *= 0.5f;
-		else if ( g_pGameRules->IsSkillLevel(SKILL_EASY) )
-			flHealthRegen *= 1.5f;
-
-		m_flTimeLastRegen = gpGlobals->curtime;
-
-		TakeHealth( flHealthRegen, DMG_GENERIC );
-	}
-
-#ifdef HL2_EPISODIC
-	if ( (GetState() == NPC_STATE_IDLE || GetState() == NPC_STATE_ALERT) 
-		 && !HasCondition(COND_RECEIVED_ORDERS) && !IsInAScript() )
-	{
-		if ( m_flNextIdleSpeechTime && m_flNextIdleSpeechTime < gpGlobals->curtime )
-		{
-			AISpeechSelection_t selection;
-			if ( SelectNonCombatSpeech( &selection ) )
-			{
-				SetSpeechTarget( selection.hSpeechTarget );
-				SpeakDispatchResponse( selection.concept.c_str(), &selection.response );
-				m_flNextIdleSpeechTime = gpGlobals->curtime + RandomFloat( 20,30 );
-			}
-			else
-			{
-				m_flNextIdleSpeechTime = gpGlobals->curtime + RandomFloat( 10,20 );
-			}
-		}
-	}
-#endif // HL2_EPISODIC
-
-#endif // HL2_DLL
 }
 
 //-----------------------------------------------------------------------------
@@ -688,21 +613,6 @@ bool CAI_PlayerAlly::SelectIdleSpeech( AISpeechSelection_t *pSelection )
 //-----------------------------------------------------------------------------
 bool CAI_PlayerAlly::SelectAlertSpeech( AISpeechSelection_t *pSelection )
 {
-#ifdef HL2_EPISODIC
-	CBasePlayer *pTarget = assert_cast<CBasePlayer *>(FindSpeechTarget( AIST_PLAYERS | AIST_FACING_TARGET ));
-	if ( pTarget )
-	{
-		if ( pTarget->IsAlive() )
-		{
-			float flHealthPerc = ((float)pTarget->m_iHealth / (float)pTarget->m_iMaxHealth);
-			if ( flHealthPerc < 1.0 )
-			{
-				if ( SelectSpeechResponse( TLK_PLHURT, NULL, pTarget, pSelection ) )
-					return true;
-			}
-		}
-	}
-#endif
 
 	return SelectIdleSpeech( pSelection );
 }
@@ -772,69 +682,6 @@ bool CAI_PlayerAlly::SelectQuestionAndAnswerSpeech( AISpeechSelection_t *pSelect
 //-----------------------------------------------------------------------------
 void CAI_PlayerAlly::PostSpeakDispatchResponse( AIConcept_t concept, AI_Response *response )
 {
-#ifdef HL2_EPISODIC
-	CAI_AllySpeechManager *pSpeechManager = GetAllySpeechManager();
-	ConceptInfo_t *pConceptInfo	= pSpeechManager->GetConceptInfo( concept );
-	if ( pConceptInfo && (pConceptInfo->flags & AICF_QUESTION) && GetSpeechTarget() )
-	{
-		bool bSaidHelloToNPC = !Q_strcmp(concept, "TLK_HELLO_NPC");
-
-		float duration = GetExpresser()->GetSemaphoreAvailableTime(this) - gpGlobals->curtime;
-
-		if ( rr_debug_qa.GetBool() )
-		{
-			if ( bSaidHelloToNPC )
-			{
-				Warning("Q&A: '%s' said Hello to '%s' (concept %s)\n", GetDebugName(), GetSpeechTarget()->GetDebugName(), concept );
-			}
-			else
-			{
-				Warning("Q&A: '%s' questioned '%s' (concept %s)\n", GetDebugName(), GetSpeechTarget()->GetDebugName(), concept );
-			}
-			NDebugOverlay::HorzArrow( GetAbsOrigin(), GetSpeechTarget()->GetAbsOrigin(), 8, 0, 255, 0, 64, true, duration );
-		}
-
-		// If we spoke a Question, tell our friend to answer
-		const char *pszInput;
-		if ( bSaidHelloToNPC )
-		{
-			pszInput = "AnswerQuestionHello";
-		}
-		else
-		{
-			pszInput = "AnswerQuestion";
-		}
-
-		// Set the input parameter to the random number we used to find the Question
-		variant_t value;
-		value.SetInt( m_iQARandomNumber );
-		g_EventQueue.AddEvent( GetSpeechTarget(), pszInput, value, duration + .2, this, this );
-
-		if ( GetSpeechTarget()->MyNPCPointer() )
-		{
-			AddLookTarget( GetSpeechTarget()->MyNPCPointer(), 1.0, duration + random->RandomFloat( 0.4, 1.2 ), 0.5 );
-			GetSpeechTarget()->MyNPCPointer()->AddLookTarget( this, 1.0, duration + random->RandomFloat( 0.4, 1 ), 0.7 );
-		}
-
-		// Don't let anyone else butt in.
-		DeferAllIdleSpeech( random->RandomFloat( TALKER_DEFER_IDLE_SPEAK_MIN, TALKER_DEFER_IDLE_SPEAK_MAX ), GetSpeechTarget()->MyNPCPointer() );
-	}
-	else if ( pConceptInfo && (pConceptInfo->flags & AICF_ANSWER) && GetSpeechTarget() )
-	{
-		float duration = GetExpresser()->GetSemaphoreAvailableTime(this) - gpGlobals->curtime;
-		if ( rr_debug_qa.GetBool() )
-		{
-			NDebugOverlay::HorzArrow( GetAbsOrigin(), GetSpeechTarget()->GetAbsOrigin(), 8, 0, 255, 0, 64, true, duration );
-		}
-		if ( GetSpeechTarget()->MyNPCPointer() )
-		{
-			AddLookTarget( GetSpeechTarget()->MyNPCPointer(), 1.0, duration + random->RandomFloat( 0, 0.3 ), 0.5 );
-			GetSpeechTarget()->MyNPCPointer()->AddLookTarget( this, 1.0, duration + random->RandomFloat( 0.2, 0.5 ), 0.7 );
-		}
-	}
-
-	m_hPotentialSpeechTarget = NULL;
-#endif // HL2_EPISODIC
 }
 
 //-----------------------------------------------------------------------------
@@ -943,14 +790,6 @@ void CAI_PlayerAlly::AnswerQuestion( CAI_PlayerAlly *pQuestioner, int iQARandomN
 int CAI_PlayerAlly::SelectNonCombatSpeech( AISpeechSelection_t *pSelection )
 {
 	bool bResult = false;
-
-	#ifdef HL2_EPISODIC
-	// See if we can Q&A first
-	if ( GetState() == NPC_STATE_IDLE || GetState() == NPC_STATE_ALERT )
-	{
-		bResult = SelectQuestionAndAnswerSpeech( pSelection );
-	}
-	#endif // HL2_EPISODIC
 
 	if ( !bResult )
 	{
@@ -1158,21 +997,6 @@ int CAI_PlayerAlly::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 {
 	CTakeDamageInfo subInfo = info;
 	// Vital allies never take more than 25% of their health in a single hit (except for physics damage)
-#ifdef HL2_DLL
-	// Don't do damage reduction for DMG_GENERIC. This allows SetHealth inputs to still do full damage.
-	if ( subInfo.GetDamageType() != DMG_GENERIC )
-	{
-		if ( Classify() == CLASS_PLAYER_ALLY_VITAL && !(subInfo.GetDamageType() & DMG_CRUSH) )
-		{
-			float flDamage = subInfo.GetDamage();
-			if ( flDamage > ( GetMaxHealth() * 0.25 ) )
-			{
-				flDamage = ( GetMaxHealth() * 0.25 );
-				subInfo.SetDamage( flDamage );
-			}
-		}
-	}
-#endif
 
 	return BaseClass::OnTakeDamage_Alive( subInfo );
 }

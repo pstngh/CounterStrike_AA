@@ -289,9 +289,6 @@ void CHudMessage::SetFont( HScheme scheme, const char *pFontName )
 	if ( pScheme )
 	{
 		bool bProportional = false;
-#ifdef PORTAL2
-		bProportional = true;
-#endif
 		vgui::HFont font = pScheme->GetFont( pFontName, bProportional );
 		textmessage->SetFont( font );
 		m_parms.font = font;
@@ -345,11 +342,7 @@ void CHudMessage::MessageScanStart( void )
 	if ( m_parms.vguiFontName != NULL && 
 		m_parms.vguiFontName[ 0 ] )
 	{
-#ifdef PORTAL2
-		SetFont( vgui::scheme()->GetScheme( "basemodui_scheme" ), m_parms.vguiFontName );
-#else
 		SetFont( vgui::scheme()->GetDefaultScheme(), m_parms.vguiFontName );
-#endif
 	}
 }
 
@@ -398,11 +391,7 @@ void CHudMessage::MessageDrawScan( client_textmessage_t *pMessage, float time )
 		if ( m_parms.vguiFontName != NULL && 
 			m_parms.vguiFontName[ 0 ] )
 		{
-#ifdef PORTAL2
-			SetFont( vgui::scheme()->GetScheme( "basemodui_scheme" ), m_parms.vguiFontName );
-#else
 			SetFont( vgui::scheme()->GetDefaultScheme(), m_parms.vguiFontName );
-#endif
 		}
 		else
 		{
@@ -772,21 +761,6 @@ bool CHudMessage::MsgFunc_HudMsg(const CCSUsrMsg_HudMsg &msg)
 	pNetMessage->holdtime = msg.hold_time();
 	pNetMessage->fxtime	= msg.fx_time();
 
-#ifdef PORTAL2
-	// hack to make the chapter title channel define the font size in Portal 2
-	if ( channel == 2 || channel == 3 )
-	{
-		const char *pFontName;
-		if ( channel == 2 )
-			pFontName = "InGameChapterTitle";
-		else
-			pFontName = "InGameChapterSubtitle";	
-			
-		pNetMessage->pVGuiSchemeFontName = pFontName;	
-	}
-
-#endif
-	
 	pNetMessage->pName = s_NetworkMessageNames[ channel ];
 
 	// see tmessage.cpp why 512

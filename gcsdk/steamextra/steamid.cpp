@@ -14,11 +14,6 @@
 #include "steam/steamclientpublic.h"
 #endif
 
-#ifdef HL1
-#include "steamcommon.h"
-#include "steam/steamclientpublic.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include <gcsdk/gcclientsdk.h>
 #include "tier0/memdbgon.h"

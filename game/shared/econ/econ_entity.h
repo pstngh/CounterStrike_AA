@@ -16,10 +16,6 @@
 #include "ihasowner.h"
 #include "attribute_manager.h"
 
-#ifdef DOTA_DLL
-#include "dota_econ_item_string_table.h"
-#endif
-
 #if defined( CLIENT_DLL )
 #define CEconEntity				C_EconEntity
 #define CBaseAttributableItem	C_BaseAttributableItem

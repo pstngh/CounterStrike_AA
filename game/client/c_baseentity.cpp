@@ -49,10 +49,6 @@
 #include "c_cs_player.h"
 #endif
 
-#ifdef DOTA_DLL
-#include "dota_in_main.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -592,19 +588,11 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 
 	RecvPropString( RECVINFO( m_iName ) ),
 
-#if defined ( PORTAL2 )
-	RecvPropString( RECVINFO( m_iSignifierName ) ),
-#endif
-
 	RecvPropInt( "movetype", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveType ),
 	RecvPropInt( "movecollide", 0, SIZEOF_IGNORE, 0, RecvProxy_MoveCollide ),
 	RecvPropDataTable( RECVINFO_DT( m_Collision ), 0, &REFERENCE_RECV_TABLE(DT_CollisionProperty) ),
 	
 	RecvPropInt( RECVINFO ( m_iTextureFrameIndex ) ),
-	
-#if defined ( PORTAL2 )
-	RecvPropInt		( RECVINFO( m_iObjectCapsCache ) ),
-#endif
 	
 #if !defined( NO_ENTITY_PREDICTION ) && defined( USE_PREDICTABLEID )
 	RecvPropEHandle (RECVINFO(m_hPlayerSimulationOwner)),
@@ -659,9 +647,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 	DEFINE_PRED_FIELD( m_flFriction, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_iTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_iPendingTeamNum, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
-#ifndef INFESTED_DLL // alien swarm is temporarily unpredicting health to see if prediction is cause of a bug
 	DEFINE_FIELD( m_iHealth, FIELD_INTEGER ),
-#endif
 	DEFINE_PRED_FIELD( m_hOwnerEntity, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 
 //	DEFINE_FIELD( m_nSimulationTick, FIELD_INTEGER ),
@@ -1818,12 +1804,6 @@ IClientModelRenderable*	C_BaseEntity::GetClientModelRenderable()
 	if ( !m_bReadyToDraw || !m_bCanUseBrushModelFastPath )
 		return NULL;
 
-#ifdef PORTAL
-	// Cannot participate if it has a render clip plane
-	if ( GetRenderClipPlane() != NULL )
-		return NULL;
-#endif
-
 	return this; 
 }
 
@@ -1849,11 +1829,6 @@ bool C_BaseEntity::GetRenderData( void *pData, ModelDataCategory_t nCategory )
 bool C_BaseEntity::ShouldDraw()
 {
 // Only test this in tf2
-#if defined( INVASION_CLIENT_DLL )
-	// Let the client mode (like commander mode) reject drawing entities.
-	if (GetClientMode() && !GetClientMode()->ShouldDrawEntity(this) )
-		return false;
-#endif
 
 	// Some rendermodes prevent rendering
 	if ( m_nRenderMode == kRenderNone )
@@ -6086,10 +6061,6 @@ void C_BaseEntity::SUB_Remove( void )
 
 CBaseEntity *FindEntityInFrontOfLocalPlayer()
 {
-#if DOTA_DLL
-	// Get the entity under our mouse cursor
-	return DOTAInput()->GetCrosshairEntity();
-#endif
 
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pPlayer )

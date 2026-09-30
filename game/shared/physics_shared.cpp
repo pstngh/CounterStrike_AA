@@ -31,9 +31,6 @@ IPhysics			*physics = NULL;
 IPhysicsObject		*g_PhysWorldObject = NULL;
 IPhysicsCollision	*physcollision = NULL;
 IPhysicsEnvironment	*physenv = NULL;
-#ifdef PORTAL
-IPhysicsEnvironment	*physenv_main = NULL;
-#endif
 IPhysicsSurfaceProps *physprops = NULL;
 // UNDONE: This hash holds both entity & IPhysicsObject pointer pairs
 // UNDONE: Split into separate hashes?
@@ -57,10 +54,8 @@ const objectparams_t g_PhysDefaultObjectParams =
 };
 
 PRECACHE_REGISTER_BEGIN( GLOBAL, PhysFrictionEffect )
-#ifndef DOTA_DLL
 	PRECACHE( PARTICLE_SYSTEM, "impact_physics_dust" )
 	PRECACHE( PARTICLE_SYSTEM, "impact_physics_sparks" )
-#endif
 PRECACHE_REGISTER_END()
 
 void CSolidSetDefaults::SetDefaults( void *pData )

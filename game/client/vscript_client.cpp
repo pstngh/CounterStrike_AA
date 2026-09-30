@@ -57,11 +57,6 @@ static const unsigned char g_Script_vscript_client[] = {
 };
 //lwss end
 
-#if defined ( PORTAL2 )
-#include "usermessages.h"
-#include "hud_macros.h"
-#endif
-
 extern IScriptManager *scriptmanager;
 extern ScriptClassDesc_t * GetScriptDesc( CBaseEntity * );
 
@@ -242,42 +237,3 @@ bool IsEntityCreationAllowedInScripts( void )
 {
 	return g_VScriptGameSystem.m_bAllowEntityCreationInScripts;
 }
-
-#if defined ( PORTAL2 )
-void __MsgFunc_SetMixLayerTriggerFactor( bf_read &msg )
-{
-	char buf[MAX_PATH];
-
-	msg.ReadString( buf, ARRAYSIZE( buf ), false );
-	int iLayerID = engine->GetMixLayerIndex( buf );
-	if ( iLayerID < 0 )
-	{
-		Warning( "Invalid mix layer passed to SetMixLayerTriggerFactor: '%s'\n", buf ); 
-		return;
-	}
-	msg.ReadString( buf, ARRAYSIZE( buf ), false );
-	int iGroupID = engine->GetMixGroupIndex( buf );
-	if ( iGroupID < 0 )
-	{
-		Warning( "Invalid mix group passed to SetMixLayerTriggerFactor: '%s'\n", buf ); 
-		return;
-	}
-
-	engine->SetMixLayerTriggerFactor( iLayerID, iGroupID, msg.ReadFloat() );
-}
-
-class CSetMixLayerTriggerHelper : public CAutoGameSystem 
-{
-	virtual bool Init()
-	{
-		for( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-		{
-			ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-			HOOK_MESSAGE( SetMixLayerTriggerFactor );
-		}
-		return true;
-	}
-};
-
-static CSetMixLayerTriggerHelper g_SetMixLayerTriggerHelper;
-#endif

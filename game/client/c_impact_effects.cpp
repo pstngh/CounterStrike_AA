@@ -52,7 +52,6 @@ static ConVar fx_drawimpactdust( "fx_drawimpactdust", "1", FCVAR_DEVELOPMENTONLY
 
 PRECACHE_REGISTER_BEGIN( GLOBAL, FX_CacheMaterialHandles )
 
-#ifndef DOTA_DLL
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/fleck_wood1", g_Mat_Fleck_Wood[0] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/fleck_wood2", g_Mat_Fleck_Wood[1] )
 
@@ -74,7 +73,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, FX_CacheMaterialHandles )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/blood", g_Mat_BloodPuff[0] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/blood2", g_Mat_BloodPuff[1] )
 	
-#ifndef TF_CLIENT_DLL
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/muzzleflash1", g_Mat_SMG_Muzzleflash[0] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/muzzleflash2", g_Mat_SMG_Muzzleflash[1] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/muzzleflash3", g_Mat_SMG_Muzzleflash[2] )
@@ -83,9 +81,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, FX_CacheMaterialHandles )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/combinemuzzle1", g_Mat_Combine_Muzzleflash[0] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/combinemuzzle2", g_Mat_Combine_Muzzleflash[1] )
 	PRECACHE_INDEX( PARTICLE_MATERIAL, "effects/strider_muzzle", g_Mat_Combine_Muzzleflash[2] )
-#endif
-#endif
-
 #endif
 
 PRECACHE_REGISTER_END()

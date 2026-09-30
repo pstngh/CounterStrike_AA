@@ -9,40 +9,7 @@
 #pragma once
 #endif
 
-#if defined(TF_CLIENT_DLL) || defined(TF_DLL) || defined(TF_GC_DLL)
-// TF
-	class CTFItemSchema;
-	class CTFItemDefinition;
-	class CTFItemSystem;
-	
-	typedef CTFItemSchema		GameItemSchema_t;
-	typedef CTFItemDefinition	GameItemDefinition_t;
-	typedef CTFItemSystem		GameItemSystem_t;
-
-	#include "tf_item_schema.h"
-#elif defined( DOTA_CLIENT_DLL ) || defined( DOTA_DLL ) || defined ( DOTA_GC_DLL ) 
-// DOTA
-	class CDOTAItemSchema;
-	class CDOTAItemDefinition;
-	class CDOTAItemSystem;
-
-	typedef CDOTAItemSchema		GameItemSchema_t;
-	typedef CDOTAItemDefinition	GameItemDefinition_t;
-	typedef CDOTAItemSystem		GameItemSystem_t;
-
-	#include "econ/dota_item_schema.h"
-#elif defined( PORTAL2 ) || defined( PORTAL2_GC_DLL )
-// PORTAL2
-	class CPortal2ItemSchema;
-	class CPortal2ItemDefinition;
-	class CPortal2ItemSystem;
-	
-	typedef CPortal2ItemSchema		GameItemSchema_t;
-	typedef CPortal2ItemDefinition	GameItemDefinition_t;
-	typedef CPortal2ItemSystem		GameItemSystem_t;
-
-	#include "portal2_item_schema.h"	
-#elif defined( CSTRIKE15 ) || defined( CSTRIKE_GC_DLL )
+#if defined( CSTRIKE15 ) || defined( CSTRIKE_GC_DLL )
 	class CCStrike15ItemSchema;
 	class CCStrike15ItemDefinition;
 	class CCStrike15ItemSystem;

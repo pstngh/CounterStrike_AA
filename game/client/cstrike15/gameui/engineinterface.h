@@ -25,22 +25,6 @@
 #include "tier2/tier2.h"
 #include "matchmaking/imatchframework.h"
 
-#ifdef SWARM_DLL
-#include "matchmaking/swarm/imatchext_swarm.h"
-extern class IMatchExtSwarm *g_pMatchExtSwarm;
-#endif
-
-#ifdef PORTAL2_UITEST_DLL
-class IMatchExtPortal2
-{
-public:
-	inline KeyValues * GetAllMissions() { return NULL; }
-	inline KeyValues * GetMapInfoByBspName( KeyValues *, char const *, KeyValues ** = NULL ) { return NULL; }
-	inline KeyValues * GetMapInfo( KeyValues *, KeyValues ** = NULL ) { return NULL; }
-};
-extern class IMatchExtPortal2 *g_pMatchExtPortal2;
-#endif
-
 // engine interface singleton accessors
 extern IVEngineClient *engine;
 extern class IBik *bik;

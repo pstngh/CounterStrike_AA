@@ -30,7 +30,6 @@
 #include "tier0/memdbgon.h"
 
 //Precahce the effects
-#if !defined(TF_CLIENT_DLL) && !defined(DOTA_CLIENT_DLL)
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheMuzzleFlash )
 PRECACHE( MATERIAL, "effects/muzzleflash1" )
 PRECACHE( MATERIAL, "effects/muzzleflash2" )
@@ -47,7 +46,6 @@ PRECACHE( MATERIAL, "effects/combinemuzzle2" )
 PRECACHE( MATERIAL, "effects/combinemuzzle2_nocull" )
 #endif
 PRECACHE_REGISTER_END()
-#endif
 
 //Whether or not we should emit a dynamic light
 ConVar muzzleflash_light( "muzzleflash_light", "1", FCVAR_ARCHIVE );

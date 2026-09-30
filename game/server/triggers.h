@@ -313,16 +313,6 @@ private:
 	int	  m_iAttachmentIndex;
 	bool  m_bSnapToGoal;
 
-#if HL2_EPISODIC
-	bool  m_bInterpolatePosition;
-
-	// these are interpolation vars used for interpolating the camera over time
-	Vector m_vStartPos, m_vEndPos;
-	float m_flInterpStartTime;
-
-	const static float kflPosInterpTime; // seconds
-#endif
-
 	int   m_nPlayerButtons;
 	int m_nOldTakeDamage;
 

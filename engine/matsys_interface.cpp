@@ -949,16 +949,7 @@ void InitWellKnownRenderTargets( void )
 		mat_resolveFullFrameDepth.SetValue( 0 );
 	}
 
-#if defined( LEFT4DEAD )
-	if ( IsPC() )	
-	{
-		g_FullFrameFBTexture1.Init( CreateFullFrameFBTexture( 1 ) );	// save some memory on the 360
-	}
-#else
-
 	g_FullFrameFBTexture1.Init( CreateFullFrameFBTexture( 1, CREATERENDERTARGETFLAGS_TEMP ) );
-
-#endif
 
 #ifndef _PS3
 	g_FullFrameDepth.Init( CreateFullFrameDepthTexture() );

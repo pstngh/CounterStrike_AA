@@ -264,9 +264,6 @@ void CHLTVClientState::SendClientInfo( void )
 	info.set_send_table_crc( SendTable_GetCRC() );
 	info.set_server_count( m_nServerCount );
 	info.set_is_hltv( true );
-#if defined( REPLAY_ENABLED )
-	info.set_is_replay( false );
-#endif
 	info.set_friends_id( 0 );
 	// info.set_friends_name( "" );
 

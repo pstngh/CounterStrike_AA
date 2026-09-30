@@ -203,10 +203,6 @@ void CAI_NetworkManager::MarkDontSaveGraph()
 
 void CAI_NetworkManager::SaveNetworkGraph( void )
 {
-#if defined( PORTAL2 )
-	// not used
-	return;
-#endif
 
 	if ( m_bDontSaveGraph )
 		return;
@@ -474,10 +470,6 @@ void CAI_NetworkManager::SaveNetworkGraph( void )
 
 void CAI_NetworkManager::LoadNetworkGraph( void )
 {
-#if defined( PORTAL2 )
-	// not used
-	return;
-#endif
 
 	// ---------------------------------------------------
 	// If I'm in edit mode don't load, always recalculate
@@ -1024,10 +1016,6 @@ static bool SetupEditMode()
 
 void CAI_NetworkManager::DelayedInit( void )
 {
-#if defined( PORTAL2 )
-	SetThink ( NULL );
-	m_fInitalized = true;
-#else
 	if ( !g_pGameRules->FAllowNPCs() )
 	{
 		SetThink ( NULL );
@@ -1106,7 +1094,6 @@ void CAI_NetworkManager::DelayedInit( void )
 
 	if ( g_AI_Manager.NumAIs() != 0 && g_pBigAINet->NumNodes() == 0 )
 		DevMsg( "WARNING: Level contains NPCs but has no path nodes\n" );
-#endif
 }
 
 

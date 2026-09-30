@@ -56,9 +56,6 @@
 #include "vphysics/player_controller.h"
 #include "saverestore_utlvector.h"
 #include "hltvdirector.h"
-#if defined( REPLAY_ENABLED )
-#include "replaydirector.h"
-#endif
 #include "nav_mesh.h"
 #include "env_zoom.h"
 #include "rumble_shared.h"
@@ -77,15 +74,6 @@
 #include "iclient.h"
 #include "vote_controller.h"
 #include "platforminputdevice.h"
-
-#ifdef PORTAL2
-#include "weapon_portalgun.h"
-#endif
-
-#ifdef HL2_DLL
-#include "combine_mine.h"
-#include "weapon_physcannon.h"
-#endif
 
 #ifdef CSTRIKE_DLL
 #include "weapon_c4.h"
@@ -617,9 +605,6 @@ CBasePlayer::CBasePlayer( )
 	m_flFlashTime = -1;
 	pl.fixangle = FIXANGLE_ABSOLUTE;
 	pl.hltv = false;
-#if defined( REPLAY_ENABLED )
-	pl.replay = false;
-#endif
 	pl.frags = 0;
 	pl.assists = 0;
 	pl.deaths = 0;
@@ -812,24 +797,14 @@ int CBasePlayer::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 	// when HLTV/Replay is connected and spectators press +USE, they
 	// signal that they are recording a interesting scene
 	// so transmit these 'cameramans' to the HLTV or Replay client
-#if defined( REPLAY_ENABLED )
-	if ( HLTVDirector()->GetCameraMan() == entindex() ||
-		 ReplayDirector()->GetCameraMan() == entindex() )
-#else
 	if ( HLTVDirector()->GetCameraMan() == entindex() )
-#endif
 	{
 		CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
 		
 		Assert( pRecipientEntity->IsPlayer() );
 		
 		CBasePlayer *pRecipientPlayer = static_cast<CBasePlayer*>( pRecipientEntity );
-#if defined( REPLAY_ENABLED )
-		if ( pRecipientPlayer->IsHLTV() ||
-			 pRecipientPlayer->IsReplay() )
-#else
 		if ( pRecipientPlayer->IsHLTV() )
-#endif
 		{
 			// HACK force calling RecomputePVSInformation to update PVS data
 			NetworkProp()->AreaNum();
@@ -951,7 +926,6 @@ int TrainSpeed(int iSpeed, int iMax)
 void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 {
 	// temporarily using pain sounds for death sounds
-#if !defined ( PORTAL2 )
 	// Did we die from falling?
 	if ( m_bitsDamageType & DMG_FALL )
 	{
@@ -962,7 +936,6 @@ void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 	{
 		EmitSound( "Player.Death" );
 	}
-#endif
 	// play one of the suit death alarms
 	if ( IsSuitEquipped() )
 	{
@@ -1072,11 +1045,6 @@ void CBasePlayer::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &v
 			break;
 		}
 
-#ifdef HL2_EPISODIC
-		// If this damage type makes us bleed, then do so
-		bool bShouldBleed = !g_pGameRules->Damage_ShouldNotBleed( info.GetDamageType() );
-		if ( bShouldBleed )
-#endif
 		{
 			SpawnBlood(ptr->endpos, vecDir, BloodColor(), info.GetDamage());// a little surface blood.
 			TraceBleed( info.GetDamage(), vecDir, ptr, info.GetDamageType() );
@@ -1129,11 +1097,6 @@ void CBasePlayer::DamageEffect(float flDamage, int fDamageType)
 	}
 	else if ( fDamageType & DMG_BULLET )
 	{
-#	ifdef PORTAL2
-		if( GameRules()->IsMultiplayer() )
-			EmitSound( "CoopBot.CoopBotBulletImpact" );
-		else
-#	endif
 			EmitSound( "Flesh.BulletImpact" );
 	}
 }
@@ -1164,11 +1127,6 @@ bool CBasePlayer::ShouldTakeDamageInCommentaryMode( const CTakeDamageInfo &input
 	// Allow SetHealth inputs to kill player.
 	if ( inputInfo.GetInflictor() == this && inputInfo.GetAttacker() == this )
 		return true;
-
-#ifdef PORTAL
-	if ( inputInfo.GetDamageType() & DMG_ACID )
-		return true;
-#endif
 
 	// In commentary, ignore all damage except for falling and leeches
 	if ( !(inputInfo.GetDamageType() & (DMG_BURN | DMG_PLASMA | DMG_FALL | DMG_CRUSH)) && inputInfo.GetDamageType() != DMG_GENERIC )
@@ -1544,7 +1502,6 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 //-----------------------------------------------------------------------------
 void CBasePlayer::OnDamagedByExplosion( const CTakeDamageInfo &info )
 {
-#ifndef PORTAL2
 	float lastDamage = info.GetDamage();
 
 	float distanceFromPlayer = 9999.0f;
@@ -1568,7 +1525,6 @@ void CBasePlayer::OnDamagedByExplosion( const CTakeDamageInfo &info )
 
 	CSingleUserRecipientFilter user( this );
 	enginesound->SetPlayerDSP( user, effect, false );
-#endif
 }
 
 //=========================================================
@@ -2033,20 +1989,10 @@ void CBasePlayer::SetAnimation( PLAYER_ANIM playerAnim )
 WaterMove
 ============
 */
-#ifdef HL2_DLL
-
-// test for HL2 drowning damage increase (aux power used instead)
-#define AIRTIME						7		// lung full of air lasts this many seconds
-#define DROWNING_DAMAGE_INITIAL		10
-#define DROWNING_DAMAGE_MAX			10
-
-#else
 
 #define AIRTIME						12		// lung full of air lasts this many seconds
 #define DROWNING_DAMAGE_INITIAL		2
 #define DROWNING_DAMAGE_MAX			5
-
-#endif
 
 void CBasePlayer::WaterMove()
 {
@@ -2770,11 +2716,7 @@ CBaseEntity * CBasePlayer::GetObserverTarget()
 
 void CBasePlayer::ObserverUse( bool bIsPressed )
 {
-#if defined( REPLAY_ENABLED )
-	if ( !HLTVDirector()->IsActive() && !ReplayDirector()->IsActive() )	
-#else
 	if ( !HLTVDirector()->IsActive() )
-#endif
 		return;
 
 	if ( GetTeamNumber() != TEAM_SPECTATOR || IsCoach() )
@@ -2784,9 +2726,6 @@ void CBasePlayer::ObserverUse( bool bIsPressed )
 		return;
 
 	bool bIsHLTV = HLTVDirector()->IsActive();
-#if defined( REPLAY_ENABLED )
-	bool bIsReplay = ReplayDirector()->IsActive();
-#endif
 
 	if ( bIsHLTV )
 	{
@@ -2812,27 +2751,6 @@ void CBasePlayer::ObserverUse( bool bIsPressed )
 		//m_bActiveCameraMan = !m_bActiveCameraMan;
 #endif
 	}
-#if defined( REPLAY_ENABLED )
-	else if ( bIsReplay )
-	{
-		int iCameraManIndex = ReplayDirector()->GetCameraMan();
-
-		if ( iCameraManIndex == 0 )
-		{
-			// turn camera on
-			ReplayDirector()->SetCameraMan( entindex() );
-		}
-		else if ( iCameraManIndex == entindex() )
-		{
-			// turn camera off
-			ReplayDirector()->SetCameraMan( 0 );
-		}
-		else
-		{
-			ClientPrint( this, HUD_PRINTTALK, "Camera in use by other player." );	
-		}
-	}
-#endif
 	else
 	{
 #ifdef CAMERAMAN_OLD_WAY
@@ -3466,11 +3384,7 @@ void CBasePlayer::PhysicsSimulate( void )
 		AdjustPlayerTimeBase( simulation_ticks );
 	}
 
-#if defined( REPLAY_ENABLED )
-	if ( IsHLTV() || IsReplay() )
-#else
 	if ( IsHLTV() )
-#endif
 	{
 		// just run a single, empty command to make sure 
 		// all PreThink/PostThink functions are called as usual
@@ -4784,21 +4698,9 @@ void CBasePlayer::PostThink()
 				if ( m_hUseEntity->OnControls( this ) && 
 					( !GetActiveWeapon() || GetActiveWeapon()->IsEffectActive( EF_NODRAW ) ||
 					( GetActiveWeapon()->GetActivity() == ACT_VM_HOLSTER ) 
-	#ifdef PORTAL // Portalgun view model stays up when holding an object -Jeep
-					|| FClassnameIs( GetActiveWeapon(), "weapon_portalgun" ) 
-	#endif //#ifdef PORTAL			
 					) )
 				{  
-#if defined ( PORTAL2 )
-					CPlayerPickupController *pPickup = (CPlayerPickupController*)m_hUseEntity.Get();
-					Assert( pPickup );
-					if ( pPickup )
-					{
-						pPickup->UsePickupController( this, this, USE_SET, 2 );	// try fire the gun
-					}
-#else
 					m_hUseEntity->Use( this, this, USE_SET, 2 );	// try fire the gun
-#endif
 				}
 				else
 				{
@@ -5309,11 +5211,8 @@ void CBasePlayer::Precache( void )
 	BaseClass::Precache();
 
 
-#ifndef DOTA_DLL
-#if !defined ( PORTAL2 )
 	PrecacheScriptSound( "Player.FallGib" );
 	PrecacheScriptSound( "Player.Death" );
-#endif
 	PrecacheScriptSound( "Player.PlasmaDamage" );
 	PrecacheScriptSound( "Player.SonicDamage" );
 	PrecacheScriptSound( "Player.DrownStart" );
@@ -5323,13 +5222,9 @@ void CBasePlayer::Precache( void )
 	enginesound->PrecacheSentenceGroup( "HEV" );
 
 	// These are always needed
-#ifndef TF_DLL
 	PrecacheParticleSystem( "slime_splash_01" );
 	PrecacheParticleSystem( "slime_splash_02" );
 	PrecacheParticleSystem( "slime_splash_03" );
-#endif
-
-#endif
 
 	// in the event that the player JUST spawned, and the level node graph
 	// was loaded, fix all of the node graph pointers before the game starts.
@@ -5686,9 +5581,7 @@ bool CBasePlayer::GetInVehicle( IServerVehicle *pVehicle, int nRole )
 			pWeapon->Holster( NULL );
 		}
 
-#ifndef HL2_DLL
 		m_Local.m_iHideHUD |= HIDEHUD_WEAPONSELECTION;
-#endif
 		m_Local.m_iHideHUD |= HIDEHUD_INVEHICLE;
 	}
 
@@ -5793,9 +5686,7 @@ void CBasePlayer::LeaveVehicle( const Vector &vecExitPoint, const QAngle &vecExi
 	qAngles[ROLL] = 0;
 	SnapEyeAngles( qAngles );
 
-#ifndef HL2_DLL
 	m_Local.m_iHideHUD &= ~HIDEHUD_WEAPONSELECTION;
-#endif
 
 	m_Local.m_iHideHUD &= ~HIDEHUD_INVEHICLE;
 
@@ -6115,45 +6006,6 @@ void CBasePlayer::ImpulseCommands( )
 	m_nImpulse = 0;
 }
 
-#ifdef HL2_EPISODIC
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-static void CreateJalopy( CBasePlayer *pPlayer )
-{
-	// Cheat to create a jeep in front of the player
-	Vector vecForward;
-	AngleVectors( pPlayer->EyeAngles(), &vecForward );
-	CBaseEntity *pJeep = (CBaseEntity *)CreateEntityByName( "prop_vehicle_jeep" );
-	if ( pJeep )
-	{
-		Vector vecOrigin = pPlayer->GetAbsOrigin() + vecForward * 256 + Vector(0,0,64);
-		QAngle vecAngles( 0, pPlayer->GetAbsAngles().y - 90, 0 );
-		pJeep->SetAbsOrigin( vecOrigin );
-		pJeep->SetAbsAngles( vecAngles );
-		pJeep->KeyValue( "model", "models/vehicle.mdl" );
-		pJeep->KeyValue( "solid", "6" );
-		pJeep->KeyValue( "targetname", "jeep" );
-		pJeep->KeyValue( "vehiclescript", "scripts/vehicles/jalopy.txt" );
-		DispatchSpawn( pJeep );
-		pJeep->Activate();
-		pJeep->Teleport( &vecOrigin, &vecAngles, NULL );
-	}
-}
-
-void CC_CH_CreateJalopy( void )
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-	if ( !pPlayer )
-		return;
-	CreateJalopy( pPlayer );
-}
-
-static ConCommand ch_createjalopy("ch_createjalopy", CC_CH_CreateJalopy, "Spawn jalopy in front of the player.", FCVAR_CHEAT);
-
-#endif // HL2_EPISODIC
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -6282,12 +6134,6 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 
 		EquipSuit();
 
-		#if defined( PORTAL2 )
-			// Give the player portal 2 stuff!
-			GiveNamedItem( "weapon_camera" );
-			GiveNamedItem( "weapon_placement" );
-		#else // PORTAL2
-
 			// Give the player everything!
 			GiveAmmo( 255,	"Pistol");
 			GiveAmmo( 255,	"AR2");
@@ -6299,9 +6145,6 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 			GiveAmmo( 5,	"grenade");
 			GiveAmmo( 32,	"357" );
 			GiveAmmo( 16,	"XBowBolt" );
-			#ifdef HL2_EPISODIC
-				GiveAmmo( 5,	"Hopwire" );
-			#endif
 
 			GiveNamedItem( "weapon_smg1" );
 			GiveNamedItem( "weapon_frag" );
@@ -6310,27 +6153,10 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 			GiveNamedItem( "weapon_ar2" );
 			GiveNamedItem( "weapon_shotgun" );
 			GiveNamedItem( "weapon_physcannon" );
-			#ifndef HL2_EP3 // No bugbait in EP3
 				GiveNamedItem( "weapon_bugbait" );
-			#endif
 			GiveNamedItem( "weapon_rpg" );
 			GiveNamedItem( "weapon_357" );
 			GiveNamedItem( "weapon_crossbow" );
-
-			#ifdef HL2_EP3
-				GiveNamedItem( "weapon_icegun" );
-				GiveNamedItem( "weapon_weaponizer" );
-				GiveNamedItem( "weapon_teleport" );
-				GiveNamedItem( "weapon_pipebomblauncher" );
-				GiveNamedItem( "weapon_flechettegun" );
-				GiveNamedItem( "weapon_flamethrower" );
-				GiveNamedItem( "weapon_egon" );
-				GiveNamedItem( "weapon_gauss" );
-				GiveAmmo( 999, "Fuel" );
-				GiveAmmo( 100, "Uranium" );
-			#endif // HL2_EP3
-
-		#endif // PORTAL2 
 
 		if ( GetHealth() < 100 )
 		{
@@ -6529,11 +6355,7 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 		ConVarRef mp_allowspectators( "mp_allowspectators" );
 		if ( mp_allowspectators.IsValid() )
 		{
-#if defined( REPLAY_ENABLED )
-			if ( ( mp_allowspectators.GetBool() == false ) && !IsHLTV() && !IsReplay() )
-#else
 			if ( ( mp_allowspectators.GetBool() == false ) && !IsHLTV() )
-#endif
 			{
 				ClientPrint( this, HUD_PRINTCENTER, "#Cannot_Be_Spectator" );
 				return true;
@@ -6993,27 +6815,6 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 		}
 		else
 		{
-#ifdef HL2_DLL
-
-			if ( IsGameConsole() )
-			{
-				CFmtStr hint;
-				hint.sprintf( "#valve_hint_select_%s", pWeapon->GetClassname() );
-				UTIL_HudHintText( this, hint.Access() );
-			}
-
-			// Always switch to a newly-picked up weapon
-			if ( !PlayerHasMegaPhysCannon() )
-			{
-				// If it uses clips, load it full. (this is the first time you've picked up this type of weapon)
-				if ( pWeapon->UsesClipsForAmmo1() )
-				{
-					pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
-				}
-
-				Weapon_Switch( pWeapon );
-			}
-#endif
 		}
 		return true;
 	}
@@ -7700,14 +7501,6 @@ void CBasePlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 
 	bool bShouldSwitch = g_pGameRules->FShouldSwitchWeapon( this, pWeapon );
 
-#ifdef HL2_DLL
-	if ( bShouldSwitch == false && PhysCannonGetHeldEntity( GetActiveWeapon() ) == pWeapon && 
-		 Weapon_OwnsThisType( pWeapon->GetClassname(), pWeapon->GetSubType()) )
-	{
-		bShouldSwitch = true;
-	}
-#endif//HL2_DLL
-
 	// should we switch to this item?
 	if ( bShouldSwitch )
 	{
@@ -8208,11 +8001,9 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
 		SendPropDataTable	( SENDINFO_DT(m_Local), &REFERENCE_SEND_TABLE(DT_Local) ),
 		
 // If HL2_DLL is defined, then baseflex.cpp already sends these.
-#ifndef HL2_DLL
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 0), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 1), 8, SPROP_ROUNDDOWN, -32.0, 32.0f),
 		SendPropFloat		( SENDINFO_VECTORELEM(m_vecViewOffset, 2), 10, SPROP_CHANGES_OFTEN,	0.0f, 128.0f),
-#endif
 
 		SendPropFloat		( SENDINFO(m_flFriction),		8,	SPROP_ROUNDDOWN,	0.0f,	4.0f),
 
@@ -8570,28 +8361,6 @@ void CBasePlayer::ModifyOrAppendPlayerCriteria( AI_CriteriaSet& set )
 	set.AppendCriteria( "playeractivity", CAI_BaseNPC::GetActivityName( GetActivity() ) );
 
 	set.AppendCriteria( "playerspeed", UTIL_VarArgs( "%.3f", GetAbsVelocity().Length() ) );
-
-#ifdef HL2_EP3
-	CBaseEntity *pHeldObject = GetPlayerHeldEntity( this );
-	if( !pHeldObject )
-	{
-		pHeldObject = PhysCannonGetHeldEntity( GetActiveWeapon() );
-	}
-	
-	if ( pHeldObject )
-	{
-		if ( pHeldObject->GetEntityName() == NULL_STRING )
-		{
-			set.AppendCriteria( "playerheldentity", pHeldObject->GetClassname() );
-		}
-		else
-		{
-			set.AppendCriteria( "playerheldentity", STRING( pHeldObject->GetEntityName() ) );
-		}
-		
-		set.AppendCriteria( "playerheldmodel", STRING( pHeldObject->GetModelName() ) );
-	}
-#endif
 
 	AppendContextToCriteria( set, "player" );
 }
@@ -9155,14 +8924,6 @@ bool CPlayerInfo::IsHLTV()
 	Assert( m_pParent );
 	return m_pParent->IsHLTV(); 
 }
-
-#if defined( REPLAY_ENABLED )
-bool CPlayerInfo::IsReplay()
-{
-	Assert( m_pParent );
-	return m_pParent->IsReplay();
-}
-#endif
 
 bool CPlayerInfo::IsPlayer() 
 { 

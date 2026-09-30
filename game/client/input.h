@@ -115,10 +115,6 @@ public:
 	virtual		bool		CAM_IsOrthographic() const;
 	virtual		void		CAM_OrthographicSize( float& w, float& h ) const;
 	
-#if defined( HL2_CLIENT_DLL )
-	// IK back channel info
-	virtual		void		AddIKGroundContactInfo( int entindex, float minheight, float maxheight );
-#endif
 	virtual		void		LevelInit( void );
 
 	virtual		void		CAM_SetCameraThirdData( CameraThirdData_t *pCameraData, const QAngle &vecCameraOffset );
@@ -351,10 +347,6 @@ protected:
 
 		// Set until polled by CreateMove and cleared
 		CHandle< C_BaseCombatWeapon > m_hSelectedWeapon;
-
-#if defined( HL2_CLIENT_DLL )
-		CUtlVector< CEntityGroundContact > m_EntityGroundContact;
-#endif
 
 		CameraThirdData_t	*m_pCameraThirdData;
 		int					m_nCamCommand;

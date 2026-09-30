@@ -97,9 +97,6 @@ void C_Gib::ClientThink( void )
 
 	if ( GetRenderAlpha() == 0 )
 	{
-#ifdef HL2_CLIENT_DLL
-		s_AntlionGibManager.RemoveGib( this );
-#endif
 		Release();
 		return;
 	}

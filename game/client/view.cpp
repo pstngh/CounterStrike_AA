@@ -27,9 +27,6 @@
 #include "smoke_fog_overlay.h"
 #include "bitmap/tgawriter.h"
 #include "hltvcamera.h"
-#if defined( REPLAY_ENABLED )
-#include "replaycamera.h"
-#endif
 #include "input.h"
 #include "filesystem.h"
 #include "materialsystem/itexture.h"
@@ -48,11 +45,7 @@
 #include "gameui.h"
 #endif
 #ifdef GAMEUI_EMBEDDED
-#if defined( PORTAL2 )
-#include "gameui/basemodpanel.h"
-#elif defined( SWARM_DLL )
-#include "swarm/gameui/swarm/basemodpanel.h"
-#elif defined( CSTRIKE15 )
+#if defined( CSTRIKE15 )
 #include "gameui/basemodpanel.h"
 #else
 #error "GAMEUI_EMBEDDED"
@@ -61,10 +54,6 @@
 
 #if defined( HL2_CLIENT_DLL ) || defined( CSTRIKE_DLL ) || defined( INFESTED_DLL )
 #define USE_MONITORS
-#endif
-
-#ifdef PORTAL
-#include "C_Prop_Portal.h" //portal surface rendering functions
 #endif
 
 	
@@ -430,11 +419,7 @@ void CViewRender::DriftPitch (void)
 	if ( !player )
 		return;
 
-#if defined( REPLAY_ENABLED )
-	if ( g_bEngineIsHLTV || engine->IsReplay() || ( player->GetGroundEntity() == NULL ) || engine->IsPlayingDemo() )
-#else
 	if ( g_bEngineIsHLTV || ( player->GetGroundEntity() == NULL ) || engine->IsPlayingDemo() )
-#endif
 	{
 		m_PitchDrift.driftmove = 0;
 		m_PitchDrift.pitchvel = 0;
@@ -713,12 +698,6 @@ void CViewRender::SetUpView()
 	{
 		HLTVCamera()->CalcView( &view );
 	}
-#if defined( REPLAY_ENABLED )
-	else if ( engine->IsReplay() )
-	{
-		ReplayCamera()->CalcView( view.origin, view.angles, view.fov );
-	}
-#endif
 	else
 	{
 		// FIXME: Are there multiple views? If so, then what?

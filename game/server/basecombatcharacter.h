@@ -21,10 +21,7 @@
 #include <limits.h>
 #include "weapon_proficiency.h"
 
-#if defined( PORTAL2 )
-// HACK, Should come from game specific enum...
-#include "weapons_portal.h"
-#elif defined( CSTRIKE_DLL )
+#if defined( CSTRIKE_DLL )
 #include "cs_weapon_parse.h"
 #else
 #define WEAPON_MAX 32   
@@ -149,17 +146,8 @@ public:
 	virtual bool		FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL )	{ return BaseClass::FVisible( vecTarget, traceMask, ppBlocker ); }
 	static void			ResetVisibilityCache( CBaseCombatCharacter *pBCC = NULL );
 
-#ifdef PORTAL
-	virtual	bool		FVisibleThroughPortal( const CPortal_Base2D *pPortal, CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
-#endif
-
 	virtual bool		FInViewCone( CBaseEntity *pEntity );
 	virtual bool		FInViewCone( const Vector &vecSpot );
-
-#ifdef PORTAL
-	virtual CPortal_Base2D*	FInViewConeThroughPortal( CBaseEntity *pEntity );
-	virtual CPortal_Base2D*	FInViewConeThroughPortal( const Vector &vecSpot );
-#endif
 
 	virtual bool		FInAimCone( CBaseEntity *pEntity );
 	virtual bool		FInAimCone( const Vector &vecSpot );
@@ -342,9 +330,7 @@ public:
 
 	// VPHYSICS
 	virtual void			VPhysicsShadowCollision( int index, gamevcollisionevent_t *pEvent );
-#if !defined( PORTAL2 )
 	virtual void			VPhysicsUpdate( IPhysicsObject *pPhysics );
-#endif
 	float					CalculatePhysicsStressDamage( vphysics_objectstress_t *pStressOut, IPhysicsObject *pPhysics );
 	void					ApplyStressDamage( IPhysicsObject *pPhysics, bool bRequireLargeObject );
 

@@ -56,11 +56,6 @@
 #include "cbenchmark.h"
 #include "client.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replay.h"
-#include "replayserver.h"
-#include "replayhistorymanager.h"
-#endif
 #include "keyvalues.h"
 #include "sv_logofile.h"
 #include "cl_steamauth.h"
@@ -867,11 +862,7 @@ void CGameServer::InitMaxClients( void )
 
 	for ( int nHltvServerIndex = 0; nHltvServerIndex < HLTV_SERVER_MAX_COUNT; ++nHltvServerIndex )
 	{
-#if defined( REPLAY_ENABLED )
-		if ( GetIndexedConVar( tv_enable, nHltvServerIndex ).GetBool() || Replay_IsEnabled() ) 
-#else
 		if ( GetIndexedConVar( tv_enable, nHltvServerIndex ).GetBool() )
-#endif
 		{
 			newmaxplayers += 1;
 			m_nMaxClientsLimit += 1;
@@ -1473,11 +1464,7 @@ void SV_DetermineMulticastRecipients( bool usepas, const Vector& origin, CPlayer
             continue;
         
         // Always add the HLTV or Replay client
-#if defined( REPLAY_ENABLED )
-        if ( pClient->IsHLTV() || pClient->IsReplay() )
-#else
         if ( pClient->IsHLTV() )
-#endif
         {
             playerbits.Set( i );
             continue;
@@ -2608,54 +2595,6 @@ bool SV_ActivateServer()
     }
 
     // Replay setup
-#if defined( REPLAY_ENABLED )
-    if ( !g_pServerReplayHistoryManager )
-    {
-        g_pServerReplayHistoryManager = CreateServerReplayHistoryManager();
-        g_pServerReplayHistoryManager->Init();
-    }
-
-    if ( Replay_IsEnabled() )
-    {
-        if ( CommandLine()->FindParm("-noreplay") )
-        {
-            // let user know that Replay will not work
-            ConMsg ("Replay is disabled on this server.\n");
-        }
-        else
-        {
-            if ( !replay )
-            {
-                replay = new CReplayServer;
-                replay->Init( NET_IsDedicated() );
-            }
-
-#if !defined( NO_STEAM )
-            Steam3Server().UpdateSpectatorPort( NET_GetUDPPort( NS_REPLAY ) );
-#endif
-
-            if ( replay->IsActive() )
-            {
-                // replay master already running, just activate client
-                replay->m_MasterClient->ActivatePlayer();
-                replay->StartMaster( replay->m_MasterClient );
-            }
-            else
-            {
-                // create new replay client
-                CGameClient *cl = (CGameClient*)sv.CreateFakeClient( "Replay" );
-                replay->StartMaster( cl );
-            }
-        }
-    }
-    else
-    {
-
-        // make sure replay is disabled
-        if ( replay )
-            replay->Shutdown();
-    }
-#endif
 
     if (sv.IsDedicated())
     {
@@ -2862,9 +2801,6 @@ void CGameServer::ExecGameTypeCfg( const char *mapname )
     if ( numSlots >= 0 )
     {
         m_numGameSlots = numSlots;
-#ifdef PORTAL2	// HACK: PORTAL2 uses maxclients instead of GAMERULES
-        SetMaxClients( numSlots );
-#endif
     }
 }
 

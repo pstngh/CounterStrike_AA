@@ -37,9 +37,6 @@
 #endif
 #include "hltvreplaysystem.h"
 #include "netmessages.h"
-#if defined( REPLAY_ENABLED )
-#include "replaycamera.h"
-#endif
 #include "particlemgr.h"
 #include "c_vguiscreen.h"
 #include "c_team.h"
@@ -55,10 +52,6 @@
 #include "matchmaking/imatchframework.h"
 #include "clientmode_csnormal.h"
 
-
-#ifdef PORTAL2
-#include "c_basehlplayer.h"
-#endif // PORTAL2
 
 #ifdef CSTRIKE15
 #include "c_cs_playerresource.h"
@@ -230,17 +223,10 @@ void ClientModeShared::Init()
 	ListenForGameEvent( "items_gifted" );
 #endif
 
-#if defined( INFESTED_DLL )
-	ListenForGameEvent( "player_fullyjoined" );	
-#endif
-
 
 
 
 	HLTVCamera()->Init();
-#if defined( REPLAY_ENABLED )
-	ReplayCamera()->Init();
-#endif
 
 	m_CursorNone = vgui::dc_none;
 
@@ -1032,11 +1018,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 
 	if ( Q_strcmp( "player_connect", eventname ) == 0 )
 	{
-#ifdef PORTAL2
-		// dont show these message on the console at all
-		if ( IsGameConsole() )
-			return;
-#endif
 
 		if ( this == GetFullscreenClientMode() )
 			return;
@@ -1066,11 +1047,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_disconnect", eventname ) == 0 )
 	{
-#ifdef PORTAL2
-		// dont show these message on the console at all
-		if ( IsGameConsole() )
-			return;
-#endif
 
 		if ( this == GetFullscreenClientMode() )
 			return;
@@ -1126,11 +1102,6 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "player_fullyjoined", eventname ) == 0 )
 	{
-#ifdef PORTAL2
-		// dont show these message on the console at all
-		if ( IsGameConsole() )
-			return;
-#endif
 		if ( !hudChat )
 			return;
 		if ( PlayerNameNotSetYet(event->GetString("name")) )

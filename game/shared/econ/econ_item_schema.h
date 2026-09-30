@@ -3892,9 +3892,6 @@ private:
 	virtual bool BInitLootLists( KeyValues *pKVLootLists, KeyValues *pKVRandomAttributeTemplates, CUtlVector<CUtlString> *pVecErrors, bool bServerLists );
 	bool BInitRevolvingLootLists( KeyValues *pKVRevolvingLootLists, CUtlVector<CUtlString> *pVecErrors );
 	bool BInitQuestRewardLootLists( KeyValues *pKVQuestRewardLootLists, CUtlVector<CUtlString> *pVecErrors );
-#ifdef TF_CLIENT_DLL
-	bool BInitConcreteItemCounts( CUtlVector<CUtlString> *pVecErrors );
-#endif
 	bool BInitItemLevels( KeyValues *pKVItemLevels, CUtlVector<CUtlString> *pVecErrors );
 	bool BInitKillEaterScoreTypes( KeyValues *pKVItemLevels, CUtlVector<CUtlString> *pVecErrors );
 	bool BInitAlternateIcons( KeyValues *pKVAlternateIcons, CUtlVector<CUtlString> *pVecErrors );

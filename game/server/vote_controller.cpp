@@ -13,10 +13,6 @@
 #include "cs_gamerules.h"
 #include "usermessages.h"
 
-#ifdef TF_DLL
-#include "tf/tf_gamerules.h"
-#endif
-
 #include "EventLog.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -1094,14 +1090,6 @@ bool CBaseIssue::CanCallVote( int iEntIndex, const char *pszCommand, const char 
 	// Bogus player
 	if( iEntIndex == -1 )
 		return false;
-
-#ifdef TF_DLL
-	if ( TFGameRules() && TFGameRules()->IsInWaitingForPlayers() && !TFGameRules()->IsInTournamentMode() )
-	{
-		nFailCode = VOTE_FAILED_WAITINGFORPLAYERS;
-		return false;
-	}
-#endif // TF_DLL
 
 	if ( !sv_vote_allow_in_warmup.GetBool() && CSGameRules() && CSGameRules()->IsWarmupPeriod() && !IsEnabledDuringWarmup() )
 	{

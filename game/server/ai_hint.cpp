@@ -1654,9 +1654,6 @@ hinttypedescs_t g_pszHintDescriptions[] =
 
 	{	HINT_CSTRIKE_HOSTAGE_ESCAPE, "CS Port: Hostage Escape"	},
 
-#ifdef PORTAL2
-	{	HINT_PORTAL2_NEST, "Portal 2: Nest"	},
-#endif // PORTAL2
 };
 
 //-----------------------------------------------------------------------------

@@ -48,13 +48,6 @@
 #include "vphysics2_interface.h"
 #include "vphysics2_interface_flags.h"
 
-#ifdef PORTAL
-#include "portal_physics_collisionevent.h"
-#include "physicsshadowclone.h"
-#include "PortalSimulation.h"
-void PortalPhysFrame( float deltaTime ); //small wrapper for PhysFrame that simulates all 3 environments at once
-#endif
-
 void PrecachePhysicsSounds( void );
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -71,9 +64,6 @@ extern IPhysicsConstraintEvent *g_pConstraintEvents;
 
 
 CEntityList *g_pShadowEntities = NULL;
-#ifdef PORTAL
-CEntityList *g_pShadowEntities_Main = NULL;
-#endif
 
 // local variables
 static float g_PhysAverageSimTime;
@@ -99,11 +89,7 @@ ConVar phys_timescale( "phys_timescale", "1", 0, "Scale time for physics", Times
 ConVar phys_dontprintint( "phys_dontprintint", "1", FCVAR_NONE, "Don't print inter-penetration warnings." );
 #endif
 
-#ifdef PORTAL
-	CPortal_CollisionEvent g_Collisions;
-#else
 	CCollisionEvent g_Collisions;
-#endif
 
 
 IPhysicsCollisionSolver * const g_pCollisionSolver = &g_Collisions;
@@ -205,9 +191,6 @@ void CPhysicsHook::LevelInitPreEntity()
 	params.maxCollisionsPerObjectPerTimestep = 10;
 	physenv->SetPerformanceSettings( &params );
 
-#ifdef PORTAL
-	physenv_main = physenv;
-#endif
 	{
 	g_EntityCollisionHash = physics->CreateObjectPairHash();
 	}
@@ -238,9 +221,6 @@ void CPhysicsHook::LevelInitPreEntity()
 	g_PhysWorldObject = PhysCreateWorld( GetWorldEntity() );
 
 	g_pShadowEntities = new CEntityList;
-#ifdef PORTAL
-	g_pShadowEntities_Main  = g_pShadowEntities;
-#endif
 
 	PrecachePhysicsSounds();
 
@@ -371,20 +351,12 @@ void CPhysicsHook::FrameUpdatePostEntityThink( )
 	{
 		m_isFinalTick = false;
 
-#ifdef PORTAL //slight detour if we're the portal mod
-		PortalPhysFrame( interval );
-#else
 		PhysFrame( interval );
-#endif
 
 	}
 	m_isFinalTick = true;
 
-#ifdef PORTAL //slight detour if we're the portal mod
-	PortalPhysFrame( interval );
-#else
 	PhysFrame( interval );
-#endif
 }
 
 void CPhysicsHook::PreClientUpdate()
@@ -1661,28 +1633,6 @@ CON_COMMAND( physics_budget, "Times the cost of each active object" )
 }
 
 
-#ifdef PORTAL
-ConVar sv_fullsyncclones("sv_fullsyncclones", "1", FCVAR_CHEAT );
-void PortalPhysFrame( float deltaTime ) //small wrapper for PhysFrame that simulates all environments at once
-{
-	CPortalSimulator::PrePhysFrame();
-
-	if( sv_fullsyncclones.GetBool() )
-		CPhysicsShadowClone::FullSyncAllClones();
-
-	g_Collisions.BufferTouchEvents( true );
-
-	PhysFrame( deltaTime );
-
-	g_Collisions.PortalPostSimulationFrame();
-
-	g_Collisions.BufferTouchEvents( false );
-	g_Collisions.FrameUpdate();
-
-	CPortalSimulator::PostPhysFrame();
-}
-#endif
-
 // Advance physics by time (in seconds)
 void PhysFrame( float deltaTime )
 {
@@ -1722,9 +1672,7 @@ void PhysFrame( float deltaTime )
 		physenv->DebugCheckContacts();
 	}
 
-#ifndef PORTAL //instead of wrapping 1 simulation with this, portal needs to wrap 3
 	g_Collisions.BufferTouchEvents( true );
-#endif
 
 	{
 		//CMiniProfilerGuard mpg3(&g_mp_ServerPhysicsSimulate);
@@ -1804,10 +1752,8 @@ void PhysFrame( float deltaTime )
 		lastObjectCount = activeCount;
 	}
 
-#ifndef PORTAL //instead of wrapping 1 simulation with this, portal needs to wrap 3
 	g_Collisions.BufferTouchEvents( false );
 	g_Collisions.FrameUpdate();
-#endif
 }
 
 
@@ -2201,11 +2147,6 @@ void CCollisionEvent::UpdateDamageEvents( void )
 		int iEntBits = event.pEntity->IsAlive() ? 0x0001 : 0;
 		iEntBits |= event.pEntity->IsMarkedForDeletion() ? 0x0002 : 0;
 		iEntBits |= (event.pEntity->GetSolidFlags() & FSOLID_NOT_SOLID) ? 0x0004 : 0;
-
-#ifdef PORTAL2
-		if ( event.pEntity->IsPlayer() )
-			continue;
-#endif // PORTAL2
 
 		event.pEntity->TakeDamage( event.info );
 		int iEntBits2 = event.pEntity->IsAlive() ? 0x0001 : 0;
@@ -2613,11 +2554,6 @@ void PhysCollisionSound( CBaseEntity *pEntity, IPhysicsObject *pPhysObject, int 
 	if ( deltaTime < 0.05f || speed < 70.0f )
 		return;
 
-#if defined ( PORTAL2 )
-	if ( pPhysObject->GetGameFlags() & FVPHYSICS_PLAYER_HELD )
-		return;
-#endif
-
 	float volume = speed * speed * (1.0f/(320.0f*320.0f));	// max volume at 320 in/s
 	if ( volume > 1.0f )
 		volume = 1.0f;
@@ -2656,34 +2592,10 @@ void PhysCollisionScreenShake( gamevcollisionevent_t *pEvent, int index )
 	}
 }
 
-#if HL2_EPISODIC
-// Uses DispatchParticleEffect because, so far as I know, that is the new means of kicking
-// off flinders for this kind of collision. Should this be in g_pEffects instead? 
-void PhysCollisionWarpEffect( gamevcollisionevent_t *pEvent, surfacedata_t *phit )
-{
-	Vector vecPos; 
-	QAngle vecAngles;
-
-	pEvent->pInternalData->GetContactPoint( vecPos );
-	{
-		Vector vecNormal;
-		pEvent->pInternalData->GetSurfaceNormal(vecNormal);
-		VectorAngles( vecNormal, vecAngles );
-	}
-
-	DispatchParticleEffect( "warp_shield_impact", vecPos, vecAngles );
-}
-#endif
-
 
 void PhysCollisionDust( gamevcollisionevent_t *pEvent, surfacedata_t *phit )
 {
 
-#if defined ( PORTAL2 )
-	if ( ( pEvent->pObjects[0]->GetGameFlags() & FVPHYSICS_PLAYER_HELD ) ||  
-		 ( pEvent->pObjects[1]->GetGameFlags() & FVPHYSICS_PLAYER_HELD ) )
-		return;
-#endif
 	switch ( phit->game.material )
 	{
 	case CHAR_TEX_SAND:
@@ -2700,15 +2612,6 @@ void PhysCollisionDust( gamevcollisionevent_t *pEvent, surfacedata_t *phit )
 			return;
 
 		break;
-
-#if HL2_EPISODIC 
-		// this is probably redundant because BaseEntity::VHandleCollision should have already dispatched us elsewhere
-	case CHAR_TEX_WARPSHIELD:
-		PhysCollisionWarpEffect(pEvent,phit);
-		return;
-
-		break;
-#endif
 
 	default:
 		return;
@@ -2732,10 +2635,6 @@ void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, const cha
 	if ( !pEntity )
 		return;
 
-#if defined ( PORTAL2 )
-	if ( ( pObject->GetGameFlags() & FVPHYSICS_PLAYER_HELD ) )  
-		return;
-#endif
 	// cut out the quiet sounds
 	// UNDONE: Separate threshold for starting a sound vs. continuing?
 	flVolume = clamp( flVolume, 0.0f, 1.0f );

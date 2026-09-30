@@ -46,11 +46,7 @@ inline void UpdateRefractTexture( int x, int y, int w, int h, bool bForceUpdate 
 
 	CMatRenderContextPtr pRenderContext( materials );
 	ITexture *pTexture = GetPowerOfTwoFrameBufferTexture();
-#ifdef PORTAL2
-	if ( IsPC() || bForceUpdate || g_bAllowMultipleRefractUpdatesPerScenePerFrame || ( gpGlobals->framecount != g_viewscene_refractUpdateFrame ) || ( g_nRefractUpdatePortalRender != g_nCurrentPortalRender ) )
-#else
 	if ( IsPC() || bForceUpdate || g_bAllowMultipleRefractUpdatesPerScenePerFrame || ( gpGlobals->framecount != g_viewscene_refractUpdateFrame ) )
-#endif
 	{
 		// forced or only once per frame 
 		Rect_t rect;
@@ -60,9 +56,6 @@ inline void UpdateRefractTexture( int x, int y, int w, int h, bool bForceUpdate 
 		rect.height = h;
 		pRenderContext->CopyRenderTargetToTextureEx( pTexture, 0, &rect, IsPC() ? NULL : &rect );
 
-#ifdef PORTAL2
-		g_nRefractUpdatePortalRender = g_nCurrentPortalRender;
-#endif
 		g_viewscene_refractUpdateFrame = gpGlobals->framecount;
 	}
 	pRenderContext->SetFrameBufferCopyTexture( pTexture );

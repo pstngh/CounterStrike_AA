@@ -156,9 +156,6 @@ void C_TEBloodSprite::PostDataUpdate( DataUpdateType_t updateType )
 
 void TE_BloodSprite( IRecipientFilter& filter, float delay, KeyValues *pKeyValues )
 {
-#ifdef PORTAL2
-	Error( "Attempted to create blood particle!\n" );
-#else
 	Vector vecOrigin, vecDirection;
 	vecOrigin.x = pKeyValues->GetFloat( "originx" );
 	vecOrigin.y = pKeyValues->GetFloat( "originy" );
@@ -172,5 +169,4 @@ void TE_BloodSprite( IRecipientFilter& filter, float delay, KeyValues *pKeyValue
 	int nSize = pKeyValues->GetInt( "size" );
 
 	TE_BloodSprite( filter, 0.0f, &vecOrigin, &vecDirection, c.r(), c.g(), c.b(), c.a(), nSize );
-#endif // P2
 }

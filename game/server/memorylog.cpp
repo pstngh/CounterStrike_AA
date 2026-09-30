@@ -29,23 +29,6 @@ const char *GetMapName( void )
 void CMemoryLog::LevelInitPostEntity( void )
 {
 //#include "entitylist.h"
-#if defined( PORTAL2 )
-	const char *mapName = GetMapName();
-	if ( V_stristr( mapName, "sp_" ) == mapName )
-	{
-		// In order to ensure that the map loop never fails, spawn a script entity with the transition script if none exists in the map:
-		for ( CBaseEntity *pEnt = gEntList.FindEntityByClassname( NULL, "logic_script" ); pEnt; pEnt = gEntList.FindEntityByClassname( pEnt, "logic_script" ) )
-		{
-			if ( pEnt && V_stristr( pEnt->GetEntityNameAsCStr(), "transition_script" ) )
-				return;
-		}
-		CBaseEntity *pScriptEntity = (CBaseEntity *)CreateEntityByName( "logic_script" );
-		pScriptEntity->SetName( MAKE_STRING( "failsafe_transition_script" ) );
-		pScriptEntity->KeyValue( "thinkfunction", "Think" );
-		pScriptEntity->KeyValue( "vscripts", "transitions/sp_transition_list.nut" );
-		DispatchSpawn( pScriptEntity );
-	}
-#endif
 }
 
 #endif // !defined( _CERT )

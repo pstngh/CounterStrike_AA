@@ -35,16 +35,9 @@
 #include "model_types.h"
 #include "vscript/ivscript.h"
 #include "vscript_server.h"
-#if defined( TERROR )
-#include "music.h"
-#endif
 
 #if defined( CSTRIKE15 )
 #include "gametypes.h"
-#endif
-
-#ifdef PORTAL2
-#include "paint_stream_manager.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -556,10 +549,6 @@ BEGIN_DATADESC( CWorld )
 	DEFINE_KEYFIELD( m_iszDetailSpriteMaterial, FIELD_STRING, "detailmaterial" ),
 	DEFINE_KEYFIELD( m_bColdWorld,		FIELD_BOOLEAN, "coldworld" ),
 
-#ifdef PORTAL2
-	DEFINE_KEYFIELD( m_nMaxBlobCount,	FIELD_INTEGER, "maxblobcount" ),
-#endif
-
 END_DATADESC()
 
 
@@ -575,10 +564,6 @@ IMPLEMENT_SERVERCLASS_ST(CWorld, DT_WORLD)
 	SendPropFloat	(SENDINFO(m_flMinPropScreenSpaceWidth), 0, SPROP_NOSCALE ),
 	SendPropStringT (SENDINFO(m_iszDetailSpriteMaterial) ),
 	SendPropInt		(SENDINFO(m_bColdWorld), 1, SPROP_UNSIGNED ),
-
-#ifdef PORTAL2
-	SendPropInt		(SENDINFO(m_nMaxBlobCount), 0, SPROP_UNSIGNED),
-#endif
 
 END_SEND_TABLE()
 
@@ -618,31 +603,11 @@ bool CWorld::KeyValue( const char *szKeyName, const char *szValue )
 	{
 		SetTimeOfDay( atoi( szValue ) );
 	}
-#ifdef PORTAL2
-	else if ( FStrEq(szKeyName, "maxblobcount" ) )
-	{
-		m_nMaxBlobCount = atoi( szValue );
-		PaintStreamManager.AllocatePaintBlobPool( m_nMaxBlobCount );
-	}
-#endif
 	else
 		return BaseClass::KeyValue( szKeyName, szValue );
 
 	return true;
 }
-
-
-#ifdef PORTAL2
-int CWorld::Restore( IRestore &restore )
-{
-	if ( !BaseClass::Restore( restore ) )
-		return 0;
-
-	// world is the first thing that gets loaded, so we want to do our pool allocation here
-	PaintStreamManager.AllocatePaintBlobPool( m_nMaxBlobCount );
-	return 1;
-}
-#endif
 
 
 extern bool		g_fGameOver;
@@ -798,10 +763,8 @@ void CWorld::Precache( void )
 	g_pLastSpawn = NULL;
 	g_Language.SetValue( LANGUAGE_ENGLISH );	// TODO use VGUI to get current language
 
-#ifndef INFESTED_DLL
 	ConVarRef stepsize( "sv_stepsize" );
 	stepsize.SetValue( 18 );
-#endif
 
 	ConVarRef roomtype( "room_type" );
 	roomtype.SetValue( 0 );
@@ -817,9 +780,7 @@ void CWorld::Precache( void )
 	Assert( g_pGameRules );
 	g_pGameRules->Init();
 
-#ifndef DOTA_DLL
 	CSoundEnt::InitSoundEnt();
-#endif
 
 	// UNDONE: Make most of these things server systems or precache_registers
 	// =================================================

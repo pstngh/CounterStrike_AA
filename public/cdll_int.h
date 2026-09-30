@@ -147,10 +147,6 @@ typedef struct player_info_s
 	bool			fakeplayer;
 	// true if player is the HLTV proxy
 	bool			ishltv;
-#if defined( REPLAY_ENABLED )
-	// true if player is the Replay proxy
-	bool			isreplay;
-#endif
 	// custom files CRC for this player
 	CRC32_t			customFiles[MAX_CUSTOM_FILES];
 	// this counter increases each time the server downloaded a new file
@@ -543,19 +539,6 @@ public:
 	virtual bool		IsTakingScreenshot( void ) = 0;
 	// Is this a HLTV broadcast ?
 	virtual bool		IsHLTV( void ) = 0;
-
-#if defined( REPLAY_ENABLED )
-	// Is this a Replay demo?
-	virtual bool		IsReplay( void ) = 0;
-	// Download a replay from the given URL
-	virtual void		DownloadReplay( int nReplayDownloadGroupId ) = 0;
-	// Is replay enabled?
-	virtual bool		IsReplayEnabled() = 0;
-	// Is replay recording?
-	virtual bool		IsReplayRecording() = 0;
-	// Get the replay recording tick from server
-	virtual int			GetReplayRecordingTick() = 0;
-#endif  // REPLAY_ENABLED
 
 	// is this level loaded as just the background to the main menu? (active, but unplayable)
 	virtual bool		IsLevelMainMenuBackground( void ) = 0;

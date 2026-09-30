@@ -43,15 +43,6 @@ IMPLEMENT_CLIENTCLASS_DT(C_BaseFlex, DT_BaseFlex, CBaseFlex)
 	RecvPropInt(RECVINFO(m_blinktoggle)),
 	RecvPropVector(RECVINFO(m_viewtarget)),
 
-#ifdef HL2_CLIENT_DLL
-	RecvPropFloat( RECVINFO(m_vecViewOffset[0]) ),
-	RecvPropFloat( RECVINFO(m_vecViewOffset[1]) ),
-	RecvPropFloat( RECVINFO(m_vecViewOffset[2]) ),
-
-	RecvPropVector(RECVINFO(m_vecLean)),
-	RecvPropVector(RECVINFO(m_vecShift)),
-#endif
-
 END_RECV_TABLE()
 
 BEGIN_PREDICTION_DATA( C_BaseFlex )
@@ -122,10 +113,6 @@ bool GetHWMExpressionFileName( const char *pFilename, char *pHWMFilename )
 C_BaseFlex::C_BaseFlex() : 
 	m_iv_viewtarget( "C_BaseFlex::m_iv_viewtarget" ), 
 	m_iv_flexWeight("C_BaseFlex:m_iv_flexWeight" ),
-#ifdef HL2_CLIENT_DLL
-	m_iv_vecLean("C_BaseFlex:m_iv_vecLean" ),
-	m_iv_vecShift("C_BaseFlex:m_iv_vecShift" ),
-#endif
 	m_LocalToGlobal( 0, 0, FlexSettingLessFunc )
 {
 #ifdef _DEBUG
@@ -145,11 +132,6 @@ C_BaseFlex::C_BaseFlex() :
 	/// Make sure size is correct
 	Assert( PHONEME_CLASS_STRONG + 1 == NUM_PHONEME_CLASSES );
 
-#ifdef HL2_CLIENT_DLL
-	// Get general lean vector
-	AddVar( &m_vecLean, &m_iv_vecLean, LATCH_ANIMATION_VAR );
-	AddVar( &m_vecShift, &m_iv_vecShift, LATCH_ANIMATION_VAR );
-#endif
 }
 
 C_BaseFlex::~C_BaseFlex()
@@ -261,48 +243,6 @@ void C_BaseFlex::StandardBlendingRules( CStudioHdr *hdr, BoneVector pos[], BoneQ
 {
 	BaseClass::StandardBlendingRules( hdr, pos, q, currentTime, boneMask );
 
-#ifdef HL2_CLIENT_DLL
-	// shift pelvis, rotate body
-	if (hdr->GetNumIKChains() != 0 && (m_vecShift.x != 0.0 || m_vecShift.y != 0.0))
-	{
-		//CIKContext auto_ik;
-		//auto_ik.Init( hdr, GetRenderAngles(), GetRenderOrigin(), currentTime, gpGlobals->framecount, boneMask );
-		//auto_ik.AddAllLocks( pos, q );
-
-		matrix3x4_t rootxform;
-		AngleMatrix( GetRenderAngles(), GetRenderOrigin(), rootxform );
-
-		Vector localShift;
-		VectorIRotate( m_vecShift, rootxform, localShift );
-		Vector localLean;
-		VectorIRotate( m_vecLean, rootxform, localLean );
-
-		Vector p0 = pos[0];
-		float length = VectorNormalize( p0 );
-
-		// shift the root bone, but keep the height off the origin the same
-		Vector shiftPos = pos[0] + localShift;
-		VectorNormalize( shiftPos );
-		Vector leanPos = pos[0] + localLean;
-		VectorNormalize( leanPos );
-		pos[0] = shiftPos * length;
-
-		// rotate the root bone based on how much it was "leaned"
-		Vector p1;
-		CrossProduct( p0, leanPos, p1 );
-		float sinAngle = VectorNormalize( p1 );
-		float cosAngle = DotProduct( p0, leanPos );
-		float angle = atan2( sinAngle, cosAngle ) * 180 / M_PI;
-		Quaternion q1;
-		angle = clamp( angle, -45, 45 );
-		AxisAngleQuaternion( p1, angle, q1 );
-		QuaternionMult( q1, q[0], q[0] );
-		QuaternionNormalize( q[0] );
-
-		// DevMsgRT( "   (%.2f) %.2f %.2f %.2f\n", angle, p1.x, p1.y, p1.z );
-		// auto_ik.SolveAllLocks( pos, q );
-	}
-#endif
 }
 
 
@@ -383,12 +323,6 @@ public:
 		{
 			pFolder = "expressions";
 
-#if defined( PORTAL2 )
-			if ( IsGameConsole() )
-			{
-				return false;
-			}
-#endif
 		}
 
 		char directory[ MAX_PATH ];
@@ -440,56 +374,6 @@ public:
 		FindSceneFile( NULL, "phonemes_weak", true );
 		FindSceneFile(NULL,  "phonemes_strong", true );
 
-#if defined( HL2_CLIENT_DLL )
-		FindSceneFile( NULL, "random", true );
-		FindSceneFile( NULL, "randomAlert", true );
-#endif
-
-#if defined( TF_CLIENT_DLL )
-		// HACK TO ALL TF TO HAVE PER CLASS OVERRIDES
-		char const *pTFClasses[] = 
-		{
-			"scout",
-			"sniper",
-			"soldier",
-			"demo",
-			"medic",
-			"heavy",
-			"pyro",
-			"spy",
-			"engineer",
-		};
-
-		char fn[ MAX_PATH ];
-		for ( int i = 0; i < ARRAYSIZE( pTFClasses ); ++i )
-		{
-			Q_snprintf( fn, sizeof( fn ), "player/%s/phonemes/phonemes", pTFClasses[i] );
-			FindSceneFile( NULL, fn, true );
-			Q_snprintf( fn, sizeof( fn ), "player/%s/phonemes/phonemes_weak", pTFClasses[i] );
-			FindSceneFile( NULL, fn, true );
-			Q_snprintf( fn, sizeof( fn ), "player/%s/phonemes/phonemes_strong", pTFClasses[i] );
-			FindSceneFile( NULL, fn, true );
-
-			if ( !IsGameConsole() )
-			{
-				Q_snprintf( fn, sizeof( fn ), "player/hwm/%s/phonemes/phonemes", pTFClasses[i] );
-				FindSceneFile( NULL, fn, true );
-				Q_snprintf( fn, sizeof( fn ), "player/hwm/%s/phonemes/phonemes_weak", pTFClasses[i] );
-				FindSceneFile( NULL, fn, true );
-				Q_snprintf( fn, sizeof( fn ), "player/hwm/%s/phonemes/phonemes_strong", pTFClasses[i] );
-				FindSceneFile( NULL, fn, true );
-			}
-
-			Q_snprintf( fn, sizeof( fn ), "player/%s/emotion/emotion", pTFClasses[i] );
-			FindSceneFile( NULL, fn, true );
-			if ( !IsGameConsole() )
-			{
-				Q_snprintf( fn, sizeof( fn ), "player/hwm/%s/emotion/emotion", pTFClasses[i] );
-				FindSceneFile( NULL, fn, true );
-			}
-		}
-#endif
-
 		InitRecursive( NULL );
 		return true;
 	}
@@ -523,14 +407,6 @@ public:
 		Assert( V_strlen( filename ) < MAX_PATH );
 		V_strcpy( szFilename, filename );
 		
-#if defined( TF_CLIENT_DLL )	
-		char szHWMFilename[MAX_PATH];
-		if ( GetHWMExpressionFileName( szFilename, szHWMFilename ) )
-		{
-			V_strcpy( szFilename, szHWMFilename );
-		}
-#endif
-
 		Q_FixSlashes( szFilename );
 
 		// See if it's already loaded

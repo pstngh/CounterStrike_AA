@@ -4223,17 +4223,8 @@ model_t	*CModelLoader::LoadModel( model_t *mod, REFERENCETYPE *pReferencetype )
 			// the texture state needs to be established before any loading work
 			if ( IsGameConsole() || mat_excludetextures.GetBool() )
 			{
-#if defined( PORTAL2 )
-				char szExcludePath[MAX_PATH] = "";
-				// PORTAL2: we aren't using per-map excludes, we just need a few textures excluded in SP
-				if ( V_stristr( m_szBaseName, "sp_" ) )
-				{
-					v_snprintf( szExcludePath, sizeof( szExcludePath ), "//MOD/maps/sp_exclude.lst" );
-				}
-#else
 				char szExcludePath[MAX_PATH];
 				V_snprintf( szExcludePath, sizeof( szExcludePath ), "//MOD/maps/%s_exclude.lst", m_szBaseName );
-#endif
 				if ( developer.GetInt() > 1 )
 				{
 					DevMsg( "Setting excluded textures: %s\n", szExcludePath );

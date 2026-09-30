@@ -22,19 +22,12 @@
 #include "tier0/vprof.h"
 #include "EntityFlame.h"
 #include "EntityDissolve.h"
-#if defined( HL2_EP3 ) || defined( INFESTED_DLL )
-#include "EntityFreezing.h"
-#endif
 #include "ai_basenpc.h"
 #include "physics_prop_ragdoll.h"
 #include "datacache/idatacache.h"
 #include "smoke_trail.h"
 #include "collisionutils.h"
 #include "toolframework/itoolframework.h"
-
-#ifdef PORTAL2
-#include "ai_criteria.h"
-#endif // PORTAL2
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -115,10 +108,8 @@ BEGIN_DATADESC( CBaseAnimating )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Ignite", InputIgnite ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "IgniteLifetime", InputIgniteLifetime ),
 
-#ifndef HL2_EP3
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "IgniteNumHitboxFires", InputIgnite ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "IgniteHitboxFireScale", InputIgnite ),
-#endif
 	DEFINE_INPUTFUNC( FIELD_VOID, "BecomeRagdoll", InputBecomeRagdoll ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetLightingOriginHack", InputSetLightingOriginRelative ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetLightingOrigin", InputSetLightingOrigin ),
@@ -129,10 +120,6 @@ BEGIN_DATADESC( CBaseAnimating )
 	DEFINE_FIELD( m_flFrozenMax, FIELD_FLOAT ),
 
 	DEFINE_FIELD( m_fBoneCacheFlags, FIELD_SHORT ),
-
-#ifdef PORTAL2
-	DEFINE_OUTPUT( m_OnFizzled, "OnFizzled" ),
-#endif // PORTAL2
 
 	DEFINE_KEYFIELD( m_bSuppressAnimSounds, FIELD_BOOLEAN, "SuppressAnimSounds" ),
 
@@ -188,9 +175,6 @@ END_SEND_TABLE()
 
 
 BEGIN_ENT_SCRIPTDESC( CBaseAnimating, CBaseEntity, "Animating models" )
-	#ifdef PORTAL2
-	DEFINE_SCRIPTFUNC( GetObjectScaleLevel, "The scale size of the entity" )
-	#endif // PORTAL2
 	DEFINE_SCRIPTFUNC( LookupAttachment, "Get the named attachement id"  )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetAttachmentOrigin, "GetAttachmentOrigin", "Get the attachement id's origin vector"  )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetAttachmentAngles, "GetAttachmentAngles", "Get the attachement id's angles as a p,y,r vector"  )
@@ -226,11 +210,6 @@ CBaseAnimating::CBaseAnimating()
 		m_pBoneMergeCache = NULL;
 	}
 
-#ifdef PORTAL2
-	m_nObjectScaleLevel = 0;	 // No scale
-	m_bCanBeCaptured = true;
-#endif // PORTAL2
-
 	m_ScaleType = HIERARCHICAL_MODEL_SCALE;
 
 	// Anything animating is not intended to be cached for depth
@@ -247,14 +226,8 @@ CBaseAnimating::~CBaseAnimating()
 
 void CBaseAnimating::Precache()
 {
-#if !defined( TF_DLL ) && !defined ( DOTA_DLL ) && !defined ( PORTAL2 )
 	// Anything derived from this class can potentially burn - true, but do we want it to!
 	PrecacheParticleSystem( "burning_character" );
-#endif
-
-#ifdef PORTAL2
-	PrecacheScriptSound( "Prop.Fizzled" );
-#endif // PORTAL2
 
 	BaseClass::Precache();
 }
@@ -268,17 +241,6 @@ void CBaseAnimating::Activate()
 	SetLightingOrigin( m_iszLightingOrigin );
 	SetLightingOriginRelative( m_iszLightingOriginRelative );
 
-#if defined ( PORTAL2 )
-	// Scaled physics objects (re)create their physics here
-	if ( GetObjectScaleLevel() != 0 && VPhysicsGetObject() )
-	{	
-		// sanity check to make sure 'm_flModelScale' is in sync with the 
-		// mod specific 'm_nObjectScaleLevel' member.
-		Assert( m_flModelScale > 0.0f && m_flModelScale != 1.0f );
-
-		// UTIL_CreateScaledPhysObject( this, m_flModelScale );
-	}
-#endif // PORTAL2 
 }
 
 
@@ -955,12 +917,7 @@ float CBaseAnimating::GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSeque
 
 	if (t > 0)
 	{
-#if defined( PORTAL2 ) || defined( INFESTED )
-		float flBaseSpeed = GetSequenceMoveDist( pStudioHdr, iSequence ) / t;
-		return flBaseSpeed * GetModelHierarchyScale() * GetPlaybackRate();
-#else
 		return GetSequenceMoveDist( pStudioHdr, iSequence ) / t;
-#endif // PORTAL2 or INFESTED
 	}
 	else
 	{
@@ -1129,43 +1086,6 @@ void CBaseAnimating::HandleAnimEvent( animevent_t *pEvent )
 			BecomeRagdollOnClient( vec3_origin );
 			return;
 		}
-#ifdef HL2_EPISODIC
-		else if ( nEvent == AE_SV_DUSTTRAIL )
-		{
-			char szAttachment[128];
-			float flDuration;
-			float flSize;
-			if (sscanf( pEvent->options, "%s %f %f", szAttachment, &flDuration, &flSize ) == 3)
-			{
-				CHandle<DustTrail>	hDustTrail;
-
-				hDustTrail = DustTrail::CreateDustTrail();
-
-				if( hDustTrail )
-				{
-					hDustTrail->m_SpawnRate = 4;    // Particles per second
-					hDustTrail->m_ParticleLifetime = 1.5;   // Lifetime of each particle, In seconds
-					hDustTrail->m_Color.Init(0.5f, 0.46f, 0.44f);
-					hDustTrail->m_StartSize = flSize;
-					hDustTrail->m_EndSize = hDustTrail->m_StartSize * 8;
-					hDustTrail->m_SpawnRadius = 3;    // Each particle randomly offset from the center up to this many units
-					hDustTrail->m_MinSpeed = 4;    // u/sec
-					hDustTrail->m_MaxSpeed = 10;    // u/sec
-					hDustTrail->m_Opacity = 0.5f;  
-					hDustTrail->SetLifetime(flDuration);  // Lifetime of the spawner, in seconds
-					hDustTrail->m_StopEmitTime = gpGlobals->curtime + flDuration;
-					hDustTrail->SetParent( this, LookupAttachment( szAttachment ) );
-					hDustTrail->SetLocalOrigin( vec3_origin );
-				}
-			}
-			else
-			{
-				DevWarning( 1, "%s unable to parse AE_SV_DUSTTRAIL event \"%s\"\n", STRING( GetModelName() ), pEvent->options );
-			}
-
-			return;
-		}
-#endif
 	}
 
 	// New event, not meant for server.  Don't spam console.
@@ -2827,9 +2747,6 @@ CBoneCache *CBaseAnimating::GetBoneCache( void )
 	int boneMask = BONE_USED_BY_HITBOX | BONE_USED_BY_ATTACHMENT;
 
 	// TF queries these bones to position weapons when players are killed
-#if defined( TF_DLL )
-	boneMask |= BONE_USED_BY_BONE_MERGE;
-#endif
 	if ( pcache )
 	{
 		if ( pcache->IsValid( gpGlobals->curtime ) && (pcache->m_boneMask & boneMask) == boneMask && pcache->m_timeValid <= gpGlobals->curtime)
@@ -3755,10 +3672,6 @@ bool CBaseAnimating::Dissolve( const char *pMaterialName, float flStartTime, boo
 		}
 	}
 
-#ifdef PORTAL2
-	EmitSound( "Prop.Fizzled" );
-#endif // PORTAL2
-
 	return bRagdollCreated;
 }
 
@@ -3827,80 +3740,6 @@ void CBaseAnimating::InputBecomeRagdoll( inputdata_t &inputdata )
 
 void CBaseAnimating::Thaw( float flThawAmount )
 {
-#if defined( HL2_EP3 ) || defined( INFESTED_DLL )
-	if ( m_flFrozen <= 0.0f )
-		return;
-
-	bool bWasFrozen = IsFrozen();
-
-	CEntityFreezing *pFreezing = NULL;
-
-	if ( ( GetFlags() & FL_FREEZING ) != 0 )
-	{
-		// Get the freezing effect
-		pFreezing = dynamic_cast<CEntityFreezing*>( GetEffectEntity() );
-	}
-
-	float fTotalFrozen = 0.0f;
-
-	if ( pFreezing )
-	{
-		studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
-		if ( pStudioHdr )
-		{
-			// Thaw all hitboxes
-			mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( GetHitboxSet() );
-			if ( set && set->numhitboxes > 0 )
-			{
-				for ( int i = 0; i < set->numhitboxes; ++i )
-				{
-					pFreezing->m_flFrozenPerHitbox.GetForModify( i ) = MAX( 0.0f, pFreezing->m_flFrozenPerHitbox[ i ] - flThawAmount );
-				}
-
-				fTotalFrozen /= set->numhitboxes;
-			}
-		}
-	}
-
-	float flNewFrozen;
-
-	if ( fTotalFrozen )
-	{
-		// Total frozen amount from hitboxes
-		flNewFrozen = MAX( 0.0f, fTotalFrozen * 2.0f );
-	}
-	else
-	{
-		// Not hitboxes frozen, so do the thawing directly
-		flNewFrozen = MAX( 0.0f, m_flFrozen - flThawAmount );
-	}
-
-	m_flAttackFrozen = MIN( m_flAttackFrozen, flNewFrozen );
-	m_flMovementFrozen = MIN( m_flMovementFrozen, flNewFrozen );
-	m_flFrozen = flNewFrozen;
-
-	if ( bWasFrozen && !IsFrozen() )
-	{
-		// We're not in a frozen state anymore!
-		Unfreeze();
-	}
-
-	if ( pFreezing )
-	{
-		if ( m_flFrozen > 0.0f )
-		{
-			// Update our freezing effect
-			pFreezing->SetFrozen( m_flFrozen );
-		}
-		else
-		{
-			// Remove the freezing effect
-			UTIL_Remove( pFreezing );
-			SetEffectEntity( NULL );
-			RemoveFlag( FL_FREEZING );
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3923,114 +3762,6 @@ void CBaseAnimating::ToggleFreeze()
 //-----------------------------------------------------------------------------
 void CBaseAnimating::Freeze( float flFreezeAmount, CBaseEntity *pFreezer, Ray_t *pFreezeRay ) 
 {
-#if defined( HL2_EP3 ) || defined( INFESTED_DLL )
-	if ( flFreezeAmount < 0 )
-	{
-		// This is a debugging freeze
-		m_flFrozen = 1.0f;
-		m_flFrozenThawRate = 0.0f;
-		return;
-	}
-
-	// Bail if it's not allowed to freeze
-	if ( m_flFrozenMax < 0.0f )
-		return;
-
-	CEntityFreezing *pFreezing = NULL;
-
-	if ( ( GetFlags() & FL_FREEZING ) != 0 )
-	{
-		pFreezing = dynamic_cast<CEntityFreezing*>( GetEffectEntity() );
-	}
-	else
-	{
-		pFreezing = CEntityFreezing::Create( this );
-		SetEffectEntity( pFreezing );
-		AddFlag( FL_FREEZING );
-	}
-	
-	if ( !pFreezing )
-	{
-		return;
-	}
-
-	float fMaxFrozen = ( m_flFrozenMax == 0.0f ) ? ( 1.0f ) : m_flFrozenMax;
-
-	if ( pFreezeRay )
-	{
-		float fTotalFrozen = 0.0f;
-		m_flMovementFrozen = 0.0f;
-		m_flAttackFrozen = 0.0f;
-
-		float flMidHeight = WorldSpaceCenter().z;
-
-		studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( GetModel() );
-		if ( pStudioHdr )
-		{
-			// Freeze hitboxes that intersect this ray
-			mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( GetHitboxSet() );
-			if ( set && set->numhitboxes > 0 )
-			{
-				for ( int i = 0; i < set->numhitboxes; ++i )
-				{
-					// Get the hitbox data
-					mstudiobbox_t *pBox = set->pHitbox(i);
-
-					Vector vecPosition;
-					QAngle angAngles;
-					GetBonePosition( pBox->bone, vecPosition, angAngles );
-
-					trace_t tr;
-					if ( IntersectRayWithOBB( *pFreezeRay, vecPosition, angAngles, pBox->bbmin * GetModelHierarchyScale(), pBox->bbmax * GetModelHierarchyScale(), 0.0f, &tr ) )
-					{
-						// Ice ray intersected this bounding box
-						pFreezing->m_flFrozenPerHitbox.GetForModify( i ) = MIN( 1.0f, pFreezing->m_flFrozenPerHitbox[ i ] + flFreezeAmount );
-					}
-
-					fTotalFrozen += pFreezing->m_flFrozenPerHitbox[ i ];
-
-					// If it's above their middle prevent attacking otherwise prevent movement
-					if ( vecPosition.z > flMidHeight )
-					{
-						m_flAttackFrozen += pFreezing->m_flFrozenPerHitbox[ i ];
-					}
-					else
-					{
-						m_flMovementFrozen += pFreezing->m_flFrozenPerHitbox[ i ];
-					}
-				}
-
-				fTotalFrozen /= set->numhitboxes;
-				m_flMovementFrozen /= set->numhitboxes;
-				m_flAttackFrozen /= set->numhitboxes;
-			}
-		}
-
-		m_flFrozen = MIN( fMaxFrozen, fTotalFrozen * 3.0f );
-		m_flMovementFrozen = MIN( m_flFrozen, m_flMovementFrozen * 3.0f );
-		m_flAttackFrozen = MIN( m_flFrozen, m_flAttackFrozen * 3.0f );
-	}
-	else
-	{
-		studiohdr_t *pStudioHdr = GetModel() ? modelinfo->GetStudiomodel( GetModel() ) : NULL;
-		if ( pStudioHdr )
-		{
-			// Freeze all hitboxes
-			mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( GetHitboxSet() );
-			if ( set )
-			{
-				for ( int i = 0; i < set->numhitboxes; ++i )
-				{
-					pFreezing->m_flFrozenPerHitbox.GetForModify( i ) = MIN( 1.0f, pFreezing->m_flFrozenPerHitbox[ i ] + flFreezeAmount );
-				}
-			}
-		}
-
-		m_flFrozen = MIN( fMaxFrozen, m_flFrozen + flFreezeAmount );
-	}
-
-	pFreezing->SetFrozen( m_flFrozen );
-#endif
 }
 
 
@@ -4076,9 +3807,3 @@ bool CBaseAnimating::IsSequenceLooping( CStudioHdr *pStudioHdr, int iSequence )
 	return (::GetSequenceFlags( pStudioHdr, iSequence ) & STUDIO_LOOPING) != 0;
 }
 
-#ifdef	PORTAL2
-void CBaseAnimating::OnFizzled( void )
-{
-	m_OnFizzled.FireOutput( this, this );
-}
-#endif // PORTAL2

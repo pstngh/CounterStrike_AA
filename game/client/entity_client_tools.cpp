@@ -17,11 +17,6 @@
 #include "model_types.h"
 #include "vstdlib/ikeyvaluessystem.h"
 
-#ifdef PORTAL
-	#include "portalrender.h"
-	#include "c_portal_player.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -855,20 +850,6 @@ void CClientTools::PostToolMessage( KeyValues *pKeyValues )
 		pKeyValues->SetPtr( "texture", GetCameraTexture() );
 		return;
 	}
-
-#ifdef PORTAL
-	if ( !Q_stricmp( pKeyValues->GetName(), "portals" ) )
-	{
-		g_pPortalRender->HandlePortalPlaybackMessage( pKeyValues );
-		return;
-	}
-	
-	if ( !Q_stricmp( pKeyValues->GetName(), "query CPortalRenderer" ) )
-	{
-		pKeyValues->SetInt( "IsRenderingPortal", g_pPortalRender->GetViewRecursionLevel() );
-		return;
-	}
-#endif
 
 	if ( !Q_strcmp( pKeyValues->GetName(), "Game Entity KeyValues" ) )
 	{

@@ -47,13 +47,6 @@ public:
 	virtual void DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles );
 	virtual void GetVehicleClipPlanes( float &flZNear, float &flZFar ) const;
 
-#ifdef HL2_CLIENT_DLL
-	virtual int GetPrimaryAmmoType() const { return -1; }
-	virtual int GetPrimaryAmmoCount() const { return -1; }
-	virtual int GetPrimaryAmmoClip() const  { return -1; }
-	virtual bool PrimaryAmmoUsesClips() const { return false; }
-#endif
-
 	virtual bool IsPredicted() const { return false; }
 	virtual int GetJoystickResponseCurve() const;
 

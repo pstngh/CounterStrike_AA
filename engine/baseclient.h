@@ -118,11 +118,7 @@ public:
 	virtual	bool	IsActive( void ) const { return m_nSignonState == SIGNONSTATE_FULL; };
 	virtual	bool	IsFakeClient( void ) const { return m_bFakePlayer; };
 	virtual	bool	IsHLTV( void ) const { return m_bIsHLTV; }
-#if defined( REPLAY_ENABLED )
-	virtual bool	IsReplay( void ) const { return m_bIsReplay; }
-#else
 	virtual bool	IsReplay( void ) const { return false; }
-#endif  // REPLAY_ENABLED
 	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
 	virtual bool	IsHumanPlayer() const;
 	virtual	bool	IsHearingClient( int index ) const { return false; };
@@ -287,9 +283,6 @@ public:
 	CBaseServer		*m_Server;			// pointer to server object
 	bool			m_bIsHLTV;			// if this a HLTV proxy ?
 	CHLTVServer		*m_pHltvSlaveServer;
-#if defined( REPLAY_ENABLED )
-	bool			m_bIsReplay;		// if this is a Replay proxy ?
-#endif
 
 	// Client sends this during connection, so we can see if
 	//  we need to send sendtable info or if the .dll matches

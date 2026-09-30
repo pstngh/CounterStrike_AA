@@ -95,11 +95,7 @@ CBaseHudWeaponSelection::CBaseHudWeaponSelection( const char *pElementName ) : C
 {
 	s_pInstance[GET_ACTIVE_SPLITSCREEN_SLOT()] = this;
 	
-#ifdef PORTAL2
-	SetHiddenBits( HIDEHUD_WEAPONSELECTION | HIDEHUD_PLAYERDEAD );
-#else
 		SetHiddenBits( HIDEHUD_WEAPONSELECTION | HIDEHUD_NEEDSUIT | HIDEHUD_PLAYERDEAD | HIDEHUD_INVEHICLE );
-#endif // PORTAL2
 }
 
 //-----------------------------------------------------------------------------
@@ -203,9 +199,7 @@ void CBaseHudWeaponSelection::ProcessInput()
 	{
 		if ( IsWeaponSelectable() )
 		{
-#ifndef TF_CLIENT_DLL
 			if ( HUDTYPE_PLUS != hud_fastswitch.GetInt() )
-#endif
 			{
 				// Swallow the button
 				GetHud().m_iKeyBits &= ~( IN_ATTACK | IN_ATTACK2 | IN_ZOOM );

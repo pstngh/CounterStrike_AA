@@ -80,9 +80,6 @@ enum ESocketIndex_t
 #endif
 	NS_HLTV,
 	NS_HLTV1, // Note: NS_HLTV1 must follow NS_HLTV, NS_HLTV2 must follow NS_HLTV1, etc.
-#if defined( REPLAY_ENABLED )
-	NS_REPLAY,
-#endif
 	MAX_SOCKETS
 };
 

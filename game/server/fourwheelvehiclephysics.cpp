@@ -850,14 +850,6 @@ void CFourWheelVehiclePhysics::GetVehicleViewPosition( const char *pViewAttachme
 	GetAttachment( pViewAttachment, vehicleEyeOrigin, vehicleEyeAngles );
 	AngleMatrix( vehicleEyeAngles, vehicleEyePosToWorld );
 
-#ifdef HL2_DLL
-	// View dampening.
-	if ( r_VehicleViewDampen.GetInt() )
-	{
-		m_pOuterServerVehicle->GetFourWheelVehicle()->DampenEyePosition( vehicleEyeOrigin, vehicleEyeAngles );
-	}
-#endif
-
 	// Compute the relative rotation between the unperterbed eye attachment + the eye angles
 	matrix3x4_t cameraToWorld;
 	AngleMatrix( *pAbsAngles, cameraToWorld );

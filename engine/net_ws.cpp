@@ -57,9 +57,6 @@ static ConVar net_public_adr( "net_public_adr", "", FCVAR_RELEASE, "For servers 
 static ConVar clientport    ( "clientport", NETSTRING( PORT_CLIENT ), FCVAR_RELEASE, "Host game client port" );
 static ConVar hltvport		( "tv_port", NETSTRING( PORT_HLTV ), FCVAR_RELEASE, "Host GOTV[0] port" );
 static ConVar hltvport1		( "tv_port1", NETSTRING( PORT_HLTV1 ), FCVAR_RELEASE, "Host GOTV[1] port" );
-#if defined( REPLAY_ENABLED )
-static ConVar replayport	( "replay_port", va("%i",PORT_REPLAY), 0, "Host Replay port" );
-#endif
 
 static ConVar fakelag		( "net_fakelag", "0", FCVAR_CHEAT, "Lag all incoming network data (including loopback) by this many milliseconds." );
 static ConVar fakeloss		( "net_fakeloss", "0", FCVAR_CHEAT, "Simulate packet loss as a percentage (negative means drop 1/n packets)" ); 
@@ -219,9 +216,6 @@ static	bool net_nodns = false;	// Disable DNS request to avoid long timeouts
 bool net_notcp = true;	// Disable TCP support
 static	bool net_nohltv = false; // disable HLTV support
 static	bool net_addhltv1 = false; // by default, HLTV1 (sup)port is disabled. Must be enabled explicitly with -addhltv1 cmdline parameter
-#if defined( REPLAY_ENABLED )
-static	bool net_noreplay = false;	// disable Replay support
-#endif
 static	bool net_dedicated = false;	// true is dedicated system
 static	bool net_dedicatedForXbox = false; // true is dedicated system serving xbox
 static	bool net_dedicatedForXboxInsecure = false; // true if dedicated system serving insecure xbox
@@ -1185,9 +1179,6 @@ static const tokenset_t< ESocketIndex_t > s_SocketDescMap[] =
 #endif
 	{ "htv",	NS_HLTV			},
 	{ "htv1",	NS_HLTV1			},
-#if defined( REPLAY_ENABLED )
-	{ "rply",	NS_REPLAY		},
-#endif
 	{ NULL,		(ESocketIndex_t)-1 }
 };
 
@@ -1787,14 +1778,7 @@ netpacket_t *NET_GetPacket (int sock, byte *scratch )
 	// Check loopback first
 	if ( !NET_GetLoopPacket( &inpacket ) )
 	{
-#ifdef PORTAL2
-		extern IVEngineClient *engineClient;
-		// PORTAL2-specific hack for console perf - don't waste time reading from the actual socket (expensive Steam code)
-		if ( !NET_IsMultiplayer() || engineClient->IsSplitScreenActive() 
-			|| ( !IsGameConsole() && sv.IsActive() && !sv. IsMultiplayer() ) )
-#else // PORTAL2
 		if ( !NET_IsMultiplayer() )
-#endif // !PORTAL2
 		{
 			return NULL;
 		}
@@ -3162,12 +3146,6 @@ void NET_OpenSockets (void)
 			OpenSocketInternal( NS_HLTV1, hltvport1.GetInt(), PORT_HLTV1, "hltv1", nProtocol, false );
 		}
 	}
-#if defined( REPLAY_ENABLED )
-	if ( !net_noreplay )
-	{
-		OpenSocketInternal( NS_REPLAY, replayport.GetInt(), PORT_REPLAY, "replay", nProtocol, false );
-	}
-#endif
 }
 
 bool NET_IsSocketOpen( int nSockIdx )
@@ -3916,13 +3894,6 @@ void NET_Init( bool bIsDedicated )
 	{
 		net_addhltv1 = true;
 	}
-
-#if defined( REPLAY_ENABLED )
-	if ( CommandLine()->FindParm("-noreplay"))
-	{
-		net_noreplay = true;
-	}
-#endif
 
 	if (CommandLine()->FindParm("-noip"))
 	{

@@ -27,10 +27,6 @@
 #include "iservervehicle.h"
 #include "func_break.h"
 
-#if defined(PORTAL2)
-#include "weapon_portalgun.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -70,10 +66,8 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, WeaponResources )
 	PRECACHE( MODEL, "effects/bubble.vmt" )
 #endif // !TF_DLL
 
-#if !defined ( DOTA_DLL ) && !defined ( PORTAL2 )
 	PRECACHE( GAMESOUND, "BaseCombatWeapon.WeaponDrop" )
 	PRECACHE( GAMESOUND, "BaseCombatWeapon.WeaponMaterialize" )
-#endif
 
 PRECACHE_REGISTER_END()
 
@@ -640,12 +634,6 @@ void CBaseCombatWeapon::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 		{
 			OnPickedUp( pPlayer );
 		}
-#if defined(PORTAL2)
-		else if ( dynamic_cast<CWeaponPortalgun*>( this ) == NULL )
-		{
-			pPlayer->PickupObject( this );
-		}
-#endif
 	}
 }
 

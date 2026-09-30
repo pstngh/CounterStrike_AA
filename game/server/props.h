@@ -205,10 +205,6 @@ public:
 	void SetPhysicsAttacker( CBasePlayer *pEntity, float flTime );
 
 
-#ifdef HL2_EPISODIC
-	void CreateFlare( float flLifetime );
-#endif //HL2_EPISODIC
-
 protected:
 	void CheckRemoveRagdolls();
 	
@@ -451,9 +447,6 @@ private:
 protected:
 	CNetworkVar( bool, m_bAwake );
 
-#ifdef PORTAL2
-	bool		m_bAllowPortalFunnel;
-#endif // PORTAL2
 };
 
 //--------------------------------------------------------------------------------------------------------
@@ -506,10 +499,5 @@ int PropBreakablePrecacheAll( string_t modelName );
 extern ConVar func_breakdmg_bullet;
 extern ConVar func_breakdmg_club;
 extern ConVar func_breakdmg_explosive;
-
-#ifdef PORTAL2
-bool UTIL_PropIsMotionDisabled( CBaseEntity *pObject );
-void UTIL_SetPropMotionDisabled( CBaseEntity *pObject );
-#endif // PORTAL2
 
 #endif // PROPS_H

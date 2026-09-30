@@ -185,10 +185,6 @@ BEGIN_RECV_TABLE(C_BaseCombatCharacter, DT_BaseCombatCharacter)
 	RecvPropInt( RECVINFO( m_nRelativeDirectionOfLastInjury ) ),
 	RecvPropArray3( RECVINFO_ARRAY(m_hMyWeapons), RecvPropEHandle( RECVINFO( m_hMyWeapons[0] ) ) ),
 
-#ifdef INVASION_CLIENT_DLL
-	RecvPropInt( RECVINFO( m_iPowerups ) ),
-#endif
-
 END_RECV_TABLE()
 
 

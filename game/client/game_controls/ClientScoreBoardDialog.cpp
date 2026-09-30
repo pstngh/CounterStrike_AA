@@ -78,10 +78,6 @@ CClientScoreBoardDialog::CClientScoreBoardDialog(IViewPort *pViewPort) : Editabl
 	ListenForGameEvent( "hltv_status" );
 	ListenForGameEvent( "server_spawn" );
 
-#if defined( REPLAY_ENABLED )
-	ListenForGameEvent( "replay_status" );
-#endif
-
 	m_pImageList = NULL;
 
 	m_mapAvatarsToImageList.SetLessFunc( AvatarIndexLessFunc );

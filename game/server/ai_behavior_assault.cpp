@@ -83,57 +83,11 @@ int CRallyPoint::DrawDebugTextOverlays()
 //---------------------------------------------------------
 bool CRallyPoint::IsExclusive()
 {
-#ifndef HL2_EPISODIC // IF NOT EPISODIC
 	// This 'exclusivity' concept is new to EP2. We're only willing to
 	// risk causing problems in EP1, so emulate the old behavior if 
 	// we are not EPISODIC. We must do this by setting m_sExclusivity
 	// so that ent_text will properly report the state.
 	m_sExclusivity = RALLY_EXCLUSIVE_NO;
-#else
-	if( m_sExclusivity == RALLY_EXCLUSIVE_NOT_EVALUATED )
-	{
-		// We need to evaluate! Walk the chain of assault points
-		// and if *ANY* assault points  on this assault chain
-		// are set to Never Time Out then set this rally point to 
-		// be exclusive to stop other NPC's walking down the chain
-		// and ending up clumped up at the infinite rally point.
-		CAssaultPoint *pAssaultEnt = (CAssaultPoint *)gEntList.FindEntityByName( NULL, m_AssaultPointName );
-
-		if( !pAssaultEnt )
-		{
-			// Well, this is awkward. Leave it up to other assault code to tattle on the missing assault point.
-			// We will just assume this assault is not exclusive.
-			m_sExclusivity = RALLY_EXCLUSIVE_NO;
-			return false;
-		}
-
-		// Otherwise, we start by assuming this assault chain is not exclusive.
-		m_sExclusivity = RALLY_EXCLUSIVE_NO;
-
-		if( pAssaultEnt )
-		{
-			CAssaultPoint *pFirstAssaultEnt = pAssaultEnt; //some assault chains are circularly linked
-
-			do
-			{
-				if( pAssaultEnt->m_bNeverTimeout )
-				{
-					// We found a never timeout assault point! That makes this whole chain exclusive.
-					m_sExclusivity = RALLY_EXCLUSIVE_YES;
-					break;
-				}
-
-				pAssaultEnt = (CAssaultPoint *)gEntList.FindEntityByName( NULL, pAssaultEnt->m_NextAssaultPointName );
-				if ( pAssaultEnt && !pAssaultEnt->ClassMatchesExact( g_AssaultPointString ) )
-				{
-					pAssaultEnt = NULL;
-				}
-				
-			} while( (pAssaultEnt != NULL) && (pAssaultEnt != pFirstAssaultEnt) );
-
-		}
-	}
-#endif// HL2_EPISODIC 
 
 	return (m_sExclusivity == RALLY_EXCLUSIVE_YES);
 }
@@ -1594,23 +1548,6 @@ int CAI_AssaultBehavior::SelectSchedule()
 		}
 	}
 
-#ifdef HL2_EPISODIC
-	// This ugly patch fixes a bug where Combine Soldiers on an assault would not shoot through glass, because of the way
-	// that shooting through glass is implemented in their AI. (sjb)
-	if( HasCondition(COND_SEE_ENEMY) && HasCondition(COND_WEAPON_SIGHT_OCCLUDED) && !HasCondition(COND_LOW_PRIMARY_AMMO) )
-	{	
-		// If they are hiding behind something that we can destroy, start shooting at it.
-		CBaseEntity *pBlocker = GetOuter()->GetEnemyOccluder();
-		if ( pBlocker && pBlocker->GetHealth() > 0 )
-		{
-			if( GetOuter()->Classify() == CLASS_COMBINE && FClassnameIs(GetOuter(), "npc_combine_s") )
-			{
-				return SCHED_SHOOT_ENEMY_COVER;
-			}
-		}
-	}
-#endif//HL2_EPISODIC
-	
 	return BaseClass::SelectSchedule();
 }
 
@@ -1764,30 +1701,6 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_AssaultBehavior)
 	)
 
 
-#ifdef HL2_EPISODIC
-	//=========================================================
-	//=========================================================
-	DEFINE_SCHEDULE 
-	(
-		SCHED_HOLD_RALLY_POINT,
-
-		"	Tasks"
-		"		TASK_FACE_RALLY_POINT					0"
-		"		TASK_AWAIT_CUE							0"
-		"		TASK_WAIT_ASSAULT_DELAY					0"
-		"	"
-		"	Interrupts"
-		//"		COND_NEW_ENEMY"
-		"		COND_CAN_RANGE_ATTACK1"
-		"		COND_CAN_MELEE_ATTACK1"
-		"		COND_LIGHT_DAMAGE"
-		"		COND_HEAVY_DAMAGE"
-		"		COND_PLAYER_PUSHING"
-		"		COND_HEAR_DANGER"
-		"		COND_HEAR_BULLET_IMPACT"
-		"		COND_NO_PRIMARY_AMMO"
-	)
-#else
 	//=========================================================
 	//=========================================================
 	DEFINE_SCHEDULE 
@@ -1811,7 +1724,6 @@ AI_BEGIN_CUSTOM_SCHEDULE_PROVIDER(CAI_AssaultBehavior)
 	"		COND_NO_PRIMARY_AMMO"
 	"		COND_TOO_CLOSE_TO_ATTACK"
 	)
-#endif//HL2_EPISODIC
 
 	//=========================================================
 	//=========================================================

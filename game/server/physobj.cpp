@@ -25,11 +25,6 @@
 #include "decals.h"
 #include "bone_setup.h"
 
-#ifdef PORTAL
-#include "portal_base2d_shared.h"
-#include "particle_system.h"
-#endif // PORTAL
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 

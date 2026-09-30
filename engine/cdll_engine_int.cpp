@@ -1727,11 +1727,7 @@ bool CEngineClient::IsHLTV( void )
 
 bool CEngineClient::IsReplay( void )
 {
-#if defined( REPLAY_ENABLED )
-	return GetBaseLocalClient().isreplay;
-#else
 	return false;
-#endif
 }
 
 void CEngineClient::GetUILanguage( char *dest, int destlen )

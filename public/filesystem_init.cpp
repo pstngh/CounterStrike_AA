@@ -652,13 +652,6 @@ static void FileSystem_AddLoadedSearchPath(
 	if ( Q_stricmp( pPathID, "game" ) == 0 )
 	{
 		bool bDoAllPaths = true;
-#if defined( _X360 ) && defined( LEFT4DEAD )
-		// hl2 is a vestigal mistake due to shaders, xbox needs to prevent any search path bloat
-		if ( V_stristr( fullLocationPath, "\\hl2" ) )
-		{
-			bDoAllPaths = false;
-		}
-#endif
 
 		// add the language path, needs to be topmost, generally only contains audio
 		// and the language localized movies (there are 2 version one normal, one LV)

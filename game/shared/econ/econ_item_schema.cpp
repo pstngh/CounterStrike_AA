@@ -19,9 +19,6 @@
 	#include "econ_item.h"
 	#include "activitylist.h"
 
-	#if defined(TF_CLIENT_DLL) || defined(TF_DLL)
-		#include "tf_gcmessages.h"
-	#endif
 #endif
 
 #if defined(CSTRIKE_CLIENT_DLL) || defined(CSTRIKE_DLL)
@@ -4424,14 +4421,10 @@ void CEconItemDefinition::GeneratePrecacheModelStrings( bool bDynamicLoad, CUtlV
 		}
 	}
 
-#ifdef DOTA_DLL
-	// We don't need to cache the inventory model, because it's never loaded by the game.
-#else
 	if ( GetIconDisplayModel() )
 	{
 		out_pVecModelStrings->AddToTail( GetIconDisplayModel() );
 	}
-#endif
 	if ( GetBuyMenuDisplayModel() )
 	{
 		out_pVecModelStrings->AddToTail( GetBuyMenuDisplayModel() );
@@ -5581,19 +5574,6 @@ bool CTimedItemRewardDefinition::BInitFromKV( KeyValues *pKVTimedReward, CEconIt
 	// Parse the basic values
 	m_flChance = pKVTimedReward->GetFloat( "pctChance" );
 	
-#ifdef DOTA_DLL
-	m_unMinFreq = pKVTimedReward->GetInt( "value_min", 0 );
-	m_unMaxFreq = pKVTimedReward->GetInt( "value_max", UINT_MAX );
-
-	// Check required fields
-	SCHEMA_INIT_CHECK( 
-		NULL != pKVTimedReward->FindKey( "value_min" ), 
-		CFmtStr( "Time reward %s: Missing required field \"value_min\"", pKVTimedReward->GetName() ) );
-	SCHEMA_INIT_CHECK( 
-		NULL != pKVTimedReward->FindKey( "value_max" ), 
-		CFmtStr( "Time reward %s: Missing required field \"value_max\"", pKVTimedReward->GetName() ) );
-#endif
-
 	//
 	// Parse the basic values
 	//
@@ -6839,11 +6819,6 @@ bool CEconItemSchema::BInitSchema( KeyValues *pKVRawDefinition, CUtlVector<CUtlS
 	{
 		SCHEMA_INIT_SUBSTEP( BInitAchievementRewards( pKVAchievementRewards, pVecErrors ) );
 	}
-
-#ifdef TF_CLIENT_DLL
-	// Compute the number of concrete items, for each item, and cache for quick access
-	SCHEMA_INIT_SUBSTEP( BInitConcreteItemCounts( pVecErrors ) );
-#endif // TF_CLIENT_DLL
 
 	// Parse the item levels block
 	KeyValues *pKVItemLevels = pKVRawDefinition->FindKey( "item_levels" );
@@ -8184,22 +8159,6 @@ bool CEconItemSchema::BInitAchievementRewards( KeyValues *pKVAchievementRewards,
 
 	return SCHEMA_INIT_SUCCESS();
 }
-
-#ifdef TF_CLIENT_DLL
-//-----------------------------------------------------------------------------
-// Purpose: Go through all items and cache the number of concrete items in each.
-//-----------------------------------------------------------------------------
-bool CEconItemSchema::BInitConcreteItemCounts( CUtlVector<CUtlString> *pVecErrors )
-{
-	FOR_EACH_MAP_FAST( m_mapItems, i )
-	{
-		CEconItemDefinition *pItemDef = m_mapItems[ i ];
-		pItemDef->m_unNumConcreteItems = CalculateNumberOfConcreteItems( pItemDef );
-	}
-
-	return true;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the number of actual "real" items referenced by the item definition

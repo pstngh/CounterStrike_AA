@@ -4583,14 +4583,6 @@ void ConvertPakFileContents( const char *pInFilename, char const *szPlatform )
 		else if ( pExtension && !V_stricmp( pExtension, "dct" ) )
 		{
 			
-#if defined( PORTAL2 )
-
-			// not supporting for Portal2
-			// strip all
-			continue;
-
-#endif
-
 			// take as-is no conversion necessary
 			if ( !V_stristr( relativeName, "_xbox.dct" ) )
 			{

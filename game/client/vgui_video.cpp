@@ -14,20 +14,12 @@
 #include "engine/IEngineSound.h"
 #include "vgui/ILocalize.h"
 
-#if defined(PORTAL2)
-#include "portal2/basemodui.h"
-#endif
-
 #include "subtitlepanel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 using namespace vgui;
-
-#ifdef PORTAL2
-using namespace BaseModUI;
-#endif
 
 ConVar bink_preload_videopanel_movies( "bink_preload_videopanel_movies", "1", 0, "Preload Bink movies used by VideoPanel." );
 
@@ -87,11 +79,7 @@ bool VGui_IsPlayingFullScreenVideo()
 		return false;
 	}
 
-#ifdef PORTAL2
-	vgui::VPANEL pParent = enginevgui->GetPanel( PANEL_GAMEDLL );
-#else
 	vgui::VPANEL pParent = enginevgui->GetPanel( PANEL_GAMEUIDLL );
-#endif
 
 	for ( int i = g_vecVideoPanels.Count() - 1; i >= 0; --i )
 	{
@@ -153,11 +141,7 @@ VideoPanel::VideoPanel( unsigned int nXPos, unsigned int nYPos, unsigned int nHe
 
 	m_pSubtitlePanel = NULL;
 
-#ifdef PORTAL2
-	vgui::VPANEL pParent = enginevgui->GetPanel( PANEL_GAMEDLL );
-#else
 	vgui::VPANEL pParent = enginevgui->GetPanel( PANEL_GAMEUIDLL );
-#endif // PORTAL2
 	SetParent( pParent );
 	SetVisible( false );
 
@@ -221,9 +205,6 @@ void VideoPanel::ApplySchemeSettings( vgui::IScheme *pScheme )
 	m_pLblGamerTag = dynamic_cast< vgui::Label* >( FindChildByName( "LblGamerTag" ) );
 	m_pLblGamerTagStatus = dynamic_cast< vgui::Label* >( FindChildByName( "LblGamerTagStatus" ) );
 
-#ifdef PORTAL2
-	SetupPartnerInScience( m_bEnablePartnerUI );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -257,13 +238,6 @@ void VideoPanel::OnTick( void )
 	{
 		bPartnerUIVisible = false;
 	}
-
-#ifdef PORTAL2
-	if ( m_pWaitingForPlayers && m_pWaitingForPlayers->IsVisible() != bPartnerUIVisible )
-	{
-		SetupPartnerInScience( bPartnerUIVisible );
-	}
-#endif
 
 	BaseClass::OnTick(); 
 }
@@ -508,30 +482,6 @@ void VideoPanel::SetFadeOutTime( float flTime )
 }
 
 
-#if defined( PORTAL2 )
-void VideoPanel::EnablePartnerUI( bool bEnablePartnerUI )
-{
-	m_bEnablePartnerUI = false;
-
-	if ( bEnablePartnerUI )
-	{
-		if ( GameRules() && GameRules()->IsMultiplayer() && ( XBX_GetNumGameUsers() == 1 ) )
-		{
-			IMatchSession *pSession = g_pMatchFramework->GetMatchSession();
-			if ( pSession ) 
-			{
-				const char *pNetworkString = pSession->GetSessionSettings()->GetString( "system/network" );	
-				if ( !V_stricmp( pNetworkString, "lan" ) || !V_stricmp( pNetworkString, "live" ) )
-				{
-					// only allowing the partner ui for lan/live coop games
-					m_bEnablePartnerUI = true;
-				}
-			}	
-		}	
-	}
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -714,24 +664,12 @@ void VideoPanel::Paint()
 {
 	BaseClass::Paint();
 
-#ifdef PORTAL2
-	float flAlpha = DrawMovieFrame();
-
-	if ( m_bEnablePartnerUI )
-	{
-		SetPartnerInScienceAlpha( flAlpha * 255.0f );
-	}
-#else
 	DrawMovieFrame();
-#endif
 }
 
 void VideoPanel::PostChildPaint()
 {
 	if ( engine->IsPaused() || (enginevgui->IsGameUIVisible()
-#ifdef PORTAL2
-		&& !CBaseModPanel::GetSingleton().IsLevelLoading()
-#endif
 		) )
 	{
 		vgui::surface()->DrawSetColor( 0, 0, 0, 150 );
@@ -746,78 +684,6 @@ bool VideoPanel::IsPlaying()
 
 	return true;
 }
-
-#if defined( PORTAL2 )
-void VideoPanel::SetupPartnerInScience( bool bEnable )
-{
-	if ( bEnable )
-	{
-		CBaseModPanel::GetSingleton().SetupPartnerInScience();
-	}
-
-	if ( m_pWaitingForPlayers )
-	{
-		m_pWaitingForPlayers->SetVisible( bEnable );
-	}
-
-	if ( m_pPnlGamerPic )
-	{
-		if ( bEnable )
-		{
-			vgui::IImage *pAvatarImage = CBaseModPanel::GetSingleton().GetPartnerImage();
-			if ( pAvatarImage )
-			{
-				m_pPnlGamerPic->SetImage( pAvatarImage );
-			}
-			else
-			{
-				m_pPnlGamerPic->SetImage( "icon_lobby" );
-			}		
-		}
-
-		m_pPnlGamerPic->SetVisible( bEnable );
-	}
-
-	if ( m_pLblGamerTag )
-	{
-		if ( bEnable )
-		{
-			CUtlString partnerName = CBaseModPanel::GetSingleton().GetPartnerName();
-			m_pLblGamerTag->SetText( partnerName.Get() );
-		}
-		m_pLblGamerTag->SetVisible( bEnable );
-	}
-
-	if ( m_pLblGamerTagStatus )
-	{
-		m_pLblGamerTagStatus->SetVisible( bEnable );
-		m_pLblGamerTagStatus->SetText( CBaseModPanel::GetSingleton().GetPartnerDescKey() );
-	}
-}
-
-void VideoPanel::SetPartnerInScienceAlpha( int alpha )
-{
-	if ( m_pWaitingForPlayers )
-	{
-		m_pWaitingForPlayers->SetAlpha( alpha );
-	}
-
-	if ( m_pPnlGamerPic )
-	{
-		m_pPnlGamerPic->SetAlpha( alpha );
-	}
-
-	if ( m_pLblGamerTag )
-	{
-		m_pLblGamerTag->SetAlpha( alpha );
-	}
-
-	if ( m_pLblGamerTagStatus )
-	{
-		m_pLblGamerTagStatus->SetAlpha( alpha );
-	}
-}
-#endif
 
 void VideoPanel::SetupCaptioning( const char *pFilename, int nPlaybackHeight )
 {
@@ -867,10 +733,6 @@ bool VideoPanel_Create( unsigned int nXPos, unsigned int nYPos,
 	pVideoPanel->SetExitCommand( pExitCommand );
 
 	pVideoPanel->SetLooping( bLoop );
-
-#if defined( PORTAL2 )
-	pVideoPanel->EnablePartnerUI( bAddPartnerUI );
-#endif
 
 	// Start it going
 	if ( pVideoPanel->BeginPlayback( pVideoFilename ) == false )

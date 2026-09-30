@@ -1344,9 +1344,6 @@ COptionsSubVideoThirdPartyCreditsDlg::COptionsSubVideoThirdPartyCreditsDlg( vgui
 	SetProportional( true );
 
 	// parent is ignored, since we want look like we're steal focus from the parent (we'll become modal below)
-#ifdef SWARM_DLL
-	SetScheme( "SwarmScheme" );
-#endif
 
 	SetTitle("#GameUI_ThirdPartyVideo_Title", true);
 	SetSize( 

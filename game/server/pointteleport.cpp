@@ -11,11 +11,6 @@
 
 #include "in_buttons.h"
 
-#if defined ( PORTAL2 )
-	#include "portal_player.h"
-	#include "portal2/portal_grabcontroller_shared.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -182,31 +177,6 @@ void CPointTeleport::DoTeleport( inputdata_t &inputdata, const Vector &vecOrigin
 	}
 
 	// in episodic, we have a special spawn flag that forces Gordon into a duck
-#ifdef HL2_EPISODIC
-	if ( (m_spawnflags & SF_TELEPORT_INTO_DUCK) && pTarget->IsPlayer() ) 
-	{
-		CBasePlayer *pPlayer = ToBasePlayer( pTarget );
-		if ( pPlayer != NULL )
-		{
-			pPlayer->m_nButtons |= IN_DUCK;
-			pPlayer->AddFlag( FL_DUCKING );
-			pPlayer->m_Local.m_bDucked = true;
-			pPlayer->m_Local.m_bDucking = true;
-			pPlayer->m_Local.m_nDuckTimeMsecs = 0;
-			pPlayer->SetViewOffset( VEC_DUCK_VIEW );
-			pPlayer->SetCollisionBounds( VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX );
-		}
-	}		
-#endif
-
-#if defined ( PORTAL2 )
-	// Force the player to drop the object when teleported by a map entity
-	CPortal_Player *pPlayer = (CPortal_Player*)GetPlayerHoldingEntity( pTarget ); 
-	if ( pPlayer && pPlayer->IsUsingVMGrab() )
-	{
-		pPlayer->ForceDropOfCarriedPhysObjects( pTarget );
-	}
-#endif
 
 	pTarget->Teleport( &vecOrigin, &angRotation, NULL );
 }

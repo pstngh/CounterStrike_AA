@@ -69,12 +69,8 @@ void C_BaseCombatWeapon::NotifyShouldTransmit( ShouldTransmitState_t state )
 //-----------------------------------------------------------------------------
 static inline bool ShouldDrawLocalPlayer( C_BasePlayer *pl )
 {
-#if defined( PORTAL )
-	return true;
-#else
 	Assert( pl );
 	return pl->ShouldDrawLocalPlayer();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -212,7 +208,6 @@ void C_BaseCombatWeapon::Redraw()
 //-----------------------------------------------------------------------------
 void C_BaseCombatWeapon::DrawCrosshair()
 {
-#ifndef INFESTED_DLL
 	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
 	if ( !player )
 		return;
@@ -284,7 +279,6 @@ void C_BaseCombatWeapon::DrawCrosshair()
 		else
 			crosshair->ResetCrosshair();
 	}
-	#endif
 }
 //-----------------------------------------------------------------------------
 // Purpose: This weapon is the active weapon, and the viewmodel for it was just drawn.

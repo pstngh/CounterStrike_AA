@@ -134,12 +134,6 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	Vector vecAbsOrigin = GetAbsOrigin();
 	int contents = UTIL_PointContents ( vecAbsOrigin, MASK_ALL );
 
-#if defined( TF_DLL )
-	// Since this code only runs on the server, make sure it shows the tempents it creates.
-	// This solves a problem with remote detonating the pipebombs (client wasn't seeing the explosion effect)
-	CDisablePredictionFiltering disabler;
-#endif
-
 	// Try using the new particle system instead of temp ents
 	surfacedata_t *pSurfaceData = physprops->GetSurfaceData( pTrace->surface.surfaceProps );
 	const char *pEffectName = GetParticleSystemName( contents, pSurfaceData );
@@ -231,25 +225,7 @@ void CBaseGrenade::Explode( trace_t *pTrace, int bitsDamageType )
 	AddEffects( EF_NODRAW );
 	SetAbsVelocity( vec3_origin );
 
-#if HL2_EPISODIC
-	// Because the grenade is zipped out of the world instantly, the EXPLOSION sound that it makes for
-	// the AI is also immediately destroyed. For this reason, we now make the grenade entity inert and
-	// throw it away in 1/10th of a second instead of right away. Removing the grenade instantly causes
-	// intermittent bugs with env_microphones who are listening for explosions. They will 'randomly' not
-	// hear explosion sounds when the grenade is removed and the SoundEnt thinks (and removes the sound)
-	// before the env_microphone thinks and hears the sound.
-	SetNextThink( gpGlobals->curtime + 0.1 );
-#else
 	SetNextThink( gpGlobals->curtime );
-#endif//HL2_EPISODIC
-
-#if defined( HL2_DLL )
-	CBasePlayer *pPlayer = ToBasePlayer( m_hThrower.Get() );
-	if ( pPlayer )
-	{
-		gamestats->Event_WeaponHit( pPlayer, true, "weapon_frag", info );
-	}
-#endif
 
 #endif
 }

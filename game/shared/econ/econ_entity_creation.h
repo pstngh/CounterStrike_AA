@@ -14,10 +14,6 @@
 #include "econ_item_system.h"
 #include "econ_entity.h"
 
-#if defined(TF_CLIENT_DLL) || defined(TF_DLL)
-#include "tf_shareddefs.h"
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: Game system that handles initializing the item system, and generating items as full game entities
 //-----------------------------------------------------------------------------

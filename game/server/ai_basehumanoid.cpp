@@ -13,10 +13,6 @@
 #include "ai_navigator.h"
 #include "ai_memory.h"
 
-#ifdef HL2_DLL
-#include "ai_interactions.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -31,22 +27,6 @@
 //-----------------------------------------------------------------------------
 bool CAI_BaseHumanoid::HandleInteraction(int interactionType, void *data, CBaseCombatCharacter* sourceEnt)
 {
-#if defined( HL2_DLL )
-	// Annoying to ifdef this out. Copy it into all the HL2 specific humanoid NPC's instead?
-	if ( interactionType == g_interactionBarnacleVictimDangle )
-	{
-		// Force choosing of a new schedule
-		ClearSchedule( "Grabbed by a barnacle" );
-		return true;
-	}
-	else if ( interactionType == g_interactionBarnacleVictimReleased )
-	{
-		// Destroy the entity, the barnacle is going to use the ragdoll that it is releasing
-		// as the corpse.
-		UTIL_Remove( this );
-		return true;
-	}
-#endif
 	return BaseClass::HandleInteraction( interactionType, data, sourceEnt);
 }
 

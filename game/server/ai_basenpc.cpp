@@ -23,11 +23,6 @@
 #include "game.h"
 #include "shot_manipulator.h"
 
-#ifdef HL2_DLL
-#include "ai_interactions.h"
-#include "hl2_gamerules.h"
-#endif // HL2_DLL
-
 #include "ai_network.h"
 #include "ai_networkmanager.h"
 #include "ai_pathfinder.h"
@@ -70,33 +65,17 @@
 #include "checksum_crc.h"
 #include "iservervehicle.h"
 #include "filters.h"
-#ifdef HL2_DLL
-#include "npc_bullseye.h"
-#include "hl2_player.h"
-#include "weapon_physcannon.h"
-#endif
 #include "waterbullet.h"
 #include "in_buttons.h"
 #include "eventlist.h"
 #include "globalstate.h"
 #include "physics_prop_ragdoll.h"
-#if defined( HL2_EP3 ) || defined( INFESTED_DLL )
-#include "physics_prop_statue.h"
-#endif
 #include "vphysics/friction.h"
 #include "physics_npc_solver.h"
 #include "death_pose.h"
 #include "datacache/imdlcache.h"
 #include "vstdlib/jobthread.h"
 #include "ai_addon.h"
-
-#ifdef HL2_EPISODIC
-#include "npc_alyx_episodic.h"
-#endif
-
-#ifdef PORTAL
-	#include "portal_base2d_shared.h"
-#endif
 
 #include "env_debughistory.h"
 #include "collisionutils.h"
@@ -149,10 +128,6 @@ ConVar	ai_frametime_limit( "ai_frametime_limit", "50", FCVAR_NONE, "frametime li
 ConVar	ai_use_think_optimizations( "ai_use_think_optimizations", "1" );
 
 ConVar	ai_test_moveprobe_ignoresmall( "ai_test_moveprobe_ignoresmall", "0" );
-
-#ifdef HL2_EPISODIC
-extern ConVar ai_vehicle_avoidance;
-#endif // HL2_EPISODIC
 
 #ifndef _RETAIL
 #define ShouldUseEfficiency()			( ai_use_think_optimizations.GetBool() && ai_use_efficiency.GetBool() )
@@ -743,18 +718,6 @@ void CAI_BaseNPC::Ignite( float flFlameLifetime, bool bNPCOnly, float flSize, bo
 {
 	BaseClass::Ignite( flFlameLifetime, bNPCOnly, flSize, bCalledByLevelDesigner );
 
-#ifdef HL2_EPISODIC
-	CBasePlayer *pPlayer = AI_GetSinglePlayer();
-	if ( pPlayer && pPlayer->IRelationType( this ) != D_LI )
-	{
-		CNPC_Alyx *alyx = CNPC_Alyx::GetAlyx();
-
-		if ( alyx )
-		{
-			alyx->EnemyIgnited( this );
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1518,20 +1481,6 @@ void CAI_BaseNPC::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::FireBullets( const FireBulletsInfo_t &info )
 {
-#ifdef HL2_DLL
-	// If we're shooting at a bullseye, become perfectly accurate if the bullseye demands it
-	if ( GetEnemy() && GetEnemy()->Classify() == CLASS_BULLSEYE )
-	{
-		CNPC_Bullseye *pBullseye = dynamic_cast<CNPC_Bullseye*>(GetEnemy()); 
-		if ( pBullseye && pBullseye->UsePerfectAccuracy() )
-		{
-			FireBulletsInfo_t accurateInfo = info;
-			accurateInfo.m_vecSpread = vec3_origin;
-			BaseClass::FireBullets( accurateInfo );
-			return;
-		}
-	}
-#endif
 
 	BaseClass::FireBullets( info );
 }
@@ -2984,7 +2933,6 @@ bool CAI_BaseNPC::PreThink( void )
 	//
 	// Don't do this if the convar wants it hidden
 	// ----------------------------------------------------------
-#ifndef PORTAL2
 	if ( (CAI_BaseNPC::m_nDebugBits & bits_debugDisableAI || !g_pAINetworkManager->NetworksLoaded()) )
 	{
 		if ( gpGlobals->curtime >= g_AINextDisabledMessageTime && !IsInCommentaryMode() )
@@ -3013,7 +2961,6 @@ bool CAI_BaseNPC::PreThink( void )
 		SetActivity( ACT_IDLE );
 		return false;
 	}
-#endif // !PORTAL2
 
 	// --------------------------------------------------------
 	//	If debug stepping
@@ -4834,9 +4781,6 @@ void CAI_BaseNPC::GatherConditions( void )
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::PrescheduleThink( void )
 {
-#ifdef HL2_EPISODIC
-	CheckForScriptedNPCInteractions();
-#endif
 
 	// If we use weapons, and our desired weapon state is not the current, fix it
 	if( (CapabilitiesGet() & bits_CAP_USE_WEAPONS) && (m_iDesiredWeaponState == DESIREDWEAPONSTATE_HOLSTERED || m_iDesiredWeaponState == DESIREDWEAPONSTATE_UNHOLSTERED || m_iDesiredWeaponState == DESIREDWEAPONSTATE_HOLSTERED_DESTROYED ) )
@@ -5937,29 +5881,7 @@ void CAI_BaseNPC::CheckTarget( CBaseEntity *pTarget )
 //-----------------------------------------------------------------------------
 CAI_BaseNPC *CAI_BaseNPC::CreateCustomTarget( const Vector &vecOrigin, float duration )
 {
-#ifdef HL2_DLL
-	CNPC_Bullseye *pTarget = (CNPC_Bullseye*)CreateEntityByName( "npc_bullseye" );
-
-	ASSERT( pTarget != NULL );
-
-	// Build a nonsolid bullseye and place it in the desired location
-	// The bullseye must take damage or the SetHealth 0 call will not be able
-	pTarget->AddSpawnFlags( SF_BULLSEYE_NONSOLID );
-	pTarget->SetAbsOrigin( vecOrigin );
-	pTarget->Spawn();
-
-	// Set it up to remove itself, unless told to be infinite (-1)
-	if( duration > -1 )
-	{
-		variant_t value;
-		value.SetFloat(0);
-		g_EventQueue.AddEvent( pTarget, "SetHealth", value, duration, this, this );
-	}
-
-	return pTarget;
-#else
 	return NULL;
-#endif// HL2_DLL
 }
 
 //-----------------------------------------------------------------------------
@@ -9575,19 +9497,6 @@ Vector CAI_BaseNPC::GetShootEnemyDir( const Vector &shootOrigin, bool bNoisy )
 
 		Vector vecEnemyOffset = pEnemy->BodyTarget( shootOrigin, bNoisy ) - pEnemy->GetAbsOrigin();
 
-#ifdef PORTAL
-		// Translate the enemy's position across the portals if it's only seen in the portal view cone
-		if ( !FInViewCone( vecEnemyLKP ) || !FVisible( vecEnemyLKP ) )
-		{
-			CPortal_Base2D *pPortal = FInViewConeThroughPortal( vecEnemyLKP );
-			if ( pPortal )
-			{
-				UTIL_Portal_VectorTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecEnemyOffset, vecEnemyOffset );
-				UTIL_Portal_PointTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecEnemyLKP, vecEnemyLKP );
-			}
-		}
-#endif
-
 		Vector retval = vecEnemyOffset + vecEnemyLKP - shootOrigin;
 		VectorNormalize( retval );
 		return retval;
@@ -9605,45 +9514,6 @@ Vector CAI_BaseNPC::GetShootEnemyDir( const Vector &shootOrigin, bool bNoisy )
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::CollectShotStats( const Vector &vecShootOrigin, const Vector &vecShootDir )
 {
-#ifdef HL2_DLL
-	if( ai_shot_stats.GetBool() != 0 && GetEnemy()->IsPlayer() )
-	{
-		int iterations = ai_shot_stats_term.GetInt();
-		int iHits = 0;
-		Vector testDir = vecShootDir;
-
-		CShotManipulator manipulator( testDir );
-
-		for( int i = 0 ; i < iterations ; i++ )
-		{
-			// Apply appropriate accuracy.
-			manipulator.ApplySpread( GetAttackSpread( GetActiveWeapon(), GetEnemy() ), GetSpreadBias( GetActiveWeapon(), GetEnemy() ) );
-			Vector shotDir = manipulator.GetResult();
-
-			Vector vecEnd = vecShootOrigin + shotDir * 8192;
-
-			trace_t tr;
-			AI_TraceLine( vecShootOrigin, vecEnd, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
-
-			if( tr.m_pEnt && tr.m_pEnt == GetEnemy() )
-			{
-				iHits++;
-			}
-			Vector vecProjectedPosition = GetActualShootPosition( vecShootOrigin );
-			Vector testDir = vecProjectedPosition - vecShootOrigin;
-			VectorNormalize( testDir );
-			manipulator.SetShootDir( testDir );
-		}
-
-		float flHitPercent = ((float)iHits / (float)iterations) * 100.0;
-		m_LastShootAccuracy = flHitPercent;
-		//DevMsg("Shots:%d   Hits:%d   Percentage:%.1f\n", iterations, iHits, flHitPercent);
-	}
-	else
-	{
-		m_LastShootAccuracy = -1;
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -9656,31 +9526,6 @@ Vector CAI_BaseNPC::GetActualShootPosition( const Vector &shootOrigin )
 	Vector vecEnemyLKP = GetEnemyLKP();
 	Vector vecEnemyOffset = GetEnemy()->BodyTarget( shootOrigin ) - GetEnemy()->GetAbsOrigin();
 	Vector vecTargetPosition = vecEnemyOffset + vecEnemyLKP;
-
-#ifdef PORTAL
-	// Check if it's also visible through portals
-	CPortal_Base2D *pPortal = FInViewConeThroughPortal( vecEnemyLKP );
-	// BUG 69142: Only run this if the target is on the other side of a portal
-	if ( pPortal && FVisibleThroughPortal( pPortal, GetEnemy() ) )
-	{
-		// Get the target's position through portals
-		Vector vecEnemyOffsetTransformed;
-		Vector vecEnemyLKPTransformed;
-		UTIL_Portal_VectorTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecEnemyOffset, vecEnemyOffsetTransformed );
-		UTIL_Portal_PointTransform( pPortal->m_hLinkedPortal->MatrixThisToLinked(), vecEnemyLKP, vecEnemyLKPTransformed );
-		Vector vecTargetPositionTransformed = vecEnemyOffsetTransformed + vecEnemyLKPTransformed;
-
-		// Get the distance to the target with and without portals
-		float fDistanceToEnemyThroughPortalSqr = GetAbsOrigin().DistToSqr( vecTargetPositionTransformed );
-		float fDistanceToEnemySqr = GetAbsOrigin().DistToSqr( vecTargetPosition );
-
-		if ( fDistanceToEnemyThroughPortalSqr < fDistanceToEnemySqr || !FInViewCone( vecEnemyLKP ) || !FVisible( vecEnemyLKP ) )
-		{
-			// We're better off shooting through the portals
-			vecTargetPosition = vecTargetPositionTransformed;
-		}
-	}
-#endif
 
 	// lead for some fraction of a second.
 	return (vecTargetPosition + ( GetEnemy()->GetSmoothedVelocity() * ai_lead_time.GetFloat() ));
@@ -9819,17 +9664,6 @@ Vector CAI_BaseNPC::GetActualShootTrajectory( const Vector &shootOrigin )
 	CShotManipulator manipulator( shotDir );
 
 	bool bUsePerfectAccuracy = false;
-#ifdef HL2_DLL
-	// Apply appropriate accuracy.
-	if ( GetEnemy() && GetEnemy()->Classify() == CLASS_BULLSEYE )
-	{
-		CNPC_Bullseye *pBullseye = dynamic_cast<CNPC_Bullseye*>(GetEnemy()); 
-		if ( pBullseye && pBullseye->UsePerfectAccuracy() )
-		{
-			bUsePerfectAccuracy = true;
-		}
-	}
-#endif // HL2_DLL
 
 	if ( !bUsePerfectAccuracy )
 	{
@@ -11878,27 +11712,6 @@ void CAI_BaseNPC::CleanupScriptsOnTeleport( bool bEnrouteAsWell )
 //-----------------------------------------------------------------------------
 bool CAI_BaseNPC::HandleInteraction(int interactionType, void *data, CBaseCombatCharacter* sourceEnt)
 {
-#if defined( HL2_DLL )
-	if ( interactionType == g_interactionBarnacleVictimGrab )
-	{
-		// Make the victim stop thinking so they're as good as dead without 
-		// shocking the system by destroying the entity.
-		StopLoopingSounds();
-		BarnacleDeathSound();
- 		SetThink( NULL );
-
-		// Gag the NPC so they won't talk anymore
-		AddSpawnFlags( SF_NPC_GAG );
-
-		// Drop any weapon they're holding
-		if ( GetActiveWeapon() )
-		{
-			Weapon_Drop( GetActiveWeapon() );
-		}
-
-		return true;
-	}
-#endif // HL2_DLL
 
 	return BaseClass::HandleInteraction( interactionType, data, sourceEnt );
 }
@@ -12202,21 +12015,6 @@ bool CAI_BaseNPC::IsNavigationUrgent()
 
 bool CAI_BaseNPC::ShouldFailNav( bool bMovementFailed )
 {
-#ifdef HL2_EPISODIC
-
-	if ( ai_vehicle_avoidance.GetBool() )
-	{
-		// Never be blocked this way by a vehicle (creates too many headaches around the levels)
-		CBaseEntity *pEntity = GetNavigator()->GetBlockingEntity();
-		if ( pEntity && pEntity->GetServerVehicle() )
-		{
-			// Vital allies never get stuck, and urgent moves cannot be blocked by a vehicle
-			if ( Classify() == CLASS_PLAYER_ALLY_VITAL || IsNavigationUrgent() )
-				return false;
-		}
-	}
-
-#endif // HL2_EPISODIC
 
 	// It's up to the schedule that requested movement to deal with failed movement.  Currently, only a handfull of 
 	// schedules are considered Urgent, and they need to deal with what to do when there's no route, which by inspection
@@ -14099,24 +13897,6 @@ void CAI_BaseNPC::CalculateForcedInteractionPosition( void )
 //-----------------------------------------------------------------------------
 void CAI_BaseNPC::PlayerHasIlluminatedNPC( CBasePlayer *pPlayer, float flDot )
 {
-#ifdef HL2_EPISODIC
-	if ( IsActiveDynamicInteraction() )
-	{
-		ScriptedNPCInteraction_t *pInteraction = GetRunningDynamicInteraction();
-		if ( pInteraction->iLoopBreakTriggerMethod & SNPCINT_LOOPBREAK_ON_FLASHLIGHT_ILLUM )
-		{
-			// Only do this in alyx darkness mode
-			if ( HL2GameRules()->IsAlyxInDarknessMode() )
-			{
-				// Can only break when we're in the action anim
-				if ( m_hCine->IsPlayingAction() )
-				{
-					m_hCine->StopActionLoop( true );
-				}
-			}
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

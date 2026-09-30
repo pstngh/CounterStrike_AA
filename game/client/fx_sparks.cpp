@@ -24,7 +24,6 @@
 
 //Precahce the effects
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectSparks )
-#ifndef DOTA_DLL
 	PRECACHE( MATERIAL, "effects/spark" )
 	PRECACHE( MATERIAL, "effects/energysplash" )
 	PRECACHE( MATERIAL, "effects/energyball" )
@@ -35,7 +34,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectSparks )
 	PRECACHE( MATERIAL, "effects/combinemuzzle1_nocull" )
 	PRECACHE( MATERIAL, "effects/combinemuzzle2_nocull" )
 	PRECACHE( MATERIAL, "effects/yellowflare_noz" )
-#endif
 PRECACHE_REGISTER_END()
 
 PMaterialHandle g_Material_Spark = NULL;

@@ -14,10 +14,6 @@
 #include "ai_moveshoot.h"
 #include "tier0/platform.h"
 
-#ifdef HL2_EPISODIC
-	#include "hl2_gamerules.h"
-#endif
-
 #if defined( _WIN32 )
 #pragma once
 #endif
@@ -64,9 +60,6 @@ public:
 
 	virtual void EnableGoal( CAI_BaseNPC *pAI );
 	virtual void DisableGoal( CAI_BaseNPC *pAI  );
-#ifdef HL2_EPISODIC
-	virtual void InputOutsideTransition( inputdata_t &inputdata );
-#endif
 
 	int m_iFormation;
 

@@ -50,9 +50,6 @@ CBaseClient::CBaseClient()
 	m_pBaseline = NULL;
 	m_bIsHLTV = false;
 	m_pHltvSlaveServer = NULL;
-#if defined( REPLAY_ENABLED )
-	m_bIsReplay = false;
-#endif
 	m_bConVarsChanged = false;
 	m_bSendServerInfo = false;
 	m_bFullyAuthenticated = false;
@@ -113,9 +110,6 @@ bool CBaseClient::FillUserInfo( player_info_s &userInfo )
 	userInfo.userID = GetUserID();
 	userInfo.fakeplayer = ( IsFakeClient() && !IsSplitScreenUser() );
 	userInfo.ishltv = IsHLTV();
-#if defined( REPLAY_ENABLED )
-	userInfo.isreplay = IsReplay();
-#endif		
 	for( int i=0; i< MAX_CUSTOM_FILES; i++ )
 		userInfo.customFiles[i] = m_nCustomFiles[i].crc;
 
@@ -307,9 +301,6 @@ void CBaseClient::Clear()
 	m_bIsHLTV = false;
 	//???TODO: do we need to disconnect slave hltv server?
 	//m_pHltvSlaveServer = NULL;
-#if defined( REPLAY_ENABLED )
-	m_bIsReplay = false;
-#endif
 	m_fNextMessageTime = 0;
 	m_fSnapshotInterval = 0;
 	m_bReceivedPacket = false;
@@ -1157,10 +1148,6 @@ bool CBaseClient::CLCMsg_ClientInfo( const CCLCMsg_ClientInfo& msg )
 	m_nSendtableCRC = msg.send_table_crc();
 
 	m_bIsHLTV = msg.is_hltv();
-
-#if defined( REPLAY_ENABLED )
-	m_bIsReplay = msg.is_replay();
-#endif
 
 	m_nFilesDownloaded = 0;
 	Q_strncpy( m_FriendsName, msg.friends_name().c_str(), sizeof(m_FriendsName) );

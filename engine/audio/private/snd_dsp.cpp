@@ -8354,11 +8354,7 @@ inline int PSET_GetNext ( pset_t *ppset, int x )
 
 // Dsp presets
 
-#ifdef PORTAL2
-ConVar dsp_room			("dsp_room", "1", FCVAR_DEMO );				// room dsp preset - sounds more distant from player (1ch)
-#else
 ConVar dsp_room			("dsp_room", "0", FCVAR_DEMO );				// room dsp preset - sounds more distant from player (1ch)
-#endif
 ConVar dsp_water		("dsp_water", "14", FCVAR_DEMO );			// "14" underwater dsp preset - sound when underwater (1-2ch)
 static int dsp_player_value = 0;
 static void dsp_player_changed( IConVar *pConVar, const char *pOldValue, float flOldValue )

@@ -27,13 +27,6 @@
 #endif
 
 // FIXME FIXME FIXME
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
-	#include "tf_item_system.h"
-#endif // defined(TF_DLL) || defined(TF_CLIENT_DLL)
-
-#if defined (DOTA_CLIENT_DLL) || defined (DOTA_DLL)
-	#include "econ/dota_item_system.h"
-#endif // defined (DOTA_CLIENT_DLL) || defined (DOTA_DLL)
 
 #if defined( CSTRIKE_CLIENT_DLL ) || defined( CSTRIKE15 )
 	#include "cstrike15_item_system.h"

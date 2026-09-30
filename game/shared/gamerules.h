@@ -445,8 +445,4 @@ inline CGameRules* GameRules()
 	return g_pGameRules;
 }
 
-#ifdef PORTAL2
-bool IsGameRulesMultiplayer();
-#endif
-
 #endif // GAMERULES_H

@@ -22,26 +22,8 @@
 #include "cstrike15_item_inventory.h"
 #endif
 
-#if defined(TF_CLIENT_DLL)
-#include "c_tf_player.h"
-#include "tf_gamerules.h"
-#include "c_playerresource.h"
-#endif
-
-#if defined(DOTA_DLL) && defined( GAME_DLL )
-#include "dota_npc_base.h"
-#endif
-#if defined(DOTA_DLL) && defined( CLIENT_DLL )
-#include "c_dota_npc_base.h"
-#endif
-
 extern INetworkStringTable *g_StringTableDynamicModels;
 extern CUtlMap<int, int>	g_DynamicModelStringRemap;
-
-#if defined(DOTA_DLL)
-#include "dota_particle_manager.h"
-
-#endif
 
 extern INetworkStringTable *g_StringTableDynamicModels;
 extern CUtlMap<int, int>	g_DynamicModelStringRemap;
@@ -50,9 +32,6 @@ extern CUtlMap<int, int>	g_DynamicModelStringRemap;
 
 #include "activitylist.h"
 
-#if defined(TF_DLL)
-#include "tf_player.h"
-#endif
 #endif // defined( CLIENT_DLL )
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -115,10 +94,6 @@ END_NETWORK_TABLE()
 BEGIN_DATADESC( CBaseAttributableItem )
 END_DATADESC()
 
-#ifdef TF_CLIENT_DLL
-extern ConVar cl_flipviewmodels;
-#endif
-
 
 #ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
@@ -126,7 +101,6 @@ extern ConVar cl_flipviewmodels;
 //-----------------------------------------------------------------------------
 void DrawEconEntityAttachedModels( CBaseAnimating *pEnt, CEconEntity *pAttachedModelSource, const ClientModelRenderInfo_t *pInfo, int iMatchDisplayFlags )
 {
-#ifndef DOTA_DLL
 	if ( !pEnt || !pAttachedModelSource || !pInfo )
 		return;
 
@@ -155,7 +129,6 @@ void DrawEconEntityAttachedModels( CBaseAnimating *pEnt, CEconEntity *pAttachedM
 			//pEnt->DoInternalDrawModel( &infoAttached, ( bMarkAsDrawn && ( infoAttached.flags & STUDIO_RENDER ) ) ? &state : NULL, pBoneToWorld );
 		}
 	}
-#endif
 }
 #endif // CLIENT_DLL
 
@@ -218,25 +191,6 @@ CStudioHdr * CEconEntity::OnNewModel()
 		}
 	}
 #endif
-
-#ifdef TF_CLIENT_DLL
-	// If we're carried by a player, let him know he should recalc his bodygroups.
-	C_TFPlayer *pPlayer = ToTFPlayer( GetOwnerEntity() );
-	if ( pPlayer )
-	{
-		pPlayer->SetBodygroupsDirty();
-	}
-
-	// allocate room for delayed flex weights
-	delete [] m_flFlexDelayedWeight;
-	if ( hdr && hdr->numflexcontrollers() )
-	{
-		m_flFlexDelayedWeight = new float[  hdr->numflexcontrollers() ];
-		memset( m_flFlexDelayedWeight, 0, sizeof( float ) * hdr->numflexdesc() ); 
-
-		C_BaseFlex::LinkToGlobalFlexControllers( hdr );
-	}
-#endif // TF_CLIENT_DLL
 
 	return hdr;
 }
@@ -464,13 +418,6 @@ static int GetCustomParticleEffectId( CEconEntity *pEconEntity )
 //-----------------------------------------------------------------------------
 void CEconEntity::OnOwnerClassChange( void )
 {
-#ifdef TF_DLL
-	CTFPlayer *pPlayer = ToTFPlayer( GetOwnerEntity() );
-	if ( pPlayer && pPlayer->GetPlayerClass()->GetClassIndex() != m_iOldOwnerClass )
-	{
-		UpdateModelToClass();
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -478,12 +425,7 @@ void CEconEntity::OnOwnerClassChange( void )
 //-----------------------------------------------------------------------------
 int CEconEntity::CalculateVisibleClassFor( CBaseCombatCharacter *pPlayer )
 {
-#ifdef TF_DLL
-	CTFPlayer *pTFPlayer = ToTFPlayer( pPlayer );
-	return (pTFPlayer ? pTFPlayer->GetPlayerClass()->GetClassIndex() : 0);
-#else
 	return 0;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -507,48 +449,6 @@ int CEconEntity::ShouldTransmit( const CCheckTransmitInfo *pInfo )
 //-----------------------------------------------------------------------------
 void CEconEntity::UpdateModelToClass( void )
 {
-#ifdef TF_DLL
-	MDLCACHE_CRITICAL_SECTION();
-
-	CTFPlayer *pPlayer = ToTFPlayer( GetOwnerEntity() );
-	m_iOldOwnerClass = CalculateVisibleClassFor( pPlayer );
-	if ( !pPlayer )
-		return;
-
-	CEconItemView *pItem = GetAttributeContainer()->GetItem();
-	if ( !pItem->IsValid() )
-		return;
-
-	const char *pszModel = NULL;
-
-	// If we attach to hands, we need to use the hand models
-	if ( pItem->GetStaticData()->ShouldAttachToHands() )
-	{
-		pszModel = pPlayer->GetPlayerClass()->GetHandModelName( 0 );
-	}
-	else
-	{
-		pszModel = pItem->GetPlayerDisplayModel( m_iOldOwnerClass );
-	}
-	if ( pszModel && pszModel[0] )
-	{
-		if ( V_stricmp( STRING( GetModelName() ), pszModel ) != 0 )
-		{
-			if ( pItem->GetStaticData()->IsContentStreamable() )
-			{
-				modelinfo->RegisterDynamicModel( pszModel, IsClient() );
-			}
-
-			SetModel( pszModel );
-		}
-	}
-
-	if ( GetModelPtr() && pItem->GetStaticData()->UsesPerClassBodygroups( GetTeamNumber() ) )
-	{
-		// Classes start at 1, bodygroups at 0, so we shift them all back 1.
-		SetBodygroup( 1, (m_iOldOwnerClass-1) );
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -627,202 +527,7 @@ bool CEconEntity::ValidateEntityAttachedToPlayer( bool &bShouldRetry )
 		return true;
 #endif // _DEBUG
 
-#if defined( TF_CLIENT_DLL )
-	// Always valid in item testing mode
-	if ( TFGameRules()->IsInItemTestingMode() )
-		return true;
-
-	C_TFPlayer *pOwner = ToTFPlayer( GetOwnerEntity() );
-
-	// If we're not carried by a player, we're not valid. This prevents them
-	// parenting hats to ents that they then parent to the player.
-	if ( !pOwner )
-	{
-		//Msg( "NO OWNER SET! %i\n", m_iNumOwnerValidationRetries );
-		bShouldRetry = ( m_iNumOwnerValidationRetries < 500 );
-		m_iNumOwnerValidationRetries++;
-		return false;
-	}
-
-	// The owner entity must also be a move parent of this entity.
-	bool bPlayerIsParented = false;
-	C_BaseEntity *pEntity = this;
-	while ( (pEntity = pEntity->GetMoveParent()) != NULL )
-	{
-		if ( pOwner == pEntity )
-		{
-			bPlayerIsParented = true;
-			break;
-		}
-	}
-
-	if ( !bPlayerIsParented )
-	{
-		//Msg( "NOT PARENTED! %i\n", m_iNumOwnerValidationRetries );
-		bShouldRetry = ( m_iNumOwnerValidationRetries < 500 );
-		m_iNumOwnerValidationRetries++;
-		return false;
-	}
-
-	m_iNumOwnerValidationRetries = 0;
-
-	bool bOwnerIsBot = false;
-#if defined( _DEBUG ) || defined( TF_PVE_MODE )
-	// We only need this in debug (for item_debug_validation) or PvE mode
-	bOwnerIsBot = pOwner->IsABot(); // THIS IS INSECURE -- DO NOT USE THIS OUTSIDE OF DEBUG OR PVE MODE
-#endif
-
-#ifdef TF_PVE_MODE
-	// Allow bots to use anything in PvE mode
-	if ( bOwnerIsBot && TFGameRules()->IsPVEModeActive() )
-		return true;
-#endif // TF_PVE_MODE
-
-	int iClass = pOwner->GetPlayerClass()->GetClassIndex();
-
-	// Allow all weapons parented to the local player
-	if ( pOwner == C_BasePlayer::GetLocalPlayer() )
-	{
-		// They can change the owner entity, so we have to keep checking.
-		bShouldRetry = true;
-		return true;
-	}
-
-	// HACK: For now, if our owner is a disguised spy, we assume everything is valid.
-	if ( (pOwner->m_Shared.InCond( TF_COND_DISGUISED ) || pOwner->m_Shared.InCond( TF_COND_DISGUISING )) && iClass == TF_CLASS_SPY )
-	{
-		bShouldRetry = true; // Keep checking in case the player switches class or becomes no longer disguised
-		return true;
-	}
-
-	// If our owner is a disguised spy, we validate everything based 
-	// on the items carried by the person we're disguised as.
-	/*if ( pOwner->m_Shared.InCond( TF_COND_DISGUISED ) )
-	{
-		// DAMN: This won't work. If our disguise target is a player we've never seen before,
-		//		 we won't have a client entity, and hence we don't have their inventory.
-		C_TFPlayer *pDisguiseTarget = ToTFPlayer( pOwner->m_Shared.GetDisguiseTarget() );
-		if ( pDisguiseTarget && pDisguiseTarget != pOwner )
-		{
-			pOwner = pDisguiseTarget;
-			iClass = pOwner->GetPlayerClass()->GetClassIndex();
-		}
-		else
-		{
-			// We're not disguised as a specific player. Make sure we lookup base weapons with the disguise class.
-			iClass = pOwner->m_Shared.GetDisguiseClass();
-		}
-	}
-	*/
-
-	const char *pszClientModel = modelinfo->GetModelName( GetModel() );
-	if ( pszClientModel && g_modelWhiteList[0] )
-	{
-		// Certain builder models are okay to have.
-		for ( int i=0; i<ARRAYSIZE( g_modelWhiteList ); ++i )
-		{
-				if ( FStrEq( pszClientModel, g_modelWhiteList[i] ) )
-					return true;
-		}
-	}
-
-	// If our player doesn't have an inventory, we're not valid. 
-	CTFPlayerInventory *pInv = pOwner->Inventory();
-	if ( !pInv )
-		return false;
-
-	// If we've lost connection to the GC, let's just trust the server to avoid breaking the appearance for everyone.
-	bool bSkipInventoryCheck = bItemDebugValidation && bOwnerIsBot; // will always be false in release builds
-	if ( ( !pInv->GetSOC() || !pInv->GetSOC()->BIsInitialized() ) && !bSkipInventoryCheck )
-	{
-		bShouldRetry = true;
-		return true;
-	}
-
-	CEconItemView *pScriptItem = GetAttributeContainer()->GetItem();
-
-	// If the item isn't valid, we're probably an extra wearable for another item. See if our model is 
-	// a model specified as the extra wearable for any of the items we have equipped.
-	if ( !pScriptItem->IsValid() )
-	{
-		// Uninitialized client models return their model as '?'
-		if ( pszClientModel && pszClientModel[0] != '?' )
-		{
-			CSteamID steamIDForPlayer;
-			pOwner->GetSteamID( &steamIDForPlayer );
-
-			for ( int i = 0; i < LOADOUT_POSITION_COUNT; i++ )
-			{
-				CEconItemView *pItem = TFInventoryManager()->GetItemInLoadoutForClass( iClass, i, &steamIDForPlayer );
-				if ( pItem && pItem->IsValid() )
-				{
-					const char *pszAttached = pItem->GetExtraWearableModel();
-					if ( pszAttached && pszAttached[0] )
-					{
-						if ( FStrEq( pszClientModel, pszAttached ) )
-							return true;
-					}
-				}
-			}
-		}
-		else if ( pszClientModel && pszClientModel[0] == '?' )
-		{
-			bShouldRetry = true;
-		}
-
-		return false;
-	}
-
-	// Skip this check for bots if item_debug_validation is enabled.
-	if ( !pInv->GetInventoryItemByItemID( pScriptItem->GetItemID() ) && !bSkipInventoryCheck )
-	{
-		// If it's a base item, we allow it.
-		CEconItemView *pBaseItem = TFInventoryManager()->GetBaseItemForClass( iClass, pScriptItem->GetStaticData()->GetLoadoutSlot(iClass) );
-		if ( *pScriptItem != *pBaseItem )
-		{
-			const wchar_t *pwzItemName = pScriptItem->GetItemName();
-
-			char szItemName[ MAX_ITEM_NAME_LENGTH ];
-			ILocalize::ConvertUnicodeToANSI( pwzItemName, szItemName, sizeof( szItemName ) );
-
-#ifdef _DEBUG
-			Warning("Item '%s' attached to %s, but it's not in his inventory.\n", szItemName, pOwner->GetPlayerName() );
-#endif
-			return false;
-		}
-	}
-
-	// Our model has to match the model in our script
-	const char *pszScriptModel = pScriptItem->GetWorldDisplayModel();
-	if ( !pszScriptModel )
-	{
-		pszScriptModel = pScriptItem->GetPlayerDisplayModel( iClass );
-	}
-
-	if ( pszClientModel && pszClientModel[0] && pszClientModel[0] != '?' )
-	{
-		// A model was set on the entity, let's make sure it matches the model in the script.
-		if ( !pszScriptModel || !pszScriptModel[0] )
-			return false;
-		if ( FStrEq( pszClientModel, pszScriptModel ) == false )
-			return false;
-	}
-	else
-	{
-		// The client model was not set, so check that there isn't a model set in the script either.
-		if ( pszScriptModel && pszScriptModel[0] )
-		{
-			if ( pszClientModel[0] == '?' )
-				bShouldRetry = true;
-
-			return false;
-		}
-	}
-
-	return true;
-#else
 	return false;
-#endif
 }
 
 
@@ -841,8 +546,6 @@ void CEconEntity::SetMaterialOverride( CMaterialReference &ref )
 	m_MaterialOverrides.Init( ref );
 }
 
-#ifndef DOTA_DLL
-
 
 bool C_ViewmodelAttachmentModel::InitializeAsClientEntity( const char *pszModelName, bool bRenderWithViewModels )
 {
@@ -859,13 +562,6 @@ bool C_ViewmodelAttachmentModel::InitializeAsClientEntity( const char *pszModelN
 
 int C_ViewmodelAttachmentModel::InternalDrawModel( int flags, const RenderableInstance_t &instance )
 {
-#if defined(TF_CLIENT_DLL)
-	CMatRenderContextPtr pRenderContext( materials );
-	if ( cl_flipviewmodels.GetBool() != m_bAlwaysFlip )
-	{
-		pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
-	}
-#endif
 #if defined( CSTRIKE15 )
 	CMatRenderContextPtr pRenderContext( materials );
 	C_BaseViewModel *pViewmodel = m_hViewmodel;
@@ -886,8 +582,6 @@ void C_ViewmodelAttachmentModel::SetViewmodel( C_BaseViewModel *pVM )
 {
 	m_hViewmodel = pVM;
 }
-
-#endif // !defined( DOTA_DLL )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -950,19 +644,6 @@ void CEconEntity::OnDataChanged( DataUpdateType_t updateType )
 			m_MaterialOverrides.Init( pszMaterial, TEXTURE_GROUP_CLIENT_EFFECTS );
 		}
 
-#ifdef TF_CLIENT_DLL
-		// If we're carried by a player, let him know he should recalc his bodygroups.
-		C_TFPlayer *pPlayer = ToTFPlayer( GetOwnerEntity() );
-		if ( pPlayer )
-		{
-			pPlayer->SetBodygroupsDirty();
-		}
-
-		//Warning("Forcing recalc of visiblity for %d\n", entindex().GetRaw());
-		m_bValidatedOwner = false;
-		m_iNumOwnerValidationRetries = 0;
-		UpdateVisibility();
-#endif // TF_CLIENT_DLL
 	}
 
 	UpdateAttachmentModels();
@@ -973,7 +654,6 @@ void CEconEntity::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 void CEconEntity::UpdateAttachmentModels( void )
 {
-#ifndef DOTA_DLL
 	CEconItemView *pItem = GetAttributeContainer()->GetItem();
 	const GameItemDefinition_t *pItemDef = pItem && pItem->IsValid() ? pItem->GetStaticData() : NULL;
 
@@ -1047,7 +727,6 @@ void CEconEntity::UpdateAttachmentModels( void )
 		m_hViewmodelAttachment->Release();
 	}
 
-#endif // !defined( DOTA_DLL )
 }
 
 //-----------------------------------------------------------------z------------
@@ -1091,26 +770,6 @@ bool CEconEntity::ShouldDrawParticleSystems( void )
 {
 	if ( !ShouldDraw() )
 		return false;
-
-#if defined(TF_CLIENT_DLL) || defined(TF_DLL)
-	C_TFPlayer *pPlayer = ToTFPlayer( GetOwnerEntity() );
-	if ( pPlayer )
-	{
-		bool bStealthed = pPlayer->m_Shared.InCond( TF_COND_STEALTHED );
-		if ( bStealthed )
-			return false;
-		bool bDisguised = pPlayer->m_Shared.InCond( TF_COND_DISGUISED );
-		if ( bDisguised )
-		{
-			CTFWeaponBase *pWeapon = dynamic_cast<CTFWeaponBase*>( this );
-			bool bDisguiseWeapon = pWeapon && pWeapon->m_bDisguiseWeapon;
-			if ( !bDisguiseWeapon )
-			{
-				return false;
-			}
-		}
-	}
-#endif
 
 	// Make sure the entity we're attaching to is being drawn
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
@@ -1311,102 +970,9 @@ void CEconEntity::UpdateSingleParticleSystem( bool bVisible, attachedparticlesys
 			RemoveEffects( EF_BONEMERGE_FASTCULL );
 		}
 
-#ifdef DOTA_DLL
-		C_DOTA_BaseNPC *pNPC = ToDOTABaseNPC( pEffectOwner );
-		if ( pNPC )
-			pNPC->CopyParticlesToPortrait( true );
-
-		bool bAttachTypeSet = (pSystem->nRootAttachType != 1);
-		int iIndex = -1;
-
-		bool bAttached = false;
-		if ( pszAttachmentName && pszAttachmentName[0] && pEffectOwner->GetBaseAnimating() )
-		{
-			int iAttachment = pEffectOwner->GetBaseAnimating()->LookupAttachment( pszAttachmentName );
-			if ( iAttachment != INVALID_PARTICLE_ATTACHMENT )
-			{
-				iIndex = GetParticleManager()->CreateParticle( GetParticleManager()->GetParticleReplacement( pSystem->pszSystemName, GetOwnerEntity() ), bAttachTypeSet ? pSystem->nRootAttachType : PATTACH_POINT_FOLLOW, pEffectOwner );
-				m_vecAttachedParticles.AddToTail( iIndex );
-				bAttached = true;
-			}
-		}
-
-		// Attachments can fall back to following root bones if the attachment point wasn't found
-		if ( !bAttached )
-		{
-			if ( bAttachTypeSet )
-			{
-				iIndex = GetParticleManager()->CreateParticle( GetParticleManager()->GetParticleReplacement( pSystem->pszSystemName, GetOwnerEntity() ), pSystem->nRootAttachType, pEffectOwner );
-				m_vecAttachedParticles.AddToTail( iIndex );
-			}
-			else
-			{
-				if ( pSystem->bFollowRootBone )
-				{
-					iIndex = GetParticleManager()->CreateParticle( GetParticleManager()->GetParticleReplacement( pSystem->pszSystemName, GetOwnerEntity() ), PATTACH_ROOTBONE_FOLLOW, pEffectOwner );
-				}
-				else
-				{
-					iIndex = GetParticleManager()->CreateParticle( GetParticleManager()->GetParticleReplacement( pSystem->pszSystemName, GetOwnerEntity() ), PATTACH_ABSORIGIN_FOLLOW, pEffectOwner );
-				}
-				m_vecAttachedParticles.AddToTail( iIndex );
-			}
-		}
-		// Now init any control points
-		if ( iIndex != -1 )
-		{
-			FOR_EACH_VEC( pSystem->vecControlPoints, i )
-			{
-				attachedparticlecontrolpoint_t *pCP = &pSystem->vecControlPoints[i];
-				if ( pCP->nAttachType == PATTACH_CUSTOMORIGIN || pCP->nAttachType == PATTACH_WORLDORIGIN )
-					GetParticleManager()->SetParticleControl( iIndex, pCP->nControlPoint, pCP->vecPosition );
-				else
-					GetParticleManager()->SetParticleControlEnt( iIndex, pCP->nControlPoint, pEffectOwner, pCP->nAttachType, pCP->pszAttachmentName );
-			}
-
-			// If we're a Strange Type, set CP 13 to our current value
-			CEconItemView *pItem = GetAttributeContainer()->GetItem();
-
-			if ( pItem )
-			{
-				
-				static CSchemaAttributeDefHandle pAttrDef_KillEaterAttribute( "kill eater" );
-				uint32 unKillEater;
-				if ( pItem->FindAttribute( pAttrDef_KillEaterAttribute, &unKillEater ) )
-				{
-					GetParticleManager()->SetParticleControl( iIndex, 13, Vector( unKillEater, 1, 1 ) );
-				}
-				const CDOTAItemDefinition *pDef = pItem->GetStaticData();
-
-				for ( int nCPIndex = 0; nCPIndex < pDef->GetNumParticleControlPoints(); ++nCPIndex )
-				{
-					int nWhichCP;
-					Vector vecCPValue;
-					bool bHasCP = pDef->GetReplacementControlPoint( nCPIndex, GetParticleManager()->GetParticleReplacement( pSystem->pszSystemName, GetOwnerEntity() ), nWhichCP, vecCPValue );
-					if ( bHasCP )
-					{
-						GetParticleManager()->SetParticleControl( iIndex, nWhichCP, vecCPValue );
-					}
-				}
-			}
-		}
-
-
-
-		if ( pNPC )
-			pNPC->CopyParticlesToPortrait( false );
-			
-#endif //#ifdef DOTA_DLL
 	}
 	else
 	{
-#ifdef DOTA_DLL
-		FOR_EACH_VEC( m_vecAttachedParticles, i )
-		{
-			GetParticleManager()->DestroyParticleEffect( m_vecAttachedParticles[i], true );
-		}
-		m_vecAttachedParticles.RemoveAll();
-#endif //#ifdef DOTA_DLL
 	}
 }
 
@@ -1482,52 +1048,6 @@ bool CEconEntity::IsOverridingViewmodel( void )
 int	CEconEntity::DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags )
 {
 	int ret = 0;
-#ifdef TF_DLL
-	bool bIsAttachmentTranslucent = m_hViewmodelAttachment.Get() ? m_hViewmodelAttachment->IsTransparent() : false;
-	bool bUseOverride = false;
-	
-	CEconItemView *pItem = GetAttributeContainer()->GetItem();
-	bool bAttachesToHands = ( pItem->IsValid() && (pItem->GetStaticData()->ShouldAttachToHands() || pItem->GetStaticData()->ShouldAttachToHandsVMOnly()));
-
-	// If the attachment is translucent, we need to render the viewmodel first
-	if ( bIsAttachmentTranslucent )
-	{
-		ret = pViewmodel->DrawOverriddenViewmodel( flags );
-	}
-
-	if ( flags & STUDIO_RENDER )
-	{
-		bUseOverride = m_MaterialOverrides.IsValid();
-		if ( bUseOverride )
-		{
-			modelrender->ForcedMaterialOverride( m_MaterialOverrides );
-		}
-	
-		if ( m_hViewmodelAttachment )
-		{
-			m_hViewmodelAttachment->RemoveEffects( EF_NODRAW );
-			m_hViewmodelAttachment->DrawModel( flags );
-			m_hViewmodelAttachment->AddEffects( EF_NODRAW );
-		}
-
-		// if we are attached to the hands, then we DO NOT want have an override material when we draw our view model
-		if ( bAttachesToHands && bUseOverride )
-		{
-			modelrender->ForcedMaterialOverride( NULL );
-			bUseOverride = false;
-		}
-	}
-
-	if ( !bIsAttachmentTranslucent )
-	{
-		ret = pViewmodel->DrawOverriddenViewmodel( flags );
-	}
-
-	if ( bUseOverride )
-	{
-		modelrender->ForcedMaterialOverride( NULL );
-	}
-#endif // #ifdef TF_DLL
 	return ret;
 }
 

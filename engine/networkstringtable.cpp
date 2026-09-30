@@ -87,11 +87,7 @@ static int GetBestPreviousString( CUtlVector< StringHistoryEntry >& history, cha
 
 
 static ConVar stringtable_usedictionaries( "stringtable_usedictionaries", 
-#if defined( PORTAL2 )
-										   "0", // Don't use dictionaries on portal2, its only two player!  Just send them.
-#else
 										   "1",	// On CS:GO we disable stringtable dictionaries for community servers for maps to be downloadable in code (see: CNetworkStringTable::WriteUpdate)
-#endif // PORTAL2
 										   0, "Use dictionaries for string table networking\n" );
 static ConVar stringtable_alwaysrebuilddictionaries( "stringtable_alwaysrebuilddictionaries", "0", 0, "Rebuild dictionary file on every level load\n" );
 static ConVar stringtable_showsizes( "stringtable_showsizes", "0", 0, "Show sizes of string tables when building for signon\n" );

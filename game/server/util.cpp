@@ -37,10 +37,6 @@
 #include "util.h"
 #include "usermessages.h"
 
-#ifdef PORTAL
-#include "portal_base2d_shared.h"
-#endif
-
 #include "CegClientWrapper.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -429,9 +425,6 @@ void UTIL_Remove( IServerNetworkable *oldObj )
 	CBaseEntity *pBaseEnt = oldObj->GetBaseEntity();
 	if ( pBaseEnt )
 	{
-#ifdef PORTAL //make sure entities are in the primary physics environment for the portal mod, this code should be safe even if the entity is in neither extra environment
-		CPortalSimulator::Pre_UTIL_Remove( pBaseEnt );
-#endif
 		g_bReceivedChainedUpdateOnRemove = false;
 		pBaseEnt->UpdateOnRemove();
 
@@ -440,9 +433,6 @@ void UTIL_Remove( IServerNetworkable *oldObj )
 		// clear oldObj targetname / other flags now
 		pBaseEnt->SetName( NULL_STRING );
 
-#ifdef PORTAL
-		CPortalSimulator::Post_UTIL_Remove( pBaseEnt );
-#endif
 	}
 
 	gEntList.AddToDeleteList( oldObj );
@@ -482,10 +472,6 @@ void UTIL_RemoveImmediate( CBaseEntity *oldObj )
 		return;
 	}
 
-#ifdef PORTAL //make sure entities are in the primary physics environment for the portal mod, this code should be safe even if the entity is in neither extra environment
-	CPortalSimulator::Pre_UTIL_Remove( oldObj );
-#endif
-
 	oldObj->AddEFlags( EFL_KILLME );	// Make sure to ignore further calls into here or UTIL_Remove.
 
 	g_bReceivedChainedUpdateOnRemove = false;
@@ -498,9 +484,6 @@ void UTIL_RemoveImmediate( CBaseEntity *oldObj )
 	delete oldObj;
 	g_bDisableEhandleAccess = false;
 
-#ifdef PORTAL
-	CPortalSimulator::Post_UTIL_Remove( oldObj );
-#endif
 }
 
 
@@ -2229,27 +2212,6 @@ static int UTIL_GetNewCheckClient( int check )
 			g_CheckClient.m_checkCluster = clusterIndex;
 			engine->GetPVSForCluster( clusterIndex, sizeof(g_CheckClient.m_checkPVS), g_CheckClient.m_checkPVS );
 
-#if defined ( PORTAL )
-			// Add in any clusters seen by portals.
-			int iPortalCount = CPortal_Base2D_Shared::AllPortals.Count();
-			if( iPortalCount > 0 )
-			{
-				CPortal_Base2D **pPortals = CPortal_Base2D_Shared::AllPortals.Base();
-				for( int i = 0; i != iPortalCount; ++i )
-				{
-					CPortal_Base2D *pPortal = pPortals[i];
-					if ( pPortal && pPortal->IsActivedAndLinked() )
-					{
-						// add only portals visible in the new cluster the client check ent just moved into.
-						if ( pPortal->NetworkProp()->IsInPVS( ent, g_CheckClient.m_checkPVS	, sizeof( g_CheckClient.m_checkPVS ) ) )
-						{
-							// add what it can see to the check pvs
-							AddPortalVisibilityToPVS( pPortal, sizeof( g_CheckClient.m_checkPVS ), g_CheckClient.m_checkPVS );
-						}
-					}
-				}
-			}
-#endif // PORTAL 
 		}
 	}
 	
@@ -2286,20 +2248,6 @@ static edict_t *UTIL_GetCurrentCheckClient()
 
 	return ent;
 }
-
-#if defined ( PORTAL )
-void UTIL_SetClientCheckPVS( edict_t *pClient, const unsigned char *pvs, int pvssize )
-{
-	Assert( (pClient == UTIL_GetCurrentCheckClient()) || g_pGameRules->IsMultiplayer() ); //double check that the code is nondivergent from existing behavior in single player
-	if( pClient == UTIL_GetCurrentCheckClient() )
-	{
-		// this sets whatever client check is the current g_ClientCheck
-		Assert( pvssize <= sizeof(g_CheckClient.m_checkPVS) );
-
-		memcpy( g_CheckClient.m_checkPVS, pvs, pvssize );
-	}
-}
-#endif
 
 void UTIL_SetClientVisibilityPVS( edict_t *pClient, const unsigned char *pvs, int pvssize )
 {

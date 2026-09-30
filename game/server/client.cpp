@@ -35,14 +35,6 @@
 #include "cs_team.h"
 #endif
 
-#ifdef TF_DLL
-#include "tf_player.h"
-#endif
-
-#ifdef HL2_DLL
-#include "weapon_physcannon.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -328,7 +320,6 @@ void Host_Say( edict_t *pEdict, const CCommand &args, bool teamonly )
 }
 
 PRECACHE_REGISTER_BEGIN( GLOBAL, ClientPrecache )
-#ifndef DOTA_DLL
 	// Precache cable textures.
 	PRECACHE( MODEL, "cable/phonecable.vmt" )
 	PRECACHE( MODEL, "cable/phonecable_red.vmt" )
@@ -371,17 +362,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, ClientPrecache )
 
 	PRECACHE( GAMESOUND, "BaseEntity.EnterWater" )
 	PRECACHE( GAMESOUND, "BaseEntity.ExitWater" )
-#endif
-
-#ifdef PORTAL2
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudActivate" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudClick" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudClickLow" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudClickHigh" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudDeactivate" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudFocus" )
-	PRECACHE( GAMESOUND, "GameUI.UiCoopHudUnfocus" )
-#endif
 
 	// Game Instructor sounds
 	PRECACHE( GAMESOUND, "Instructor.LessonStart" )
@@ -1067,40 +1047,6 @@ void CC_Player_TestDispatchEffect( const CCommand &args )
 
 static ConCommand test_dispatcheffect("test_dispatcheffect", CC_Player_TestDispatchEffect, "Test a clientside dispatch effect.\n\tUsage: test_dispatcheffect <effect name> <distance away> <flags> <magnitude> <scale>\n\tDefaults are: <distance 1024> <flags 0> <magnitude 0> <scale 0>\n", FCVAR_CHEAT);
 
-#ifdef HL2_DLL
-//-----------------------------------------------------------------------------
-// Purpose: Quickly switch to the physics cannon, or back to previous item
-//-----------------------------------------------------------------------------
-void CC_Player_PhysSwap( void )
-{
-	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
-	
-	if ( pPlayer )
-	{
-		CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
-
-		if ( pWeapon )
-		{
-			// Tell the client to stop selecting weapons
-			engine->ClientCommand( UTIL_GetCommandClient()->edict(), "cancelselect" );
-
-			const char *strWeaponName = pWeapon->GetName();
-
-			if ( !Q_stricmp( strWeaponName, "weapon_physcannon" ) )
-			{
-				PhysCannonForceDrop( pWeapon, NULL );
-				pPlayer->SelectLastItem();
-			}
-			else
-			{
-				pPlayer->SelectItem( "weapon_physcannon" );
-			}
-		}
-	}
-}
-static ConCommand physswap("phys_swap", CC_Player_PhysSwap, "Automatically swaps the current weapon for the physcannon and back again." );
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: Quickly switch to the bug bait, or back to previous item
 //-----------------------------------------------------------------------------
@@ -1616,9 +1562,6 @@ CON_COMMAND_F( setang_exact, "Snap player eyes and orientation to specified pitc
 	pPlayer->Teleport( NULL, &newang, NULL );
 	pPlayer->SnapEyeAngles( newang );
 
-#ifdef TF_DLL
-	static_cast<CTFPlayer*>( pPlayer )->DoAnimationEvent( PLAYERANIMEVENT_SNAP_YAW );
-#endif
 }
 
 

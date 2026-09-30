@@ -518,13 +518,11 @@ void VGui_PreRender()
 	VPROF( "VGui_PreRender" );
 
 	// 360 does not use these plaques
-#if !defined( PORTAL2 )
 	if ( IsPC() )
 	{
 		loadingdisc->SetLoadingVisible( engine->IsDrawingLoadingImage() && !engine->IsPlayingDemo() );
 		loadingdisc->SetPausedVisible( !enginevgui->IsGameUIVisible() && cl_showpausedimage.GetBool() && engine->IsPaused() && !engine->IsTakingScreenshot() && !engine->IsPlayingDemo() );
 	}
-#endif
 
 	int nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
 

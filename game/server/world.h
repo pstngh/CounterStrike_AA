@@ -67,11 +67,6 @@ public:
 
 	int GetTimeOfDay()	{ return m_iTimeOfDay; }
 
-#ifdef PORTAL2
-	virtual int Restore( IRestore &restore );
-	int GetMaxBlobCount() const { return m_nMaxBlobCount; }
-#endif
-
 private:
 	DECLARE_DATADESC();
 
@@ -92,9 +87,6 @@ private:
 	CNetworkVar( int, m_iTimeOfDay );
 	bool m_bDisplayTitle;
 
-#ifdef PORTAL2
-	CNetworkVar( int, m_nMaxBlobCount );
-#endif
 };
 
 

@@ -318,24 +318,6 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	m_bAllowFlipping = pKeyValuesData->GetBool( "AllowFlipping", true );
 	m_bMeleeWeapon = pKeyValuesData->GetBool( "MeleeWeapon", false );
 
-#if defined(_DEBUG) && defined(HL2_CLIENT_DLL)
-	// make sure two weapons aren't in the same slot & position
-	if ( iSlot >= MAX_WEAPON_SLOTS ||
-		iPosition >= MAX_WEAPON_POSITIONS )
-	{
-		Warning( "Invalid weapon slot or position [slot %d/%d max], pos[%d/%d max]\n",
-			iSlot, MAX_WEAPON_SLOTS - 1, iPosition, MAX_WEAPON_POSITIONS - 1 );
-	}
-	else
-	{
-		if (g_bUsedWeaponSlots[iSlot][iPosition])
-		{
-			Warning( "Duplicately assigned weapon slots in selection hud:  %s (%d, %d)\n", szPrintName, iSlot, iPosition );
-		}
-		g_bUsedWeaponSlots[iSlot][iPosition] = true;
-	}
-#endif
-
 	// Primary ammo used
 	const char *pAmmo = pKeyValuesData->GetString( "primary_ammo", "None" );
 	if ( strcmp("None", pAmmo) == 0 )

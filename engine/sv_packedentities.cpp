@@ -16,9 +16,6 @@
 #include "changeframelist.h"
 #include "sv_main.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "dt_instrumentation_server.h"
 #include "LocalNetworkBackdoor.h"
 #include "tier0/vprof.h"
@@ -157,11 +154,7 @@ static inline CChangeFrameList * GetMergedChangeFrameList( PackedEntity* pPrevFr
 		CActiveHltvServerIterator hltv;
 
 #ifndef _XBOX	
-#if defined( REPLAY_ENABLED )
-		if ( hltv || (replay && replay->IsActive()) )
-#else
 		if ( hltv )
-#endif	
 		{
 			// in HLTV or Replay mode every PackedEntity keeps it's own ChangeFrameList
 			// we just copy the ChangeFrameList from prev frame and update it
@@ -431,35 +424,6 @@ void SV_FillHLTVData( CFrameSnapshot *pSnapshot, edict_t *edict, int iValidEdict
 	}
 }
 
-#if defined( REPLAY_ENABLED )
-// in Replay mode we ALWAYS have to store position and PVS info, even if entity didnt change
-void SV_FillReplayData( CFrameSnapshot *pSnapshot, edict_t *edict, int iValidEdict )
-{
-	if ( pSnapshot->m_pReplayEntityData && edict )
-	{
-		CReplayEntityData *pReplayData = &pSnapshot->m_pReplayEntityData[iValidEdict];
-
-		PVSInfo_t *pvsInfo = edict->GetNetworkable()->GetPVSInfo();
-
-		if ( pvsInfo->m_nClusterCount == 1 )
-		{
-			// store cluster, if entity spawns only over one cluster
-			pReplayData->m_nNodeCluster = pvsInfo->m_pClusters[0];
-		}
-		else
-		{
-			// otherwise save PVS head node for larger entities
-			pReplayData->m_nNodeCluster = pvsInfo->m_nHeadNode | (1<<31);
-		}
-
-		// remember origin
-		pReplayData->origin[0] = pvsInfo->m_vCenter[0];
-		pReplayData->origin[1] = pvsInfo->m_vCenter[1];
-		pReplayData->origin[2] = pvsInfo->m_vCenter[2];
-	}
-}
-#endif
-
 // Returns the SendTable that should be used with the specified edict.
 SendTable* GetEntSendTable(edict_t *pEdict)
 {
@@ -561,11 +525,6 @@ void PackEntities_Normal(
 		// if HLTV is running save PVS info for each entity
 		SV_FillHLTVData( snapshot, edict, iValidEdict );
 		
-#if defined( REPLAY_ENABLED )
-		// if Replay is running save PVS info for each entity
-		SV_FillReplayData( snapshot, edict, iValidEdict );
-#endif
-
 		// Check to see if the entity changed this frame...
 		//ServerDTI_RegisterNetworkStateChange( pSendTable, ent->m_bStateChanged );
 

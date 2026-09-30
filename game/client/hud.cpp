@@ -156,9 +156,6 @@ void CHudElement::InitCHudElementAfterConstruction( const char* pElementName )
     m_bWantLateUpdate = false;
 
 	// Make this for all hud elements, but when its a bit safer
-#if defined( TF_CLIENT_DLL )
-	RegisterForRenderGroup( "global" );
-#endif
 }
 
 
@@ -1208,9 +1205,6 @@ void CHudIcons::Init()
 	LoadHudTextures( textureList, "scripts/mod_textures", NULL );
 	LoadHudTextures( textureList, "scripts/instructor_textures", NULL );
 	LoadHudTextures( textureList, "scripts/instructor_modtextures", NULL );
-#ifdef PORTAL2
-	LoadHudTextures( textureList, "scripts/signifier_textures", NULL );
-#endif
 	// PORTAL2
 
 	int c = textureList.Count();

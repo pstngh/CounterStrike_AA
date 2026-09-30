@@ -302,9 +302,6 @@ bool __MsgFunc_Fade( const CCSUsrMsg_Fade &msg )
 void CViewEffects::Init( void )
 {
 	HOOK_MESSAGE( Shake );
-#ifdef INFESTED_DLL // the user message ShakeDir isn't registered for other games, but if you add it to your RegisterUserMessages, then you can un-#ifdef this
-	HOOK_MESSAGE( ShakeDir ); // directional screen shake
-#endif
 #ifdef HL2_CLIENT
 	// @TODO: Jeep, this causes assert in other games w/o this guard ifdef [6/3/2008 tom]
 	HOOK_MESSAGE( Tilt );

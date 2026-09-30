@@ -440,9 +440,6 @@ bool CCvarUtilities::IsCommand( const CCommand &args, const int iSplitscreenSlot
 		if ( !Host_IsSinglePlayerGame() && !CanCheat() 
 #if !defined(DEDICATED)
 			&& !GetBaseLocalClient().ishltv
-#if defined( REPLAY_ENABLED )
-			&& !GetBaseLocalClient().isreplay
-#endif
 			&& !demoplayer->IsPlayingBack() 
 #endif
 			)
@@ -1329,25 +1326,6 @@ CON_COMMAND( toggle, "Toggles a convar on or off, or cycles through a set of val
 
 void ResetGameConVarsToDefaults( void )
 {
-#if defined( LEFT4DEAD )
-	ConVarRef testprocess( "test_progression_loop" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "z_" );
-	if ( ! testprocess.GetInt() )
-	{
-		ConVarUtilities->ResetConVarsToDefaultValues( "sb_" );
-	}
-	ConVarUtilities->ResetConVarsToDefaultValues( "survivor_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "director_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "intensity_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "rescue_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "tongue_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "inferno_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "boomer_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "hunter_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "smoker_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "tank_" );
-	ConVarUtilities->ResetConVarsToDefaultValues( "nav_" );
-#endif
 }
 
 CON_COMMAND_F( reset_gameconvars, "Reset a bunch of game convars to default values", FCVAR_CHEAT )

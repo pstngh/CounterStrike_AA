@@ -17,9 +17,6 @@
 #include "LocalNetworkBackdoor.h"
 #include "ents_shared.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "framesnapshot.h"
 #include "changeframelist.h"
 
@@ -246,11 +243,7 @@ static inline void SV_WritePropsFromPackedEntity( CEntityWriteInfo &u, CalcDelta
 	SendTable *pSendTable = pTo->m_pServerClass->m_pTable;
 
 	CServerDTITimer timer( pSendTable, SERVERDTI_WRITE_DELTA_PROPS );
-#if defined( REPLAY_ENABLED )
-	if ( g_bServerDTIEnabled && !u.m_pServer->IsHLTV() && !u.m_pServer->IsReplay() )
-#else
 	if ( g_bServerDTIEnabled && !u.m_pServer->IsHLTV() )
-#endif
 	{
 		ICollideable *pEnt = sv.edicts[pTo->m_nEntityIndex].GetCollideable();
 		ICollideable *pClientEnt = sv.edicts[u.m_nClientEntity].GetCollideable();
@@ -356,14 +349,6 @@ static inline void SV_WritePropsFromPackedEntity( CEntityWriteInfo &u, CalcDelta
 			hltv->m_DeltaCache.AddDeltaBits( pTo->m_nEntityIndex, u.m_pFromSnapshot->m_nTickCount, nBits, &bufStart );
 		}
 
-#if defined( REPLAY_ENABLED )
-		if ( replay )
-		{
-			// this is a replay relay proxy, cache delta bits
-			int nBits = u.m_pBuf->GetNumBitsWritten() - bufStart.GetNumBitsWritten();
-			replay->m_DeltaCache.AddDeltaBits( pTo->m_nEntityIndex, u.m_pFromSnapshot->m_nTickCount, nBits, &bufStart );
-		}
-#endif
 	}
 }
 
@@ -503,11 +488,7 @@ static inline void SV_DetermineUpdateType( CEntityWriteInfo &u, CHLTVServer *hlt
 		Assert( u.m_pServer->IsHLTV() ); // because !u.m_bCullProps only happens when u.m_pServer->IsHLTV() AND sv is INactive, at least currently.So, replay should never play a role... ?
 			
 		unsigned char *pBuffer = hltv ? hltv->m_DeltaCache.FindDeltaBits( u.m_nNewEntity, u.m_pFromSnapshot->m_nTickCount, nBits ) :
-#if defined( REPLAY_ENABLED )
-									  replay ? replay->m_DeltaCache.FindDeltaBits( u.m_nNewEntity, u.m_pFromSnapshot->m_nTickCount, nBits ) :
-#else
 			                          NULL;
-#endif
 
 		if ( pBuffer )
 		{
@@ -573,13 +554,6 @@ static inline void SV_DetermineUpdateType( CEntityWriteInfo &u, CHLTVServer *hlt
 				hltv->m_DeltaCache.AddDeltaBits( u.m_nNewEntity, u.m_pFromSnapshot->m_nTickCount, 0, NULL );
 			}
 
-#if defined( REPLAY_ENABLED )
-			if ( replay )
-			{
-				// no bits changed, PreserveEnt
-				replay->m_DeltaCache.AddDeltaBits( u.m_nNewEntity, u.m_pFromSnapshot->m_nTickCount, 0, NULL );
-			}
-#endif
 		}
 #endif
 		u.m_UpdateType = PreserveEnt;
@@ -838,11 +812,7 @@ static bool InternalWriteDeltaEntities( CBaseServer* pServer, CBaseClient *clien
 
 	CHLTVServer *hltv = pServer->IsHLTV() ? static_cast< CHLTVServer* >( pServer ) : NULL;
 #ifndef _XBOX
-#if defined( REPLAY_ENABLED )
-	if ( hltv || pServer->IsReplay() )
-#else
 	if ( hltv )
-#endif
 	{
 		// cull props only on master proxy
 		u.m_bCullProps = sv.IsActive();

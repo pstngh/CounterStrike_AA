@@ -20,14 +20,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifndef DOTA_DLL
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectSplash )
 PRECACHE( MATERIAL, "effects/splash1" )
 PRECACHE( MATERIAL, "effects/splash2" )
 PRECACHE( MATERIAL, "effects/splash4" )
 PRECACHE( MATERIAL, "effects/slime1" )
 PRECACHE_REGISTER_END()
-#endif
 
 
 #define	SPLASH_MIN_SPEED	50.0f
@@ -126,12 +124,10 @@ void FX_WaterRipple( const Vector &origin, float scale, Vector *pColor, float fl
 	}
 }
 
-#ifndef DOTA_DLL
 PRECACHE_REGISTER_BEGIN( SHARED_SYSTEM, FX_WaterRipple )
 	PRECACHE( PARTICLE_SYSTEM, "water_splash_02_surface2" )
 	//PRECACHE( MATERIAL, "effects/splashwake1" )
 PRECACHE_REGISTER_END()
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -249,12 +245,10 @@ void FX_GunshotSlimeSplash( const Vector &origin, const Vector &normal, float sc
 }
 
 PRECACHE_REGISTER_BEGIN( SHARED_SYSTEM, FX_GunshotSlimeSplash )
-#ifndef DOTA_DLL
 	PRECACHE( PARTICLE_SYSTEM, "slime_splash_01" )
 	PRECACHE( PARTICLE_SYSTEM, "slime_splash_02" )
 	PRECACHE( PARTICLE_SYSTEM, "slime_splash_03" )
 	PRECACHE( GAMESOUND, "Physics.WaterSplash" )
-#endif
 PRECACHE_REGISTER_END()
 
 

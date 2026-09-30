@@ -467,9 +467,6 @@ private:
 	bool	PassesNameFilter( CBaseEntity *pCaller );
 	bool	PassesProximityFilter( CBaseEntity *pCaller, CBaseEntity *pEnemy );
 	bool	PassesMobbedFilter( CBaseEntity *pCaller, CBaseEntity *pEnemy );
-#ifdef PORTAL2
-	bool	PassesSizeFilter( CBaseEntity *pEnemy );
-#endif // PORTAL2
 
 	string_t	m_iszEnemyName;				// Name or classname
 	float		m_flRadius;					// Radius (enemies are acquired at this range)
@@ -477,9 +474,6 @@ private:
 	int			m_nMaxSquadmatesPerEnemy;	// Maximum number of squadmates who may share the same enemy
 	string_t	m_iszPlayerName;			// "!player"
 
-#ifdef PORTAL2
-	int			m_nObjectSize;				// Size the object must be
-#endif // PORTAL2
 };
 
 //-----------------------------------------------------------------------------
@@ -506,11 +500,6 @@ bool CFilterEnemy::PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity 
 	if ( PassesMobbedFilter( pCaller, pEntity ) == false )
 		return false;
 
-#ifdef PORTAL2
-	if ( PassesSizeFilter( pEntity ) == false )
-		return false;
-#endif // PORTAL2
-
 	// The filter has been passed, meaning:
 	//	- If we wanted all criteria to fail, they have
 	//  - If we wanted all criteria to succeed, they have
@@ -527,22 +516,6 @@ bool CFilterEnemy::PassesDamageFilterImpl( const CTakeDamageInfo &info )
 	Assert( 0 );
 	return false;
 }
-
-#ifdef PORTAL2
-//-----------------------------------------------------------------------------
-// Purpose: Tests the enemy's size against a desired size
-// Input  : *pEnemy - Entity being assessed
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CFilterEnemy::PassesSizeFilter( CBaseEntity *pEnemy )
-{
-	CBaseAnimating *pAnim = pEnemy->GetBaseAnimating();
-	if ( pAnim == NULL )
-		return false;
-
-	return ( pAnim->GetObjectScaleLevel() == m_nObjectSize );
-}
-#endif // PORTAL2
 
 //-----------------------------------------------------------------------------
 // Purpose: Tests the enemy's name or classname
@@ -712,69 +685,5 @@ BEGIN_DATADESC( CFilterEnemy )
 	DEFINE_KEYFIELD( m_flOuterRadius, FIELD_FLOAT, "filter_outer_radius" ),
 	DEFINE_KEYFIELD( m_nMaxSquadmatesPerEnemy, FIELD_INTEGER, "filter_max_per_enemy" ),
 	DEFINE_FIELD( m_iszPlayerName, FIELD_STRING ),
-#ifdef PORTAL2
-	DEFINE_KEYFIELD( m_nObjectSize, FIELD_INTEGER, "filter_object_size" ),
-#endif // PORTAL2
 END_DATADESC()
 
-#ifdef PORTAL2
-
-// ###################################################################
-//	> FilterSize
-// ###################################################################
-
-class CFilterSize : public CBaseFilter
-{
-	DECLARE_CLASS( CFilterSize, CBaseFilter );
-	DECLARE_DATADESC();
-
-public:
-	int	m_nFilterSize;
-
-	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
-	{
-		CBaseAnimating *pAnim = pEntity->GetBaseAnimating();
-		if ( pAnim == NULL )
-			return false;
-
-		return ( pAnim->GetObjectScaleLevel() == m_nFilterSize );
-	}
-};
-
-LINK_ENTITY_TO_CLASS( filter_size, CFilterSize );
-
-BEGIN_DATADESC( CFilterSize )
-
-	// Keyfields
-	DEFINE_KEYFIELD( m_nFilterSize,	FIELD_INTEGER,	"filtersize" ),
-
-END_DATADESC()
-
-
-// ###################################################################
-//	> FilterPlayerHeld
-// ###################################################################
-
-class CFilterPlayerHeld : public CBaseFilter
-{
-	DECLARE_CLASS( CFilterPlayerHeld, CBaseFilter );
-	DECLARE_DATADESC();
-
-public:
-	bool PassesFilterImpl( CBaseEntity *pCaller, CBaseEntity *pEntity )
-	{
-		IPhysicsObject *pPhys = pEntity->VPhysicsGetObject();
-		if( (pPhys != NULL) && (pPhys->GetGameFlags() & FVPHYSICS_PLAYER_HELD) )
-		{
-			return true;
-		}
-		return false;
-	}
-};
-
-LINK_ENTITY_TO_CLASS( filter_player_held, CFilterPlayerHeld );
-
-BEGIN_DATADESC( CFilterPlayerHeld )
-END_DATADESC()
-
-#endif // PORTAL2

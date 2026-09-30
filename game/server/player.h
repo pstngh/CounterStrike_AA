@@ -169,9 +169,6 @@ public:
 	virtual int			GetArmorValue();
 
 	virtual bool IsHLTV();
-#if defined( REPLAY_ENABLED )
-	virtual bool IsReplay();
-#endif
 	virtual bool IsPlayer();
 	virtual bool IsFakeClient();
 	virtual bool IsDead();

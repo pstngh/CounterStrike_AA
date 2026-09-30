@@ -32,11 +32,7 @@ public:
 
 	virtual int BloodColor( void ) { return DONT_BLEED; }
 
-#if defined( HL2_DLL )
-	virtual Class_T Classify( void ) { return CLASS_MILITARY; }
-#else
 	virtual Class_T Classify( void ) { return CLASS_NONE; }
-#endif
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual Vector BodyTarget( const Vector &posSrc, bool bNoisy = true ) { return GetAbsOrigin(); }
 

@@ -12,10 +12,6 @@
 #include "cbase.h"
 #include "nav_mesh.h"
 
-#ifdef TERROR
-#include "terror/TerrorNav.h"
-#endif
-
 #ifdef CSTRIKE_DLL
 #include "cs_nav_mesh.h"
 #endif
@@ -25,9 +21,6 @@
 
 CNavMesh *NavMeshFactory( void )
 {
-#ifdef TERROR
-	return new TerrorNavMesh;
-#endif
 
 #ifdef CSTRIKE_DLL
 	return new CSNavMesh;

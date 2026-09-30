@@ -101,26 +101,7 @@ enum PanoramaGameViewPriority_t
 };
 #endif
 
-#if defined( SWARM_DLL )
-
-#include "swarm/basemodpanel.h"
-#include "swarm/basemodui.h"
-typedef BaseModUI::CBaseModPanel UI_BASEMOD_PANEL_CLASS;
-inline UI_BASEMOD_PANEL_CLASS & GetUiBaseModPanelClass() { return UI_BASEMOD_PANEL_CLASS::GetSingleton(); }
-inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return * new UI_BASEMOD_PANEL_CLASS(); }
-class IMatchExtSwarm *g_pMatchExtSwarm = NULL;
-
-#elif defined( PORTAL2_UITEST_DLL )
-
-#include "portal2uitest/basemodpanel.h"
-#include "portal2uitest/basemodui.h"
-typedef BaseModUI::CBaseModPanel UI_BASEMOD_PANEL_CLASS;
-inline UI_BASEMOD_PANEL_CLASS & GetUiBaseModPanelClass() { return UI_BASEMOD_PANEL_CLASS::GetSingleton(); }
-inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return * new UI_BASEMOD_PANEL_CLASS(); }
-IMatchExtPortal2 g_MatchExtPortal2;
-class IMatchExtPortal2 *g_pMatchExtPortal2 = &g_MatchExtPortal2;
-
-#elif defined( CSTRIKE15 )
+#if defined( CSTRIKE15 )
 
 #include "basepanel.h"
 #include "../gameui/cstrike15/cstrike15basepanel.h"
@@ -308,18 +289,12 @@ void CGameUI::Initialize( CreateInterfaceFn factory )
 #ifdef _X360
 	xonline = (IXOnline *)factory( XONLINE_INTERFACE_VERSION, NULL );
 #endif
-#ifdef SWARM_DLL
-	g_pMatchExtSwarm = ( IMatchExtSwarm * ) factory( IMATCHEXT_SWARM_INTERFACE, NULL );
-#endif
 	bFailed = !enginesurfacefuncs || !gameuifuncs || !enginevguifuncs ||
 		!xboxsystem ||
 // dgoodenough - xonline only exists on the 360.
 // PS3_BUILDFIX
 #ifdef _X360
 		!xonline ||
-#endif
-#ifdef SWARM_DLL
-		!g_pMatchExtSwarm ||
 #endif
 		!g_pMatchFramework;
 
@@ -382,10 +357,6 @@ void CGameUI::PostInit()
 		enginesound->PrecacheSound( "UI/menu_back.wav", true, true );
 	}
 
-#ifdef SWARM_DLL
-	// to know once client dlls have been loaded
-	BaseModUI::CUIGameData::Get()->OnGameUIPostInit();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -953,14 +924,6 @@ void CGameUI::OnLevelLoadingFinished(bool bError, const char *failureReason, con
 	GetUiBaseModPanelClass().OnLevelLoadingFinished();
 	HideLoadingBackgroundDialog();
 
-#if defined( PORTAL )
-	Warning( "HACK: Forcing all of gameui to hide on level load for portal. For some reason it stays open for us and it's annoying. Especially on xbox where it steals our controller focus.\n" );
-	HideGameUI();
-#endif
-#if defined( DOTA_DLL )
-	// Similar story for DOTA.
-	HideGameUI();
-#endif
 #if defined ( CSTRIKE_DLL )
 	// ditto cstrike
 	HideGameUI();
@@ -1261,16 +1224,10 @@ void CGameUI::CreateCommandMsgBoxInSlot( ECommandMsgBoxSlot slot, const char* ps
 
 void CGameUI::NeedConnectionProblemWaitScreen()
 {
-#ifdef SWARM_DLL
-	BaseModUI::CUIGameData::Get()->NeedConnectionProblemWaitScreen();
-#endif
 }
 
 void CGameUI::ShowPasswordUI( char const *pchCurrentPW )
 {
-#ifdef SWARM_DLL
-	BaseModUI::CUIGameData::Get()->ShowPasswordUI( pchCurrentPW );
-#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -256,12 +256,6 @@ public:
 
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool bUseSlowHighAccuracyContacts = true );
 
-#ifdef HL2_DLL
-	Vector m_vecPrevOrigin;
-	Vector m_vecPrevVelocity;
-	CNetworkVector( m_vecLean );
-	CNetworkVector( m_vecShift );
-#endif
 };
 
 

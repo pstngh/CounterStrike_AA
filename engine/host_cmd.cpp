@@ -50,9 +50,6 @@
 #include "icliententitylist.h"
 #include "icliententity.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "cdll_engine_int.h"
 #include "cl_steamauth.h"
 #include "cl_splitscreen.h"
@@ -679,13 +676,6 @@ void Host_PrintStatus( cmd_source_t commandSource, void ( *print )(const char *f
 			print( "gotv[%i]:  port %i, delay %.1fs, rate %.1f\n", hltv.GetIndex(), hltv->GetUDPPort(), hltv->GetDirector() ? hltv->GetDirector()->GetDelay() : 0.0f, hltv->GetSnapshotRate() );
 		}
 	}
-
-#if defined( REPLAY_ENABLED )
-	if ( replay && replay->IsActive() )
-	{
-		print( "replay:  port %i, delay %.1fs\n", replay->GetUDPPort(), replay->GetDirector()->GetDelay() );
-	}
-#endif
 
 	int nHumans;
 	int nMaxHumans;

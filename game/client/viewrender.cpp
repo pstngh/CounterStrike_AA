@@ -60,10 +60,6 @@
 
 
 
-#ifdef PORTAL
-#include "portal_render_targets.h"
-#include "portalrender.h"
-#endif
 #if defined( HL2_CLIENT_DLL ) || defined( CSTRIKE_DLL ) || defined( INFESTED_DLL ) || defined( PORTAL2 )
 #define USE_MONITORS
 #endif
@@ -74,11 +70,6 @@
 #ifdef USE_MONITORS
 #include "c_point_camera.h"
 #endif // USE_MONITORS
-
-#ifdef INFESTED_DLL
-#include "c_asw_render_targets.h"
-#include "clientmode_asw.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -468,55 +459,9 @@ CON_COMMAND( r_cheapwaterend,  "" )
 }
 
 
-#ifdef PORTAL2
-struct AperturePhotoViewQueue_t
-{
-	EHANDLE hEnt;
-	ITexture *pTexture;
-	int iFailedTries;
-};
-CUtlVector<AperturePhotoViewQueue_t> g_AperturePhotoQueue;
-
-void Aperture_QueuePhotoView( EHANDLE hPhotoEntity, ITexture *pRenderTarget )
-{
-	if( pRenderTarget == NULL )
-		return;
-
-	AperturePhotoViewQueue_t temp;
-	temp.hEnt = hPhotoEntity;
-	temp.pTexture = pRenderTarget;
-	temp.iFailedTries = 0;
-	
-	g_AperturePhotoQueue.AddToTail( temp );
-}
-#endif
-
-
 
 static int ComputeSimpleWorldModelDrawFlags()
 {
-#if defined( PORTAL ) 
-
-	bool bSimpleWorldModeWaterReflection;
-	int nSimpleWorldModelRecursionLevel;
-	float flSimpleWorldModelDrawBeyondDistance;
-	GetSimpleWorldModelConfiguration( bSimpleWorldModeWaterReflection, nSimpleWorldModelRecursionLevel, flSimpleWorldModelDrawBeyondDistance );
-	if ( nSimpleWorldModelRecursionLevel >= 0 && g_pPortalRender->GetViewRecursionLevel() >= nSimpleWorldModelRecursionLevel )
-	{
-		return DF_DRAW_SIMPLE_WORLD_MODEL | DF_DRAW_SIMPLE_WORLD_MODEL_WATER | DF_FAST_ENTITY_RENDERING | DF_DRAW_ENTITITES;
-	}
-	else
-	{
-		if ( flSimpleWorldModelDrawBeyondDistance >= 0.0f )
-		{
-			float flDistanceBias = g_pPortalRender->GetCurrentPortalDistanceBias();
-			if ( flDistanceBias > flSimpleWorldModelDrawBeyondDistance )
-			{
-				return DF_DRAW_SIMPLE_WORLD_MODEL | DF_DRAW_SIMPLE_WORLD_MODEL_WATER | DF_FAST_ENTITY_RENDERING | DF_DRAW_ENTITITES;
-			}
-		}
-	}
-#endif // PORTAL
 
 	return 0;
 }
@@ -709,10 +654,6 @@ public:
 
 protected:
 
-#ifdef PORTAL
-	virtual bool ShouldDrawPortals() { return false; }
-#endif
-
 	virtual SkyboxVisibility_t	ComputeSkyboxVisibility();
 
 	bool			GetSkyboxFogEnable();
@@ -728,27 +669,6 @@ protected:
 //-----------------------------------------------------------------------------
 // 3d skybox view when drawing portals
 //-----------------------------------------------------------------------------
-#ifdef PORTAL
-class CPortalSkyboxView : public CSkyboxView
-{
-	DECLARE_CLASS( CPortalSkyboxView, CSkyboxView );
-public:
-	CPortalSkyboxView(CViewRender *pMainView) : 
-	  CSkyboxView( pMainView ),
-		  m_pRenderTarget( NULL )
-	  {}
-
-	  bool			Setup( const CViewSetup &view, int *pClearFlags, SkyboxVisibility_t *pSkyboxVisible, ITexture *pRenderTarget = NULL );
-
-	  //Skybox drawing through portals with workarounds to fix area bits, position/scaling, view id's..........
-	  void			Draw();
-
-private:
-	virtual SkyboxVisibility_t	ComputeSkyboxVisibility();
-
-	ITexture *m_pRenderTarget;
-};
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -1021,30 +941,6 @@ public:
 //-----------------------------------------------------------------------------
 // view of a single entity by itself
 //-----------------------------------------------------------------------------
-#ifdef PORTAL2
-class CAperturePhotoView : public CSimpleWorldView
-{
-	DECLARE_CLASS( CAperturePhotoView, CSimpleWorldView );
-public:
-	CAperturePhotoView(CViewRender *pMainView) : 
-	  CSimpleWorldView( pMainView ),
-		  m_pRenderTarget( NULL )
-	  {}
-
-	  bool			Setup( C_BaseEntity *pTargetEntity, const CViewSetup &view, int *pClearFlags, SkyboxVisibility_t *pSkyboxVisible, ITexture *pRenderTarget = NULL );
-
-	  //Skybox drawing through portals with workarounds to fix area bits, position/scaling, view id's..........
-	  void			Draw();
-
-#ifdef PORTAL
-	  virtual bool	ShouldDrawPortals() { return false; }
-#endif
-
-private:
-	ITexture *m_pRenderTarget;
-	C_BaseEntity *m_pTargetEntity;
-};
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -1154,12 +1050,6 @@ static void SetClearColorToFogColor()
 // Precache of necessary materials
 //-----------------------------------------------------------------------------
 
-#ifdef HL2_CLIENT_DLL
-PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheViewRender )
-	PRECACHE( MATERIAL, "scripted/intro_screenspaceeffect" )
-PRECACHE_REGISTER_END()
-#endif
-
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecachePostProcessingEffects )
 	PRECACHE( MATERIAL, "dev/blurfiltery_and_add_nohdr" )
 	PRECACHE( MATERIAL, "dev/blurfilterx" )
@@ -1202,9 +1092,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, PrecachePostProcessingEffects )
 	PRECACHE( MATERIAL, "models/weapons/shared/scope/scope_dot_red")
 #endif
 #endif // INFESTED_DLL || DOTA_DLL
-#if defined( INFESTED_DLL )
-	PRECACHE( MATERIAL, "engine/writestencil" )
-#endif // INFSETED_DLL
 PRECACHE_REGISTER_END( )
 
 //-----------------------------------------------------------------------------
@@ -1280,14 +1167,7 @@ void SetupCurrentView( const Vector &vecOrigin, const QAngle &angles, view_id_t 
 	modelinfo->SetViewScreenFadeRange( flScreenFadeMinSize, flScreenFadeMaxSize );
 
 	CMatRenderContextPtr pRenderContext( materials );
-#ifdef PORTAL
-	if ( g_pPortalRender->GetViewRecursionLevel() == 0 )
-	{
-		pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_WRITE_DEPTH_TO_DESTALPHA, ((viewID == VIEW_MAIN) || (viewID == VIEW_3DSKY)) ? 1 : 0 );
-	}
-#else
 	pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_WRITE_DEPTH_TO_DESTALPHA, ((viewID == VIEW_MAIN) || (viewID == VIEW_3DSKY)) ? 1 : 0 );
-#endif
 
 	if ( bDrawWorldNormal )
 		pRenderContext->SetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING, ENABLE_FIXED_LIGHTING_OUTPUTNORMAL_AND_DEPTH );
@@ -1313,11 +1193,7 @@ view_id_t CurrentViewID()
 //-----------------------------------------------------------------------------
 bool IsMainView ( view_id_t id )
 {
-#if defined(PORTAL)
-	return ( (id == VIEW_MAIN) || g_pPortalRender->IsPortalViewID( id ) );
-#else
 	return (id == VIEW_MAIN);
-#endif
 }
 
 void FinishCurrentView()
@@ -1456,11 +1332,7 @@ void CViewRender::DrawRenderablesInList( CViewModelRenderablesList::RenderGroups
 
 		// Non-view models wanting to render in view model list...
 		Assert( pRenderable->ShouldDraw() );
-#ifdef PORTAL
-		Assert( ( g_pPortalRender->GetViewRecursionLevel() > 0 ) || !IsSplitScreenSupported() || pRenderable->ShouldDrawForSplitScreenUser( nSlot ) );
-#else
 		Assert( !IsSplitScreenSupported() || pRenderable->ShouldDrawForSplitScreenUser( nSlot ) );
-#endif
 		m_pCurrentlyDrawingEntity = pRenderable->GetIClientUnknown()->GetBaseEntity();
 		int nDrawFlags = STUDIO_RENDER | flags;
 		nDrawFlags |= renderGroups[i].m_InstanceData.m_bTwoPass ? STUDIO_TWOPASS : 0;
@@ -1534,10 +1406,6 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 {
 	VPROF( "CViewRender::DrawViewModel" );
 
-#ifdef PORTAL //in portal, we'd like a copy of the front buffer without the gun in it for use with the depth doubler
-	g_pPortalRender->UpdateDepthDoublerTexture( view );
-#endif
-
 	bool bShouldDrawPlayerViewModel = ShouldDrawViewModel( drawViewmodel );
 	bool bShouldDrawToolViewModels = ToolsEnabled();
 
@@ -1565,15 +1433,7 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 
 	render->Push3DView( pRenderContext, viewModelSetup, 0, NULL, GetFrustum() );
 
-#ifdef PORTAL //the depth range hack doesn't work well enough for the portal mod (and messing with the depth hack values makes some models draw incorrectly)
-				//step up to a full depth clear if we're extremely close to a portal (in a portal environment)
-	extern bool LocalPlayerIsCloseToPortal( void ); //defined in C_Portal_Player.cpp, abstracting to a single bool function to remove explicit dependence on c_portal_player.h/cpp, you can define the function as a "return true" in other build configurations at the cost of some perf
-	bool bUseDepthHack = !LocalPlayerIsCloseToPortal();
-	if( !bUseDepthHack )
-		pRenderContext->ClearBuffers( false, true, false );
-#else
 	const bool bUseDepthHack = true;
-#endif
 
 	// FIXME: Add code to read the current depth range
 	float depthmin = 0.0f;
@@ -3691,24 +3551,6 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 	bool bForceReflectEntities = r_waterforcereflectentities.GetBool();
 
 	bool bForceCheap = false;
-#ifdef PORTAL
-	switch( g_pPortalRender->ShouldForceCheaperWaterLevel() )
-	{
-	case 0: //force cheap water
-		info.m_bCheapWater = true;
-		bForceCheap = true;
-		return;
-
-	case 1: //downgrade level to "simple reflection"
-		bForceExpensive = false;
-
-	case 2: //downgrade level to "reflect world"
-		bForceReflectEntities = false;
-	
-	default:
-		break;
-	};
-#endif
 
 	// Determine if the water surface is opaque or not
 	info.m_bOpaqueWater = !pWaterMaterial->IsTranslucent();
@@ -3873,18 +3715,7 @@ void CViewRender::DrawWorldAndEntities( bool bDrawSkybox, const CViewSetup &view
 	MDLCACHE_CRITICAL_SECTION();
 
 	VisibleFogVolumeInfo_t fogVolumeInfo;
-#ifdef PORTAL //in portal, we can't use the fog volume for the camera since it's almost never in the same fog volume as what's in front of the portal
-	if( g_pPortalRender->GetViewRecursionLevel() == 0 )
-	{
-		render->GetVisibleFogVolume( viewIn.origin, NULL, &fogVolumeInfo );
-	}
-	else
-	{
-		render->GetVisibleFogVolume( g_pPortalRender->GetExitPortalFogOrigin(), &pCustomVisibility->m_VisData, &fogVolumeInfo );
-	}
-#else
 	render->GetVisibleFogVolume( viewIn.origin, NULL, &fogVolumeInfo );
-#endif
 
 	WaterRenderInfo_t info;
 	DetermineWaterRenderInfo( fogVolumeInfo, info );
@@ -3969,11 +3800,6 @@ bool DoesViewPlaneIntersectWater( float waterZ, int leafWaterDataID )
 	if ( leafWaterDataID == -1 )
 		return false;
 
-#ifdef PORTAL //when rendering portal views point/plane intersections just don't cut it.
-	if( g_pPortalRender->GetViewRecursionLevel() != 0 )
-		return g_pPortalRender->DoesExitPortalViewIntersectWaterPlane( waterZ, leafWaterDataID );
-#endif
-
 	CMatRenderContextPtr pRenderContext( materials );
 	
 	VMatrix viewMatrix, projectionMatrix, viewProjectionMatrix, inverseViewProjectionMatrix;
@@ -4022,221 +3848,7 @@ bool DoesViewPlaneIntersectWater( float waterZ, int leafWaterDataID )
 	return render->DoesBoxIntersectWaterVolume( mins, maxs, leafWaterDataID );
 } 
 
-#ifdef PORTAL 
 
-//-----------------------------------------------------------------------------
-// Purpose: Draw the scene during another draw scene call. We must draw our portals
-//			after opaques but before translucents, so this ViewDrawScene resets the view
-//			and doesn't flag the rendering as ended when it ends.
-// Input  : bDrawSkybox - do we draw the skybox
-//			&view - the camera view to render from
-//			nClearFlags -  how to clear the buffer
-//-----------------------------------------------------------------------------
-void CViewRender::ViewDrawScene_PortalStencil( const CViewSetup &viewIn, ViewCustomVisibility_t *pCustomVisibility )
-{
-	VPROF_BUDGET( "CViewRender::ViewDrawScene_PortalStencil", "ViewDrawScene_PortalStencil" );
-
-	CViewSetup view( viewIn );
-
-	// Record old view stats
-	Vector vecOldOrigin = CurrentViewOrigin();
-	QAngle vecOldAngles = CurrentViewAngles();
-
-	int iCurrentViewID = g_CurrentViewID;
-#if defined( DBGFLAG_ASSERT )
-	int iRecursionLevel = g_pPortalRender->GetViewRecursionLevel();
-	Assert( iRecursionLevel > 0 );
-#endif
-
-	bool bDrew3dSkybox = false;
-	SkyboxVisibility_t nSkyboxVisible = SKYBOX_NOT_VISIBLE;
-	int iClearFlags = 0;
-
-	Draw3dSkyboxworld_Portal( view, iClearFlags, bDrew3dSkybox, nSkyboxVisible );
-
-	bool drawSkybox = r_skybox.GetBool();
-	if ( bDrew3dSkybox || ( nSkyboxVisible == SKYBOX_NOT_VISIBLE ) )
-	{
-		drawSkybox = false;
-	}
-
-	//generate unique view ID's for each stencil view
-	view_id_t iNewViewID = (view_id_t)g_pPortalRender->GetCurrentViewId();
-	SetupCurrentView( view.origin, view.angles, (view_id_t)iNewViewID );
-	
-	// update vis data
-	unsigned int visFlags;
-	SetupVis( view, visFlags, pCustomVisibility );
-
-	VisibleFogVolumeInfo_t fogInfo;
-	if( g_pPortalRender->GetViewRecursionLevel() == 0 )
-	{
-		render->GetVisibleFogVolume( view.origin, NULL, &fogInfo );
-	}
-	else
-	{
-		render->GetVisibleFogVolume( g_pPortalRender->GetExitPortalFogOrigin(), &pCustomVisibility->m_VisData, &fogInfo );
-	}
-
-	WaterRenderInfo_t waterInfo;
-	DetermineWaterRenderInfo( fogInfo, waterInfo );
-
-	if ( waterInfo.m_bCheapWater )
-	{		     
-		// Only bother to enable depth feathering with water seen through up to a single portal when cheap_water is active.
-		if ( g_pPortalRender->GetViewRecursionLevel() <= 1)
-		{
-			EnableWaterDepthFeathing( fogInfo.m_pFogVolumeMaterial, true );
-		}
-		
-		cplane_t glassReflectionPlane;
-		if ( IsReflectiveGlassInView( viewIn, glassReflectionPlane ) )
-		{								    
-			CRefPtr<CReflectiveGlassView> pGlassReflectionView = new CReflectiveGlassView( this );
-			pGlassReflectionView->Setup( viewIn, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR | VIEW_CLEAR_OBEY_STENCIL, drawSkybox, fogInfo, waterInfo, glassReflectionPlane );
-			AddViewToScene( pGlassReflectionView );
-
-			CRefPtr<CRefractiveGlassView> pGlassRefractionView = new CRefractiveGlassView( this );
-			pGlassRefractionView->Setup( viewIn, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR | VIEW_CLEAR_OBEY_STENCIL, drawSkybox, fogInfo, waterInfo, glassReflectionPlane );
-			AddViewToScene( pGlassRefractionView );
-		}
-
-		CSimpleWorldView *pClientView = new CSimpleWorldView( this );
-		pClientView->Setup( view, VIEW_CLEAR_OBEY_STENCIL, drawSkybox, fogInfo, waterInfo, pCustomVisibility );
-		AddViewToScene( pClientView );
-		SafeRelease( pClientView );
-
-		EnableWaterDepthFeathing( fogInfo.m_pFogVolumeMaterial, false );
-	}
-	else
-	{
-		EnableWaterDepthFeathing( fogInfo.m_pFogVolumeMaterial, true );
-		
-		// We can see water of some sort
-		if ( !fogInfo.m_bEyeInFogVolume )
-		{
-			CRefPtr<CAboveWaterView> pAboveWaterView = new CAboveWaterView( this );
-			pAboveWaterView->Setup( viewIn, drawSkybox, fogInfo, waterInfo, pCustomVisibility );
-			AddViewToScene( pAboveWaterView );
-		}
-		else
-		{
-			CRefPtr<CUnderWaterView> pUnderWaterView = new CUnderWaterView( this );
-			pUnderWaterView->Setup( viewIn, drawSkybox, fogInfo, waterInfo, pCustomVisibility );
-			AddViewToScene( pUnderWaterView );
-		}
-
-		EnableWaterDepthFeathing( fogInfo.m_pFogVolumeMaterial, false );
-	}
-	
-	// Disable fog for the rest of the stuff
-	DisableFog();
-
-	CGlowOverlay::DrawOverlays( view.m_bCacheFullSceneState );
-
-	// Draw rain..
-	DrawPrecipitation();
-
-	//prerender version only
-	// issue the pixel visibility tests
-	PixelVisibility_EndCurrentView();
-
-	// Make sure sound doesn't stutter
-	engine->Sound_ExtraUpdate();
-
-	// Debugging info goes over the top
-	CDebugViewRender::Draw3DDebuggingInfo( view );
-
-	// Return to the previous view
-	SetupCurrentView( vecOldOrigin, vecOldAngles, (view_id_t)iCurrentViewID );
-	g_CurrentViewID = iCurrentViewID; //just in case the cast to view_id_t screwed up the id #
-}
-
-void CViewRender::Draw3dSkyboxworld_Portal( const CViewSetup &view, int &nClearFlags, bool &bDrew3dSkybox, SkyboxVisibility_t &nSkyboxVisible, ITexture *pRenderTarget ) 
-{ 
-	CRefPtr<CPortalSkyboxView> pSkyView = new CPortalSkyboxView( this ); 
-	if ( ( bDrew3dSkybox = pSkyView->Setup( view, &nClearFlags, &nSkyboxVisible, pRenderTarget ) ) == true )
-	{
-		AddViewToScene( pSkyView );
-	}
-}
-
-#endif //PORTAL
-
-
-
-#ifdef PORTAL2
-void CViewRender::ViewDrawPhoto( ITexture *pRenderTarget, C_BaseEntity *pTargetEntity )
-{
-	CRefPtr<CAperturePhotoView> pPhotoView = new CAperturePhotoView( this ); 
-	int nClearFlags = VIEW_CLEAR_COLOR | VIEW_CLEAR_DEPTH | VIEW_CLEAR_STENCIL;
-	SkyboxVisibility_t nSkyboxVisible = SKYBOX_NOT_VISIBLE;
-
-	CMatRenderContextPtr pRenderContext( materials );
-	// pRenderContext->SetStencilEnable( false ); // FIXME: JDW
-
-	//bool bIsDormant = pTargetEntity->IsDormant();
-	//pTargetEntity->m_bDormant = false;
-
-	//IClientRenderable *pEntRenderable = pTargetEntity->GetClientRenderable();
-
-	bool bNoDraw = pTargetEntity->IsEffectActive( EF_NODRAW );
-	if( bNoDraw )
-	{
-		pTargetEntity->RemoveEffects( EF_NODRAW );
-	}
-
-	bool bHandle = pTargetEntity->GetRenderHandle() == INVALID_CLIENT_RENDER_HANDLE;
-	if( bHandle )
-	{
-		ClientLeafSystem()->AddRenderable( pTargetEntity, false, RENDERABLE_IS_OPAQUE, RENDERABLE_MODEL_UNKNOWN_TYPE );
-		ClientLeafSystem()->RenderableChanged( pTargetEntity->m_hRender );
-		ClientLeafSystem()->PreRender();
-	}
-
-	//bool bShouldDraw = pEntRenderable->ShouldDraw();
-	//bool bIsVisible = pTargetEntity->IsVisible();
-
-	Assert( pTargetEntity->ShouldDraw() );
-
-	CViewSetup photoview = m_CurrentView;
-	photoview.width = pRenderTarget->GetActualWidth();
-	photoview.height = pRenderTarget->GetActualHeight();
-	photoview.x = 0;
-	photoview.y = 0;
-	//photoview.origin = pCameraEnt->GetAbsOrigin();
-	//photoview.angles = pCameraEnt->GetAbsAngles();
-	//photoview.fov = pCameraEnt->GetFOV();
-	photoview.m_bOrtho = false;
-	//photoview.m_flAspectRatio = 0.0f;
-	//(*this) = photoview;
-
-	SetupCurrentView( photoview.origin, photoview.angles, VIEW_MONITOR );
-
-	Frustum frustum;
-	render->Push3DView( pRenderContext, photoview, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pRenderTarget, (VPlane *)frustum );
-
-	//HACKHACK: need to setup a proper view
-	if( pPhotoView->Setup( pTargetEntity, photoview, &nClearFlags, &nSkyboxVisible, pRenderTarget ) == true )
-	{
-		AddViewToScene( pPhotoView );
-	}
-
-	render->PopView( pRenderContext, frustum );
-
-	//pTargetEntity->m_bDormant = bIsDormant;
-
-	if( bHandle )
-	{
-		ClientLeafSystem()->RemoveRenderable( pTargetEntity->GetRenderHandle() );
-	}
-
-	if( bNoDraw )
-	{
-		pTargetEntity->AddEffects( EF_NODRAW );
-	}
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Methods related to controlling the cheap water distance
@@ -5212,10 +4824,6 @@ void CRendering3dView::BeginConsoleZPass()
 {
 #if defined( _GAMECONSOLE )
 	{
-#if defined( PORTAL )
-		if( g_pPortalRender->GetViewRecursionLevel() != 0 )
-			return;
-#endif
 		// set up command buffer-based fast z rejection for 360
 		if ( r_fastzreject.GetBool() && !( m_DrawFlags & DF_SHADOW_DEPTH_MAP ) )
 		{
@@ -5236,10 +4844,6 @@ void CRendering3dView::EndConsoleZPass()
 {
 #if defined( _GAMECONSOLE )
 	{
-#if defined( PORTAL )
-		if( g_pPortalRender->GetViewRecursionLevel() != 0 )
-			return;
-#endif
 
 		if ( r_fastzreject.GetBool() && !( m_DrawFlags & DF_SHADOW_DEPTH_MAP ) )
 		{
@@ -5546,11 +5150,7 @@ static inline void DrawOpaqueRenderable( IClientRenderable *pEnt, bool bTwoPass,
 {
 	ASSERT_LOCAL_PLAYER_RESOLVABLE();
 
-#ifdef PORTAL
-	Assert( ( g_pPortalRender->GetViewRecursionLevel() > 0 ) || !IsSplitScreenSupported() || pEnt->ShouldDrawForSplitScreenUser( GET_ACTIVE_SPLITSCREEN_SLOT() ) );
-#else
 	Assert( !IsSplitScreenSupported() || pEnt->ShouldDrawForSplitScreenUser( GET_ACTIVE_SPLITSCREEN_SLOT() ) );
-#endif
 	Assert( (pEnt->GetIClientUnknown() == NULL) || (pEnt->GetIClientUnknown()->GetIClientEntity() == NULL) || (pEnt->GetIClientUnknown()->GetIClientEntity()->IsBlurred() == false) );
 
 	int flags = STUDIO_RENDER;
@@ -6137,11 +5737,7 @@ static inline void DrawTranslucentRenderable( IClientRenderable *pEnt, const Ren
 {
 	ASSERT_LOCAL_PLAYER_RESOLVABLE();
 
-#ifdef PORTAL
-	Assert( ( g_pPortalRender->GetViewRecursionLevel() > 0 ) || !IsSplitScreenSupported() || pEnt->ShouldDrawForSplitScreenUser( GET_ACTIVE_SPLITSCREEN_SLOT() ) );
-#else
 	Assert( !IsSplitScreenSupported() || pEnt->ShouldDrawForSplitScreenUser( GET_ACTIVE_SPLITSCREEN_SLOT() ) );
-#endif
 
 	// Renderable list building should already have caught this
 	Assert( instance.m_nAlpha > 0 );
@@ -6302,65 +5898,6 @@ static void UpdateNecessaryRenderTargets( int nRenderFlags )
 	}
 }
 
-#ifdef PORTAL //if we're in the portal mod, we need to make a detour so we can render portal views using stencil areas
-void CRendering3dView::DrawRecursivePortalViews( void )
-{
-	if( ShouldDrawPortals() ) //no recursive stencil views during skybox rendering (although we might be drawing a skybox while already in a recursive stencil view)
-	{
-		int iDrawFlagsBackup = m_DrawFlags;
-
-		if( g_pPortalRender->DrawPortalsUsingStencils( (CViewRender *)m_pMainView ) )// @MULTICORE (toml 8/10/2006): remove this hack cast
-		{
-			m_DrawFlags = iDrawFlagsBackup;
-
-			//reset visibility
-			unsigned int iVisFlags = 0;
-			m_pMainView->SetupVis( *this, iVisFlags, m_pCustomVisibility );		
-
-			//recreate drawlists (since I can't find an easy way to backup the originals)
-			{
-				SafeRelease( m_pWorldRenderList );
-				SafeRelease( m_pWorldListInfo );
-				BuildWorldRenderLists( ((m_DrawFlags & DF_DRAW_ENTITITES) != 0), m_pCustomVisibility ? m_pCustomVisibility->m_iForceViewLeaf : -1 );
-
-				AssertMsg( m_DrawFlags & DF_DRAW_ENTITITES, "It shouldn't be possible to get here if this wasn't set, needs special case investigation" );
-			}
-
-			if( r_depthoverlay.GetBool() )
-			{
-				CMatRenderContextPtr pRenderContext( materials );
-				ITexture *pDepthTex = GetFullFrameDepthTexture();
-
-				if ( pDepthTex )
-				{
-					IMaterial *pMaterial = materials->FindMaterial( "debug/showz", TEXTURE_GROUP_OTHER, true );
-					IMaterialVar *BaseTextureVar = pMaterial->FindVar( "$basetexture", NULL, false );
-					IMaterialVar *pDepthInAlpha = NULL;
-					if( IsPC() )
-					{
-						pDepthInAlpha = pMaterial->FindVar( "$ALPHADEPTH", NULL, false );
-						pDepthInAlpha->SetIntValue( 1 );
-					}
-
-					BaseTextureVar->SetTextureValue( pDepthTex );
-
-					pRenderContext->OverrideDepthEnable( true, false ); //don't write to depth, or else we'll never see translucents
-					pRenderContext->DrawScreenSpaceQuad( pMaterial );
-					pRenderContext->OverrideDepthEnable( false, true );
-				}
-			}
-		}
-		// PS3 reads directly from the depth buffer alias texture, so we don't need to update the full-screen depth texture.
-		else if ( !IsPS3() )
-		{
-			//done recursing in, time to go back out and do translucents
-			CMatRenderContextPtr pRenderContext( materials );		
-			UpdateFullScreenDepthTexture();
-		}
-	}
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Renders all translucent world, entities, and detail objects in a particular set of leaves
 //-----------------------------------------------------------------------------
@@ -6372,7 +5909,6 @@ extern ConVar cl_colorfastpath;
 
 void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowDepth )
 {
-#if !defined( PORTAL )
 	{
 		//opaques generally write depth, and translucents generally don't.
 		//So immediately after opaques are done is the best time to snap off the depth buffer to a texture.
@@ -6391,7 +5927,6 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 			break;
 		}
 	}
-#endif
 
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "DrawTranslucent" );
@@ -6668,19 +6203,6 @@ void CRendering3dView::SetFogVolumeState( const VisibleFogVolumeInfo_t &fogInfo,
 {
 	render->SetFogVolumeState( fogInfo.m_nVisibleFogVolume, bUseHeightFog );
 
-#ifdef PORTAL
-
-	//the idea behind fog shifting is this...
-	//Normal fog simulates the effect of countless tiny particles between your viewpoint and whatever geometry is rendering.
-	//But, when rendering to a portal view, there's a large space between the virtual camera and the portal exit surface.
-	//This space isn't supposed to exist, and therefore has none of the tiny particles that make up fog.
-	//So, we have to shift fog start/end out to align the distances with the portal exit surface instead of the virtual camera to eliminate fog simulation in the non-space
-	if( g_pPortalRender->GetViewRecursionLevel() == 0 )
-		return; //rendering one of the primary views, do nothing
-
-	g_pPortalRender->ShiftFogForExitPortalView();
-
-#endif //#ifdef PORTAL
 }
 
 
@@ -6888,10 +6410,6 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	// Iterate over all leaves and render objects in those leaves
 	DrawOpaqueRenderables( pRenderContext, RENDERABLES_RENDER_PATH_NORMAL, DEPTH_MODE_NORMAL, NULL );
 
-#if defined( PORTAL )
-	DrawRecursivePortalViews(); //Dave K: probably does nothing in this view, calling it anyway because it's contents were directly inside DrawTranslucentRenderables() a moment ago and I don't want to risk breaking anything
-#endif
-
 	// Iterate over all leaves and render objects in those leaves
 	DrawTranslucentRenderables( true, false );
 	DrawNoZBufferTranslucentRenderables();
@@ -6989,248 +6507,6 @@ void CSkyboxView::Draw()
 	DrawInternal();
 }
 
-
-#ifdef PORTAL
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-bool CPortalSkyboxView::Setup( const CViewSetup &view, int *pClearFlags, SkyboxVisibility_t *pSkyboxVisible, ITexture *pRenderTarget )
-{
-	if ( !BaseClass::Setup( view, pClearFlags, pSkyboxVisible ) )
-		return false;
-
-	m_pRenderTarget = pRenderTarget;
-	return true;
-}
-
-
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-SkyboxVisibility_t CPortalSkyboxView::ComputeSkyboxVisibility()
-{
-	return g_pPortalRender->IsSkyboxVisibleFromExitPortal();
-}
-
-
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-void CPortalSkyboxView::Draw()
-{
-	AssertMsg( (g_pPortalRender->GetViewRecursionLevel() != 0) && g_pPortalRender->IsRenderingPortal(), "This is designed for through-portal views. Use the regular skybox drawing code for primary views" );
-
-	VPROF( "CViewRender::Draw3dSkyboxworld_Portal" );
-
-	int iCurrentViewID = g_CurrentViewID;
-
-	Frustum FrustumBackup;
-	memcpy( FrustumBackup, GetFrustum(), sizeof( Frustum ) );
-
-	CMatRenderContextPtr pRenderContext( materials );
-
-	bool bClippingEnabled = pRenderContext->EnableClipping( false );
-
-	//NOTE: doesn't magically map to VIEW_3DSKY at (0,0) like PORTAL_VIEWID maps to VIEW_MAIN
-	view_id_t iSkyBoxViewID = (view_id_t)g_pPortalRender->GetCurrentSkyboxViewId();
-
-	bool bInvokePreAndPostRender = false;
-
-	DrawInternal( iSkyBoxViewID, bInvokePreAndPostRender, m_pRenderTarget );
-
-	pRenderContext->ClearBuffersObeyStencil( false, true );
-
-#ifdef _PS3
-	// Reload z-cull after 3D skybox render if in a portal view since we just re-cleared depth values
-	if ( g_pPortalRender->GetViewRecursionLevel() > 0 )
-	{
-		g_pPortalRender->ReloadZcullMemory();
-	}
-#endif // _PS3
-
-	pRenderContext->EnableClipping( bClippingEnabled );
-
-	memcpy( GetFrustum(), FrustumBackup, sizeof( Frustum ) );
-	render->OverrideViewFrustum( FrustumBackup );
-
-	g_CurrentViewID = iCurrentViewID;
-}
-#endif // PORTAL
-
-
-
-#ifdef PORTAL2
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-bool CAperturePhotoView::Setup( C_BaseEntity *pTargetEntity, const CViewSetup &view, int *pClearFlags, SkyboxVisibility_t *pSkyboxVisible, ITexture *pRenderTarget )
-{
-	if( pTargetEntity == NULL )
-		return false;
-
-	IClientRenderable *pEntRenderable = pTargetEntity->GetClientRenderable();
-
-	if( pEntRenderable == NULL )
-		return false;
-
-	m_pTargetEntity = pTargetEntity;
-
-	VisibleFogVolumeInfo_t fogInfo;
-	WaterRenderInfo_t waterInfo;
-
-	memset( &fogInfo, 0, sizeof( VisibleFogVolumeInfo_t ) );
-	memset( &waterInfo, 0, sizeof( WaterRenderInfo_t ) );
-	waterInfo.m_bCheapWater = true;
-	BaseClass::Setup( view, *pClearFlags, false, fogInfo, waterInfo, NULL );
-	
-	m_pRenderTarget = pRenderTarget;
-	return true;
-}
-
-ConVar cl_camera_minimal_photos( "cl_camera_minimal_photos", "1", 0, "Draw just the targetted entity when taking a camera photo" );
-
-
-void AddIClientRenderableToRenderList( IClientRenderable *pRenderable, CClientRenderablesList *pRenderablesList )
-{
-	CClientRenderablesList::CEntry renderableEntry;
-	RenderGroup_t group = ClientLeafSystem()->GenerateRenderListEntry( pRenderable, renderableEntry );
-	if( group == RENDER_GROUP_COUNT )
-		return;
-
-	for( int i = 0; i != pRenderablesList->m_RenderGroupCounts[group]; ++i )
-	{
-		if( pRenderablesList->m_RenderGroups[group][i].m_pRenderable == pRenderable )
-			return; //already in the list
-	}
-
-	int iAddIndex = pRenderablesList->m_RenderGroupCounts[group];
-	++pRenderablesList->m_RenderGroupCounts[group];
-	pRenderablesList->m_RenderGroups[group][iAddIndex] = renderableEntry;
-}
-
-void GetAllChildRenderables( C_BaseEntity *pEntity, IClientRenderable **pKeepers, int &iKeepCount, int iKeepArraySize )
-{
-	IClientRenderable *pThisRenderable = pEntity->GetClientRenderable();
-	
-	//avoid duplicates and infinite recursion
-	for( int i = 0; i != iKeepCount; ++i )
-	{
-		if( pThisRenderable == pKeepers[i] )
-			return;
-	}
-
-	pKeepers[iKeepCount++] = pThisRenderable;
-
-	if( pEntity->ParticleProp() )
-	{
-		iKeepCount += pEntity->ParticleProp()->GetAllParticleEffectRenderables( &pKeepers[iKeepCount], iKeepArraySize - iKeepCount );
-	}
-	if( pEntity->GetEffectEntity() != NULL )
-	{
-		GetAllChildRenderables( pEntity->GetEffectEntity(), pKeepers, iKeepCount, iKeepArraySize );
-	}
-	for( C_BaseEntity *pMoveChild = pEntity->FirstMoveChild(); pMoveChild != NULL; pMoveChild = pMoveChild->NextMovePeer() )
-	{
-		GetAllChildRenderables( pMoveChild, pKeepers, iKeepCount, iKeepArraySize );
-	}
-}
-
-ConVar cl_blur_test( "cl_blur_test", "0", 0, "Blurs entities that have had their photo taken" );
-ConVar cl_photo_disable_model_alpha_writes( "cl_photo_disable_model_alpha_writes", "1", FCVAR_ARCHIVE, "Disallows the target entity in photos from writing to the photo's alpha channel" );
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-void CAperturePhotoView::Draw()
-{
-	CMatRenderContextPtr pRenderContext( materials );
-
-	Vector vDiff = m_pTargetEntity->GetRenderOrigin() - origin;
-	Vector vMins, vMaxs;
-	m_pTargetEntity->GetRenderBounds( vMins, vMaxs );
-	float fGoodDist = MAX((vMaxs - vMins).Length() * (1.5f/2.0f), 20.0f );
-	float fLength = vDiff.Length();
-	if( fLength > fGoodDist )
-	{
-		//move the camera closer for a better view
-		Vector vCameraForward;
-		AngleVectors( angles, &vCameraForward );
-
-		origin = m_pTargetEntity->WorldSpaceCenter() - (vCameraForward * fGoodDist); 
-		//Vector vCameraForward;
-		//AngleVectors( angles, &vCameraForward );
-		//origin += vCameraForward * ((fLength - fGoodDist) * vCameraForward.Dot( vDiff / fLength ));
-	}
-
-	render->Push3DView( pRenderContext, *this, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR | VIEW_CLEAR_STENCIL, m_pRenderTarget, GetFrustum() );
-	SetupCurrentView( origin, angles, VIEW_MONITOR );
-
-
-	MDLCACHE_CRITICAL_SECTION();
-
-	bool bDrawEverything = !cl_camera_minimal_photos.GetBool();
-	//Build the world list for now because I don't want to track down crash bugs and this doesn't happen often.
-	BuildWorldRenderLists( true, -1, true, false ); // @MULTICORE (toml 8/9/2006): Portal problem, not sending custom vis down
-	if( !bDrawEverything )
-	{
-		memset( m_pRenderablesList->m_RenderGroupCounts, 0, sizeof( m_pRenderablesList->m_RenderGroupCounts ) );
-	}
-	
-	BuildRenderableRenderLists( CurrentViewID() );
-
-	IClientRenderable *keepHandles[MAX_EDICTS];
-	int iKeepChildren = 0;
-	GetAllChildRenderables( m_pTargetEntity, keepHandles, iKeepChildren, MAX_EDICTS );
-
-	//set the target entity as the only entity in the renderables list
-	{
-		if( !bDrawEverything )
-			memset( m_pRenderablesList->m_RenderGroupCounts, 0, sizeof( m_pRenderablesList->m_RenderGroupCounts ) );
-
-		for( int i = 0; i != iKeepChildren; ++i )
-		{
-			AddIClientRenderableToRenderList( keepHandles[i], m_pRenderablesList );
-		}
-	}
-
-	engine->Sound_ExtraUpdate();	// Make sure sound doesn't stutter
-
-	m_DrawFlags = m_pMainView->GetBaseDrawFlags() | DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER;	// Don't draw water surface...
-
-	IMaterial *pPhotoBackground = materials->FindMaterial( "photos/photo_background", TEXTURE_GROUP_CLIENT_EFFECTS, false );
-	pRenderContext->DrawScreenSpaceQuad( pPhotoBackground );
-
-	if( cl_photo_disable_model_alpha_writes.GetBool() )
-		pRenderContext->OverrideAlphaWriteEnable( true, false );
-
-	if( bDrawEverything )
-		DrawWorld( pRenderContext, 0.0f );
-
-	DrawOpaqueRenderables( pRenderContext, RENDERABLES_RENDER_PATH_NORMAL, NULL );
-	if( bDrawEverything )
-	{
-#if defined( PORTAL )
-		DrawRecursivePortalViews();
-#endif
-		DrawTranslucentRenderables( false, false );
-	}
-	else
-	{
-		DrawTranslucentRenderablesNoWorld( false );
-	}
-
-	if( cl_photo_disable_model_alpha_writes.GetBool() )
-		pRenderContext->OverrideAlphaWriteEnable( false, false );
-
-	IMaterial *pPhotoForeground = materials->FindMaterial( "photos/photo_foreground", TEXTURE_GROUP_CLIENT_EFFECTS, false );
-	pRenderContext->DrawScreenSpaceQuad( pPhotoForeground );
-
-	m_DrawFlags = 0;
-	render->PopView( pRenderContext, GetFrustum() );
-
-	if( cl_blur_test.GetBool() )
-		m_pTargetEntity->SetBlurState( true );
-}
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -7457,9 +6733,6 @@ void CShadowDepthView::Draw()
 		// PS3 is not supporting translucent renderables for now, will need support in static geo cache
 		if ( r_flashlightdepth_drawtranslucents.GetBool() )
 		{
-#if defined( PORTAL )
-			DrawRecursivePortalViews(); //Dave K: probably does nothing in this view, calling it anyway because it's contents were directly inside DrawTranslucentRenderables() a moment ago and I don't want to risk breaking anything
-#endif
 			DrawTranslucentRenderables( false, true );
 		}
 #endif
@@ -7899,13 +7172,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 		BeginConsoleZPass();
 	}
 
-#ifdef PORTAL
-	if ( IsMainView( viewID ) )
-	{
-		g_pPortalRender->DrawEarlyZPortals( (CViewRender*)view );
-	}
-#endif // PORTAL
-
 //#if !defined(_PS3) - trying to re-order drawing of world and renderables on PS3 (small gpu perf win, but now confuses/delays the syncing of SPU buildworld/renderable jobs)
 	m_DrawFlags |= DF_SKIP_WORLD_DECALS_AND_OVERLAYS;
 	DrawWorld( pRenderContext, waterZAdjust );
@@ -7973,9 +7239,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 	{
 		if ( m_DrawFlags & DF_DRAW_ENTITITES )
 		{
-#if defined( PORTAL )
-			DrawRecursivePortalViews();
-#endif
 			DrawDeferredClippedOpaqueRenderables( pRenderContext, RENDERABLES_RENDER_PATH_NORMAL, DEPTH_MODE_NORMAL, pArrFastClippedOpaqueRenderables );
 			DrawTranslucentRenderables( false, false );
 			DrawNoZBufferTranslucentRenderables();
@@ -8134,10 +7397,6 @@ void CSimpleWorldView::Setup( const CViewSetup &view, int nClearFlags, bool bDra
 		m_DrawFlags |= DF_DRAWSKYBOX;
 	}
 
-#if defined( PORTAL2 )
-	m_DrawFlags |= ComputeSimpleWorldModelDrawFlags();
-#endif // PORTAL2
-
 	m_pCustomVisibility = pCustomVisibility;
 	m_fogInfo = fogInfo;
 }
@@ -8273,18 +7532,10 @@ void CAboveWaterView::Setup( const CViewSetup &view, bool bDrawSkybox, const Vis
 
 	m_DrawFlags = DF_RENDER_ABOVEWATER | DF_DRAW_ENTITITES;
 	
-#ifdef PORTAL
-	if ( g_pPortalRender->GetViewRecursionLevel() == 0 )
-#endif
 	{
 		m_ClearFlags = VIEW_CLEAR_DEPTH;
 	}
 	
-
-#ifdef PORTAL
-	if( g_pPortalRender->ShouldObeyStencilForClears() )
-		m_ClearFlags |= VIEW_CLEAR_OBEY_STENCIL;
-#endif
 
 	if ( bDrawSkybox )
 	{
@@ -8306,10 +7557,6 @@ void CAboveWaterView::Setup( const CViewSetup &view, bool bDrawSkybox, const Vis
 	{
 		m_DrawFlags |= DF_RENDER_UNDERWATER;
 	}
-
-#if defined( PORTAL2 )
-	m_DrawFlags |= ComputeSimpleWorldModelDrawFlags();
-#endif // PORTAL2
 
 	m_fogInfo = fogInfo;
 	m_waterInfo = waterInfo;
@@ -8349,11 +7596,6 @@ void CAboveWaterView::Draw()
 			bViewIntersectsWater = DoesViewPlaneIntersectWater( m_fogInfo.m_flWaterHeight, m_fogInfo.m_nVisibleFogVolume );
 		}
 	}	
-
-#ifdef PORTAL
-	if( g_pPortalRender->ShouldObeyStencilForClears() )
-		m_ClearFlags |= VIEW_CLEAR_OBEY_STENCIL;
-#endif
 
 	// NOTE!!!!!  YOU CAN ONLY DO THIS IF YOU HAVE HARDWARE USER CLIP PLANES!!!!!!
 	bool bHardwareUserClipPlanes = !g_pMaterialSystemHardwareConfig->UseFastClipping();
@@ -8438,10 +7680,6 @@ void CAboveWaterView::CReflectionView::Setup( bool bReflectEntities, bool bRefle
 void CAboveWaterView::CReflectionView::Draw()
 {
 
-#ifdef PORTAL
-	g_pPortalRender->WaterRenderingHandler_PreReflection();
-#endif
-
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CAboveWaterView::CReflectionView" );
 
@@ -8469,11 +7707,6 @@ void CAboveWaterView::CReflectionView::Draw()
 
 	r_visocclusion.SetValue( bVisOcclusion );
 	
-#ifdef PORTAL
-	// deal with stencil
-	g_pPortalRender->WaterRenderingHandler_PostReflection();
-#endif
-
 	// finish off the view and restore the previous view.
 	SetupCurrentView( vecOldOrigin, vecOldAngles, ( view_id_t )nSaveViewID );
 
@@ -8516,10 +7749,6 @@ void CAboveWaterView::CRefractionView::Draw()
 
 	PS3_SPUPATH_INVALID( "CAboveWaterView::CRefractionView::Draw" );
 
-#ifdef PORTAL
-	g_pPortalRender->WaterRenderingHandler_PreRefraction();
-#endif
-
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CAboveWaterView::CRefractionView" );
 
@@ -8538,11 +7767,6 @@ void CAboveWaterView::CRefractionView::Draw()
 	END_2PASS_BLOCK
 
 	DrawExecute( GetOuter()->m_waterHeight, VIEW_REFRACTION, GetOuter()->m_waterZAdjust );
-
-#ifdef PORTAL
-	// deal with stencil
-	g_pPortalRender->WaterRenderingHandler_PostRefraction();
-#endif
 
 	// finish off the view.  restore the previous view.
 	SetupCurrentView( vecOldOrigin, vecOldAngles, ( view_id_t )nSaveViewID );
@@ -8619,9 +7843,6 @@ void CUnderWaterView::Setup( const CViewSetup &view, bool bDrawSkybox, const Vis
 	// Clear the color to get the appropriate underwater fog color
 	m_DrawFlags = DF_FUDGE_UP | DF_RENDER_UNDERWATER | DF_DRAW_ENTITITES;
 
-#ifdef PORTAL
-	if ( g_pPortalRender->GetViewRecursionLevel() == 0 )
-#endif
 	{
 		m_ClearFlags = VIEW_CLEAR_DEPTH;
 	}

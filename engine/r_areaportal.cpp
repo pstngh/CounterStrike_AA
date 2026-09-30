@@ -528,9 +528,6 @@ void R_SetupAreaBits( int iForceViewLeaf /* = -1 */, const VisOverrideData_t* pV
 
 		if ( host_state.worldbrush->leafs[leaf].contents & CONTENTS_SOLID ||
 			 GetBaseLocalClient().ishltv || 
-#if defined( REPLAY_ENABLED )
-			 GetBaseLocalClient().isreplay ||
-#endif
 			 !GetBaseLocalClient().m_bAreaBitsValid || 
 			 r_portalsopenall.GetBool()  )
 		{

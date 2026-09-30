@@ -31,9 +31,6 @@
 #include "tier0/icommandline.h"
 #include "steam/steam_gameserver.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "pr_edict.h"
 #include "steam/steamclientpublic.h"
 #include "mathlib/expressioncalculator.h"

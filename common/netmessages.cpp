@@ -310,27 +310,3 @@ bool CmdEncryptedDataMessageCodec::SVCMsg_EncryptedData_Process( CSVCMsg_Encrypt
 
 CTSPool< net_scratchbuffer_t::buffer_t > net_scratchbuffer_t::sm_NetScratchBuffers;
 
-#if defined( REPLAY_ENABLED )
-bool CLC_SaveReplay::WriteToBuffer( bf_write &buffer ) const
-{
-	buffer.WriteUBitLong( GetType(), NETMSG_TYPE_BITS );
-	buffer.WriteString( m_szFilename );
-	buffer.WriteUBitLong( m_nStartSendByte, sizeof( m_nStartSendByte ) );
-	buffer.WriteFloat( m_flPostDeathRecordTime );
-	return !buffer.IsOverflowed();
-}
-
-bool CLC_SaveReplay::ReadFromBuffer( bf_read &buffer )
-{
-	buffer.ReadString( m_szFilename, sizeof( m_szFilename ) );
-	m_nStartSendByte = buffer.ReadUBitLong( sizeof( m_nStartSendByte ) );
-	m_flPostDeathRecordTime = buffer.ReadFloat();
-	return !buffer.IsOverflowed();
-}
-
-const char *CLC_SaveReplay::ToString() const
-{
-	V_snprintf( s_text, sizeof( s_text ), "%s: filename: %s, start byte: %i, post death record time: %f", GetName(), m_szFilename, m_nStartSendByte, m_flPostDeathRecordTime );
-	return s_text;
-}
-#endif

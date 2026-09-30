@@ -6,10 +6,6 @@
 #include "vgui/ILocalize.h"
 #include "localization_provider.h"
 
-#if defined( DOTA_DLL ) || defined( DOTA_GC_DLL )
-#include "dota_sharedfuncs.h"
-#endif
-
 	#ifndef EXTERNALTESTS_DLL
 		#include "econ_item_inventory.h"
 	#endif

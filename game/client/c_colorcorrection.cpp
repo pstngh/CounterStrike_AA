@@ -238,8 +238,6 @@ bool C_ColorCorrection::IsFadeTimeElapsed( int nSplitScreenSlot ) const
 			( ( gpGlobals->curtime - m_flFadeStartTime[nSplitScreenSlot] ) < 0.0f );
 }
 
-#ifndef DOTA_DLL
-
 void UpdateColorCorrectionEntities( C_BasePlayer *pPlayer, float ccScale, C_ColorCorrection **pList, int listCount )
 {
 	for ( int i = 0; i < listCount; i++ )
@@ -247,5 +245,3 @@ void UpdateColorCorrectionEntities( C_BasePlayer *pPlayer, float ccScale, C_Colo
 		pList[i]->Update(pPlayer, ccScale);
 	}
 }
-
-#endif

@@ -40,9 +40,6 @@
 #include "ivideomode.h"
 #include "download.h"
 #include "GameUI/IGameUI.h"
-#if defined( REPLAY_ENABLED )
-#include "replayhistorymanager.h"
-#endif
 #include "cl_demo.h"
 
 #include "audio_pch.h"
@@ -214,11 +211,6 @@ void CClientState::Disconnect( bool bShowMainMenu )
 	demoplayer->StopPlayback();
 	demorecorder->StopRecording();
 
-#if defined( REPLAY_ENABLED )
-	extern IReplayHistoryManager *g_pClientReplayHistoryManager;
-	g_pClientReplayHistoryManager->StopDownloads();
-#endif
-
 	S_StopAllSounds( true );
 	
 	R_DecalTermAll();
@@ -353,11 +345,6 @@ bool CClientState::SVCMsg_ServerInfo( const CSVCMsg_ServerInfo& msg )
 
 	// is server a HLTV proxy ?
 	ishltv = msg.is_hltv();
-
-#if defined( REPLAY_ENABLED )
-	// is server a replay proxy ?
-	isreplay = msg.is_replay();
-#endif
 
 	// The CRC of the server map must match the CRC of the client map. or else
 	//  the client is probably cheating.

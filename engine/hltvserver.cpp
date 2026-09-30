@@ -625,9 +625,6 @@ void CHLTVServer::StartMaster(CGameClient *client)
 	m_MasterClient = client;
 	m_MasterClient->m_bIsHLTV = true;
 	m_MasterClient->m_pHltvSlaveServer = this;  // Master client needs to know which server (with which tickrate) it's sending packets
-#if defined( REPLAY_ENABLED )
-	m_MasterClient->m_bIsReplay = false;
-#endif
 	// let game.dll know that we are the HLTV client
 	Assert( serverGameClients );
 

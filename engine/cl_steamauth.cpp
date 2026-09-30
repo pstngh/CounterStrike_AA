@@ -246,13 +246,6 @@ extern ConVar	password;
 //-----------------------------------------------------------------------------
 void CSteam3Client::OnGameServerChangeRequested( GameServerChangeRequested_t *pGameServerChangeRequested )
 {
-#ifdef PORTAL2
-	if ( GetSteamUniverse() != k_EUniverseBeta && GetSteamUniverse() != k_EUniverseInternal )
-	{
-		// Portal 2 doesn't support joining pure servers from Steam Overlay
-		return;
-	}
-#endif
 #ifndef DEDICATED
 	if ( g_pMatchFramework )
 	{

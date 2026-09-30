@@ -107,20 +107,6 @@ void CRagdollManager::InputSetMaxRagdollCount(inputdata_t &inputdata)
 //-----------------------------------------------------------------------------
 bool RagdollManager_SaveImportant( CAI_BaseNPC *pNPC )
 {
-#ifdef HL2_DLL
-	CRagdollManager *pEnt =	(CRagdollManager *)gEntList.FindEntityByClassname( NULL, "game_ragdoll_manager" );
-
-	if ( pEnt == NULL )
-		return false;
-
-	if ( pEnt->m_bSaveImportant )
-	{
-		if ( pNPC->Classify() == CLASS_PLAYER_ALLY || pNPC->Classify() == CLASS_PLAYER_ALLY_VITAL )
-		{
-			return true;
-		}
-	}
-#endif
 
 	return false;
 }

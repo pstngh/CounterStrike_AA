@@ -74,9 +74,6 @@
 #ifdef _X360
 #include "xbox/xbox_launch.h"
 #endif
-#if defined( REPLAY_ENABLED )
-#include "replayhistorymanager.h"
-#endif
 
 #include "ConfigManager.h"
 
@@ -1510,9 +1507,6 @@ void CL_CheckForPureServerWhitelist()
 
 	// Don't do sv_pure stuff in SP games or HLTV/replay
 	if ( GetBaseLocalClient().m_nMaxClients <= 1 || GetBaseLocalClient().ishltv
-#ifdef REPLAY_ENABLED
-		|| GetBaseLocalClient().isreplay
-#endif // ifdef REPLAY_ENABLED
 		)
 		return;
 	
@@ -2659,9 +2653,6 @@ void CL_ExtraMouseUpdate( float frametime )
 
 		// Don't create usercmds here during playback, they were encoded into the packet already
 		if ( demoplayer->IsPlayingBack() && !GetLocalClient().ishltv
-#	ifdef REPLAY_ENABLED
-			&& !GetLocalClient().isreplay
-#	endif
 			)
 			continue;
 
@@ -2748,9 +2739,6 @@ void CL_Move(float accumulated_extra_samples, bool bFinalTick )
 	if ( demoplayer->IsPlayingBack() )
 	{
 		if ( cl.ishltv 
-#	ifdef REPLAY_ENABLED
-			|| cl.isreplay 
-#	endif // ifdef REPLAY_ENABLED
 			)
 		{
 			// still do it when playing back a HLTV/replay demo
@@ -3524,13 +3512,8 @@ void CL_InitCloudSettingsCvar()
 
 		if ( !bFound )
 		{
-			#ifndef PORTAL2
 			// No key yet, use the uninitialized value
 			iCloudSettings = -1;
-			#else
-			// Portal 2 will cloud everything by default if no registry key
-			iCloudSettings = STEAMREMOTESTORAGE_CLOUD_ALL;
-			#endif
 		}
 
 		#if defined( CSTRIKE15 )
@@ -3569,9 +3552,6 @@ void CL_Init( void )
 	CL_InitLanguageCvar();
 	CL_InitCloudSettingsCvar();
 
-#if defined( REPLAY_ENABLED )
-	g_pClientReplayHistoryManager->Init();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3579,9 +3559,6 @@ void CL_Init( void )
 //-----------------------------------------------------------------------------
 void CL_Shutdown( void )
 {
-#if defined( REPLAY_ENABLED )
-	g_pClientReplayHistoryManager->Shutdown();
-#endif
 }
 
 CON_COMMAND_F( cl_fullupdate, "Forces the server to send a full update packet", FCVAR_CHEAT )

@@ -24,11 +24,7 @@
 #include "env_wind_shared.h"
 #include "filesystem.h"
 #include "engine/IEngineSound.h"
-#ifdef INFESTED_DLL
-#include "asw_fire.h"
-#else
 #include "fire.h"
-#endif
 #include "te_effect_dispatch.h"
 #include "Sprite.h"
 #include "precipitation_shared.h"
@@ -662,9 +658,6 @@ public:
 	float m_flGibScale;
 	float m_flGibGravityScale;
 
-#if HL2_EPISODIC
-	float m_flMassOverride;	// allow designer to force a mass for gibs in some cases
-#endif
 };
 
 BEGIN_DATADESC( CEnvShooter )
@@ -672,10 +665,6 @@ BEGIN_DATADESC( CEnvShooter )
 	DEFINE_KEYFIELD( m_nSkin, FIELD_INTEGER, "skin" ),
 	DEFINE_KEYFIELD( m_flGibScale, FIELD_FLOAT ,"scale" ),
 	DEFINE_KEYFIELD( m_flGibGravityScale, FIELD_FLOAT, "gibgravityscale" ),
-
-#if HL2_EPISODIC
-	DEFINE_KEYFIELD( m_flMassOverride, FIELD_FLOAT, "massoverride" ),
-#endif
 
 END_DATADESC()
 
@@ -790,18 +779,6 @@ CGib *CEnvShooter::CreateGib ( void )
 	{
 		pGib->AddEffects( EF_NOSHADOW );
 	}
-
-#if HL2_EPISODIC
-	// if a mass override is set, apply it to the gib
-	if (m_flMassOverride != 0)
-	{
-		IPhysicsObject *pPhys = pGib->VPhysicsGetObject();
-		if (pPhys)
-		{
-			pPhys->SetMass( m_flMassOverride );
-		}
-	}
-#endif
 
 	return pGib;
 }
@@ -1482,35 +1459,23 @@ public:
 	void	Spawn( void );
 
 	CNetworkVar( PrecipitationType_t, m_nPrecipType );
-#ifdef INFESTED_DLL
-	CNetworkVar( int, m_nSnowDustAmount );
-#endif
 };
 
 LINK_ENTITY_TO_CLASS( func_precipitation, CPrecipitation );
 
 BEGIN_DATADESC( CPrecipitation )
 	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
-#ifdef INFESTED_DLL
-	DEFINE_KEYFIELD( m_nSnowDustAmount, FIELD_INTEGER, "snowDustAmt" ),
-#endif
 END_DATADESC()
 
 // Just send the normal entity crap
 IMPLEMENT_SERVERCLASS_ST( CPrecipitation, DT_Precipitation)
 	SendPropInt( SENDINFO( m_nPrecipType ), Q_log2( NUM_PRECIPITATION_TYPES ) + 1, SPROP_UNSIGNED ),
-#ifdef INFESTED_DLL
-	SendPropInt( SENDINFO( m_nSnowDustAmount ) ),
-#endif
 END_SEND_TABLE()
 
 
 CPrecipitation::CPrecipitation()
 {
 	m_nPrecipType = PRECIPITATION_TYPE_RAIN; // default to rain.
-#ifdef INFESTED_DLL
-	m_nSnowDustAmount = 0;
-#endif
 }
 
 int CPrecipitation::UpdateTransmitState()
@@ -2846,7 +2811,6 @@ CEnvQuadraticBeam *CreateQuadraticBeam( const char *pSpriteName, const Vector &s
 }
 
 PRECACHE_REGISTER_BEGIN( GLOBAL, EffectsPrecache )
-#ifndef DOTA_DLL
 	PRECACHE( GAMESOUND, "Underwater.BulletImpact" )
 	PRECACHE( GAMESOUND, "FX_RicochetSound.Ricochet" )
 	PRECACHE(GAMESOUND, "FX_RicochetSound.Ricochet_Legacy")
@@ -2855,7 +2819,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, EffectsPrecache )
 	PRECACHE( GAMESOUND, "Splash.SplashSound" )
 #ifndef _WIN64 // TODO64: PRECACHE_CONDITIONAL is not supported on 64bit , hopefully it's not an issue for the server to not precache a sound
 	PRECACHE_CONDITIONAL( GAMESOUND, "HudChat.Message", gpGlobals->maxClients > 1 )
-#endif
 #endif
 PRECACHE_REGISTER_END()
 

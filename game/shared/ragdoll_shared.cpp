@@ -687,7 +687,6 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 			if ( dir.LengthSqr() > 1.0f )
 			{
 				// this fixes a bug in ep2 with antlion grubs, but causes problems in TF2 - revisit, but disable for TF now
-#if !defined(TF_CLIENT_DLL)
 				// heuristic: guess that anything separated and small mass ratio is in some state that's 
 				// keeping the solver from fixing it
 				float mass = element.pObject->GetMass();
@@ -701,7 +700,6 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 					++fixCount;
 					continue;
 				}
-#endif
 
 				if ( PhysHasContactWithOtherInDirection(element.pObject, dir) )
 				{
@@ -839,146 +837,6 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 // Cull stale ragdolls. There is an ifdef here: one version for episodic, 
 // one for everything else.
 //-----------------------------------------------------------------------------
-#if HL2_EPISODIC
-
-void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
-{
-	VPROF( "CRagdollLRURetirement::Update" );
-	// Compress out dead items
-	int i, next;
-
-	int iMaxRagdollCount = m_iMaxRagdolls;
-
-	if ( iMaxRagdollCount == -1 )
-	{
-		iMaxRagdollCount = g_ragdoll_maxcount.GetInt();
-	}
-
-	// fade them all for the low violence version
-	if ( g_RagdollLVManager.IsLowViolence() )
-	{
-		iMaxRagdollCount = 0;
-	}
-	m_iRagdollCount = 0;
-	m_iSimulatedRagdollCount = 0;
-
-	// First, find ragdolls that are good candidates for deletion because they are not
-	// visible at all, or are in a culled visibility box
-	for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-	{
-		next = m_LRU.Next(i);
-		CBaseAnimating *pRagdoll = m_LRU[i].Get();
-		if ( pRagdoll )
-		{
-			m_iRagdollCount++;
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if (pObject && !pObject->IsAsleep())
-			{
-				m_iSimulatedRagdollCount++;
-			}
-			if ( m_LRU.Count() > iMaxRagdollCount )
-			{
-				//Found one, we're done.
-				if ( ShouldRemoveThisRagdoll( pRagdoll ) == true )
-				{
-#ifdef CLIENT_DLL
-					pRagdoll->SUB_Remove();
-#else
-					pRagdoll->SUB_StartFadeOut( 0 );
-#endif
-
-					m_LRU.Remove(i);
-					return;
-				}
-			}
-		}
-		else 
-		{
-			m_LRU.Remove(i);
-		}
-	}
-
-	//////////////////////////////
-	///   EPISODIC ALGORITHM   ///
-	//////////////////////////////
-	// If we get here, it means we couldn't find a suitable ragdoll to remove,
-	// so just remove the furthest one.
-	int furthestOne = m_LRU.Head();
-	float furthestDistSq = 0;
-#ifdef CLIENT_DLL
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( 0 );
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-#else
-	CBasePlayer  *pPlayer = g_pGameRules->IsMultiplayer() ? NULL : UTIL_GetLocalPlayer();
-#endif
-
-	if (pPlayer && m_LRU.Count() > iMaxRagdollCount) // find the furthest one algorithm
-	{
-		Vector PlayerOrigin = pPlayer->GetAbsOrigin();
-		// const CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-	
-		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-		{
-			CBaseAnimating *pRagdoll = m_LRU[i].Get();
-
-			next = m_LRU.Next(i);
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if ( pRagdoll && (pRagdoll->GetEffectEntity() || ( pObject && !pObject->IsAsleep()) ) )
-				continue;
-
-			if ( pRagdoll )
-			{
-				// float distToPlayer = (pPlayer->GetAbsOrigin() - pRagdoll->GetAbsOrigin()).LengthSqr();
-				float distToPlayer = (PlayerOrigin - pRagdoll->GetAbsOrigin()).LengthSqr();
-
-				if (distToPlayer > furthestDistSq)
-				{
-					furthestOne = i;
-					furthestDistSq = distToPlayer;
-				}
-			}
-			else // delete bad rags first.
-			{
-				furthestOne = i;
-				break;
-			}
-		}
-
-		CBaseAnimating *pRemoveRagdoll = m_LRU[ furthestOne ].Get();
-#ifdef CLIENT_DLL
-		pRemoveRagdoll->SUB_Remove();
-#else
-		pRemoveRagdoll->SUB_StartFadeOut( 0 );
-#endif
-
-	}
-	else // fall back on old-style pick the oldest one algorithm
-	{
-		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-		{
-			if ( m_LRU.Count() <=  iMaxRagdollCount )
-				break;
-
-			next = m_LRU.Next(i);
-
-			CBaseAnimating *pRagdoll = m_LRU[i].Get();
-
-			//Just ignore it until we're done burning/dissolving.
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if ( pRagdoll && (pRagdoll->GetEffectEntity() || ( pObject && !pObject->IsAsleep()) ) )
-				continue;
-
-	#ifdef CLIENT_DLL
-			pRagdoll->SUB_Remove();
-	#else
-			pRagdoll->SUB_StartFadeOut( 0 );
-	#endif
-			m_LRU.Remove(i);
-		}
-	}
-}
-
-#else
 
 void CRagdollLRURetirement::Update( float frametime ) // Non-episodic version
 {
@@ -1087,8 +945,6 @@ void CRagdollLRURetirement::Update( float frametime ) // Non-episodic version
 		m_LRU.Remove(i);
 	}
 }
-
-#endif // HL2_EPISODIC
 
 //This is pretty hacky, it's only called on the server so it just calls the update method.
 void CRagdollLRURetirement::FrameUpdatePostEntityThink( void )
@@ -1208,20 +1064,6 @@ C_EntityFlame *FireEffect( C_BaseAnimating *pTarget, C_BaseEntity *pServerFire, 
 
 		pFire->OnDataChanged( DATA_UPDATE_CREATED );
 		pFire->SetAbsOrigin( pTarget->GetAbsOrigin() );
-
-#ifdef HL2_EPISODIC
-		if ( pServerFire )
-		{
-			if ( pServerFire->IsEffectActive(EF_DIMLIGHT) )
-			{
-				pFire->AddEffects( EF_DIMLIGHT );
-			}
-			if ( pServerFire->IsEffectActive(EF_BRIGHTLIGHT) )
-			{
-				pFire->AddEffects( EF_BRIGHTLIGHT );
-			}
-		}
-#endif
 
 		//Play a sound
 		CBroadcastRecipientFilter filter;

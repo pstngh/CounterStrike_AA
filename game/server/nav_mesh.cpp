@@ -17,9 +17,6 @@
 #include "utlbuffer.h"
 #include "tier0/vprof.h"
 //#include "shared_util.h"
-#ifdef TERROR
-#include "func_simpleladder.h"
-#endif
 #include "functorutils.h"
 
 // NOTE: This has to be the last file included!
@@ -1053,39 +1050,6 @@ unsigned int CNavMesh::GetPlace( const Vector &pos ) const
 void CNavMesh::LoadPlaceDatabase( void )
 {
 	m_placeCount = 0;
-
-#ifdef TERROR
-	// TODO: LoadPlaceDatabase happens during the constructor, so we can't override it!
-	// Population.txt holds all the info we need for place names in Left4Dead, so let's not
-	// make Phil edit yet another text file.
-	KeyValues *populationData = new KeyValues( "population" );
-	if ( populationData->LoadFromFile( filesystem, "scripts/population.txt" ) )
-	{
-		CUtlVector< char * > placeNames;
-
-		for ( KeyValues *key = populationData->GetFirstTrueSubKey(); key != NULL; key = key->GetNextTrueSubKey() )
-		{
-			if ( FStrEq( key->GetName(), "default" ) )	// default population is the undefined place
-				continue;
-
-			placeNames.AddToTail( CloneString( key->GetName() ) );
-		}
-
-		m_placeCount = placeNames.Count();
-
-		// allocate place name array
-		m_placeName = new char * [ m_placeCount ];
-		for ( unsigned int i=0; i<m_placeCount; ++i )
-		{
-			m_placeName[i] = placeNames[i];
-		}
-
-		populationData->deleteThis();
-		return;
-	}
-
-	populationData->deleteThis();
-#endif
 
 	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 	filesystem->ReadFile("NavPlace.db", "GAME", buf);
@@ -2501,23 +2465,6 @@ static ConCommand nav_compress_id( "nav_compress_id", CommandNavCompressID, "Re-
 
 
 //--------------------------------------------------------------------------------------------------------------
-#ifdef TERROR
-void CommandNavShowLadderBounds( void )
-{
-	if ( !UTIL_IsCommandIssuedByServerAdmin() )
-		return;
-
-	CFuncSimpleLadder *ladder = NULL;
-	while( (ladder = dynamic_cast< CFuncSimpleLadder * >(gEntList.FindEntityByClassname( ladder, "func_simpleladder" ))) != NULL )
-	{
-		Vector mins, maxs;
-		ladder->CollisionProp()->WorldSpaceSurroundingBounds( &mins, &maxs );
-		ladder->m_debugOverlays |= OVERLAY_TEXT_BIT | OVERLAY_ABSBOX_BIT;
-		NDebugOverlay::Box( vec3_origin, mins, maxs, 0, 255, 0, 0, 600 );
-	}
-}
-static ConCommand nav_show_ladder_bounds( "nav_show_ladder_bounds", CommandNavShowLadderBounds, "Draws the bounding boxes of all func_ladders in the map.", FCVAR_GAMEDLL | FCVAR_CHEAT );
-#endif
 
 //--------------------------------------------------------------------------------------------------------------
 void CommandNavBuildLadder( void )
@@ -2576,10 +2523,6 @@ NavAttributeLookup TheNavAttributeTable[] =
 	{ "NO_MERGE", NAV_MESH_NO_MERGE },
 	{ "OBSTACLE_TOP", NAV_MESH_OBSTACLE_TOP },
 	{ "CLIFF", NAV_MESH_CLIFF },
-#ifdef TERROR
-	{ "PLAYERCLIP", (NavAttributeType)CNavArea::NAV_PLAYERCLIP },
-	{ "BREAKABLEWALL", (NavAttributeType)CNavArea::NAV_BREAKABLEWALL },
-#endif
 	{ NULL, NAV_MESH_INVALID }
 };
 

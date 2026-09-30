@@ -12,11 +12,7 @@
 #include "tier0/memdbgon.h"
 
 // some cvars used by player movement system
-#if defined(HL2_DLL) || defined(HL2_CLIENT_DLL) || defined(PORTAL2)
-#define DEFAULT_GRAVITY_STRING	"600"
-#else
 #define DEFAULT_GRAVITY_STRING	"800"
-#endif
 
 ConVar	sv_gravity		( "sv_gravity", DEFAULT_GRAVITY_STRING, FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_RELEASE, "World gravity." );
 
@@ -46,11 +42,7 @@ ConVar	sv_friction		( "sv_friction","5.2", FCVAR_NOTIFY | FCVAR_REPLICATED | FCV
 ConVar	sv_bounce		( "sv_bounce","0", FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_RELEASE, "Bounce multiplier for when physically simulated objects collide with other objects." );
 ConVar	sv_maxvelocity	( "sv_maxvelocity","3500", FCVAR_REPLICATED | FCVAR_RELEASE, "Maximum speed any ballistically moving object is allowed to attain per axis." );
 
-#ifdef INFESTED_DLL
-ConVar	sv_stepsize		( "sv_stepsize","24", FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY );
-#else
 ConVar	sv_stepsize		( "sv_stepsize","18", FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY );
-#endif
 
 ConVar	sv_skyname		( "sv_skyname", "sky_urb01", FCVAR_ARCHIVE | FCVAR_REPLICATED, "Current name of the skybox texture" );
 ConVar	sv_backspeed	( "sv_backspeed", "0.6", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "How much to slow down backwards motion" );

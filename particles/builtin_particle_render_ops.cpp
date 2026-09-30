@@ -21,15 +21,6 @@
 #include "particles_internal.h"
 #include "tier0/vprof.h"
 
-#ifdef USE_BLOBULATOR
-// TODO: These should be in public by the time the SDK ships
-	#include "../common/blobulator/implicit/impdefines.h"
-	#include "../common/blobulator/implicit/imprenderer.h"
-	#include "../common/blobulator/implicit/imptiler.h"
-	#include "../common/blobulator/implicit/userfunctions.h"
-	#include "../common/blobulator/iblob_renderer.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -3085,132 +3076,6 @@ void C_OP_RenderRope::RenderUnsorted( CParticleCollection *pParticles, void *pCo
 	beamSegment.End();
 }
 
-#ifdef USE_BLOBULATOR										// Enable blobulator for EP3
-
-//-----------------------------------------------------------------------------
-// Installs renderers
-//-----------------------------------------------------------------------------
-class C_OP_RenderBlobs : public CParticleRenderOperatorInstance
-{
-	DECLARE_PARTICLE_OPERATOR( C_OP_RenderBlobs );
-
-	float m_cubeWidth;
-	float m_cutoffRadius;
-	float m_renderRadius;
-
-
-	struct C_OP_RenderBlobsContext_t
-	{
-		CParticleVisibilityData m_VisibilityData;
-		int		m_nQueryHandle;
-	};
-
-	virtual uint64 GetReadControlPointMask() const
-	{
-		uint64 nMask = 0;
-		if ( VisibilityInputs.m_nCPin >= 0 )
-			nMask |= 1ULL << VisibilityInputs.m_nCPin; 
-		return nMask;
-	}
-
-	size_t GetRequiredContextBytes( void ) const
-	{
-		return sizeof( C_OP_RenderBlobsContext_t );
-	}
-
-	virtual void InitializeContextData( CParticleCollection *pParticles, void *pContext ) const
-	{
-		C_OP_RenderBlobsContext_t *pCtx = reinterpret_cast<C_OP_RenderBlobsContext_t *>( pContext );
-		if ( ( VisibilityInputs.m_nCPin >= 0 ) || ( VisibilityInputs.m_flRadiusScaleFOVBase > 0 ) )
-			pCtx->m_VisibilityData.m_bUseVisibility = true;
-		else
-			pCtx->m_VisibilityData.m_bUseVisibility = false;
-	}
-
-	uint32 GetWrittenAttributes( void ) const
-	{
-		return 0;
-	}
-
-	uint32 GetReadAttributes( void ) const
-	{
-		return PARTICLE_ATTRIBUTE_XYZ_MASK;
-	}
-
-	virtual void Render( IMatRenderContext *pRenderContext, CParticleCollection *pParticles, const Vector4D &vecDiffuseModulation, void *pContext, int nViewRecursionDepth ) const;
-	
-	virtual bool IsBatchable() const
-	{
-		return false;
-	}
-};
-
-DEFINE_PARTICLE_OPERATOR( C_OP_RenderBlobs, "render_blobs", OPERATOR_SINGLETON );
-
-BEGIN_PARTICLE_RENDER_OPERATOR_UNPACK( C_OP_RenderBlobs ) 
-	DMXELEMENT_UNPACK_FIELD( "cube_width", "1.0f", float, m_cubeWidth )
-	DMXELEMENT_UNPACK_FIELD( "cutoff_radius", "3.3f", float, m_cutoffRadius )
-	DMXELEMENT_UNPACK_FIELD( "render_radius", "1.3f", float, m_renderRadius )
-END_PARTICLE_OPERATOR_UNPACK( C_OP_RenderBlobs )
-
-
-void C_OP_RenderBlobs::Render( IMatRenderContext *pRenderContext, CParticleCollection *pParticles, const Vector4D &vecDiffuseModulation, void *pContext, int nViewRecursionDepth ) const
-{
-	C_OP_RenderBlobsContext_t *pCtx = reinterpret_cast<C_OP_RenderBlobsContext_t *>( pContext );
-
-	if ( pCtx->m_VisibilityData.m_bUseVisibility )
-	{
-		SetupParticleVisibility( pParticles, &pCtx->m_VisibilityData, &VisibilityInputs, &pCtx->m_nQueryHandle, pRenderContext );
-	}
-
-
-
-	IMaterial *pMaterial = pParticles->m_pDef->GetMaterial();
-
-	// TODO: I don't need to load this as a sorted list. See Lennard Jones forces for better way!
-	int nParticles;
-	const ParticleRenderData_t *pSortList = pParticles->GetRenderList( pRenderContext, false, &nParticles, &pCtx->m_VisibilityData );
-	size_t xyz_stride;
-	const fltx4 *xyz = pParticles->GetM128AttributePtr( PARTICLE_ATTRIBUTE_XYZ, &xyz_stride );
-
-	Vector bbMin;
-	Vector bbMax;
-	pParticles->GetBounds( &bbMin, &bbMax );
-	Vector bbCenter = 0.5f * ( bbMin + bbMax );
-
-	// FIXME: Make this configurable. Not all shaders perform lighting. Although it's pretty likely for isosurface shaders.
-	g_pParticleSystemMgr->Query()->SetUpLightingEnvironment( bbCenter );
-
-	ImpParticleList particleList;
-	particleList.EnsureCount( nParticles );
-	for( int i = 0; i < nParticles; i++ )
-	{
-		int hParticle = (--pSortList)->m_nIndex;
-		int nIndex = ( hParticle / 4 ) * xyz_stride;
-		int nOffset = hParticle & 0x3;
-		float x = SubFloat( xyz[nIndex], nOffset );
-		float y = SubFloat( xyz[nIndex+1], nOffset );
-		float z = SubFloat( xyz[nIndex+2], nOffset );
-
-		ImpParticle* imp_particle = &particleList[i];
-		imp_particle->center[0]=x;
-		imp_particle->center[1]=y;
-		imp_particle->center[2]=z;
-		imp_particle->setFieldScale(1.0f);
-	}
-
-	Blobulator::BlobRenderInfo_t blobRenderInfo;
-	blobRenderInfo.m_flCubeWidth = m_cubeWidth;
-	blobRenderInfo.m_flCutoffRadius = m_cutoffRadius;
-	blobRenderInfo.m_flRenderRadius = m_renderRadius;
-	blobRenderInfo.m_flViewScale = ( nViewRecursionDepth == 0 ) ? 1.f : 1.6f;
-	blobRenderInfo.m_nViewID = nViewRecursionDepth;
-
-	Blobulator::RenderBlob( true, pRenderContext, pMaterial, blobRenderInfo, NULL, 0, particleList.Base(), nParticles );
-}
-
-#endif //blobs
-
 
 
 //-----------------------------------------------------------------------------
@@ -3696,9 +3561,6 @@ void AddBuiltInParticleRenderers( void )
 	REGISTER_PARTICLE_OPERATOR( FUNCTION_RENDERER, C_OP_RenderRope );
 	REGISTER_PARTICLE_OPERATOR( FUNCTION_RENDERER, C_OP_RenderScreenVelocityRotate );
 	REGISTER_PARTICLE_OPERATOR( FUNCTION_RENDERER, C_OP_RenderModels );
-#ifdef USE_BLOBULATOR
-	REGISTER_PARTICLE_OPERATOR( FUNCTION_RENDERER, C_OP_RenderBlobs );
-#endif // blobs
 	REGISTER_PARTICLE_OPERATOR( FUNCTION_RENDERER, C_OP_RenderProjected );
 }
 

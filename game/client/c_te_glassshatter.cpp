@@ -26,14 +26,12 @@
  
 #include "precache_register.h"
 
-#ifndef DOTA_DLL
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectGlassShatter )
 PRECACHE( MATERIAL, "effects/fleck_glass1" )
 PRECACHE( MATERIAL, "effects/fleck_glass2" )
 PRECACHE( MATERIAL, "effects/fleck_tile1" )
 PRECACHE( MATERIAL, "effects/fleck_tile2" )
 PRECACHE_REGISTER_END()
-#endif
 
 ConVar fx_glass_velocity_cap("fx_glass_velocity_cap", "0", 0, "Maximum downwards speed of shattered glass particles");
 

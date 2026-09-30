@@ -55,11 +55,6 @@
 #include "cs_player.h"
 #endif
 
-	#if defined( PORTAL )
-		#include "portal_player.h"
-		#include "physicsshadowclone.h"
-	#endif
-
 	extern int TrainSpeed(int iSpeed, int iMax);
 	
 #endif
@@ -2804,20 +2799,7 @@ bool CBasePlayer::ClearUseEntity()
 
 		// Stop controlling the train/object
 		// TODO: Send HUD Update
-#if defined ( PORTAL2 )
-		CPlayerPickupController *pPickup = (CPlayerPickupController*)GetUseEntity();
-		Assert( pPickup );
-		if ( pPickup )
-		{
-			if ( pPickup->UsePickupController( this, this, USE_OFF, 0 ) )
-			{
-				m_hUseEntity = NULL;
-				return true;
-			}
-		}
-#else
 		GetUseEntity()->Use( this, this, USE_OFF, 0 );
-#endif // PORTAL2
 	}
 
 	return false;
@@ -2830,72 +2812,7 @@ bool CBasePlayer::ClearUseEntity()
 bool CBasePlayer::CanPickupObject( CBaseEntity *pObject, float massLimit, float sizeLimit )
 {
 	// UNDONE: Make this virtual and move to HL2 player
-#if defined( HL2_DLL ) || defined( PORTAL2 )
-	//Must be valid
-	if ( pObject == NULL )
-		return false;
-
-	//Must move with physics
-	if ( pObject->GetMoveType() != MOVETYPE_VPHYSICS )
-		return false;
-
-	IPhysicsObject *pList[VPHYSICS_MAX_OBJECT_LIST_COUNT];
-	int count = pObject->VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
-
-	//Must have a physics object
-	if (!count)
-		return false;
-
-	float objectMass = 0;
-	bool checkEnable = false;
-	for ( int i = 0; i < count; i++ )
-	{
-		objectMass += pList[i]->GetMass();
-		if ( !pList[i]->IsMoveable() )
-		{
-			checkEnable = true;
-		}
-		if ( pList[i]->GetGameFlags() & FVPHYSICS_NO_PLAYER_PICKUP )
-			return false;
-		if ( pList[i]->IsHinged() )
-			return false;
-	}
-
-
-	//Msg( "Target mass: %f\n", pPhys->GetMass() );
-
-	//Must be under our threshold weight
-	if ( massLimit > 0 && objectMass > massLimit )
-		return false;
-
-	if ( checkEnable )
-	{
-		// Allow pickup of phys props that are motion enabled on player pickup
-		CPhysicsProp *pProp = dynamic_cast<CPhysicsProp*>(pObject);
-		CPhysBox *pBox = dynamic_cast<CPhysBox*>(pObject);
-		if ( !pProp && !pBox )
-			return false;
-
-#if !defined ( CLIENT_DLL )
-		if ( pProp && !(pProp->HasSpawnFlags( SF_PHYSPROP_ENABLE_ON_PHYSCANNON )) )
-			return false;
-
-		if ( pBox && !(pBox->HasSpawnFlags( SF_PHYSBOX_ENABLE_ON_PHYSCANNON )) )
-			return false;
-#endif 
-	}
-
-	if ( sizeLimit > 0 )
-	{
-		const Vector &size = pObject->CollisionProp()->OBBSize();
-		if ( size.x > sizeLimit || size.y > sizeLimit || size.z > sizeLimit )
-			return false;
-	}
-
-	return true;
-#else
 	return false;
-#endif
 }
 
 float CBasePlayer::GetHeldObjectMass( IPhysicsObject *pHeldObject )
@@ -3138,77 +3055,6 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 		}
 		else
 		{
-#if defined( PORTAL ) && defined( GAME_DLL )
-			CPortal_Player *pPortalPlayer = (CPortal_Player *)this;
-			CPortal_Base2D *pPortalEnvironment = pPortalPlayer->m_hPortalEnvironment.Get();
-			if( pPortalEnvironment != NULL )
-			{
-				trace_t trace;
-
-				Ray_t ray;
-				ray.Init( GetAbsOrigin(), GetAbsOrigin(), WorldAlignMins(), WorldAlignMaxs() );
-
-				CTraceFilterSimple OriginalTraceFilter( this, COLLISION_GROUP_PLAYER_MOVEMENT );
-				CTraceFilterTranslateClones traceFilter( &OriginalTraceFilter );
-
-				enginetrace->TraceRay( ray, MASK_PLAYERSOLID, &traceFilter, &trace );
-
-				if( trace.startsolid )
-				{
-					UTIL_Portal_TraceRay_With( pPortalEnvironment, ray, MASK_PLAYERSOLID, &traceFilter, &trace );
-
-					// current position is not ok, fixup
-					if ( trace.allsolid || trace.startsolid )
-					{
-						//try again with new position
-						ray.Init( newPosition, newPosition, WorldAlignMins(), WorldAlignMaxs() );
-						UTIL_Portal_TraceRay_With( pPortalEnvironment, ray, MASK_PLAYERSOLID, &traceFilter, &trace );
-
-						if( trace.startsolid == false )
-						{
-							SetAbsOrigin( newPosition );
-						}
-						else
-						{
-							Vector vNewCenter = vec3_origin;
-							Vector vExtents = (pPortalPlayer->GetHullMaxs() - pPortalPlayer->GetHullMins()) * 0.5f;
-							Vector vOriginToCenter = (pPortalPlayer->GetHullMaxs() + pPortalPlayer->GetHullMins()) * 0.5f;
-							
-							if( UTIL_FindClosestPassableSpace_InPortal_CenterMustStayInFront( pPortalEnvironment, GetAbsOrigin() + vOriginToCenter, vExtents, pPortalEnvironment->m_plane_Origin.normal, &traceFilter, MASK_PLAYERSOLID, 100, vNewCenter ) &&
-								(pPortalEnvironment->m_plane_Origin.normal.Dot( vNewCenter ) - pPortalEnvironment->m_plane_Origin.dist) >= 0.0f )
-							{
-								SetAbsOrigin( vNewCenter - vOriginToCenter );
-							}
-							else 
-							{
-								VPlane stayInFrontOfPlane;
-								stayInFrontOfPlane.m_Normal = pPortalEnvironment->m_plane_Origin.normal;
-								stayInFrontOfPlane.m_Dist = pPortalEnvironment->m_plane_Origin.dist;
-								if( !(UTIL_FindClosestPassableSpace_CenterMustStayInFrontOfPlane( GetAbsOrigin() + vOriginToCenter, vExtents, newPosition - GetAbsOrigin(), &traceFilter, MASK_PLAYERSOLID, 100, vNewCenter, stayInFrontOfPlane ) &&
-									(pPortalEnvironment->m_plane_Origin.normal.Dot( vNewCenter ) - pPortalEnvironment->m_plane_Origin.dist) >= 0.0f) )
-								{
-									// Try moving the player closer to the center of the portal
-									newPosition += ( pPortalEnvironment->GetAbsOrigin() - WorldSpaceCenter() ) * 0.1f;
-									SetAbsOrigin( newPosition );
-
-									DevMsg( "Hurting the player for FindClosestPassableSpaceFailure!\n" );
-
-									// Deal 1 damage per frame... this will kill a player very fast, but allow for the above correction to fix some cases
-									CTakeDamageInfo info( this, this, vec3_origin, vec3_origin, 1, DMG_CRUSH );
-									OnTakeDamage( info );
-								}
-								else
-								{
-									SetAbsOrigin( vNewCenter - vOriginToCenter );
-								}
-							}
-						}
-						}
-					}
-				}
-			}
-			else
-#endif
 			{
 				bCheckStuck = true;
 			}

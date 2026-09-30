@@ -43,11 +43,7 @@
 #endif
 #endif // CSTRIKE15
 
-#ifdef TF_CLIENT_DLL
-static ConVar		scr_centertime( "scr_centertime", "5" );
-#else
 static ConVar		scr_centertime( "scr_centertime", "4" );
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Implements Center String printing

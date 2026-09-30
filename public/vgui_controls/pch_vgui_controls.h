@@ -71,9 +71,7 @@
 #include "vgui_controls/MenuItem.h"
 #include "vgui_controls/MessageBox.h"
 #include "vgui_controls/Panel.h"
-#ifndef HL1
 #include "vgui_controls/PanelAnimationVar.h"
-#endif
 #include "vgui_controls/PanelListPanel.h"
 #include "vgui_controls/PHandle.h"
 #include "vgui_controls/ProgressBar.h"
@@ -88,27 +86,19 @@
 #include "vgui_controls/ScrollBarSlider.h"
 #include "vgui_controls/SectionedListPanel.h"
 #include "vgui_controls/Slider.h"
-#ifndef HL1
 #include "vgui_controls/Splitter.h"
-#endif
 #include "vgui_controls/TextEntry.h"
 #include "vgui_controls/TextImage.h"
 #include "vgui_controls/ToggleButton.h"
 #include "vgui_controls/Tooltip.h"
-#ifndef HL1
 #include "vgui_controls/ToolWindow.h"
-#endif
 #include "vgui_controls/TreeView.h"
-#ifndef HL1
 #include "vgui_controls/TreeViewListControl.h"
-#endif
 #include "vgui_controls/URLLabel.h"
 #include "vgui_controls/WizardPanel.h"
 #include "vgui_controls/WizardSubPanel.h"
 
-#ifndef HL1
 #include "vgui_controls/KeyBoardEditorDialog.h"
 #include "vgui_controls/InputDialog.h"
-#endif
 
 #endif // PCH_VGUI_CONTROLS_H

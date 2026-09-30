@@ -719,10 +719,6 @@ void CHudChatHistory::ApplySettings( KeyValues *inResourceData )
 {
 	BaseClass::ApplySettings( inResourceData );
 
-#if defined ( PORTAL2 ) 
-	// We don't fade out and clear text for portal2, so set a maximum size for the buffer
-	SetMaximumCharCount( 1024 );
-#endif
 }
 
 void CHudChatHistory::Paint()
@@ -730,13 +726,11 @@ void CHudChatHistory::Paint()
 	BaseClass::Paint();
 	// 84928: Messages/Instructions from coop partners are important and
 	// we don't want to have them disappear. Keep them on and let them spam.
-#if !defined ( PORTAL2 ) 
 	if ( IsAllTextAlphaZero() && HasText() )
 	{
 		SetText( "" );
 		// Wipe
 	}
-#endif
 }
 
 CBaseHudChat *g_pHudChat = NULL;
@@ -1364,9 +1358,7 @@ void CBaseHudChat::StartMessageMode( int iMessageModeType )
 		// Place the mouse cursor near the text so people notice it.
 		int x, y, w, h;
 		GetChatHistory()->GetBounds( x, y, w, h );
-#ifndef INFESTED_DLL
 		vgui::input()->SetCursorPos( x + ( w/2), y + ( h/2) );
-#endif
 		m_pFilterPanel->SetVisible( false );
 	}
 
@@ -1939,11 +1931,6 @@ void CBaseHudChat::ChatPrintf( int iPlayerIndex, int iFilter, const char *fmt, .
 
 	if ( iFilter != CHAT_FILTER_NONE )
 	{
-#ifdef PORTAL2
-		if ( iFilter & ( CHAT_FILTER_JOINLEAVE | CHAT_FILTER_TEAMCHANGE ) )
-			// In Portal 2 we don't want to show join/leave or teamchange messages
-			return;
-#endif
 		if ( !( iFilter & GetFilterFlags() ) )
 			return;
 	}

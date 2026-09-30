@@ -12,11 +12,7 @@
 #include "cbase.h"
 #include "EntityFlame.h"
 #include "ai_basenpc.h"
-#ifdef INFESTED_DLL
-#include "asw_fire.h"
-#else
 #include "fire.h"
-#endif
 #include "shareddefs.h"
 #include "ai_link.h"
 #include "ai_node.h"
@@ -47,9 +43,7 @@ IMPLEMENT_SERVERCLASS_ST( CEntityFlame, DT_EntityFlame )
 	SendPropBool( SENDINFO( m_bCheapEffect ) ),
 END_SEND_TABLE()
 
-#ifndef INFESTED_DLL
 LINK_ENTITY_TO_CLASS( entityflame, CEntityFlame );
-#endif
 PRECACHE_REGISTER(entityflame);
 
 
@@ -103,15 +97,12 @@ void CEntityFlame::Precache()
 {
 	BaseClass::Precache();
 
-#ifndef DOTA_DLL
-
 	PrecacheParticleSystem( "burning_character" );
 	PrecacheParticleSystem( "burning_gib_01" );
 
 	PrecacheScriptSound( "General.StopBurning" );
 	PrecacheScriptSound( "General.BurningFlesh" );
 	PrecacheScriptSound( "General.BurningObject" );
-#endif
 }
 
 void CEntityFlame::Spawn()
@@ -124,10 +115,6 @@ void CEntityFlame::Spawn()
 	//Send to the client even though we don't have a model
 	AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 
-#ifdef HL2_EP3
-	m_iDangerSound = CSoundEnt::InsertSound( SOUND_DANGER | SOUND_CONTEXT_FROM_FIRE | SOUND_CONTEXT_FOLLOW_OWNER, 
-		GetAbsOrigin(), m_flSize * 2.0f, FLT_MAX, this );
-#endif
 }
 							    
 
@@ -138,8 +125,6 @@ void CEntityFlame::Activate()
 {
 	BaseClass::Activate();
 
-#ifdef HL2_EP3
-#endif // HL2_EP3
 }
 
 

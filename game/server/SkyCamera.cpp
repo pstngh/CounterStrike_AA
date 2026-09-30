@@ -18,25 +18,6 @@ template <> CSkyCamera *CEntityClassList<CSkyCamera>::m_pClassList = NULL;
 
 CHandle<CSkyCamera> g_hActiveSkybox = INVALID_EHANDLE;
 
-#ifdef PORTAL2
-
-//------------------------------------------------------------------------------
-// Purpose: NPC step trough AI
-//------------------------------------------------------------------------------
-void CC_SkyboxSwap( void )
-{
-	// Make this cyclical for now!
-	if ( g_SkyList.m_pClassList->m_pNext )
-	{
-		g_SkyList.m_pClassList->m_pNext->m_pNext = g_SkyList.m_pClassList;
-	}
-	
-	g_SkyList.m_pClassList = g_SkyList.m_pClassList->m_pNext;
-}
-static ConCommand skybox_swap("skybox_swap", CC_SkyboxSwap, "Swap through the skyboxes in our queue", FCVAR_CHEAT );
-
-#endif // PORTAL2
-
 //-----------------------------------------------------------------------------
 // Retrives the current skycamera
 //-----------------------------------------------------------------------------
@@ -151,28 +132,6 @@ void CSkyCamera::Activate( )
 		m_skyboxData.fog.dirPrimary.GetForModify() *= -1.0f; 
 	}
 
-#ifdef HL2_DLL
-	// NOTE! This is a hack. There was a bug in the skybox fog computation
-	// on the client DLL that caused it to use the average of the primary and
-	// secondary fog color when blending was enabled. The bug is fixed, but to make
-	// the maps look the same as before the bug fix without having to download new maps,
-	// I have to cheat here and slam the primary and secondary colors to be the average of 
-	// the primary and secondary colors.
-	if ( m_skyboxData.fog.blend )
-	{
-		for ( int i = 0; s_pBogusFogMaps[i]; ++i )
-		{
-			if ( !Q_stricmp( s_pBogusFogMaps[i], STRING(gpGlobals->mapname) ) )
-			{
-				m_skyboxData.fog.colorPrimary.SetR( ( m_skyboxData.fog.colorPrimary.GetR() + m_skyboxData.fog.colorSecondary.GetR() ) * 0.5f );
-				m_skyboxData.fog.colorPrimary.SetG( ( m_skyboxData.fog.colorPrimary.GetG() + m_skyboxData.fog.colorSecondary.GetG() ) * 0.5f );
-				m_skyboxData.fog.colorPrimary.SetB( ( m_skyboxData.fog.colorPrimary.GetB() + m_skyboxData.fog.colorSecondary.GetB() ) * 0.5f );
-				m_skyboxData.fog.colorPrimary.SetA( ( m_skyboxData.fog.colorPrimary.GetA() + m_skyboxData.fog.colorSecondary.GetA() ) * 0.5f );
-				m_skyboxData.fog.colorSecondary = m_skyboxData.fog.colorPrimary;
-			}
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

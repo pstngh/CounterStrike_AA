@@ -61,11 +61,6 @@ extern CSteamAPIContext			*steamapicontext; // available on game clients
 extern CSteamGameServerAPIContext *steamgameserverapicontext; //available on game servers
 #endif
 
-#ifdef INFESTED_DLL
-class IASW_Mission_Chooser;
-extern IASW_Mission_Chooser *missionchooser;
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Precaches a material

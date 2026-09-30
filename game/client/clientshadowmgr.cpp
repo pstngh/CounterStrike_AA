@@ -128,11 +128,7 @@ static ConVar r_shadowfromanyworldlight( "r_shadowfromanyworldlight", "0", FCVAR
 static ConVar r_shadow_shortenfactor( "r_shadow_shortenfactor", "2" , 0, "Makes shadows cast from local lights shorter" );
 
 // Flashlight culling code isn't Portal-aware, so they pop on/off when viewed through portals.		
-#ifdef PORTAL2
-ConVar r_flashlightenableculling( "r_flashlightenableculling", "0", 0, "Enable frustum culling of flashlights");
-#else
 ConVar r_flashlightenableculling( "r_flashlightenableculling", "1", 0, "Enable frustum culling of flashlights");
-#endif
 
 static void HalfUpdateRateCallback( IConVar *var, const char *pOldValue, float flOldValue );
 static ConVar r_shadow_half_update_rate( "r_shadow_half_update_rate", IsGameConsole() ? "1" : "0", 0, "Updates shadows at half the framerate", HalfUpdateRateCallback );

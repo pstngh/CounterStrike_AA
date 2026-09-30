@@ -242,10 +242,6 @@ void		UTIL_GetPlayerConnectionInfo( int playerIndex, int& ping, int &packetloss 
 void		UTIL_SetClientVisibilityPVS( edict_t *pClient, const unsigned char *pvs, int pvssize );
 bool		UTIL_ClientPVSIsExpanded();
 
-#if defined ( PORTAL )
-void		UTIL_SetClientCheckPVS( edict_t *pClient, const unsigned char *pvs, int pvssize );
-#endif
-
 edict_t		*UTIL_FindClientInPVS( edict_t *pEdict );
 edict_t		*UTIL_FindClientInVisibilityPVS( edict_t *pEdict );
 

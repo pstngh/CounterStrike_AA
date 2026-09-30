@@ -82,10 +82,6 @@ protected:
 	CUtlVector<econ_item_description_line_t> m_vecDescLines;
 };
 
-#if defined( TF_DLL ) || defined( TF_CLIENT_DLL ) || defined( TF_GC_DLL )
-	#define PROJECT_TF
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

@@ -222,9 +222,6 @@ void PhysicsLevelInit( void )
 		physenv->SetPredicted( true );
 	}
 
-#ifdef PORTAL
-	physenv_main = physenv;
-#endif
 	{
 	MEM_ALLOC_CREDIT();
 	g_EntityCollisionHash = physics->CreateObjectPairHash();

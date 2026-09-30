@@ -44,9 +44,7 @@ public:
 
 	virtual void		Precache( void )
 	{
-#if !defined( DOTA_DLL ) && !defined( PORTAL2 )
 		PrecacheParticleSystem( "achieved" );
-#endif
 
 		BaseClass::Precache();
 	}

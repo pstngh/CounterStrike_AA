@@ -72,10 +72,6 @@
 #include "videocfg/videocfg.h"
 #include "tier0/stackstats.h"
 
-#if defined ( PORTAL2 )
-#include "PortalSimulation.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -574,11 +570,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_clrRender),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
 	SendPropInt		(SENDINFO(m_iPendingTeamNum),		TEAMNUM_NUM_BITS, 0),
-#ifdef INFESTED_DLL
-	SendPropInt		(SENDINFO(m_CollisionGroup), 6, SPROP_UNSIGNED),
-#else
 	SendPropInt		(SENDINFO(m_CollisionGroup), 5, SPROP_UNSIGNED),
-#endif
 	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_COORD),
 	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_UNSIGNED ),
 	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
@@ -587,10 +579,6 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_iParentAttachment), NUM_PARENTATTACHMENT_BITS, SPROP_UNSIGNED),
 
 	SendPropStringT( SENDINFO( m_iName ) ),
-
-#ifdef PORTAL2
-	SendPropStringT( SENDINFO( m_iSignifierName ) ),
-#endif // PORTAL2
 
 	SendPropInt		(SENDINFO_NAME( m_MoveType, movetype ), MOVETYPE_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO_NAME( m_MoveCollide, movecollide ), MOVECOLLIDE_MAX_BITS, SPROP_UNSIGNED ),
@@ -601,10 +589,6 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 #endif
 
 	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
-
-#if defined ( PORTAL2 )
-	SendPropInt		( SENDINFO( m_iObjectCapsCache ),		6, SPROP_UNSIGNED ),
-#endif
 
 #if !defined( NO_ENTITY_PREDICTION ) && defined( USE_PREDICTABLEID )
 	SendPropEHandle (SENDINFO(m_hPlayerSimulationOwner)),
@@ -750,10 +734,6 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_flCreateTime = 0.0f;
 #endif
 	m_pEvent = NULL;
-
-#ifdef PORTAL2
-	m_iSignifierName = NULL_STRING;
-#endif // PORTAL2
 
 	m_bSpotted = false;
 	ClearSpottedBy();
@@ -984,9 +964,6 @@ void CBaseEntity::SetClassname( const char *className )
 {
 	m_iClassname = AllocPooledString( className );
 
-#ifdef PORTAL2
-	m_iSignifierName = m_iClassname;
-#endif // PORTAL2
 }
 
 // position to shoot at
@@ -1456,12 +1433,6 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 		EntityText(offset,tempstr,0);
 		offset++;
 
-#if defined ( PORTAL2 )
-		Q_snprintf(tempstr, sizeof(tempstr), "In Portal Environment: %s", (CPortalSimulator::GetSimulatorThatOwnsEntity(this))?("yes"):("no") );
-		EntityText(offset,tempstr,0);
-		offset++;
-#endif
-
 	}
 
 	if (m_debugOverlays & OVERLAY_VIEWOFFSET)
@@ -1788,9 +1759,6 @@ void CBaseEntity::Activate( void )
 		AddContext( m_iszResponseContext.ToCStr() );
 	}
 
-#if defined ( PORTAL2 )
-	UpdateObjectCapsCache();
-#endif
 }
 
 ////////////////////////////  old CBaseEntity stuff ///////////////////////////////////
@@ -2276,10 +2244,6 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 
 	DEFINE_FIELD( m_iName, FIELD_STRING ),
 
-#ifdef PORTAL2
-	DEFINE_FIELD( m_iSignifierName, FIELD_STRING ),
-#endif // PORTAL2
-
 	DEFINE_EMBEDDED( m_Collision ),
 	DEFINE_EMBEDDED( m_Network ),
 
@@ -2297,10 +2261,6 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_iPendingTeamNum, FIELD_INTEGER, "pendingteamnumber" ),
 
 //	DEFINE_FIELD( m_bSentLastFrame, FIELD_INTEGER ),
-
-#if defined ( PORTAL2 )
-	DEFINE_FIELD( m_iObjectCapsCache, FIELD_INTEGER ),
-#endif 
 
 	DEFINE_FIELD( m_hGroundEntity, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flGroundChangeTime, FIELD_TIME ),
@@ -2417,10 +2377,6 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptFile", InputRunScriptFile ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptCode", InputRunScript ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "CallScriptFunction", InputCallScriptFunction ),
-
-#ifdef PORTAL2
-	DEFINE_INPUTFUNC( FIELD_VOID, "RemovePaint", InputRemovePaint ),
-#endif
 
 	DEFINE_OUTPUT( m_OnUser1, "OnUser1" ),
 	DEFINE_OUTPUT( m_OnUser2, "OnUser2" ),
@@ -2679,15 +2635,6 @@ int CBaseEntity::ObjectCaps( void )
 
 	return 0;
 }
-
-#if defined ( PORTAL2 )
-void CBaseEntity::UpdateObjectCapsCache( void )
-{
-	// Send the first six bits of the object caps to the client
-	// those should be the +use logic capabilities
-	m_iObjectCapsCache = 0x0000003f & ObjectCaps();
-}
-#endif
 
 void CBaseEntity::StartTouch( CBaseEntity *pOther )
 {
@@ -3216,19 +3163,7 @@ void CBaseEntity::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 	}
 	PhysCollisionScreenShake( pEvent, index );
 
-#if HL2_EPISODIC
-	// episodic does something different for when advisor shields are struck
-	if ( phit->game.material == 'Z' || pprops->game.material == 'Z')
-	{
-		PhysCollisionWarpEffect( pEvent, phit );
-	}
-	else
-	{
-		PhysCollisionDust( pEvent, phit );
-	}
-#else
 	PhysCollisionDust( pEvent, phit );
-#endif
 }
 
 void CBaseEntity::VPhysicsFriction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit )
@@ -3816,11 +3751,9 @@ void CBaseEntity::OnRestore()
 
 	// disable touch functions while we recreate the touch links between entities
 	// NOTE: We don't do this on transitions, because we'd miss the OnStartTouch call!
-#if !defined(HL2_DLL) || ( defined(HL2_DLL) && defined(HL2_EPISODIC) )
 	CBaseEntity::sm_bDisableTouchFuncs = ( gpGlobals->eLoadType != MapLoad_Transition );
 	PhysicsTouchTriggers();
 	CBaseEntity::sm_bDisableTouchFuncs = false;
-#endif // HL2_EPISODIC
 
 	//Adrian: If I'm restoring with these fields it means I've become a client side ragdoll.
 	//Don't create another one, just wait until is my time of being removed.
@@ -4083,10 +4016,6 @@ int CBaseEntity::UpdateTransmitState()
 	// instead of UpdateTransmitState.
 	Assert( g_nInsideDispatchUpdateTransmitState > 0 );
 
-#ifdef DOTA_DLL
-	return SetTransmitState( FL_EDICT_FULLCHECK );
-#endif
-	
 	// If an object is the moveparent of something else, don't skip it just because it's marked EF_NODRAW or else
 	//  the client won't have a proper origin for the child since the hierarchy won't be correctly transmitted down
 	if ( IsEffectActive( EF_NODRAW ) && 
@@ -7373,28 +7302,6 @@ void CBaseEntity::InputCallScriptFunction( inputdata_t& inputdata )
 }
 
 
-#ifdef PORTAL2
-
-//---------------------------------------------------------
-// Remove paint from entity with BSP model.
-//---------------------------------------------------------
-void CBaseEntity::InputRemovePaint( inputdata_t &inputdata )
-{
-	if ( engine->HasPaintmap() && IsBSPModel() )
-	{
-		engine->RemovePaint( GetModel() );
-
-		CBroadcastRecipientFilter filter;
-		filter.MakeReliable();
-		UserMessageBegin( filter, "RemovePaint" );
-		WRITE_EHANDLE( this );
-		MessageEnd();
-	}
-}
-
-#endif
-
-
 // #define VMPROFILE	// define to profile vscript calls
 
 #ifdef VMPROFILE
@@ -7636,9 +7543,6 @@ void CBaseEntity::AddContext( const char *contextName )
 	char key[ 128 ];
 	char value[ 128 ];
 	float duration;
-#ifdef TERROR  // from changelist 729204 . Ifdef'd out because not tested outside L4D yet.
-	CWorld * const world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
-#endif
 
 	const char *p = contextName;
 	while ( p )
@@ -7650,24 +7554,7 @@ void CBaseEntity::AddContext( const char *contextName )
 			duration += gpGlobals->curtime;
 		}
 
-#ifdef TERROR 
-		// Egregious last-minute hack. If a specific context is prefixed with a '$', then 
-		// apply it to the World instead of to this character. The proper way to fix this
-		// would be to do away with this insane mechanism of writing contexts out into a 
-		// string and then parsing it back apart again after calling a member function
-		// on the receiving character; but that's way too big to deal with at this stage
-		// of L4D2.  ( this hack dated 9/4/09 )
-		if ( key[0] == AI_CriteriaSet::kAPPLYTOWORLDPREFIX && world && world != this )
-		{
-			world->AddContext( key+1, value, duration );
-		}
-		else
-		{
-			AddContext( key, value, duration );
-		}
-#else
 		AddContext( key, value, duration );
-#endif
 	}
 }
 
@@ -7748,12 +7635,7 @@ void CBaseEntity::InputClearContext( inputdata_t& inputdata )
 //-----------------------------------------------------------------------------
 IResponseSystem *CBaseEntity::GetResponseSystem()
 {
-#ifndef INFESTED_DLL
 	return NULL;
-#else
-	extern IResponseSystem *g_pResponseSystem;
-	return g_pResponseSystem;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -8428,7 +8310,6 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 	}
 
 	// only keep fading things active on the high end
-#if !defined( PORTAL2 )
 	if ( !IsGameConsole() )
 	{
 		CBasePlayer *pPlayer = ( AI_IsSinglePlayer() ) ? UTIL_GetLocalPlayer() : NULL;
@@ -8436,7 +8317,6 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 		if ( pPlayer && pPlayer->FInViewCone( this ) )
 			return false;
 	}
-#endif
 
 	return true;
 }

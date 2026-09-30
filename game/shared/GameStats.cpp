@@ -1801,10 +1801,6 @@ void CBaseGameStats::SetDXLevelStatistic( int iDXLevel )
 
 static void CC_ResetGameStats( const CCommand &args )
 {
-#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
-	// Disabled this until we fix the TF gamestat crashes that result
-	return;
-#endif
 
 	if ( !UTIL_IsCommandIssuedByServerAdmin() )
 		return;

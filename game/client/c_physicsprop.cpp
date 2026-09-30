@@ -16,10 +16,6 @@
 #include "tier0/vprof.h"
 #include "ivrenderview.h"
 
-#if defined ( PORTAL2 )
-#include "portal2/portal_grabcontroller_shared.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -62,18 +58,6 @@ C_PhysicsProp::~C_PhysicsProp( void )
 
 void C_PhysicsProp::OnPreDataChanged( DataUpdateType_t updateType )
 {
-#ifdef PORTAL2
-	// UNDONE: This was supposed to do something when the player had m_pHeldEntityClone set?
-	// It was causing problems in single player where the cube would freeze in place whenever this was true
-	/*
-	C_Portal_Player *pPlayer = static_cast<C_Portal_Player *>( GetPlayerHoldingEntity( this ) );
-	if ( pPlayer && pPlayer->IsUsingVMGrab() )
-	{
-		m_vecClientOrigin = GetAbsOrigin();
-		m_vecClientAngles = GetAbsAngles();
-	}
-	*/
-#endif
 }
 
 // Used to indicate if we can use the static lighting baking
@@ -88,19 +72,6 @@ void C_PhysicsProp::OnDataChanged( DataUpdateType_t type )
 		CreateModelInstance();
 	}
 
-#ifdef PORTAL2
-	// UNDONE: This was supposed to do something when the player had m_pHeldEntityClone set?
-	// It was causing problems in single player where the cube would freeze in place whenever this was true
-	/*
-	// Put these values back to the client simulated ones if we're player held
-	C_Portal_Player *pPlayer = static_cast<C_Portal_Player *>( GetPlayerHoldingEntity( this ) );
-	if ( pPlayer && pPlayer->IsUsingVMGrab() )
-	{
-		SetAbsOrigin( m_vecClientOrigin );
-		SetAbsAngles( m_vecClientAngles );
-	}
-	*/
-#endif
 }
 
 //-----------------------------------------------------------------------------

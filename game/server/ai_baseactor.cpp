@@ -1423,13 +1423,6 @@ void CAI_BaseActor::MakeRandomLookTarget( AILookTargetArgs_t *pArgs, float minTi
 	// DevMsg("random view\n");
 
 	// For now, just look farther afield while driving in the vehicle.  Without this we look around wildly!
-#ifdef HL2_EPISODIC
-	if ( MyCombatCharacterPointer() && MyCombatCharacterPointer()->IsInAVehicle() )
-	{
-		pArgs->vTarget = EyePosition() + forward * 2048 + right * random->RandomFloat(-650,650) + up * random->RandomFloat(-32,32);
-	}
-	else
-#endif // HL2_EPISODIC
 	{
 		pArgs->vTarget = EyePosition() + forward * 128 + right * random->RandomFloat(-32,32) + up * random->RandomFloat(-16,16);
 	}
@@ -1804,26 +1797,6 @@ void CAI_BaseActor::MaintainLookTargets( float flInterval )
 			absVel = absVel + ground->GetAbsVelocity();
 		}
 
-#ifdef HL2_EPISODIC
-		// Translate our position if riding in a vehicle
-		if ( m_hLookTarget->MyCombatCharacterPointer() )
-		{
-			CBaseCombatCharacter *pBCC = m_hLookTarget->MyCombatCharacterPointer();
-			CBaseEntity *pVehicle = pBCC->GetVehicleEntity();
-			if ( pVehicle )
-			{
-				IPhysicsObject *pObj = pVehicle->VPhysicsGetObject();
-				if ( pObj )
-				{
-					Vector vecVelocity;
-					pObj->GetVelocity( &vecVelocity, NULL );
-
-					absVel += vecVelocity;
-				}
-			}
-		}
-#endif //HL2_EPISODIC
-
 		if ( !VectorCompare( absVel, vec3_origin ) )
 		{
 			Vector viewTarget = GetViewtarget();
@@ -1926,14 +1899,6 @@ const char *CAI_BaseActor::SelectRandomExpressionForState( NPC_STATE state )
 void CAI_BaseActor::OnStateChange( NPC_STATE OldState, NPC_STATE NewState )
 {
 	PlayExpressionForState( NewState );
-
-#ifdef HL2_EPISODIC
-	// If we've just switched states, ensure we stop any scenes that asked to be stopped
-	if ( OldState == NPC_STATE_IDLE )
-	{
-		RemoveActorFromScriptedScenes( this, true, true );
-	}
-#endif
 
 	BaseClass::OnStateChange( OldState, NewState );
 }

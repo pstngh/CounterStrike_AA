@@ -18,10 +18,6 @@
 #include "ndebugoverlay.h"
 #include "ai_senses.h"
 
-#ifdef HL2_EPISODIC
-	#include "info_darknessmode_lightsource.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -754,23 +750,6 @@ void CAI_FollowBehavior::GatherConditions( void )
 		}
 	}
 
-#ifdef HL2_EPISODIC
-	// Let followers know if the player is lit in the darkness
-	if ( GetFollowTarget()->IsPlayer() && HL2GameRules()->IsAlyxInDarknessMode() )
-	{
-		if ( LookerCouldSeeTargetInDarkness( GetOuter(), GetFollowTarget() ) )
-		{
-			SetCondition( COND_FOLLOW_PLAYER_IS_LIT );
-			ClearCondition( COND_FOLLOW_PLAYER_IS_NOT_LIT );
-		}
-		else
-		{
-			SetCondition( COND_FOLLOW_PLAYER_IS_NOT_LIT );
-			ClearCondition( COND_FOLLOW_PLAYER_IS_LIT );
-		}
-	}
-#endif
-
 	// Set our follow target visibility state
 	if ( (GetFollowTarget()->IsPlayer() && HasCondition( COND_SEE_PLAYER )) || GetOuter()->FVisible( GetFollowTarget()) )
 	{
@@ -838,16 +817,6 @@ bool CAI_FollowBehavior::ShouldMoveToFollowTarget()
 
 	if( m_bTargetUnreachable )
 		return false;
-
-#ifdef HL2_EPISODIC
-	if ( HL2GameRules()->IsAlyxInDarknessMode() )
-	{
-		// If we're in darkness mode, the player needs to be lit by
-		// darkness, but we don't need line of sight to him.
-		if ( HasCondition(COND_FOLLOW_PLAYER_IS_NOT_LIT) )
-			return false;
-	}
-#endif
 
 	if ( HasFollowPoint() )
 	{
@@ -1384,11 +1353,7 @@ void CAI_FollowBehavior::StartTask( const Task_t *pTask )
 
 					bool bIsEpisodicVitalAlly;
 					
-#ifdef HL2_DLL
-					bIsEpisodicVitalAlly = (hl2_episodic.GetBool() && GetOuter()->Classify() == CLASS_PLAYER_ALLY_VITAL);
-#else
 					bIsEpisodicVitalAlly = false;
-#endif//HL2_DLL
 
 					if( bIsEpisodicVitalAlly )
 					{
@@ -1932,14 +1897,6 @@ void CAI_FollowBehavior::BuildScheduleTestBits()
 		   IsCurSchedule(SCHED_ALERT_STAND) ) ||
 		   IsCurSchedule(SCHED_ALERT_FACE_BESTSOUND ) )
 	{
-#ifdef HL2_EPISODIC
-		if( IsCurSchedule(SCHED_RELOAD, false) && GetOuter()->Classify() == CLASS_PLAYER_ALLY_VITAL )
-		{
-			// Alyx and Barney do not stop reloading because the player has moved. 
-			// Citizens and other regular allies do.
-			bIgnoreMovedMark = true;
-		}
-#endif//HL2_EPISODIC
 
 		if( !bIgnoreMovedMark )
 		{
@@ -1958,17 +1915,6 @@ void CAI_FollowBehavior::BuildScheduleTestBits()
 			GetOuter()->SetCustomInterruptCondition( COND_CAN_RANGE_ATTACK1 );
 		}
 
-#ifdef HL2_EPISODIC
-		// In Alyx darkness mode, break on the player turning their flashlight off
-		if ( HL2GameRules()->IsAlyxInDarknessMode() )
-		{
-			if ( IsCurSchedule(SCHED_FOLLOW, false) || IsCurSchedule(SCHED_MOVE_TO_FACE_FOLLOW_TARGET, false) ||
-				 IsCurSchedule(SCHED_FACE_FOLLOW_TARGET, false) )
-			{
-				GetOuter()->SetCustomInterruptCondition( GetClassScheduleIdSpace()->ConditionLocalToGlobal( COND_FOLLOW_PLAYER_IS_NOT_LIT ) );
-			}
-		}
-#endif // HL2_EPISODIC
 	}
 
 	if ( GetNpcState() == NPC_STATE_COMBAT && IsCurScheduleFollowSchedule() )
@@ -2104,9 +2050,6 @@ bool CAI_FollowBehavior::ShouldAlwaysThink()
 BEGIN_DATADESC( CAI_FollowGoal )
 	DEFINE_KEYFIELD(	m_iFormation, FIELD_INTEGER, "Formation" ),
 
-#ifdef HL2_EPISODIC
-	DEFINE_INPUTFUNC( FIELD_VOID, "OutsideTransition",	InputOutsideTransition ),
-#endif
 END_DATADESC()
 
 //-------------------------------------
@@ -2147,13 +2090,6 @@ void CAI_FollowGoal::DisableGoal( CAI_BaseNPC *pAI  )
 }
 
 //-------------------------------------
-
-#ifdef HL2_EPISODIC
-void CAI_FollowGoal::InputOutsideTransition( inputdata_t &inputdata )
-{
-	EnterDormant();
-}
-#endif
 
 //-----------------------------------------------------------------------------
 //

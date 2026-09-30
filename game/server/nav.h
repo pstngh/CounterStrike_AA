@@ -28,11 +28,7 @@ const float JumpCrouchHeight = 64.0f;			// (48) if delta Z is less than or equal
 #endif
 
 // There are 3 different definitions of StepHeight throughout the code, waiting to produce bugs if the 18.0 is ever changed.
-#ifdef INFESTED_DLL
-const float StepHeight = 24.0f;					///< if delta Z is greater than this, we have to jump to get up
-#else
 const float StepHeight = 18.0f;					// if delta Z is greater than this, we have to jump to get up
-#endif // INFESTED_DLL
 
 // TERROR: Increased DeathDrop from 200, since zombies don't take falling damage
 #if defined(CSTRIKE_DLL)

@@ -134,24 +134,6 @@ void C_PropJeep::UpdateViewAngles( C_BasePlayer *pLocalPlayer, CUserCmd *pCmd )
 //-----------------------------------------------------------------------------
 void C_PropJeep::DampenEyePosition( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles )
 {
-#ifdef HL2_CLIENT_DLL
-	// Get the frametime. (Check to see if enough time has passed to warrent dampening).
-	float flFrameTime = gpGlobals->frametime;
-
-	if ( flFrameTime < JEEP_FRAMETIME_MIN )
-	{
-		vecVehicleEyePos = m_vecLastEyePos;
-		DampenUpMotion( vecVehicleEyePos, vecVehicleEyeAngles, 0.0f );
-		return;
-	}
-
-	// Keep static the sideways motion.
-	// Dampen forward/backward motion.
-	DampenForwardMotion( vecVehicleEyePos, vecVehicleEyeAngles, flFrameTime );
-
-	// Blend up/down motion.
-	DampenUpMotion( vecVehicleEyePos, vecVehicleEyeAngles, flFrameTime );
-#endif
 }
 
 

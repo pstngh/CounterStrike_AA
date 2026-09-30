@@ -646,10 +646,6 @@ void CShadowMgr::LevelShutdown()
 //-----------------------------------------------------------------------------
 // Track growth of shadow-related linked lists, warn when things grow significantly
 //-----------------------------------------------------------------------------
-#if defined( LEFT4DEAD )
-	// GrowSpew is causing unnecessary overhead on the L4D 360 build
-	#define GrowSpew( ... )
-#else
 	static int m_ShadowSurfacesMax  = 0, m_ShadowDecalsMax = 0, m_SortOrderIdsMax = 0, m_SmallVertexListMax = 0, m_LargeVertexListMax = 0;
 	static int m_ShadowsOnModelsMax = 0, m_RenderQueueMax  = 0, m_VertexCacheMax  = 0, m_TempVertexCacheMax = 0;
 	static void GrowSpew( int numAlloc, int &maxCounter, const char *array, int spewFreq = 1000 )
@@ -659,7 +655,6 @@ void CShadowMgr::LevelShutdown()
 			Warning( "Shadow memory (%s) growing [%d]\n", array, numAlloc );
 		maxCounter = numAlloc;
 	}
-#endif
 
 
 void CShadowMgr::DisableDropShadows()

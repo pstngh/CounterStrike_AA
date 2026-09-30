@@ -60,10 +60,6 @@ public:
 	bool IsTransitionVideo( void ) { return m_bIsTransitionVideo; }
 	void SetShouldPreload( bool bShouldPreload ) { m_bShouldPreload = bShouldPreload; }
 
-#if defined( PORTAL2 )
-	void EnablePartnerUI( bool bEnablePartnerUI );
-#endif
-
 	bool IsPlaying();
 
 protected:
@@ -104,10 +100,6 @@ protected:
 
 private:
 	void			LoadLayout();
-#if defined( PORTAL2 )
-	void			SetupPartnerInScience( bool bEnable );
-	void			SetPartnerInScienceAlpha( int alpha );
-#endif
 	void			SetupCaptioning( const char *pFilename, int nPlaybackHeight );
 
 	bool				m_bEnablePartnerUI;

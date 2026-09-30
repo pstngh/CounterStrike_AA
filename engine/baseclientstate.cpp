@@ -22,10 +22,6 @@
 #include "snd_audio_source.h"
 #include "server.h"
 #include "cl_steamauth.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#include "replayhistorymanager.h"
-#endif
 #include "filesystem/IQueuedLoader.h"
 #include "serializedentity.h"
 #include "checksum_engine.h"
@@ -595,17 +591,6 @@ void CBaseClientState::Clear( void )
 void CBaseClientState::FileReceived( const char * fileName, unsigned int transferID, bool bIsReplayDemoFile )
 {
 	ConMsg( "CBaseClientState::FileReceived: %s.\n", fileName );
-#if defined( REPLAY_ENABLED )
-	if ( isReplayDemoFile )
-	{
-		CClientReplayHistoryEntryData *pEntry = static_cast< CClientReplayHistoryEntryData *>( g_pClientReplayHistoryManager->FindEntry( fileName ) );		Assert( pEntry );
-		if ( pEntry )
-		{
-			pEntry->m_bTransferComplete = true;
-			g_pClientReplayHistoryManager->FlushEntriesToDisk();
-		}
-	}
-#endif
 }
 
 void CBaseClientState::FileDenied(const char *fileName, unsigned int transferID, bool bIsReplayDemoFile )

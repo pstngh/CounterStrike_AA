@@ -73,20 +73,11 @@ QAngle C_BreakableProp::PreferredCarryAngles( void )
 
 bool C_BreakableProp::ShouldPredict( void )
 {
-#ifdef PORTAL
-	C_BasePlayer *pPredOwner = GetPlayerHoldingEntity( this );
-	return (pPredOwner && pPredOwner->IsLocalPlayer()) ? true : BaseClass::ShouldPredict();
-#else
 	return false;
-#endif
 }
 
 C_BasePlayer *C_BreakableProp::GetPredictionOwner( void )
 {
-#ifdef PORTAL
-	return GetPlayerHoldingEntity( this );
-#else
 	return NULL;
-#endif
 }
 

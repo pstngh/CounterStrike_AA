@@ -42,11 +42,6 @@ using ResponseRules::IResponseSystem;
 class IEntitySaveUtils;
 class CRecipientFilter;
 
-#ifdef PORTAL
-#include "portal_shareddefs.h"
-class CPortal_Base2D;
-#endif // PORTAL 
-
 
 
 // Matching the high level concept is significantly better than other criteria
@@ -106,10 +101,6 @@ class INextBot;
 class CGlobalEvent;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
-
-#ifdef PORTAL2
-class CInfoPlacementHelper;
-#endif
 
 //
 // Structure passed to input handlers.
@@ -606,13 +597,6 @@ public:
 	// capabilities
 	virtual int	ObjectCaps( void );
 
-#if defined ( PORTAL2 )
-	// For portal 2, the use traces are on the client so
-	// we network down entities current use capabilities for validity checking.
-	CNetworkVar( int,			m_iObjectCapsCache );
-	void		UpdateObjectCapsCache();
-#endif 
-
 	// Verifies that the data description is valid in debug builds.
 	#ifdef _DEBUG
 	void ValidateDataDescription(void);
@@ -663,9 +647,6 @@ public:
 	void InputRunScript( inputdata_t &inputdata );
 	void InputRunScriptFile( inputdata_t &inputdata );
 	void InputCallScriptFunction( inputdata_t &inputdata );
-#ifdef PORTAL2
-	void InputRemovePaint( inputdata_t &inputdata );
-#endif
 
 	bool RunScriptFile( const char *pScriptFile, bool bUseRootScope = false );
 	bool RunScript( const char *pScriptText, const char *pDebugFilename = "CBaseEntity::RunScript" );
@@ -978,9 +959,6 @@ public:
 
 	// Paint helper
 	// Should never be called on anything that doesn't use PropPaintPowerUser, which overrides this.
-#ifdef PORTAL2
-	virtual void UpdatePaintPowersFromContacts() { Assert(0); }
-#endif
 
 	void	ViewPunch( const QAngle &angleOffset );
 	void	VelocityPunch( const Vector &vecForce );
@@ -1810,10 +1788,6 @@ protected:
 	CNetworkVar( float, m_flShadowCastDistance );
 	float		m_flDesiredShadowCastDistance;
 
-#ifdef PORTAL2
-	CNetworkVar( string_t, m_iSignifierName );
-#endif // PORTAL2
-
 
 // Methods shared by client and server
 public:
@@ -1944,9 +1918,6 @@ public:
 	}
 
 public:
-#ifdef PORTAL
-	virtual void NotifyPortalEvent( PortalEvent_t nEventType, CPortal_Base2D *pNotifier ) { /*Do nothing*/ }
-#endif // PORTAL
 
 public:
 	void	ClearSpotRule( int nRuleFlags );

@@ -17,9 +17,6 @@
 #include "LocalNetworkBackdoor.h"
 #include "testscriptmgr.h"
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "pr_edict.h"
 #include "logofile_shared.h"
 #include "dt_send_eng.h"
@@ -78,11 +75,6 @@ extern ConVar tv_transmitall;
 extern ConVar sv_pure_kick_clients;
 extern ConVar sv_pure_trace;
 
-#if defined( REPLAY_ENABLED )
-extern ConVar replay_snapshotrate;
-extern ConVar replay_transmitall;
-#endif
-
 // static ConVar sv_failuretime( "sv_failuretime", "0.5", 0, "After this long without a packet from client, don't send any more until client starts sending again" );
 
 static const char * s_clcommands[] = 
@@ -103,9 +95,6 @@ static const char * s_clcommands[] =
 #endif
 	"ss_connect",
 	"ss_disconnect",
-#if defined( REPLAY_ENABLED )
-	"request_replay_demo",
-#endif
 	NULL,
 };
 
@@ -233,14 +222,6 @@ bool CGameClient::CLCMsg_ClientInfo( const CCLCMsg_ClientInfo& msg )
 		Disconnect( "CLCMsg_ClientInfo: SourceTV can not connect to game directly.\n" );
 		return false;
 	}
-
-#if defined( REPLAY_ENABLED )
-	if ( m_bIsReplay )
-	{
-		Disconnect( "CLCMsg_ClientInfo: Replay can not connect to game directly.\n" );
-		return false;
-	}
-#endif
 
 	if ( sv_allowupload.GetBool() )
 	{
@@ -548,11 +529,7 @@ void CGameClient::SetupPackInfo( CFrameSnapshot *pSnapshot )
 
 	// if this client is the HLTV or Replay client, add the nocheck PVS bit array
 	// normal clients don't need that extra array
-#if defined( REPLAY_ENABLED )
-	if ( IsHLTV() || IsReplay() )
-#else
 	if ( IsHLTV() )
-#endif
 	{
 		// the hltv client doesn't has a ClientFrame list
 		m_pCurrentFrame->transmit_always = new CBitVec<MAX_EDICTS>;
@@ -742,11 +719,7 @@ bool CGameClient::ProcessIncomingLogo( const char *filename )
 
 bool CGameClient::IsHearingClient( int index ) const
 {
-#if defined( REPLAY_ENABLED )
-	if ( IsHLTV() || IsReplay() )
-#else
 	if ( IsHLTV() )
-#endif
 		return true;
 
 	if ( index == GetPlayerSlot() )
@@ -790,13 +763,6 @@ void CGameClient::Inactivate( void )
 	m_nHltvReplayStopAt = 0;
 	m_nHltvReplayStartAt = 0;
 	m_nHltvLastSendTick = 0;	// last send tick, don't send ticks twice
-
-#if defined( REPLAY_ENABLED )
-	if ( IsReplay() )
-	{
-		replay->Changelevel();
-	}
-#endif
 
 	BaseClass::Inactivate();
 
@@ -845,13 +811,6 @@ void CGameClient::Clear()
 		}
 	}
 	
-#if defined( REPLAY_ENABLED )
-	if ( m_bIsReplay )
-	{
-		replay->Shutdown();
-	}
-#endif
-
 	BaseClass::Clear();
 
 	m_HltvQueuedMessages.PurgeAndDeleteElements();
@@ -987,11 +946,7 @@ bool CGameClient::ProcessSignonStateMsg( int state, int spawncount )
 
 void CGameClient::SendSound( SoundInfo_t &sound, bool isReliable )
 {
-#if defined( REPLAY_ENABLED )
-	if ( IsFakeClient() && !IsHLTV() && !IsReplay() && !IsSplitScreenUser() )
-#else
 	if ( IsFakeClient() && !IsHLTV() && !IsSplitScreenUser() )
-#endif
 	{
 		return; // dont send sound messages to bots
 	}
@@ -1279,9 +1234,6 @@ void CGameClient::SpawnPlayer( void )
 CClientFrame *CGameClient::GetDeltaFrame( int nTick )
 {
 	Assert ( !IsHLTV() ); // has no ClientFrames
-#if defined( REPLAY_ENABLED )
-	Assert ( !IsReplay() );  // has no ClientFrames
-#endif	
 
 	if ( m_bIsInReplayMode )
 	{
@@ -1377,13 +1329,6 @@ bool CGameClient::SendNetMsg( INetMessage &msg, bool bForceReliable, bool bVoice
 			return false;
 		}
 	}
-#if defined( REPLAY_ENABLED )
-	if ( m_bIsReplay )
-	{
-		// pass this message to replay
-		return replay->SendNetMsg( msg, bForceReliable, bVoice );
-	}
-#endif
 	if ( IsHltvReplay() )
 	{
 		if ( msg.GetType() != svc_VoiceData ) // let the voice messages through
@@ -1650,39 +1595,6 @@ bool CGameClient::SendSnapshot( CClientFrame * pFrame )
 		
 		return true;
 	}
-
-#if defined( REPLAY_ENABLED )
-	if ( m_bIsReplay )
-	{
-		SNPROF( "SendSnapshot - Replay" );
-
-		char *buf = (char *)_alloca( NET_MAX_PAYLOAD );
-
-		// pack sounds to one message
-		if ( m_Sounds.Count() > 0 )
-		{
-			CSVCMsg_Sounds_t sounds;
-
-			sounds.SetReliable( false );
-			FillSoundsMessage( sounds, m_Server->IsMultiplayer() ? sv_multiplayer_maxsounds.GetInt() : 255 );
-			replay->SendNetMsg( sounds );
-		}
-
-		int maxEnts = replay_transmitall.GetBool()?255:64;
-		replay->WriteTempEntities( this, pFrame->GetSnapshot(), m_pLastSnapshot.GetObject(), *replay->GetBuffer( REPLAY_BUFFER_TEMPENTS ), maxEnts );
-
-		// add snapshot to Replay server frame list
-		replay->AddNewFrame( pFrame );
-
-		// remember this snapshot
-		m_pLastSnapshot = pFrame->GetSnapshot(); 
-
-		// fake acknowledgement, remove ClientFrame reference immediately 
-		UpdateAcknowledgedFramecount( pFrame->tick_count );
-
-		return true;
-	}
-#endif
 
 	// update client viewangles update
 	WriteViewAngleUpdate();
@@ -2126,17 +2038,6 @@ bool CGameClient::ShouldSendMessages( void )
 		}
 	}
 	
-#if defined( REPLAY_ENABLED )
-	if ( m_bIsReplay )
-	{
-		// calc snapshot interval
-		int nSnapshotInterval = 1.0f / ( m_Server->GetTickInterval() * replay_snapshotrate.GetFloat() );
-
-		// I am the Replay client, record every nSnapshotInterval tick
-		return ( sv.m_nTickCount >= (replay->m_nLastTick + nSnapshotInterval) );
-	}
-#endif
-
 	// If sv_stressbots is true, then treat a bot more like a regular client and do deltas and such for it.
 	if( !sv_replaybots.GetBool() && IsFakeClient() )
 	{

@@ -34,10 +34,6 @@
 
 #include "materialsystem/imaterialvar.h"
 
-#if defined( REPLAY_ENABLED )
-#include "replaycamera.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -480,13 +476,6 @@ bool C_BaseViewModel::ShouldDraw()
 		return ( HLTVCamera()->GetMode() == OBS_MODE_IN_EYE &&
 				 HLTVCamera()->GetPrimaryTarget() == GetOwner()	);
 	}
-#if defined( REPLAY_ENABLED )
-	else if ( engine->IsReplay() )
-	{
-		return ( ReplayCamera()->GetMode() == OBS_MODE_IN_EYE &&
-				 ReplayCamera()->GetPrimaryTarget() == GetOwner() );
-	}
-#endif
 	else
 	{
 		Assert(	GetRenderMode() != kRenderNone );

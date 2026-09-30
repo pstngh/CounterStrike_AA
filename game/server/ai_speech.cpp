@@ -308,12 +308,10 @@ CAI_Expresser::CAI_Expresser( CBaseFlex *pOuter )
 	if (m_pOuter)
 	{
 		// register me with the global expresser queue.
-#ifndef TERROR
 		// L4D: something a little ass backwards is happening here. We only want 
 		// survivors to be in the queue. However, the team number isn't 
 		// specified yet. So, we actually need to do this in the player's ChangeTeam.
 		g_ResponseQueueManager.GetQueue()->AddExpresserHost(m_pOuter);
-#endif
 	}
 }
 
@@ -782,17 +780,7 @@ bool CAI_Expresser::SpeakRawScene( const char *pszScene, float delay, AI_Respons
 	{
 		SpeechMsg( GetOuter(), "SpeakRawScene( %s, %f) %f\n", pszScene, delay, sceneLength );
 
-#if defined( HL2_EPISODIC ) || defined( TF_DLL ) || defined( TERROR )
-		char szInstanceFilename[256];
-		GetOuter()->GenderExpandString( pszScene, szInstanceFilename, sizeof( szInstanceFilename ) );
-		// Only mark ourselves as speaking if the scene has speech
-		if ( GetSceneSpeechCount(szInstanceFilename) > 0 )
-		{
-			NoteSpeaking( sceneLength, delay );
-		}
-#else
 		NoteSpeaking( sceneLength, delay );
-#endif
 
 		return true;
 	}

@@ -30,9 +30,6 @@
 	#include "voice_gamemgr.h"
 	#include "iscorer.h"
 	#include "hltvdirector.h"
-#if defined( REPLAY_ENABLED )
-	#include "replaydirector.h"
-#endif
 	#include "ai_criteria.h"
 	#include "sceneentity.h"
 	#include "team.h"
@@ -106,9 +103,7 @@ void cc_SkipNextMapInCycle()
 
 ConCommand skip_next_map( "skip_next_map", cc_SkipNextMapInCycle, "Skips the next map in the map rotation for the server." );
 
-#ifndef TF_DLL		// TF overrides the default value of this convar
 ConVar mp_waitingforplayers_time( "mp_waitingforplayers_time", "0", FCVAR_GAMEDLL, "WaitingForPlayers time length in seconds" );
-#endif
 
 ConVar mp_waitingforplayers_restart( "mp_waitingforplayers_restart", "0", FCVAR_GAMEDLL, "Set to 1 to start or restart the WaitingForPlayers period." );
 ConVar mp_waitingforplayers_cancel( "mp_waitingforplayers_cancel", "0", FCVAR_GAMEDLL, "Set to 1 to end the WaitingForPlayers period." );
@@ -1118,10 +1113,6 @@ CMultiplayRules::CMultiplayRules()
 					flWaitTime = MAX ( flWaitTime, HLTVDirector()->GetDelay() + 5.0f );
 				}
 			}
-#if defined( REPLAY_ENABLED )
-			else if ( ReplayDirector()->IsActive() )
-				flWaitTime = MAX ( flWaitTime, ReplayDirector()->GetDelay() + 5.0f );
-#endif
 		}
 
 		return flWaitTime;

@@ -8,9 +8,6 @@
 #include <utllinkedlist.h>
 
 #include "hltvserver.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#endif
 #include "framesnapshot.h"
 #include "sys_dll.h"
 
@@ -107,9 +104,6 @@ CFrameSnapshot*	CFrameSnapshotManager::CreateEmptySnapshot(
 	snap->m_nValidEntities = 0;
 	snap->m_pValidEntities = NULL;
 	snap->m_pHLTVEntityData = NULL;
-#if defined( REPLAY_ENABLED )
-	snap->m_pReplayEntityData = NULL;
-#endif
 	snap->m_pEntities = new CFrameSnapshotEntry[maxEntities];
 
 	CFrameSnapshotEntry *entry = snap->m_pEntities;
@@ -203,13 +197,6 @@ CFrameSnapshot* CFrameSnapshotManager::TakeTickSnapshot(
 		Q_memset( snap->m_pHLTVEntityData, 0, snap->m_nValidEntities * sizeof(CHLTVEntityData) );
 	}
 
-#if defined( REPLAY_ENABLED )
-	if ( replay && replay->IsActive() )
-	{
-		snap->m_pReplayEntityData = new CReplayEntityData[snap->m_nValidEntities];
-		Q_memset( snap->m_pReplayEntityData, 0, snap->m_nValidEntities * sizeof(CReplayEntityData) );
-	}
-#endif
 	snap->m_iExplicitDeleteSlots.CopyArray( m_iExplicitDeleteSlots.Base(), m_iExplicitDeleteSlots.Count() );
 	m_iExplicitDeleteSlots.Purge();
 
@@ -537,12 +524,6 @@ CFrameSnapshot::~CFrameSnapshot()
 		delete [] m_pHLTVEntityData;
 	}
 
-#if defined( REPLAY_ENABLED )
-	if ( m_pReplayEntityData )
-	{
-		delete [] m_pReplayEntityData;
-	}
-#endif	
 	Assert ( m_nReferences == 0 );
 
 #if defined( _DEBUG )

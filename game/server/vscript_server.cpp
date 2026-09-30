@@ -311,10 +311,6 @@ function __DumpScope( depth, table )
 //lwss end
 #endif
 
-#ifdef DOTA_DLL
-#include "dota_animation.h"
-#endif
-
 extern ScriptClassDesc_t * GetScriptDesc( CBaseEntity * );
 
 // #define VMPROFILE 1
@@ -733,18 +729,6 @@ static float ScriptTraceLine( const Vector &vecStart, const Vector &vecEnd, HSCR
 	}
 }
 
-#if defined ( PORTAL2 )
-static void SetDucking( const char *pszLayerName, const char *pszMixGroupName, float factor )
-{
-	CReliableBroadcastRecipientFilter filter;
-	UserMessageBegin( filter, "SetMixLayerTriggerFactor" );
-		WRITE_STRING( pszLayerName );
-		WRITE_STRING( pszMixGroupName );
-		WRITE_FLOAT( factor );
-	MessageEnd();
-}
-#endif
-
 bool VScriptServerInit()
 {
 	VMPROF_START
@@ -805,9 +789,6 @@ bool VScriptServerInit()
 				ScriptRegisterFunctionNamed( g_pScriptVM, DoRecordAchievementEvent, "RecordAchievementEvent", "Records achievement event or progress" );
 				ScriptRegisterFunction( g_pScriptVM, GetDeveloperLevel, "Gets the level of 'developer'" );
 				ScriptRegisterFunctionNamed( g_pScriptVM, ScriptDispatchParticleEffect, "DispatchParticleEffect", "Dispatches a one-off particle system" );
-#if defined ( PORTAL2 )
-				ScriptRegisterFunction( g_pScriptVM, SetDucking, "Set the level of an audio ducking channel" );
-#endif
 
 				g_pScriptVM->RegisterAllClasses();
 				

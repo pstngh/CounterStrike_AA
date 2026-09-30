@@ -16,18 +16,6 @@
 	#include "clientsteamcontext.h"
 #endif
 
-#if defined( SWARM_DLL )
-
-#include "swarm/basemodpanel.h"
-inline BaseModUI::CBaseModPanel * BasePanel() { return &BaseModUI::CBaseModPanel::GetSingleton(); }
-
-#elif defined( PORTAL2_UITEST_DLL )
-
-#include "portal2uitest/basemodpanel.h"
-inline BaseModUI::CBaseModPanel * BasePanel() { return &BaseModUI::CBaseModPanel::GetSingleton(); }
-
-#else
-
 #define BASEPANEL_LEGACY_SOURCE1
 
 #include "vgui_controls/Panel.h"
@@ -575,7 +563,5 @@ protected:
 //-----------------------------------------------------------------------------
 extern CBaseModPanel *BasePanel();
 extern CBaseModPanel *BasePanelSingleton(); // Constructs if not built yet
-
-#endif
 
 #endif // BASEPANEL_H

@@ -108,10 +108,6 @@
 #include "cl_main.h"
 #include "hltvserver.h"
 #include "hltvtest.h"
-#if defined( REPLAY_ENABLED )
-#include "replayserver.h"
-#include "replayhistorymanager.h"
-#endif
 #include "sys_mainwind.h"
 #include "host_phonehome.h"
 #ifndef DEDICATED
@@ -218,9 +214,6 @@ BEGIN_BYTESWAP_DATADESC( player_info_s )
 	DEFINE_ARRAY( friendsName, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
 	DEFINE_FIELD( fakeplayer, FIELD_BOOLEAN ),
 	DEFINE_FIELD( ishltv, FIELD_BOOLEAN ),
-#if defined( REPLAY_ENABLED )
-	DEFINE_FIELD( isreplay, FIELD_BOOLEAN ),
-#endif
 	DEFINE_ARRAY( customFiles, FIELD_INTEGER, MAX_CUSTOM_FILES ),
 	DEFINE_FIELD( filesDownloaded, FIELD_INTEGER ),
 END_BYTESWAP_DATADESC()
@@ -2329,14 +2322,6 @@ void Host_ShutdownServer( void )
 	sv.Shutdown();// sv.Shutdown() references some heap memory, so run it before Host_FreeToLowMark()
 	Host_FreeToLowMark( true ); 
 
-#if defined( REPLAY_ENABLED )
-	if ( g_pServerReplayHistoryManager )
-	{
-		g_pServerReplayHistoryManager->Shutdown();
-		g_pServerReplayHistoryManager = NULL;
-	}
-#endif
-
 	if ( IGameEvent *event = g_GameEventManager.CreateEvent( "server_shutdown" ) )
 	{
 		event->SetString( "reason", "restart" );
@@ -4329,20 +4314,6 @@ void _Host_RunFrame (float time)
 				hltvtest->RunFrame();
 			}
 
-#if defined( REPLAY_ENABLED )
-			// run replay if active
-			if ( replay )
-			{
-				replay->RunFrame();
-
-				if ( g_pServerReplayHistoryManager )
-					g_pServerReplayHistoryManager->Update();
-			}
-
-			if ( g_pClientReplayHistoryManager && g_pClientReplayHistoryManager->IsInitialized() )
-				g_pClientReplayHistoryManager->Update();
-#endif
-
 #ifndef DEDICATED
 			// This is a hack to let timedemo pull messages from the queue faster than every 15 msec
 			// Also when demoplayer is skipping packets to a certain tick we should process the queue
@@ -5086,23 +5057,6 @@ void Host_PostInit()
 #endif
 }
 
-#if defined( REPLAY_ENABLED )
-void Replay_Init()
-{
-	Assert( replay == NULL );
-}
-
-void Replay_Shutdown()
-{
-	if ( replay )
-	{
-		replay->Shutdown();
-		delete replay;
-		replay = NULL;
-	}
-}
-#endif
-
 void HLTV_Init()
 {
 	for ( int i = 0; i < HLTV_SERVER_MAX_COUNT; ++i )
@@ -5662,9 +5616,6 @@ void Host_Init( bool bDedicated )
 
 	TRACEINIT( HLTV_Init(), HLTV_Shutdown() );
 
-#if defined( REPLAY_ENABLED )
-	TRACEINIT( Replay_Init(), Replay_Shutdown() );
-#endif
 	ConDMsg( "Heap: %5.2f Mb\n", host_parms.memsize/(1024.0f*1024.0f) );
 
 	// Deal with Gore Settings
@@ -6568,9 +6519,6 @@ void Host_Shutdown(void)
 		TRACESHUTDOWN( ShutdownMaterialSystem() );
 	}
 
-#if defined( REPLAY_ENABLED )
-	TRACESHUTDOWN( Replay_Shutdown() );
-#endif
 	TRACESHUTDOWN( HLTV_Shutdown() );
 
 	TRACESHUTDOWN( g_Log.Shutdown() );

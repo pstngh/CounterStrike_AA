@@ -18,12 +18,6 @@
 #include "c_env_cascade_light.h"
 #include "materialsystem/icustommaterialmanager.h"
 
-#ifdef PORTAL
-//#include "C_Portal_Player.h"
-#include "portal_render_targets.h"
-#include "portalrender.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -606,9 +600,6 @@ static void OverlayColorRamp( bool bHalfSpace )
 }
 #endif
 
-#if defined( PORTAL )
-ConVar cl_debugoverlaysthroughportals( "cl_debugoverlaysthroughportals", "0" );
-#endif
 //-----------------------------------------------------------------------------
 // Draws all the debugging info
 //-----------------------------------------------------------------------------
@@ -625,14 +616,7 @@ void CDebugViewRender::Draw3DDebuggingInfo( const CViewSetup &view )
 	}
 
 	// Draw 3d overlays
-#if defined( PORTAL )
-	if( (g_pPortalRender->GetViewRecursionLevel() == 0) || cl_debugoverlaysthroughportals.GetBool() )
-	{
-		render->Draw3DDebugOverlays();
-	}
-#else
 	render->Draw3DDebugOverlays();
-#endif
 
 	// Draw the line file used for debugging leaks
 	render->DrawLineFile();
@@ -704,11 +688,7 @@ void CDebugViewRender::Draw2DDebuggingInfo( const CViewSetup &view )
 	{
 		float w = mat_wateroverlaysize.GetFloat();
 		float h = mat_wateroverlaysize.GetFloat();
-#ifdef PORTAL
-		g_pPortalRender->OverlayPortalRenderTargets( w, h );
-#else
 		OverlayCameraRenderTarget( "debug/debugcamerarendertarget", 0, 0, w, h );
-#endif
 	}
 
 	if ( mat_showframebuffertexture.GetBool() )

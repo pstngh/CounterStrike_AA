@@ -43,14 +43,7 @@ END_DEFINE_LOGGING_CHANNEL();
 
 ConVar sv_soundemitter_version( "sv_soundemitter_version", "2", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "specfies what version of soundemitter system to use\n" );
 
-#ifdef PORTAL2
-// THIS FUNCTION IS SUFFICIENT FOR PORTAL2 SPECIFIC CIRCUMSTANCES
-// AND MAY OR MAY NOT FUNCTION AS EXPECTED WHEN USED WITH MULTIPLE
-// SPLITSCREEN CLIENTS NETWORKED TOGETHER, ETC.
-ConVar snd_prevent_ss_duplicates( "snd_prevent_ss_duplicates", "1", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "switch to en/disable the prevention of splitscreen audio file duplicates\n" );
-#else
 ConVar snd_prevent_ss_duplicates( "snd_prevent_ss_duplicates", "0", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "switch to en/disable the prevention of splitscreen audio file duplicates\n" );
-#endif
 
 #if defined( CLIENT_DLL )
 ConVar snd_sos_show_client_xmit( "snd_sos_show_client_xmit", "0", FCVAR_CHEAT );
@@ -769,15 +762,6 @@ public:
 		//  all players from it!!!!
 		CRecipientFilter filterCopy;
 		filterCopy.CopyFrom( (CRecipientFilter &)filter );
-#ifdef PORTAL2
-		if( snd_prevent_ss_duplicates.GetBool() )
-		{
-			// THIS FUNCTION IS SUFFICIENT FOR PORTAL2 SPECIFIC CIRCUMSTANCES
-			// AND MAY OR MAY NOT FUNCTION AS EXPECTED WHEN USED WITH MULTIPLE
-			// SPLITSCREEN CLIENTS NETWORKED TOGETHER, ETC.
-			filterCopy.ReplaceSplitScreenPlayersWithOwners();
-		}
-#endif
 		
 		// use the cracked script params
 		int guid = enginesound->EmitSound( 
@@ -919,12 +903,6 @@ public:
 		// THIS FUNCTION IS SUFFICIENT FOR PORTAL2 SPECIFIC CIRCUMSTANCES
 		// AND MAY OR MAY NOT FUNCTION AS EXPECTED WHEN USED WITH MULTIPLE
 		// SPLITSCREEN CLIENTS NETWORKED TOGETHER, ETC.
-#ifdef PORTAL2
-		if( snd_prevent_ss_duplicates.GetBool() )
-		{
-			filterCopy.ReplaceSplitScreenPlayersWithOwners();
-		}
-#endif
 		
 		// Emit sound via direct soundfile reference, unless tagged as a soundentry
 		int nGuid = enginesound->EmitSound( 

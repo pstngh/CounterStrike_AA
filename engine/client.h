@@ -178,9 +178,6 @@ public:
 	// information that is static for the entire time connected to a server
 	//
 	bool		ishltv;			// true if HLTV server/demo
-#if defined( REPLAY_ENABLED )
-	bool		isreplay;		// true if Replay server/demo
-#endif
 
 	CRC32_t		serverCRC;              // To determine if client is playing hacked .map. (entities lump is skipped)
 	CRC32_t		serverClientSideDllCRC; // To determine if client is playing on a hacked client dll.

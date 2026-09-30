@@ -967,14 +967,9 @@ private:
 	CPanelAnimationVar( vgui::HFont, m_hCaptionFont, "font", "InstructorTitle" );
 	CPanelAnimationVar( vgui::HFont, m_hCaptionFont_ss, "font", "InstructorTitle_ss" );
 	CPanelAnimationVar( vgui::HFont, m_hButtonFont, "font", "InstructorButtons" );
-#ifdef TERROR
-	CPanelAnimationVar( vgui::HFont, m_hButtonFont_ss, "font", "GameUIButtons" );
-	CPanelAnimationVar( vgui::HFont, m_hKeysFont, "font", "MenuSubTitle" );
-#else
 	CPanelAnimationVar( vgui::HFont, m_hButtonFont_ss, "font", "InstructorButtons_ss" );
 	CPanelAnimationVar( vgui::HFont, m_hKeysFont, "font", "InstructorKeyBindings" );
 	CPanelAnimationVar( vgui::HFont, m_hKeysFontSmall, "font", "InstructorKeyBindingsSmall" );
-#endif
 	
 	CPanelAnimationVar( vgui::HFont, m_hButtonFontSC, "font", "InstructorButtonsSteamController" );
 

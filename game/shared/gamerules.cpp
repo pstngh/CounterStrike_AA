@@ -52,14 +52,6 @@ static CViewVectors g_DefaultViewVectors(
 );													
 	
 
-#ifdef PORTAL2
-ConVar sv_portal_players( "sv_portal_players", "1", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY | FCVAR_HIDDEN );
-bool IsGameRulesMultiplayer()
-{
-	return ( sv_portal_players.GetInt() > 1 );
-}
-#endif
-
 // ------------------------------------------------------------------------------------ //
 // CGameRulesProxy implementation.
 // ------------------------------------------------------------------------------------ //
@@ -289,19 +281,10 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 
 	SetSkillLevel( skill.IsValid() ? skill.GetInt() : 1 );
 
-#ifdef HL2_DLL
-	// HL2 current only uses one skill config file that represents MEDIUM skill level and
-	// synthesizes EASY and HARD. (sjb)
-	Q_snprintf( szExec,sizeof(szExec), "exec skill_manifest.cfg\n" );
-
-	engine->ServerCommand( szExec );
-	engine->ServerExecute();
-#else
 	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
 
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
-#endif // HL2_DLL
 #endif // CLIENT_DLL
 }
 
@@ -350,17 +333,6 @@ void CGameRules::RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc
 
 	int bInWater = (UTIL_PointContents ( vecSrc, MASK_WATER ) & MASK_WATER) ? true : false;
 
-#ifdef HL2_DLL
-	if( bInWater )
-	{
-		// Only muffle the explosion if deeper than 2 feet in water.
-		if( !(UTIL_PointContents(vecSrc + Vector(0, 0, 24), MASK_WATER) & MASK_WATER) )
-		{
-			bInWater = false;
-		}
-	}
-#endif // HL2_DLL
-	
 	vecSrc.z += 1;// in case grenade is lying on the ground
 
 	float flHalfRadiusSqr = Square( flRadius / 2.0f );
@@ -752,30 +724,6 @@ bool CGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 	// Adrian: TEST! Interactive Debris doesn't collide with the player.
 	if ( collisionGroup0 == COLLISION_GROUP_INTERACTIVE_DEBRIS && ( collisionGroup1 == COLLISION_GROUP_PLAYER_MOVEMENT || collisionGroup1 == COLLISION_GROUP_PLAYER ) )
 		 return false;
-
-#ifdef PORTAL2
-	// Only hit something of the same group
-	if ( collisionGroup0 == COLLISION_GROUP_CAMERA_SOLID || collisionGroup1 == COLLISION_GROUP_CAMERA_SOLID )
-	{
-		if ( collisionGroup0 != COLLISION_GROUP_CAMERA_SOLID || collisionGroup1 != COLLISION_GROUP_CAMERA_SOLID )
-			return false;
-	}
-
-	// Only hit something of the same group
-	if ( collisionGroup0 == COLLISION_GROUP_PLACEMENT_SOLID || collisionGroup1 == COLLISION_GROUP_PLACEMENT_SOLID )
-	{
-		if ( collisionGroup0 != COLLISION_GROUP_PLACEMENT_SOLID || collisionGroup1 != COLLISION_GROUP_PLACEMENT_SOLID )
-			return false;
-	}
-
-	// Held objects shouldn't collide with players 
-	// BUG: Not sure if we want this in MP, intention is to not collide with the holding player, not necessarily all. 
-	if ( collisionGroup1 == COLLISION_GROUP_PLAYER_HELD && collisionGroup0 == COLLISION_GROUP_PLAYER )
-		return false;
-
-	if ( collisionGroup1 == COLLISION_GROUP_PLAYER_HELD && collisionGroup0 == COLLISION_GROUP_PLAYER_MOVEMENT )
-		return false;
-#endif // PORTAL2
 
 	if ( collisionGroup0 == COLLISION_GROUP_BREAKABLE_GLASS && collisionGroup1 == COLLISION_GROUP_BREAKABLE_GLASS )
 		return false;

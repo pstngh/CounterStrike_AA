@@ -1474,9 +1474,6 @@ int CBaseServer::GetNumProxies( void ) const
 	for (int i=0 ; i < m_Clients.Count() ; i++ )
 	{
 		if ( m_Clients[ i ]->IsConnected() && (m_Clients[ i ]->IsHLTV()
-#if defined( REPLAY_ENABLED )
-			|| m_Clients[ i ]->IsReplay()
-#endif
 			) )
 		{
 			count++;
@@ -1607,10 +1604,6 @@ void CBaseServer::FillServerInfo(CSVCMsg_ServerInfo &serverinfo)
 	char szMapPath[MAX_PATH];
 	V_ComposeFileName( "maps", GetMapName(), szMapPath, sizeof(szMapPath) );
 	serverinfo.set_ugc_map_id( serverGameDLL->GetUGCMapFileID( szMapPath ) );
-
-#if defined( REPLAY_ENABLED )
-	serverinfo.set_is_replay( IsReplay() );
-#endif
 
 // Don't expose server public IP in the server info, the client is already connected, so there's no reason to store it either
 // 	if( Steam3Server().SteamGameServer() == NULL )
@@ -2108,9 +2101,6 @@ void CBaseServer::ReplyReservationRequest( const ns_address &adr, bf_read &msgIn
 					serverGameDLL->ApplyGameSettings( pKV );
 					// adjust the game slots
 					m_numGameSlots = pKV->GetInt( "members/numSlots", 0 );
-		#ifdef PORTAL2	// HACK: PORTAL2 uses maxclients instead of GAMERULES
-					SetMaxClients( m_numGameSlots );
-		#endif
 				}
 			}
 		}
@@ -2546,9 +2536,6 @@ void CBaseServer::InactivateClients( void )
 
 		// Fake clients get killed in here (but split screen users don't)
 		if ( cl->IsFakeClient() && !cl->IsSplitScreenUser() && !cl->IsHLTV()
-#if defined( REPLAY_ENABLED )
-			&& !cl->IsReplay()
-#endif
 			)
 		{
 			// If we don't do this, it'll have a bunch of extra steam IDs for unauthenticated users.

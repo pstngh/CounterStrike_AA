@@ -142,11 +142,7 @@
 #define	FL_AIMTARGET			(1<<17)	// set if the crosshair needs to aim onto the entity
 #define	FL_PARTIALGROUND		(1<<18)	// not all corners are valid
 #define FL_STATICPROP			(1<<19)	// Eetsa static prop!		
-#ifdef PORTAL2
-#define FL_AFFECTED_BY_PAINT	(1<<20)
-#else
 #define FL_GRAPHED				(1<<20) // worldgraph has this ent listed as something that blocks a connection
-#endif
 #define FL_GRENADE				(1<<21)
 #define FL_STEPMOVEMENT			(1<<22)	// Changes the SV_Movestep() behavior to not do any processing
 #define FL_DONTTOUCH			(1<<23)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
@@ -160,11 +156,7 @@
 #define FL_UNBLOCKABLE_BY_PLAYER (1<<31) // pusher that can't be blocked by the player
 
 // FIXME[HPE]: this won't actually work - we're out of bits. :(
-#ifdef PORTAL2
-#define FL_UNPAINTABLE			(1<<32) // Unpaintable entities!
-#else
 #define FL_FREEZING				(1<<32) // We're becoming frozen!
-#endif
 
 // edict->movetype values
 enum MoveType_t
@@ -403,13 +395,6 @@ enum Collision_Group_t
 	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
 	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
 	COLLISION_GROUP_PZ_CLIP,
-
-#ifdef PORTAL2
-	COLLISION_GROUP_CAMERA_SOLID,		// Solid only to the camera's test trace
-	COLLISION_GROUP_PLACEMENT_SOLID,	// Solid only to the placement tool's test trace
-	COLLISION_GROUP_PLAYER_HELD,		// Held objects that shouldn't collide with players
-	COLLISION_GROUP_WEIGHTED_CUBE,		// Cubes need a collision group that acts roughly like COLLISION_GROUP_NONE but doesn't collide with debris or interactive
-#endif // PORTAL2
 
 	COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE, // Only collides with bullets
 

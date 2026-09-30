@@ -33,18 +33,6 @@
 #include "cs_gamerules.h"
 #endif
 
-#if defined(TF_CLIENT_DLL) || defined(TF_DLL)
-#include "tf_gcmessages.h"
-#include "tf_duel_summary.h"
-#include "econ_contribution.h"
-#include "tf_player_info.h"
-#include "econ/econ_claimcode.h"
-#endif
-
-#if defined(TF_DLL) && defined(GAME_DLL)
-#include "tf_gc_api.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -224,9 +212,6 @@ void CInventoryManager::SteamRequestInventory( CPlayerInventory *pInventory, CSt
 //-----------------------------------------------------------------------------
 void CInventoryManager::GameServerSteamAPIActivated()
 {
-#if defined(TF_DLL) && defined(GAME_DLL)
-	GameCoordinator_NotifyGameState();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -657,25 +642,6 @@ void CInventoryManager::MoveItemToBackpackPosition( CEconItemView *pItem, int iB
 
 	//Warning("Moved item %llu to backpack slot: %d\n", pItem->GetItemID(), iBackpackPosition );
 }
-
-#ifdef TF_DLL
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-class CWaitForBackpackSortFinishDialog : public CGenericWaitingDialog
-{
-public:
-	CWaitForBackpackSortFinishDialog( vgui::Panel *pParent ) : CGenericWaitingDialog( pParent )
-	{
-	}
-
-protected:
-	virtual void OnTimeout()
-	{
-		InventoryManager()->SortBackpackFinished();
-	}
-};
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

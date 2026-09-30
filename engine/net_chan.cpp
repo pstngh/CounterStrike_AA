@@ -2508,14 +2508,6 @@ void CNetChan::CheckWaitingList(int nList)
 		if ( net_showfragments.GetBool() )
 			ConMsg("Sending complete: %i fragments, %i bytes.\n", data->numFragments, data->bytes );
 
-#if defined( REPLAY_ENABLED )
-		// if it's a replay demo, notify the replay system
-		if ( data->isReplayDemo )
-		{
-			Replay_OnFileSendComplete( data->filename, data->bytes );
-		}
-#endif
-
 		RemoveHeadInWaitingList( nList );
 
 		return;

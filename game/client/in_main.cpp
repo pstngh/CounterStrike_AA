@@ -19,9 +19,6 @@
 #include "bitbuf.h"
 #include "checksum_md5.h"
 #include "hltvcamera.h"
-#if defined( REPLAY_ENABLED )
-#include "replaycamera.h"
-#endif
 #include "ivieweffects.h"
 #include "inputsystem/iinputsystem.h"
 #include <ctype.h> // isalnum()
@@ -29,9 +26,6 @@
 
 extern ConVar cam_idealpitch;
 extern ConVar cam_idealyaw;
-#ifdef INFESTED_DLL
-extern ConVar asw_cam_marine_yaw;
-#endif
 // For showing/hiding the scoreboard
 #include <game/client/iviewport.h>
 
@@ -49,11 +43,7 @@ ConVar cl_upspeed( "cl_upspeed", "320", FCVAR_CHEAT );
 ConVar lookspring( "lookspring", "0", FCVAR_ARCHIVE );
 ConVar lookstrafe( "lookstrafe", "0", FCVAR_ARCHIVE );
 
-#ifdef PORTAL2
-#define MAX_LINEAR_SPEED "175"
-#else
 #define MAX_LINEAR_SPEED "450"
-#endif
 
 #if defined( USE_MAC_PRESET )
 // AA applies 0.85 strafe and 0.8 backward input multipliers.
@@ -185,17 +175,6 @@ static	kbutton_t	in_score;
 static	kbutton_t	in_break;
 static  kbutton_t   in_grenade1;
 static  kbutton_t   in_grenade2;
-
-#ifdef INFESTED_DLL
-static  kbutton_t   in_currentability;
-static  kbutton_t   in_prevability;
-static  kbutton_t   in_nextability;
-static  kbutton_t   in_ability1;
-static  kbutton_t   in_ability2;
-static  kbutton_t   in_ability3;
-static  kbutton_t   in_ability4;
-static  kbutton_t   in_ability5;
-#endif
 
 bool		joystick_forced_speed = false;
 
@@ -725,84 +704,6 @@ void IN_Grenade2Up( const CCommand &args ) { KeyUp( &in_grenade2, args[1] ); }
 void IN_Grenade2Down( const CCommand &args ) { KeyDown( &in_grenade2, args[1] ); }
 void IN_XboxStub( const CCommand &args ) { /*do nothing*/ }
 
-#ifdef PORTAL2
-
-#if USE_SLOWTIME
-
-	// Slow-time
-	kbutton_t	in_slowtoggle;
-
-	void IN_SlowTimeUp( const CCommand &args ) { KeyUp( &in_slowtoggle, args[1] ); }
-	void IN_SlowTimeDown( const CCommand &args ) { KeyDown( &in_slowtoggle, args[1] ); }
-
-	static ConCommand startslowtime( "+slowtime", IN_SlowTimeDown );
-	static ConCommand endslowtime( "-slowtime", IN_SlowTimeUp );
-
-#endif // USE_SLOWTIME
-
-kbutton_t	in_remote_view_toggle;
-
-
-static bool g_bRemoteViewKeyWasUp = true;
-
-void IN_RemoteViewUp( const CCommand &args ) 
-{ 
-	g_bRemoteViewKeyWasUp = true;
-	KeyUp( &in_remote_view_toggle, args[1] ); 
-}
-void IN_RemoteViewDown( const CCommand &args ) 
-{
-	if ( g_bRemoteViewKeyWasUp )
-	{
-		g_bRemoteViewKeyWasUp = false;
-		IGameEvent * event = gameeventmanager->CreateEvent( "remote_view_activated" );
-		if ( event )
-		{
-			gameeventmanager->FireEvent( event );
-		}
-	}
-	KeyDown( &in_remote_view_toggle, args[1] ); 
-}
-
-static ConCommand startremoteview( "+remote_view", IN_RemoteViewDown );
-static ConCommand endremoteview( "-remote_view", IN_RemoteViewUp );
-
-extern bool g_bShowGhostedPortals;
-void IN_ShowPortalsUp( const CCommand &args ) { g_bShowGhostedPortals = false; }
-void IN_ShowPortalsDown( const CCommand &args ) { g_bShowGhostedPortals = true; }
-static ConCommand showportals( "+showportals", IN_ShowPortalsDown );
-static ConCommand hideportals( "-showportals", IN_ShowPortalsUp );
-
-kbutton_t	in_coop_ping;
-
-void IN_CoopPingUp( const CCommand &args) { KeyUp( &in_coop_ping, args[1] ); }
-void IN_CoopPingDown( const CCommand &args) { KeyDown( &in_coop_ping, args[1] ); }
-
-static ConCommand presscoopping( "+coop_ping", IN_CoopPingDown );
-static ConCommand unpresscoopping( "-coop_ping", IN_CoopPingUp );
-
-#endif // PORTAL2
-
-#ifdef INFESTED_DLL
-void IN_PrevAbilityUp( const CCommand &args ) { KeyUp( &in_prevability, args[1] ); }
-void IN_PrevAbilityDown( const CCommand &args ) { KeyDown( &in_prevability, args[1] ); }
-void IN_NextAbilityUp( const CCommand &args ) { KeyUp( &in_nextability, args[1] ); }
-void IN_NextAbilityDown( const CCommand &args ) { KeyDown( &in_nextability, args[1] ); }
-void IN_CurrentAbilityUp( const CCommand &args ) { KeyUp( &in_currentability, args[1] ); }
-void IN_CurrentAbilityDown( const CCommand &args ) { KeyDown( &in_currentability, args[1] ); }
-
-void IN_Ability1Up( const CCommand &args ) { KeyUp( &in_ability1, args[1] ); }
-void IN_Ability1Down( const CCommand &args ) { KeyDown( &in_ability1, args[1] ); }
-void IN_Ability2Up( const CCommand &args ) { KeyUp( &in_ability2, args[1] ); }
-void IN_Ability2Down( const CCommand &args ) { KeyDown( &in_ability2, args[1] ); }
-void IN_Ability3Up( const CCommand &args ) { KeyUp( &in_ability3, args[1] ); }
-void IN_Ability3Down( const CCommand &args ) { KeyDown( &in_ability3, args[1] ); }
-void IN_Ability4Up( const CCommand &args ) { KeyUp( &in_ability4, args[1] ); }
-void IN_Ability4Down( const CCommand &args ) { KeyDown( &in_ability4, args[1] ); }
-void IN_Ability5Up( const CCommand &args ) { KeyUp( &in_ability5, args[1] ); }
-void IN_Ability5Down( const CCommand &args ) { KeyDown( &in_ability5, args[1] ); }
-#endif
-
 void IN_AttackDown( const CCommand &args )
 {
 	KeyDown( &in_attack, args[1] );
@@ -1052,7 +953,6 @@ void CInput::ClampAngles( QAngle& viewangles )
 	}
 
 // Don't constrain Roll in Portal because the player can be upside down! -Jeep
-#if !defined( PORTAL )
 	if ( viewangles[ROLL] > 50 )
 	{
 		viewangles[ROLL] = 50;
@@ -1061,7 +961,6 @@ void CInput::ClampAngles( QAngle& viewangles )
 	{
 		viewangles[ROLL] = -50;
 	}
-#endif
 }
 
 /*
@@ -1145,11 +1044,7 @@ void CInput::ComputeSideMove( int nSlot, CUserCmd *cmd )
 	// thirdperson screenspace movement
 	if ( CAM_IsThirdPerson() && thirdperson_screenspace.GetInt() )
 	{
-#ifdef INFESTED_DLL
-		float ideal_yaw = asw_cam_marine_yaw.GetFloat() - 90.0f;
-#else
 		float ideal_yaw = cam_idealyaw.GetFloat();
-#endif
 		float ideal_sin = sin(DEG2RAD(ideal_yaw));
 		float ideal_cos = cos(DEG2RAD(ideal_yaw));
 		
@@ -1212,11 +1107,7 @@ void CInput::ComputeForwardMove( int nSlot, CUserCmd *cmd )
 	// thirdperson screenspace movement
 	if ( CAM_IsThirdPerson() && thirdperson_screenspace.GetInt() )
 	{
-#ifdef INFESTED_DLL
-		float ideal_yaw = asw_cam_marine_yaw.GetFloat() - 90.0f;
-#else
 		float ideal_yaw = cam_idealyaw.GetFloat();
-#endif
 		float ideal_sin = sin(DEG2RAD(ideal_yaw));
 		float ideal_cos = cos(DEG2RAD(ideal_yaw));
 		
@@ -1516,19 +1407,6 @@ void CInput::CreateMove ( int sequence_number, float input_sample_frametime, boo
 	cmd->random_seed = MD5_PseudoRandom( sequence_number ) & 0x7fffffff;
 
 	HLTVCamera()->CreateMove( cmd );
-#if defined( REPLAY_ENABLED )
-	ReplayCamera()->CreateMove( cmd );
-#endif
-
-#if defined( HL2_CLIENT_DLL )
-	// copy backchannel data
-	int i;
-	for (i = 0; i < GetPerUser( nSlot ).m_EntityGroundContact.Count(); i++)
-	{
-		cmd->entitygroundcontact.AddToTail( GetPerUser().m_EntityGroundContact[i] );
-	}
-	GetPerUser( nSlot ).m_EntityGroundContact.RemoveAll();
-#endif
 
 	pVerified->m_cmd = *cmd;
 	pVerified->m_crc = cmd->GetChecksum();
@@ -1844,27 +1722,6 @@ int CInput::GetButtonBits( bool bResetState )
 	CalcButtonBits( nSlot, bits, IN_GRENADE2, ignore, &in_grenade2, bResetState );
 	CalcButtonBits( nSlot, bits, IN_LOOKSPIN, ignore, &in_lookspin, bResetState );
 
-#ifdef PORTAL2
-
-	#if USE_SLOWTIME
-		CalcButtonBits( nSlot, bits, IN_SLOWTIME, ignore, &in_slowtoggle, bResetState );
-	#endif // USE_SLOWTIME
-
-	CalcButtonBits( nSlot, bits, IN_COOP_PING, ignore, &in_coop_ping, bResetState );
-	CalcButtonBits( nSlot, bits, IN_REMOTE_VIEW, ignore, &in_remote_view_toggle, bResetState );
-#endif // PORTAL2
-
-#ifdef INFESTED_DLL
-	CalcButtonBits( nSlot, bits, IN_PREV_ABILITY, ignore, &in_prevability, bResetState );
-	CalcButtonBits( nSlot, bits, IN_NEXT_ABILITY, ignore, &in_nextability, bResetState );
-	CalcButtonBits( nSlot, bits, IN_CURRENT_ABILITY, ignore, &in_currentability, bResetState );
-	CalcButtonBits( nSlot, bits, IN_ABILITY1, ignore, &in_ability1, bResetState );
-	CalcButtonBits( nSlot, bits, IN_ABILITY2, ignore, &in_ability2, bResetState );
-	CalcButtonBits( nSlot, bits, IN_ABILITY3, ignore, &in_ability3, bResetState );
-	CalcButtonBits( nSlot, bits, IN_ABILITY4, ignore, &in_ability4, bResetState );
-	CalcButtonBits( nSlot, bits, IN_ABILITY5, ignore, &in_ability5, bResetState );
-#endif
-
 	if ( KeyState(&in_ducktoggle) )
 	{
 		bits |= IN_DUCK;
@@ -1938,35 +1795,6 @@ float CInput::GetLastForwardMove( void )
 {
 	return GetPerUser().m_flLastForwardMove;
 }
-
-
-#if defined( HL2_CLIENT_DLL )
-//-----------------------------------------------------------------------------
-// Purpose: back channel contact info for ground contact
-// Output :
-//-----------------------------------------------------------------------------
-
-void CInput::AddIKGroundContactInfo( int entindex, float minheight, float maxheight )
-{
-	CEntityGroundContact data;
-	data.entindex = entindex;
-	data.minheight = minheight;
-	data.maxheight = maxheight;
-
-	AUTO_LOCK_FM( m_IKContactPointMutex );
-
-	// These all route through the main player's slot!!!
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( 0 );
-	if ( m_PerUser[ 0 ].m_EntityGroundContact.Count() >= MAX_EDICTS )
-	{
-		// some overflow here, probably bogus anyway
-		AssertOnce( "CInput::AddIKGroundContactInfo:  Overflow!!!" );
-		m_PerUser[ 0 ].m_EntityGroundContact.RemoveAll();
-		return;
-	}
-	m_PerUser[ 0 ].m_EntityGroundContact.AddToTail( data );
-}
-#endif
 
 
 static ConCommand startcommandermousemove("+commandermousemove", IN_CommanderMouseMoveDown);
@@ -2048,25 +1876,6 @@ static ConCommand startlookspin("+lookspin", IN_LookSpinDown);
 static ConCommand endlookspin("-lookspin", IN_LookSpinUp);
 static ConCommand toggle_duck( "toggle_duck", IN_DuckToggle );
 
-#ifdef INFESTED_DLL
-static ConCommand endprevability( "-prevability", IN_PrevAbilityUp );
-static ConCommand startprevability( "+prevability", IN_PrevAbilityDown );
-static ConCommand endnextability( "-nextability", IN_NextAbilityUp );
-static ConCommand startnextability( "+nextability", IN_NextAbilityDown );
-static ConCommand endcurrentability( "-currentability", IN_CurrentAbilityUp );
-static ConCommand startcurrentability( "+currentability", IN_CurrentAbilityDown );
-static ConCommand endability1( "-ability1", IN_Ability1Up );
-static ConCommand startability1( "+ability1", IN_Ability1Down );
-static ConCommand endability2( "-ability2", IN_Ability2Up );
-static ConCommand startability2( "+ability2", IN_Ability2Down );
-static ConCommand endability3( "-ability3", IN_Ability3Up );
-static ConCommand startability3( "+ability3", IN_Ability3Down );
-static ConCommand endability4( "-ability4", IN_Ability4Up );
-static ConCommand startability4( "+ability4", IN_Ability4Down );
-static ConCommand endability5( "-ability5", IN_Ability5Up );
-static ConCommand startability5( "+ability5", IN_Ability5Down );
-#endif
-
 // Xbox 360 stub commands
 static ConCommand xboxmove("xmove", IN_XboxStub);
 static ConCommand xboxlook("xlook", IN_XboxStub);
@@ -2141,12 +1950,4 @@ void CInput::Shutdown_All(void)
 
 void CInput::LevelInit( void )
 {
-#if defined( HL2_CLIENT_DLL )
-	// Remove any IK information
-	for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( i );
-		GetPerUser().m_EntityGroundContact.RemoveAll();
-	}
-#endif
 }

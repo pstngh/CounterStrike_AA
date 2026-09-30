@@ -572,10 +572,6 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 
 	m_hWeaponFileInfo = GetInvalidWeaponInfoHandle();
 
-#if defined( TF_DLL )
-	UseClientSideAnimation();
-#endif
-
 	m_WeaponModelClassification = WEAPON_MODEL_IS_UNCLASSIFIED;
 }
 
@@ -2142,9 +2138,7 @@ void CBaseCombatWeapon::ItemPreFrame( void )
 	MaintainIdealActivity();
 
 #ifndef CLIENT_DLL
-#ifndef HL2_EPISODIC
 	if ( IsGameConsole() )
-#endif
 	{
 		// If we haven't displayed the hint enough times yet, it's time to try to 
 		// display the hint, and the player is not standing still, try to show a hud hint.
@@ -3282,10 +3276,6 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalActiveWeaponData )
 	SendPropInt( SENDINFO( m_nNextThinkTick ) ),
 	SendPropTime( SENDINFO( m_flTimeWeaponIdle ) ),
 
-#if defined( TF_DLL )
-	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
-#endif
-
 #else
 	RecvPropTime( RECVINFO( m_flNextPrimaryAttack ) ),
 	RecvPropTime( RECVINFO( m_flNextSecondaryAttack ) ),
@@ -3308,10 +3298,6 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalWeaponData )
 
 	SendPropInt( SENDINFO( m_iWeaponOrigin ) ),
 	SendPropInt( SENDINFO(m_iWeaponModule), 8),
-
-#if defined( TF_DLL )
-	SendPropExclude( "DT_AnimTimeMustBeFirst" , "m_flAnimTime" ),
-#endif
 
 #else
 	RecvPropInt( RECVINFO(m_iPrimaryAmmoType )),

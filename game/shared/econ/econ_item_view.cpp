@@ -33,18 +33,6 @@
 #endif
 #endif
 
-#if defined(TF_CLIENT_DLL)
-#include "tf_duel_summary.h"
-#include "econ_contribution.h"
-#include "tf_player_info.h"
-#include "tf_gcmessages.h"
-#include "c_tf_freeaccount.h"
-#endif
-
-#if defined(DOTA_DLL)
-#include "dota_sharedfuncs.h"
-#endif
-
 #include "activitylist.h"
 
 #if defined(CSTRIKE_CLIENT_DLL)
@@ -612,10 +600,6 @@ int32 CEconItemView::GetQuality() const
 #endif
 	return GetSOCData()
 		 ? GetSOCData()->GetQuality()
-#ifdef TF_CLIENT_DLL
-		 : GetFlags() & kEconItemFlagClient_StoreItem
-		 ? AE_UNIQUE
-#endif
 		 : ( ( m_iEntityQuality.Get() > int( AE_NORMAL ) ) ? m_iEntityQuality.Get() : int( AE_NORMAL ) );
 }
 
@@ -1100,21 +1084,6 @@ const char *CEconItemView::GetInventoryImage( void ) const
 	static CSchemaItemDefHandle hItemDefMusicKit( "musickit" );
 	static CSchemaItemDefHandle hItemDefMusicKitDefault( "musickit_default" );
 
-#ifdef DOTA_DLL
-	if ( pStaticData->GetCapabilities() & ITEM_CAP_USES_ESSENCE )
-	{
-		// Backwards compatibility to eggs, which were implemented before this feature.
-		return pStaticData->GetAlternateIcon( GetEggColor( this ) );
-	}
-	else if ( FindAttribute( pAttr_AlternateIcon, &unAlternateIcon ) )
-	{
-		return pStaticData->GetAlternateIcon( unAlternateIcon );
-	}
-	else if ( pStyle && pStyle->GetIcon() )
-	{
-		return pStaticData->GetAlternateIcon( pStyle->GetIcon() );
-	}
-#else
 	if ( FindAttribute( pAttr_AlternateIcon, &unAlternateIcon ) )
 	{
 		return GetItemSchema()->GetAlternateIcon( unAlternateIcon )->GetInventoryImage();
@@ -1174,7 +1143,6 @@ const char *CEconItemView::GetInventoryImage( void ) const
 			}
 		}
 	}
-#endif
 
 	return GetStaticData()->GetInventoryImage();
 }
@@ -1235,33 +1203,11 @@ const char *CEconItemView::GetPlayerDisplayModel( int iClass ) const
 		// It's possible to get back a NULL pStyle if GetItemStyle() returns INVALID_STYLE_INDEX.
 		if ( pStyle )
 		{
-#if defined( TF_DLL ) || defined( TF_CLIENT_DLL )
-			// TF styles support per-class models.
-			const CTFStyleInfo *pTFStyle = assert_cast<const CTFStyleInfo *>( pStyle );
-			if ( pTFStyle->GetPlayerDisplayModel( iClass ) )
-				return pTFStyle->GetPlayerDisplayModel( iClass );
-#endif // defined( TF_DLL ) || defined( TF_CLIENT_DLL )
 
 			if ( pStyle->GetBasePlayerDisplayModel() )
 				return pStyle->GetBasePlayerDisplayModel();
 		}
 	}
-
-#if defined( TF_DLL ) || defined( TF_CLIENT_DLL )
-	// If we don't have a style, we still a couple potential overrides.
-	if ( iClass >= 0 && iClass < LOADOUT_COUNT )
-	{
-		// We don't support overriding meshes in the visuals section, but we might still be overriding 
-		// the model for each class at the schema level.
-		const CTFItemDefinition *pTFDef = dynamic_cast<const CTFItemDefinition *>( pDef );
-		if ( pTFDef )	
-		{
-			const char *pszModel = pTFDef->GetPlayerDisplayModel(iClass);
-			if ( pszModel && pszModel[0] )
-				return pszModel;
-		}
-	}
-#endif // defined( TF_DLL ) || defined( TF_CLIENT_DLL )
 
 	return pDef->GetBasePlayerDisplayModel();
 }

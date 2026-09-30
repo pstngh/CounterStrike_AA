@@ -16,11 +16,6 @@
 #include "tier1/strtools.h"
 #endif
 
-#ifdef HL1
-#include "steamcommon.h"
-#include "steam/steamclientpublic.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 

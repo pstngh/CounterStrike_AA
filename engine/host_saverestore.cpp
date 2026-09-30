@@ -3192,15 +3192,6 @@ void Host_Loadgame_f( const CCommand &args )
 		return;
 	}
 
-#ifdef PORTAL2
-	if ( g_pMatchFramework->GetMatchSession() &&
-		V_stricmp( g_pMatchFramework->GetMatchSession()->GetSessionSettings()->GetString( "game/mode" ), "sp" ) )
-	{
-		ConMsg( "Loading is only allowed in single-player game.\n" );
-		return;
-	}
-#endif
-
 	if ( !serverGameDLL->SupportsSaveRestore() )
 	{
 		ConMsg ("This game doesn't support save/restore.");

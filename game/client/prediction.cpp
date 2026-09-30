@@ -21,14 +21,6 @@
 #include "hud_pdump.h"
 #include "datacache/imdlcache.h"
 
-#ifdef HL2_CLIENT_DLL
-#include "c_basehlplayer.h"
-#endif
-
-#ifdef PORTAL2
-#include "c_portal_player.h"
-#endif
-
 #include "tier0/vprof.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -73,11 +65,6 @@ extern CMoveData *g_pMoveData;
 
 void COM_Log( const char *pszFile, PRINTF_FORMAT_STRING const char *fmt, ...) FMTFUNCTION( 2, 3 ); // Log a debug message to specified file ( if pszFile == NULL uses c:\\hllog.txt )
 void PhysicsSimulate( void );
-
-#if defined( PORTAL )
-ConVar cl_predicted_movement_uses_uninterpolated_physics( "cl_predicted_movement_uses_uninterpolated_physics", "1" );
-extern void MoveUnpredictedPhysicsNearPlayerToNetworkedPosition( CBasePlayer *pPlayer );
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -833,17 +820,6 @@ void CPrediction::SetupMove( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper *
 	move->m_flConstraintWidth = player->m_flConstraintWidth;
 	move->m_flConstraintSpeedFactor = player->m_flConstraintSpeedFactor;
 
-#ifdef HL2_CLIENT_DLL
-	// Convert to HL2 data.
-	C_BaseHLPlayer *pHLPlayer = static_cast<C_BaseHLPlayer*>( player );
-	Assert( pHLPlayer );
-
-	CHLMoveData *pHLMove = static_cast<CHLMoveData*>( move );
-	Assert( pHLMove );
-
-	pHLMove->m_bIsSprinting = pHLPlayer->IsSprinting();
-#endif
-	
 	g_pGameMovement->SetupMovementBounds( move );
 #endif
 }
@@ -1042,10 +1018,6 @@ void CPrediction::RunCommand( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper 
 	char sz[ 32 ];
 	Q_snprintf( sz, sizeof( sz ), "runcommand%04d", ucmd->command_number );
 	PREDICTION_TRACKVALUECHANGESCOPE( sz );
-#endif
-
-#ifdef PORTAL2
-	assert_cast<CPortal_Player*>( player )->PreventCrouchJump( ucmd );
 #endif
 
 	StartCommand( player, ucmd );
@@ -1803,10 +1775,8 @@ bool CPrediction::PerformPrediction( int nSlot, C_BasePlayer *localPlayer, bool 
 	// This is a hack to get the CTriggerAutoGameMovement auto duck triggers to correctly deal with prediction.
 	// Here we just untouch any triggers the player was touching (since we might have teleported the origin 
 	// backward from it's previous position) and then re-touch any triggers it's currently in
-#if !defined( PORTAL2 )	 //portal2 coop likes trigger touch behavior consistent with serverside trigger touch behavior
 	localPlayer->SetCheckUntouch( true );
 	localPlayer->PhysicsCheckForEntityUntouch();
-#endif
 	localPlayer->PhysicsTouchTriggers();
 
 	// undo interpolation changes for entities we stand on
@@ -1817,16 +1787,6 @@ bool CPrediction::PerformPrediction( int nSlot, C_BasePlayer *localPlayer, bool 
 		ground->MoveToLastReceivedPosition();
 		ground = ground->GetMoveParent();
 	}
-
-#if defined( PORTAL )
-	if( cl_predicted_movement_uses_uninterpolated_physics.GetBool() )
-	{
-		//if we're going to treat physics objects as immovable solids on the client, they might as well be immovable solids in the place the server told us to put them
-		//otherwise interpolation effectively teleports it backwards without the need (or support) to push entities backwards with it.
-		//If you happen to be pushing a physics object, this will make movement traces freak out as we start in solid.
-		MoveUnpredictedPhysicsNearPlayerToNetworkedPosition( localPlayer );
-	}
-#endif
 
 	Split_t &split = m_Split[ nSlot ];
 	

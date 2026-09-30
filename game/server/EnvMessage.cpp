@@ -201,8 +201,6 @@ void CCredits::Spawn( void )
 	SetMoveType( MOVETYPE_NONE );
 }
 
-#ifndef PORTAL
-
 static void CreditsDone_f( void )
 {
 	CCredits *pCredits = (CCredits*)gEntList.FindEntityByClassname( NULL, "env_credits" );
@@ -214,8 +212,6 @@ static void CreditsDone_f( void )
 }
 
 static ConCommand creditsdone("creditsdone", CreditsDone_f );
-
-#endif // PORTAL
 
 extern ConVar sv_unlockedchapters;
 

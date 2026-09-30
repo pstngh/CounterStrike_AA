@@ -10,10 +10,6 @@
 #include "item_selection_criteria.h"
 #include "game_item_schema.h" // TODO: Fix circular dependency
 
-#if defined(TF_CLIENT_DLL) || defined(TF_DLL)
-#include "tf_gcmessages.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 

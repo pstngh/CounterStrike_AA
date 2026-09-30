@@ -1198,10 +1198,6 @@ public:
 	static void						PrefetchSound( const char *name );
 	void							Remove( ); // UTIL_Remove( this );
 
-#ifdef PORTAL2
-	const char						*GetSignifierName( void );
-#endif // PORTAL2
-
 public:
 
 	// Returns the attachment point index on our parent that our transform is relative to.
@@ -1725,10 +1721,6 @@ private:
 
 	char							m_iName[MAX_PATH];
 
-#ifdef PORTAL2
-	char							m_iSignifierName[MAX_PATH];
-#endif // PORTAL2
-
 public:
 	// Object model index
 	short							m_nModelIndex;
@@ -1838,10 +1830,6 @@ public:
 	int								GetMaxGPULevel( ) const;
 
 
-#if defined ( PORTAL2 )
-	int								GetServerObjectCaps() { return m_iObjectCapsCache; }
-#endif
-
 protected:
 	// FIXME: Should I move the functions handling these out of C_ClientEntity
 	// and into C_BaseEntity? Then we could make these private.
@@ -1882,10 +1870,6 @@ protected:
 	bool							IsParentChanging();
 
 
-#if defined ( PORTAL2 )
-	// Received caps from server. Using this for +use validity checking.
-	int								m_iObjectCapsCache;
-#endif
 private:
 	friend void OnRenderStart();
 
@@ -2678,13 +2662,6 @@ inline const char *C_BaseEntity::GetEntityName()
 { 
 	return m_iName; 
 }
-
-#ifdef PORTAL2
-inline const char *C_BaseEntity::GetSignifierName()
-{
-	return m_iSignifierName;
-}
-#endif // PORTAL2
 
 class CAbsQueryScopeGuard
 {

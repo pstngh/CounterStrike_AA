@@ -61,11 +61,6 @@
 #include "replay_ragdoll.h"
 #include "physics_softbody.h"
 
-#if defined ( PORTAL2 )
-#include "c_portal_player.h"
-#include "portal2/portal_grabcontroller_shared.h"
-#endif
-
 #include "clientalphaproperty.h"
 
 #ifdef DEMOPOLISH_ENABLED
@@ -1634,11 +1629,6 @@ void C_BaseAnimating::BuildTransformations( CStudioHdr *hdr, BoneVector *pos, Bo
 		m_BoneAccessor.SetReadableBones( BONE_USED_BY_ANYTHING );
 		
 		// If we're playing back a demo, override the ragdoll bones with cached version if available - otherwise, simulate.
-#if defined( REPLAY_ENABLED )
-		if ( ( !engine->IsPlayingDemo() && !engine->IsPlayingTimeDemo() ) ||
-			 !CReplayRagdollCache::Instance().IsInitialized() ||
-			 !CReplayRagdollCache::Instance().GetFrame( this, engine->GetDemoPlaybackTick(), boneSimulated, &m_BoneAccessor ) )
-#endif
 		{
 			m_pRagdoll->RagdollBone( this, pbones, hdr->numbones(), boneSimulated, m_BoneAccessor );
 		}
@@ -2641,13 +2631,6 @@ void C_BaseAnimating::CalculateIKLocks( float currentTime )
 			break;
 		}
 	}
-
-#if defined( HL2_CLIENT_DLL )
-	if (minHeight < FLT_MAX)
-	{
-		input->AddIKGroundContactInfo( entindex(), minHeight, maxHeight );
-	}
-#endif
 
 	CBaseEntity::PopEnableAbsRecomputations();
 	::partition->SuppressLists( curSuppressed, true );
@@ -4738,16 +4721,6 @@ int C_BaseAnimating::DrawModel( int flags, const RenderableInstance_t &instance 
 		}
 	}
 
-#if defined ( PORTAL2 )
-	if ( IsRenderingWithViewModels() )
-	{
-		if ( !UpdateBlending( flags, instance ) )
-		{
-			return 0;
-		}
-	}
-#endif
-
 	int drawn = 0;
 
 	if ( r_drawothermodels.GetInt() )
@@ -4912,11 +4885,6 @@ IClientModelRenderable*	C_BaseAnimating::GetClientModelRenderable()
 
 	if ( IsFollowingEntity() && !FindFollowedEntity() )
 		return NULL;
-
-#ifdef PORTAL
-	if ( GetRenderClipPlane() != NULL )
-		return NULL;
-#endif
 
 	return this; 
 }
@@ -6759,17 +6727,6 @@ bool C_BaseAnimating::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, cons
 
 	UpdateVisibility();
 
-#if defined( REPLAY_ENABLED )
-	// If replay is enabled on server, add an entry to the ragdoll recorder for this entity
-	ConVar* pReplayEnable = (ConVar*)cvar->FindVar( "replay_enable" );
-	if ( pReplayEnable && pReplayEnable->GetInt() && !engine->IsPlayingDemo() && !engine->IsPlayingTimeDemo() )
-	{
-		CReplayRagdollRecorder& RagdollRecorder = CReplayRagdollRecorder::Instance();
-		int nStartTick = TIME_TO_TICKS( engine->GetLastTimeStamp() );
-		RagdollRecorder.AddEntry( this, nStartTick, m_pRagdoll->RagdollBoneCount() );
-	}
-#endif
-
 	return true;
 }
 
@@ -6992,9 +6949,6 @@ void C_BaseAnimating::UpdateClientSideAnimation()
 		Assert( m_ClientSideAnimationListHandle != INVALID_CLIENTSIDEANIMATION_LIST_HANDLE );
 		if ( GetSequence() != -1 )
 		{
-#ifdef DOTA_DLL
-			if ( IsVisibleToAnyPlayer() )
-#endif
 			{
 				// latch old values
 				OnLatchInterpolatedVariables( LATCH_ANIMATION_VAR );
@@ -8028,15 +7982,6 @@ void C_BaseAnimating::ClearRagdoll()
 			SetCollisionBounds( m_vecPreRagdollMins, m_vecPreRagdollMaxs );
 		}
 
-#if defined( REPLAY_ENABLED )
-		// Delete entry from ragdoll recorder if Replay is enabled on server
-		ConVar* pReplayEnable = (ConVar*)cvar->FindVar( "replay_enable" );
-		if ( pReplayEnable && pReplayEnable->GetInt() && !engine->IsPlayingDemo() && !engine->IsPlayingTimeDemo() )
-		{
-			CReplayRagdollRecorder& RagdollRecorder = CReplayRagdollRecorder::Instance();
-			RagdollRecorder.StopRecordingRagdoll( this );
-		}
-#endif
 	}
 	m_builtRagdoll = false;
 }

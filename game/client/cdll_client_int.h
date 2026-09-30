@@ -117,14 +117,6 @@ extern IScaleformUI* g_pScaleformUI;
 extern IRocketUI* g_pRocketUI;
 #endif
 
-#ifdef INFESTED_DLL
-class IASW_Mission_Chooser;
-extern IASW_Mission_Chooser *missionchooser;
-#endif
-#if defined( REPLAY_ENABLED )
-extern IReplayHistoryManager *g_pReplayHistoryManager;
-#endif
-
 extern AchievementsAndStatsInterface* g_pAchievementsAndStatsInterface;
 
 extern IRenderToRTHelper *g_pRenderToRTHelper;

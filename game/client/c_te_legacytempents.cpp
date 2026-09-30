@@ -44,7 +44,6 @@ extern ConVar muzzleflash_light;
 color24 white24 = {255, 255, 255};
 
 //Precache the effects
-#if !defined(TF_CLIENT_DLL) && !defined(DOTA_CLIENT_DLL)
 PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectMuzzleFlash )
 
 #if !defined( CSTRIKE_DLL )
@@ -68,7 +67,6 @@ PRECACHE_REGISTER_BEGIN( GLOBAL, PrecacheEffectMuzzleFlash )
 #endif
 
 PRECACHE_REGISTER_END()
-#endif
 
 ConVar func_break_max_pieces( "func_break_max_pieces", "15", FCVAR_ARCHIVE | FCVAR_REPLICATED );
 
@@ -2337,7 +2335,6 @@ void CTempEnts::LevelInit()
 // We don't use any of these models in CSTRIKE15
 #if !defined (CSTRIKE15)
 
-#if !defined (TF_CLIENT_DLL) && !defined (DOTA_DLL) && !defined (PORTAL2)
 	m_pSpriteMuzzleFlash[0] = (model_t *)engine->LoadModel( "sprites/ar2_muzzle1.vmt" );
 	m_pSpriteMuzzleFlash[1] = (model_t *)engine->LoadModel( "sprites/muzzleflash4.vmt" );
 	m_pSpriteMuzzleFlash[2] = (model_t *)engine->LoadModel( "sprites/muzzleflash4.vmt" );
@@ -2353,7 +2350,6 @@ void CTempEnts::LevelInit()
 	m_pShells[0] = (model_t *) engine->LoadModel( "models/weapons/shell.mdl" );
 	m_pShells[1] = (model_t *) engine->LoadModel( "models/weapons/rifleshell.mdl" );
 	m_pShells[2] = (model_t *) engine->LoadModel( "models/weapons/shotgun_shell.mdl" );
-#endif
 
 #if defined( CSTRIKE_DLL ) || defined ( SDK_DLL )
 	m_pCS_9MMShell		= (model_t *)engine->LoadModel( "models/Shells/shell_9mm.mdl" );
