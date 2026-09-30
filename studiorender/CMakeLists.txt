@@ -8,7 +8,7 @@ set(OUTBINDIR ${SRCDIR}/../game/bin)
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
-add_definitions(-DSTUDIORENDER_EXPORTS -DPROTECTED_THINGS_ENABLE)
+add_definitions(-DPROTECTED_THINGS_ENABLE)
 
 target_sources(${OUTBINNAME} PRIVATE "studiorender.cpp")
 target_sources(${OUTBINNAME} PRIVATE "studiorendercontext.cpp")

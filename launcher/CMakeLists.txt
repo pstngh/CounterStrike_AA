@@ -12,17 +12,6 @@ set(OUTBINDIR ${SRCDIR}/../game/bin)
 set(NOSTINKYLINKIES "1") #link this project carefully ourselves
 
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
-if( LINUXALL )
-    # We run from the ./game dir, but want to look in the ./game/bin directory when loading libraries.
-    # To dump rpath/runpath of a library, use "chrpath --list blah.so" or "objdump -x blah.so" or "readelf -d bin/launcher.so"
-    #		$GCC_ExtraLinkerFlags		"-Wl,--enable-new-dtags -Wl,-z,origin -Wl,-rpath,'$$ORIGIN' -L/usr/lib32 -L/usr/lib" [$LINUXALL]
-    #target_compile_options(${OUTBINNAME} PRIVATE "-Wl,--enable-new-dtags -Wl,-z,origin -Wl,-rpath,'$ORIGIN' -L/usr/lib32 -L/usr/lib")
-    # This should be done before the target gets added.
-
-    #lwss- disabled this so that libs in ${PUBLIC} will link. doesn't really matter with an open-source proj
-    #set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    #set(CMAKE_INSTALL_RPATH "$ORIGIN")
-endif()
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 add_definitions(-DLAUNCHERONLY -DALLOW_TEXT_MODE=1)

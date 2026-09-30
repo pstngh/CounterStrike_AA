@@ -8,8 +8,6 @@ if(LINUX64 OR OSX64)
     set(OUTBINDIR "${OUTBINDIR}${PLATSUBDIR}")
 endif()
 
-#set(ConfigurationType "Dynamic Library (.dll)") #not used
-
 #Target
 add_library(${OUTBINNAME} SHARED)
 
@@ -30,8 +28,6 @@ if(OSXALL)
     # the equivalent behavior requested explicitly.
     target_link_options(${OUTBINNAME} PRIVATE "LINKER:-undefined,dynamic_lookup")
 endif()
-
-target_compile_definitions(${OUTBINNAME} PRIVATE -DDLLNAME=${OUTBINNAME})
 
 message("Adding dll target: ${OUTBINNAME}${OUTDLLEXT}\n")
 

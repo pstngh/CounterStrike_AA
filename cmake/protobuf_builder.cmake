@@ -6,8 +6,6 @@ MacroRequired(SRCDIR)
 include_directories(${GENERATED_PROTO_DIR})
 include_directories(${SRCDIR}/thirdparty/protobuf-2.5.0/src)
 
-add_definitions(-DPROTOBUF)
-
 # This is a target added in /thirdparty/protobuf-2.x. Use its generated full
 # path: GUI generators happened to find `protoc` by name, but a clean Ninja
 # build on macOS does not put the build directory on PATH.

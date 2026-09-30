@@ -7,8 +7,6 @@ set(OUTLIBNAME "tier1_client")
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
-add_definitions(-DTIER1_STATIC_LIB)
-
 if( LINUXALL )
     target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
 endif()

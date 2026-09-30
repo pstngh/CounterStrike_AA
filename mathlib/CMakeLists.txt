@@ -8,7 +8,6 @@ include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 set(OUTLIBNAME "mathlib_client")
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 include_directories(../public/mathlib)
-target_compile_definitions(${OUTLIBNAME} PRIVATE -DMATHLIB_LIB)
 
 if( LINUXALL )
     target_compile_options(${OUTLIBNAME} PRIVATE -Wno-narrowing -fpic -fno-semantic-interposition)
@@ -52,7 +51,7 @@ target_sources(${OUTLIBNAME} PRIVATE "capsule.cpp")
 set(OUTLIBNAME "mathlib_extended_client")
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
-target_compile_definitions(${OUTLIBNAME} PRIVATE -DMATHLIB_EXTENDED_LIB -DSOURCE1)
+target_compile_definitions(${OUTLIBNAME} PRIVATE -DSOURCE1)
 
 if( LINUXALL )
     target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)

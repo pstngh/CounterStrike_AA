@@ -9,7 +9,7 @@ set(SRVSRCDIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(NOSTINKYLINKIES "1")
 
-add_definitions(-DBOTS -DCSTRIKE_DLL -DUSE_ECONOMY_FEATURES)
+add_definitions(-DBOTS -DCSTRIKE_DLL)
 
 include( ./server_base.cmake )
 include( ./server_econ_base.cmake )

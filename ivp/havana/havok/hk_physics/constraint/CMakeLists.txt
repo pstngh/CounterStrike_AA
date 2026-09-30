@@ -17,7 +17,7 @@ include_directories(${SRCDIR}/ivp/ivp_utility)
 include_directories(${SRCDIR}/ivp/ivp_controller)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
-add_definitions(-D_LIB -DHAVANA_CONSTRAINTS -DIVP_VERSION_SDK)
+add_definitions(-DHAVANA_CONSTRAINTS -DIVP_VERSION_SDK)
 if(LINUXALL)
     target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
     add_definitions(-DLINUX)

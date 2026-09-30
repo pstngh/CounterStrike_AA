@@ -5,8 +5,6 @@ set(CMAKE_MODULE_PATH ${SRCDIR}/cmake)
 set(OUTBINNAME "vguimatsurface_client")
 set(OUTBINDIR ${SRCDIR}/../game/bin)
 
-#set(NOSTINKYLINKIES "1") #this project requires precise linking
-
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
@@ -15,7 +13,7 @@ include_directories(../public/mathlib)
 if( LINUXALL )
     include_directories(/usr/include/freetype2)
 endif()
-add_definitions(-DBENCHMARK -DVGUIMATSURFACE_DLL_EXPORT -DGAMEUI_EXPORTS -DDONT_PROTECT_FILEIO_FUNCTIONS -DPROTECTED_THINGS_ENABLE)
+add_definitions(-DBENCHMARK -DGAMEUI_EXPORTS -DDONT_PROTECT_FILEIO_FUNCTIONS -DPROTECTED_THINGS_ENABLE)
 add_definitions(-DENABLE_CHROMEHTMLWINDOW)
 
 target_sources(${OUTBINNAME} PRIVATE "Clip2D.cpp")

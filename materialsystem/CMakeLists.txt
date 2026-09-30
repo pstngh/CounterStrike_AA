@@ -10,7 +10,7 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 set(SHADERAPIDX9DIR "shaderapidx9")
 
-add_definitions(-DDEFINE_MATERIALSYSTEM_INTERFACE -DMATERIALSYSTEM_EXPORTS -DPROTECTED_THINGS_ENABLE)
+add_definitions(-DPROTECTED_THINGS_ENABLE)
 
 if( DEDICATED )
     add_definitions(-DDEDICATED)

@@ -18,8 +18,7 @@ include_directories(${SRCDIR}/ivp/ivp_surface_manager)
 include_directories(${SRCDIR}/ivp/ivp_intern)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
-#TODO: pretty sure the valve guy made a typo here, it's supposed to be HAVOK_MOPP
-add_definitions(-D_LIB -DIVP_VERSION_SDK -DHAVANA_CONSTRAINTS -DHAVOK_MOOP)
+add_definitions(-DIVP_VERSION_SDK -DHAVANA_CONSTRAINTS)
 if(LINUXALL)
     target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
     add_definitions(-DLINUX)
@@ -132,5 +131,3 @@ target_sources(${OUTLIBNAME} PRIVATE ../ivp_controller/ivp_forcefield.cxx)
 target_sources(${OUTLIBNAME} PRIVATE ../ivp_controller/ivp_multidimensional_interp.cxx)
 target_sources(${OUTLIBNAME} PRIVATE ../ivp_controller/ivp_template_constraint.cxx)
 
-#IVP_CONTROLLER_VALVE_SRC_DIR
-#target_sources(${OUTLIBNAME} PRIVATE ../ivp_controller/)

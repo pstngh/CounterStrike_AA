@@ -9,6 +9,6 @@ include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 include_directories(${SRCDIR}/game/shared)
-add_definitions(-D_WINDOWS -DPROTECTED_THINGS_ENABLE)
+add_definitions(-DPROTECTED_THINGS_ENABLE)
 
 target_sources(${OUTBINNAME} PRIVATE "SceneFileCache.cpp")

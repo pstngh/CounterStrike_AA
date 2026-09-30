@@ -32,10 +32,7 @@ else()
     target_link_libraries(${OUTBINNAME} SDL2)
 endif()
 
-#target_link_libraries(${OUTBINNAME} ${SRCDIR}/thirdparty/RmlUi/build/libRmlCore.so)
 target_link_libraries(${OUTBINNAME} RmlCore RmlDebugger) #thirdparty/RmlUI
-
-#target_link_libraries(${OUTBINNAME} ${SRCDIR}/thirdparty/RmlUi/build/libRmlDebugger.so)
 if( APPLE )
     target_link_libraries(${OUTBINNAME} "-framework OpenGL")
 else()

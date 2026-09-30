@@ -16,7 +16,6 @@ include_directories(./languages/squirrel/sqplus)
 include_directories(./languages/lua/lua-5.1.4/src)
 
 target_sources(${OUTBINNAME} PRIVATE vscript.cpp)
-#target_sources(${OUTBINNAME} PRIVATE ./languages/gm/vgm/vgm.cpp)
 if( OSXALL )
     # The original macOS VPC project embeds Lua 5.1 in vscript. Without these
     # sources the dylib links with dynamic-lookup stubs for ScriptCreateLuaVM
@@ -59,52 +58,6 @@ endif()
 target_sources(${OUTBINNAME} PRIVATE ./languages/squirrel/vsquirrel/vsquirrel.cpp)
 
 #TODO: nut builder for nut_init.h? Or hardcode like the others
-
-#GameMonkey
-#EXCLUDED FROM BUILD!
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmArraySimple.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmByteCode.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmByteCodeGen.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmCodeGen.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmCodeGenHooks.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmCodeTree.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmCrc.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmDebug.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmFunctionObject.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmHash.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmIncGC.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmLibHooks.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmListDouble.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmLog.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMachine.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMachineLib.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMem.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMemChain.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMemFixed.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmMemFixedSet.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmOperators.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmParser.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmScanner.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmStream.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmStreamBuffer.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmStringObject.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmTableObject.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmThread.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmUserObject.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmUtil.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/gm/gmVariable.cpp")
-
-#BINDS
-#EXCLUDED FROM BUILD!
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmArrayLib.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmCall.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmGCRoot.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmGCRootUtil.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmHelpers.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmMathLib.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmStringLib.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmSystemLib.cpp" )
-#target_sources(${OUTBINNAME} PRIVATE "./languages/gm/src/binds/gmVector3Lib.cpp")
 
 #Squirrel
 target_sources(${OUTBINNAME} PRIVATE "./languages/squirrel/squirrel/sqapi.cpp" )

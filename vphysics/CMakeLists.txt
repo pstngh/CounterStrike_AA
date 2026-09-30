@@ -19,7 +19,7 @@ include_directories(${SRCDIR}/ivp/ivp_compact_builder)
 include_directories(${SRCDIR}/ivp/havana/havok)
 include_directories(${SRCDIR}/ivp/havana)
 
-add_definitions(-DVPHYSICS_EXPORTS -DHAVANA_CONSTRAINTS -DHAVOK_MOPP)
+add_definitions(-DHAVANA_CONSTRAINTS -DHAVOK_MOPP)
 
 if( LINUXALL )
     target_compile_options(${OUTBINNAME} PRIVATE -fpic -fno-semantic-interposition)

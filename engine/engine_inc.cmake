@@ -21,10 +21,10 @@ include_directories(${ESRCDIR}/audio/public)
 include_directories(${SRCDIR}/thirdparty/quickhull)
 include_directories(${SRCDIR}/external/crypto++-5.61)
 
-add_definitions(-DEXTRADEFINES -DUSE_CONVARS -DVOICE_OVER_IP -DBUMPMAP -D__USEA3D -D_ADD_EAX_ -DENGINE_DLL -DVERSION_SAFE_STEAM_API_INTERFACES -DPROTECTED_THINGS_ENABLE -DUSE_BREAKPAD_HANDLER)
+add_definitions(-DUSE_CONVARS -DVOICE_OVER_IP -DBUMPMAP -DENGINE_DLL -DVERSION_SAFE_STEAM_API_INTERFACES -DPROTECTED_THINGS_ENABLE -DUSE_BREAKPAD_HANDLER)
 
 if( DEDICATED )
-    add_definitions(-DDEDICATED -DSWDS -DNO_BINK)
+    add_definitions(-DDEDICATED -DSWDS)
 else()
     if( USE_SCALEFORM )
         add_definitions(-DINCLUDE_SCALEFORM)

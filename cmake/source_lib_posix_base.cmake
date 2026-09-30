@@ -3,7 +3,6 @@ include("${CMAKE_MODULE_PATH}/common_functions.cmake")
 set(IS_LIB_PROJECT "1")
 include("${CMAKE_MODULE_PATH}/source_posix_base.cmake")
 
-#set(ConfigurationType "Static Library (.lib)") #not used
 MacroRequired(OUTLIBNAME)
 
 #Target

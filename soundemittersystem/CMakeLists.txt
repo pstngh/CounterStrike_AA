@@ -11,7 +11,7 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 include_directories(${SRCDIR}/game/shared)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_definitions(-DSOUNDEMITTERSYSTEM_EXPORTS -D_WINDOWS -DPROTECTED_THINGS_ENABLE)
+add_definitions(-DPROTECTED_THINGS_ENABLE)
 
 target_sources(${OUTBINNAME} PRIVATE "soundemittersystembase.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/SoundParametersInternal.cpp")

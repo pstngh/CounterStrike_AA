@@ -4,7 +4,6 @@ MacroRequired(SRCDIR)
 MacroRequired(_DLL_EXT)
 
 set(LIBPUBLIC "${SRCDIR}/lib/public${PLATSUBDIR}") #this is where static libs are
-#link_directories(${LIBPUBLIC}) #add to search path for linker - lwss: use the project name instead of linking the files manually.
 if(OSXALL)
     set(STEAM_API_LIBRARY steam_api_offline)
 else()
@@ -72,8 +71,6 @@ if(LINUXALL)
         add_link_options(-fsanitize=address -fsanitize-recover=address)
     endif()
 
-    #add_definitions(-D_LINUX -DLINUX)
-    #message(STATUS "DOWNGRADING CXX11 ABI")
     #disable cpp11 ABI so libraries <gcc 5 will work
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
@@ -84,14 +81,11 @@ if(OSX64)
 endif()
 
 if(NOT IS_LIB_PROJECT)
-    #set(ConfigurationType "Application (.exe)") #not used
-
     if( NOSTINKYLINKIES )
         message(STATUS "skipping stinky linkie")
     else()
         link_libraries("libtier0_client")
         link_libraries("tier1_client")
         link_libraries("interfaces_client")
-        #include_directories("vstdlib")
     endif()
 endif()

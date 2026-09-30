@@ -5,8 +5,6 @@ MacroRequired(SRCDIR)
 MacroRequired(OUTBINNAME)
 MacroRequired(OUTBINDIR)
 
-add_definitions( -DEXENAME=${OUTBINNAME} )
-
 add_executable(${OUTBINNAME})
 
 set_target_properties(${OUTBINNAME} PROPERTIES OUTPUT_NAME "${OUTBINNAME}")

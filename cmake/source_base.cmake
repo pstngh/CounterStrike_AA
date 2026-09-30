@@ -27,5 +27,3 @@ set(CMAKE_CXX_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "")
 set(CMAKE_CXX_FLAGS_DEBUG "")
-
-#add_definitions(-DVPC) #lwss - might not be needed?

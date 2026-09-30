@@ -16,16 +16,12 @@ include_directories(${SRCDIR}/ivp/ivp_collision)
 include_directories(${SRCDIR}/ivp/ivp_surface_manager)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
-#TODO: pretty sure the valve guy made a typo here, it's supposed to be HAVOK_MOPP
-add_definitions(-D_LIB -DIVP_VERSION_SDK -DHAVOK_MOOP)
+add_definitions(-DIVP_VERSION_SDK)
 if(LINUXALL)
     target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition -fpermissive)
     add_definitions(-DLINUX)
 endif()
 
-#target_sources(${OUTLIBNAME} PRIVATE 3dsimport_co.cxx)
-#target_sources(${OUTLIBNAME} PRIVATE 3dsimport_load.cxx)
-#target_sources(${OUTLIBNAME} PRIVATE 3dsimport_out.cxx)
 target_sources(${OUTLIBNAME} PRIVATE geompack_cutfac.cxx)
 target_sources(${OUTLIBNAME} PRIVATE geompack_cvdec3.cxx)
 target_sources(${OUTLIBNAME} PRIVATE geompack_drdec3.cxx)

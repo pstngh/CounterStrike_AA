@@ -8,8 +8,6 @@ set(OUTBINDIR ${SRCDIR}/../game/bin)
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
-add_definitions(-DMDLCACHE_DLL_EXPORT)
-
 if( LINUXALL )
     target_compile_options(${OUTBINNAME} PRIVATE -shared -fpic -fno-semantic-interposition)
 endif()
