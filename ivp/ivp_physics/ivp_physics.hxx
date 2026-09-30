@@ -21,6 +21,7 @@
 #define IVP_BLOCKING_EVERY_MIN
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include <math.h>
 #if defined(LINUX)
