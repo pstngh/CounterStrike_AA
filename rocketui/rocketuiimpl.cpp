@@ -495,12 +495,29 @@ bool RocketUIImpl::HandleInputEvent(const InputEvent_t &event)
     return IsConsumingInput();
 }
 
+// Rendering saves and restores the GL state around RmlUi's raw GL calls, and togl then
+// resends all of its own state. Most in-game frames show no document (the Mac preset's
+// idle chat sits at opacity 0), so skip all of that when nothing would be drawn.
+static bool HasVisibleDocument( Rml::Context *ctx )
+{
+    for( int i = 0; i < ctx->GetNumDocuments(); i++ )
+    {
+        Rml::ElementDocument *doc = ctx->GetDocument( i );
+        if( doc && doc->IsVisible() && doc->GetComputedValues().opacity > 0.0f )
+            return true;
+    }
+    return false;
+}
+
 void RocketUIImpl::RenderHUDFrame()
 {
     if( !rocket_enable.GetBool() )
         return;
 
     m_ctxCurrent = m_ctxHud;
+
+    if( !HasVisibleDocument( m_ctxHud ) )
+        return;
 
 #if defined ( DX_TO_GL_ABSTRACTION )
     m_pDevice->SaveGLState();
@@ -551,6 +568,9 @@ void RocketUIImpl::RenderMenuFrame()
         return;
 
     m_ctxCurrent = m_ctxMenu;
+
+    if( !HasVisibleDocument( m_ctxMenu ) )
+        return;
 
 #if defined ( DX_TO_GL_ABSTRACTION )
     m_pDevice->SaveGLState();
