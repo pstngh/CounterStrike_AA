@@ -49,6 +49,12 @@ void RkHudKillfeed::OnPlayerDeath( IGameEvent *event )
 
     entry.noticeSpawnTime = gpGlobals->curtime;
 
+    // CheckForOldEntries only runs while the killfeed is drawn. Expire entries here
+    // too, or a hidden killfeed (the Mac preset never draws it) grows all map long.
+    const float flLingerTime = rocket_hud_killfeed_linger_time.GetFloat();
+    while( !killFeedData.entries.empty() && ( entry.noticeSpawnTime - killFeedData.entries.front().noticeSpawnTime ) > flLingerTime )
+        killFeedData.entries.pop_front();
+
     killFeedData.entries.push_back( entry );
 
     m_dataModel.DirtyVariable( "killfeed_entries");
