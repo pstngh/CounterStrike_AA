@@ -130,9 +130,13 @@ roll 0.8 of the lean angle, the chest and shoulders the full angle, and the head
 0.6, while both feet stay where the animation plants them. Server hitboxes and
 lag compensation follow the same pose. CS:GO's acceleration lean, which tipped
 bodies into speed changes, is disabled so bodies lean only with the lean input.
-Left or right Control toggles crouch; C toggles walk.
-W/S and A/D use nullbind-style SOCD: the most recently pressed direction wins
-while both are held, and releasing it resumes the other held direction.
+Left or right Control toggles crouch; C toggles walk. macOS reserves
+Control-Space for selecting the previous input source by default, which can
+swallow Space and stop right lean while crouching; turn that shortcut off in
+System Settings > Keyboard > Keyboard Shortcuts > Input Sources.
+W/S, A/D and the two lean keys use nullbind-style SOCD: the most recently
+pressed direction wins while both are held, and releasing it resumes the other
+held direction.
 The preset uses Allied Assault deathmatch's 275 run speed, 0.6 walk
 and crouch modifiers (165 each), and a combined 99 crouch-walk speed. Backward
 input is 0.8 of forward and strafe input is 0.85, as in AA. The AWP uses AA's
