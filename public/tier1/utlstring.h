@@ -1471,7 +1471,7 @@ inline void CUtlStringBuilder::Truncate(size_t nChars)
 #ifdef DBGFLAG_VALIDATE
 inline void CUtlStringBuilder::Validate(CValidator &validator, const char *pchName)
 {
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 	validator.Push(typeid(*this).raw_name(), this, pchName);
 #else
 	validator.Push(typeid(*this).name(), this, pchName);

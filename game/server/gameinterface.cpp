@@ -72,7 +72,6 @@
 
 #ifdef _WIN32
 #include "ienginevgui.h"
-#include "vgui_gamedll_int.h"
 #include "vgui_controls/AnimationController.h"
 #endif
 

@@ -318,7 +318,7 @@ void C_BaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 		if ( time > thinkLimit )
 		{
 			{
-#ifdef WIN32
+#ifdef COMPILER_MSVC
 				Msg( "CLIENT:  %s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).raw_name(), time );
 #else
 				Msg( "CLIENT:  %s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).name(), time );				

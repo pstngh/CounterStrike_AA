@@ -45,10 +45,6 @@
 // tier 3
 #include "vphysics_interface.h"
 
-#ifdef IS_WINDOWS_PC
-#define SERVER_USES_VGUI 1
-#endif
-
 
 // Shared engine/DLL constants
 #include "const.h"
