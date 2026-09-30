@@ -32,7 +32,7 @@
 
 #if defined( PLATFORM_64BITS ) && !defined( PLATFORM_E2K )
 
-#if defined (PLATFORM_WINDOWS)
+#if defined (COMPILER_MSVC)
 //typedef __m128i int128;
 //inline int128 int128_zero()	{ return _mm_setzero_si128(); }
 #else  // PLATFORM_WINDOWS
@@ -43,7 +43,7 @@ typedef __int128_t int128;
 #define TSLIST_HEAD_ALIGNMENT 16
 #define TSLIST_NODE_ALIGNMENT 16
 
-#ifdef POSIX
+#ifdef COMPILER_GCC
 inline bool ThreadInterlockedAssignIf128( int128 volatile * pDest, const int128 &value, const int128 &comparand ) 
 {
     // We do not want the original comparand modified by the swap

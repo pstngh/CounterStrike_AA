@@ -65,6 +65,9 @@ typedef void* VD3DHANDLE;
 // Stuff that would be in windows.h
 //
 //
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #if !defined(_WINNT_)
 
 	typedef int INT;

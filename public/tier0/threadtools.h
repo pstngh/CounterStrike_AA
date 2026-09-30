@@ -213,7 +213,7 @@ PLATFORM_INTERFACE void ThreadSetAffinity( ThreadHandle_t hThread, int nAffinity
 #error Every platform needs to define ThreadMemoryBarrier to at least prevent compiler reordering
 #endif
 
-#if defined( _LINUX ) || defined( _OSX )
+#if defined( COMPILER_GCC )
 #define USE_INTRINSIC_INTERLOCKED
 // linux implementation
 inline int32 ThreadInterlockedIncrement( int32 volatile *p )
@@ -333,7 +333,7 @@ PLATFORM_INTERFACE int64 ThreadInterlockedExchange64( int64 volatile *, int64 va
 PLATFORM_INTERFACE int64 ThreadInterlockedIncrement64( int64 volatile * ) NOINLINE;
 PLATFORM_INTERFACE int64 ThreadInterlockedDecrement64( int64 volatile * ) NOINLINE;
 PLATFORM_INTERFACE int64 ThreadInterlockedExchangeAdd64( int64 volatile *, int64 value ) NOINLINE;
-#elif defined(POSIX)
+#elif defined( COMPILER_GCC )
 
 inline int64 ThreadInterlockedIncrement64( int64 volatile *p )
 {
@@ -376,7 +376,7 @@ inline bool ThreadInterlockedAssignIf( uint32 volatile *p, uint32 value, uint32 
 //inline bool ThreadInterlockedAssignIf( int volatile *p, int value, int comperand )	{ return ThreadInterlockedAssignIf( (int32 volatile *)p, value, comperand ); }
 
 
-#if defined( _WIN64 )
+#if defined( COMPILER_MSVC64 )
 typedef __m128i int128;
 inline int128 int128_zero()	{ return _mm_setzero_si128(); }
 PLATFORM_INTERFACE bool ThreadInterlockedAssignIf128( volatile int128 *pDest, const int128 &value, const int128 &comperand ) NOINLINE;
@@ -586,7 +586,7 @@ DLL_GLOBAL_IMPORT CTHREADLOCALINT g_nThreadID;
 
 #endif // NO_THREAD_LOCAL
 
-#ifdef _WIN64
+#ifdef COMPILER_MSVC64
 // 64 bit windows can use intrinsics for these, 32-bit can't
 #pragma intrinsic( _InterlockedCompareExchange64 )
 #pragma intrinsic( _InterlockedExchange64 )

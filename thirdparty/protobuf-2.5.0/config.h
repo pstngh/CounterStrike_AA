@@ -79,8 +79,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* Enable classes using zlib compression. */
-#define HAVE_ZLIB 1
+/* Enable classes using zlib compression: CMake defines HAVE_ZLIB when it
+   finds zlib. */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

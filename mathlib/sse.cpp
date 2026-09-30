@@ -22,7 +22,7 @@ static const uint32 _sincos_inv_masks[] = { (uint32)~0x0, (uint32)0x0 };
 // Macros and constants required by some of the SSE assembly:
 //-----------------------------------------------------------------------------
 
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 	#define _PS_EXTERN_CONST(Name, Val) \
 		const __declspec(align(16)) float _ps_##Name[4] = { Val, Val, Val, Val }
 
@@ -34,7 +34,7 @@ static const uint32 _sincos_inv_masks[] = { (uint32)~0x0, (uint32)0x0 };
 
 	#define _PS_CONST(Name, Val) \
 		static const __declspec(align(16)) float _ps_##Name[4] = { Val, Val, Val, Val }
-#elif POSIX
+#else
 	#define _PS_EXTERN_CONST(Name, Val) \
 		const float _ps_##Name[4] __attribute__((aligned(16))) = { Val, Val, Val, Val }
 
@@ -80,7 +80,7 @@ void  __cdecl _SSE_VectorMA( const float *start, float scale, const float *direc
 // SSE implementations of optimized routines:
 //-----------------------------------------------------------------------------
 
-#ifdef POSIX
+#if defined( POSIX ) || defined( _WIN64 )
 const __m128  f3  = _mm_set_ss(3.0f);  // 3 as SSE value
 const __m128  f05 = _mm_set_ss(0.5f);  // 0.5 as SSE value
 #endif
@@ -88,7 +88,7 @@ const __m128  f05 = _mm_set_ss(0.5f);  // 0.5 as SSE value
 float _SSE_RSqrtAccurate(float a)
 {
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	float x;
 	float half = 0.5f;
 	float three = 3.f;
@@ -110,7 +110,7 @@ float _SSE_RSqrtAccurate(float a)
 	}
 
 	return x;
-#elif POSIX
+#elif defined( POSIX ) || defined( _WIN64 )
 	__m128  xx = _mm_load_ss( &a );
 	__m128  xr = _mm_rsqrt_ss( xx );
 	__m128  xt;
@@ -135,9 +135,9 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 
 	// NOTE: This is necessary to prevent an memory overwrite...
 	// sice vec only has 3 floats, we can't "movaps" directly into it.
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 	__declspec(align(16)) float result[4];
-#elif POSIX
+#else
 	float result[4] __attribute__((aligned(16)));
 #endif
 

@@ -12,9 +12,6 @@
 
 //#include "pch_vstdlib.h"
 
-#ifdef _WIN32
-#include "stdafx.h"
-#endif
 #include "tier0/tslist.h"
 #include "tier0/t0constants.h"
 

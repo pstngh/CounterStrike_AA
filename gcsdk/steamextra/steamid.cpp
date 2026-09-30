@@ -4,9 +4,6 @@
 //
 // $NoKeywords: $
 //=============================================================================
-#ifdef _WIN32
-#include "stdafx.h"
-#endif
 
 #ifdef TF
 #include "steamcommon.h"

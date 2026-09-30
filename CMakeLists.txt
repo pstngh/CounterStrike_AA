@@ -37,14 +37,14 @@ if(APPLE)
     # fall back to the default search (the second call is skipped once found).
     find_library(SDL2_LIBRARY SDL2 PATHS /opt/homebrew/opt/sdl2/lib NO_DEFAULT_PATH)
     find_library(SDL2_LIBRARY SDL2 REQUIRED)
-
-    # Offline Steam API shim; game modules find it through their @rpath.
-    add_library(steam_api_offline SHARED thirdparty/steam_api_offline/steam_api_offline.cpp)
-    target_include_directories(steam_api_offline PRIVATE "${CMAKE_SOURCE_DIR}/public")
-    target_compile_definitions(steam_api_offline PRIVATE STEAM_API_EXPORTS GNUC VERSION_SAFE_STEAM_API_INTERFACES)
-    set_target_properties(steam_api_offline PROPERTIES
-        OUTPUT_NAME steam_offline
-        LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
+elseif(WIN32)
+    set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/x64")
+    include_directories(BEFORE "${CMAKE_SOURCE_DIR}/thirdparty/mingw_compat")
+    # As on macOS: signed SIMD masks are initialized from hex bit patterns.
+    add_compile_options(-Wno-narrowing)
+    # Ship SDL2.dll beside the modules that link it.
+    find_file(SDL2_DLL SDL2.dll PATH_SUFFIXES bin REQUIRED)
+    file(COPY "${SDL2_DLL}" DESTINATION "${GAME_BIN_DIR}")
 else()
     set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/linux64")
     # Modules find each other relative to their own location, as the macOS
@@ -59,6 +59,18 @@ else()
         COMMAND "${CMAKE_COMMAND}" -E copy "${STEAM_API_SOURCE}" "${GAME_BIN_DIR}/libsteam_api.so"
         DEPENDS "${STEAM_API_SOURCE}")
     add_custom_target(steam_api_runtime ALL DEPENDS "${GAME_BIN_DIR}/libsteam_api.so")
+endif()
+
+if(APPLE OR WIN32)
+    # Offline Steam API shim; game modules find it through their @rpath, or on
+    # Windows beside them.
+    add_library(steam_api_offline SHARED thirdparty/steam_api_offline/steam_api_offline.cpp)
+    target_include_directories(steam_api_offline PRIVATE "${CMAKE_SOURCE_DIR}/public")
+    target_compile_definitions(steam_api_offline PRIVATE STEAM_API_EXPORTS GNUC VERSION_SAFE_STEAM_API_INTERFACES)
+    set_target_properties(steam_api_offline PROPERTIES
+        OUTPUT_NAME steam_offline
+        LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
 endif()
 
 add_subdirectory(appframework)
@@ -79,6 +91,9 @@ add_subdirectory(vgui2/vgui_surfacelib)
 add_subdirectory(soundsystem/lowlevel)
 add_subdirectory(thirdparty/quickhull)
 # Only build the vendored targets the engine links (libprotobuf, protoc).
+if(WIN32)
+    set(protobuf_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+endif()
 add_subdirectory(thirdparty/protobuf-2.5.0/cmake EXCLUDE_FROM_ALL)
 add_subdirectory(utils/bzip2)
 add_subdirectory(utils/jpeglib)
@@ -90,8 +105,10 @@ add_subdirectory(bitmap)
 add_subdirectory(bonesetup)
 add_subdirectory(choreoobjects)
 add_subdirectory(datacache)
-add_subdirectory(dedicated)
-add_subdirectory(dedicated_main)
+if(NOT WIN32) # The Windows build has no dedicated server.
+    add_subdirectory(dedicated)
+    add_subdirectory(dedicated_main)
+endif()
 add_subdirectory(dmxloader)
 add_subdirectory(engine)
 add_subdirectory(engine_ds)

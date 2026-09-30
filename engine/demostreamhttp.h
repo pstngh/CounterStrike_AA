@@ -12,6 +12,8 @@
 #include "demostream.h"
 #include "demofile/gotvhttpstream.h"
 
+#undef GetObject // windows.h's GetObjectA
+
 struct HTTPRequestCompleted_t;
 
 class CDemoStreamHttp: public IDemoStream

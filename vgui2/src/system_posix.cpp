@@ -10,9 +10,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#ifndef _WIN32
 #include <sys/mount.h>
-#include <sys/stat.h>
 #include <sys/param.h>
+#endif
+#include <sys/stat.h>
+#include <time.h>
 
 #include <vgui/vgui.h>
 #include <vgui/ISystem.h>
@@ -40,6 +43,7 @@
 #include "SDL_stdinc.h"
 #include "SDL_clipboard.h"
 #include "SDL_error.h"
+#include "SDL_misc.h"
 #endif
 
 #define PROTECTED_THINGS_DISABLE
@@ -301,6 +305,9 @@ long CSystem::GetTimeMillis()
 
 void CSystem::OpenURL(const char *szURL)
 {
+#ifdef _WIN32
+    SDL_OpenURL( szURL );
+#else
     struct stat buffer;
     static const char *xdgPath = "/usr/bin/xdg-open";
     if( stat( xdgPath, &buffer ) != 0 )
@@ -318,6 +325,7 @@ void CSystem::OpenURL(const char *szURL)
 
     if( !fork() )
         execlp("xdg-open", "xdg-open", szURL, NULL );
+#endif
 }
 
 void CSystem::SetClipboardText(const char *text, int textLen)
@@ -571,16 +579,20 @@ int CSystem::GetAvailableDrives(char *buf, int bufLen)
 //-----------------------------------------------------------------------------
 double CSystem::GetFreeDiskSpace(const char *path)
 {
-	#ifdef OSX
+	#ifdef _WIN32
+	return 0.0; // nothing asks for it
+	#elif defined( OSX )
 	struct statfs buf;
 	int ret = statfs( path, &buf );
 	#else
 	struct statfs64 buf;
 	int ret = statfs64( path, &buf );
 	#endif
+	#ifndef _WIN32
 	if ( ret < 0 )
 		return 0.0;
 	return (double) ( buf.f_bsize * buf.f_bfree );
+	#endif
 }
 
 //-----------------------------------------------------------------------------

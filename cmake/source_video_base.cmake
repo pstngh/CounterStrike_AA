@@ -6,7 +6,7 @@ if( SDL )
     #Use system SDL2 for linux.
     if( LINUXALL )
         include_directories("/usr/include/SDL2")
-    elseif( OSXALL )
+    else()
         find_path(SDL2_INCLUDE_DIR SDL.h PATH_SUFFIXES SDL2 REQUIRED)
         include_directories("${SDL2_INCLUDE_DIR}")
     endif()

@@ -429,6 +429,7 @@ long p_get_time(){ // returns seconds since 1970
 // there's no strcasecmp on Windows !?!
 
 // not sure, whether this implementation is entirely correct
+#ifdef _MSC_VER
 int	strcasecmp(const char *a,const char *b)
 {
 // chris, Sept 2000
@@ -453,4 +454,5 @@ int	strcasecmp(const char *a,const char *b)
 	return 0;
 */
 }
+#endif
 #endif

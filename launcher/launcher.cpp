@@ -7,7 +7,9 @@
 //==================================================================//
 
 #if defined( _WIN32 )
+#include <winsock2.h>
 #include <windows.h>
+#include <shellapi.h>
 #include "shlwapi.h" // registry stuff
 #include <direct.h>
 #elif defined ( OSX ) 
@@ -673,7 +675,7 @@ bool CSourceAppSystemGroup::Create()
 		{ LAUNCHER_APPSYSTEM( "studiorender" ),			STUDIO_RENDER_INTERFACE_VERSION },
 		{ LAUNCHER_APPSYSTEM( "soundemittersystem" ),	SOUNDEMITTERSYSTEM_INTERFACE_VERSION },
 		{ LAUNCHER_APPSYSTEM( "vscript" ),				VSCRIPT_INTERFACE_VERSION },
-#ifdef WIN32
+#ifdef COMPILER_MSVC // the CMake build has no soundsystem module
 		{ LAUNCHER_APPSYSTEM("soundsystem"),			SOUNDSYSTEM_INTERFACE_VERSION },
 #endif
 

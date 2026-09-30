@@ -1,4 +1,4 @@
-// Offline Steam API entry points for the native macOS build.  The game still
+// Offline Steam API entry points for the macOS and Windows builds.  The game still
 // uses the Steamworks interfaces at compile time, but no Steam client or
 // proprietary Steam API runtime is loaded for insecure LAN play.
 

@@ -4994,7 +4994,7 @@ bool CTexture::FinishAsyncDownload( AsyncTextureContext_t *pContext, void *pData
 //
 //////////////////////////////////////////////////////////////////////////
 
-#ifdef IS_WINDOWS_PC
+#if defined( IS_WINDOWS_PC ) && defined( COMPILER_MSVC )
 static bool SetBufferValue( char *chTxtFileBuffer, char const *szLookupKey, char const *szNewValue )
 {
 	bool bResult = false;

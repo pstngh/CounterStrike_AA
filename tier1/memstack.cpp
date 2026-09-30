@@ -408,7 +408,7 @@ void CMemoryStack::PrintContents() const
 	// Because this code is statically linked into each DLL, this function and the PrintStatus
 	// function will be in the DLL that constructed the CMemoryStack object. We can then
 	// retrieve the DLL name to give slightly more verbose memory dumps.
-	if ( VirtualQuery( &PrintStatus, &info, sizeof( info ) ) == sizeof( info ) )
+	if ( VirtualQuery( (LPCVOID)&PrintStatus, &info, sizeof( info ) ) == sizeof( info ) )
 	{
 		GetModuleFileName( (HMODULE) info.AllocationBase, moduleName, _countof( moduleName ) );
 		moduleName[ _countof( moduleName )-1 ] = 0;

@@ -1,7 +1,20 @@
 #Something custom/made by me(lwss).
 #Include this in your CMakeLists.txt to set the various platform defines the codebase expects
-if(WIN32)
-    message(FATAL_ERROR "install gentoo")
+if(WIN32) #WINDOWS, built with MinGW-w64 GCC
+    if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        message(FATAL_ERROR "Windows builds support x64 MinGW-w64 GCC only")
+    endif()
+    if(DEDICATED)
+        message(FATAL_ERROR "Windows builds have no dedicated server")
+    endif()
+    add_definitions(-DWIN32 -DWIN64 -D_WINDOWS -DPLATFORM_64BITS -DWIN32_LEAN_AND_MEAN)
+    set(WIN64 "1")
+    set(GL "1")
+    set(_DLL_EXT ".dll")
+    set(OUTDLLEXT ".dll")
+    # Libraries that Linux modules resolve at load time; each DLL imports only
+    # what it calls.
+    link_libraries(SDL2 rpcrt4 ws2_32 winmm wininet iphlpapi)
 elseif(UNIX AND NOT APPLE) #LINUX
     add_definitions(-DLINUX -D_LINUX -DPOSIX)
     set(LINUXALL "1")

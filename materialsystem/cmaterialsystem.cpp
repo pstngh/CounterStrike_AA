@@ -757,10 +757,6 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 #ifndef DEDICATED
 
 #if defined( USE_SDL )
-#if !defined( LINUX ) && !defined( OSX )
-	g_pHWConfig = g_pHardwareConfig;
-#endif
-
 	g_pLauncherMgr = (ILauncherMgr *)factory( "SDLMgrInterface001", NULL );
 	if ( !g_pLauncherMgr )
 		return false;

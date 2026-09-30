@@ -35,6 +35,8 @@ endif()
 target_link_libraries(${OUTBINNAME} RmlCore RmlDebugger) #thirdparty/RmlUI
 if( APPLE )
     target_link_libraries(${OUTBINNAME} "-framework OpenGL")
+elseif( WIN32 )
+    target_link_libraries(${OUTBINNAME} opengl32)
 else()
     target_link_libraries(${OUTBINNAME} GL)
 endif()

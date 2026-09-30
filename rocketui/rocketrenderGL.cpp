@@ -1,9 +1,28 @@
 #include "rocketrender.h"
 
 #if defined RMLUI_PLATFORM_WIN32
-#include <win32/IncludeWindows.h>
-#include <gl/Gl.h>
-#include <gl/Glu.h>
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include "SDL_video.h"
+// opengl32.dll exports only OpenGL 1.1, so fetch the newer functions this
+// renderer calls from the driver on first use.
+template <typename T> static T GetGLProc( T &pfn, const char *pName )
+{
+    if ( !pfn )
+        pfn = (T)SDL_GL_GetProcAddress( pName );
+    return pfn;
+}
+static PFNGLACTIVETEXTUREPROC s_glActiveTexture;
+static PFNGLBINDBUFFERPROC s_glBindBuffer;
+static PFNGLDISABLEVERTEXATTRIBARRAYPROC s_glDisableVertexAttribArray;
+static PFNGLBLENDEQUATIONPROC s_glBlendEquation;
+static PFNGLBLENDCOLORPROC s_glBlendColor;
+#define glActiveTexture( ... ) GetGLProc( s_glActiveTexture, "glActiveTexture" )( __VA_ARGS__ )
+#define glBindBuffer( ... ) GetGLProc( s_glBindBuffer, "glBindBuffer" )( __VA_ARGS__ )
+#define glDisableVertexAttribArray( ... ) GetGLProc( s_glDisableVertexAttribArray, "glDisableVertexAttribArray" )( __VA_ARGS__ )
+#define glBlendEquation( ... ) GetGLProc( s_glBlendEquation, "glBlendEquation" )( __VA_ARGS__ )
+#define glBlendColor( ... ) GetGLProc( s_glBlendColor, "glBlendColor" )( __VA_ARGS__ )
 #elif defined RMLUI_PLATFORM_MACOSX
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>

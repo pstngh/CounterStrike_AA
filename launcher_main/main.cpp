@@ -41,7 +41,7 @@ typedef int (*LauncherMain_t)( int argc, char **argv );
 #ifdef WIN32
 // hinting the nvidia driver to use the dedicated graphics card in an optimus configuration
 // for more info, see: http://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
-extern "C" { _declspec( dllexport ) DWORD NvOptimusEnablement = 0x00000001; }
+extern "C" { __declspec( dllexport ) DWORD NvOptimusEnablement = 0x00000001; }
 
 // same thing for AMD GPUs using v13.35 or newer drivers
 extern "C" { __declspec( dllexport ) int AmdPowerXpressRequestHighPerformance = 1; }

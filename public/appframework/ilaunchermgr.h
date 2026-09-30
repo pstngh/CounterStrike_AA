@@ -17,7 +17,7 @@
 // we basically have to work around this by making sure the cursor is visible 
 // and set to something that is reasonable for usage in the overlay.
 // lwss - add || defined( LINUX ). because I want to use this for rocketui
-#if ( defined( OSX ) && defined( PLATFORM_64BITS ) && !defined( NO_STEAM ) ) || defined( LINUX )
+#if ( defined( OSX ) && defined( PLATFORM_64BITS ) && !defined( NO_STEAM ) ) || defined( LINUX ) || defined( _WIN32 )
 // lwss end
 #define WITH_OVERLAY_CURSOR_VISIBILITY_WORKAROUND 1 
 #endif

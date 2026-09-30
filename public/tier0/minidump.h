@@ -25,7 +25,7 @@ PLATFORM_INTERFACE void WriteMiniDump( const char *pszFilenameSuffix = NULL );
 typedef void( *FnWMain )(int, tchar *[]);
 typedef void( *FnVoidPtrFn )(void *);
 
-#if defined(_WIN32)
+#if defined( _WIN32 ) && defined( COMPILER_MSVC )
 
 // calls the passed in function pointer and catches any exceptions/crashes thrown by it, and writes a minidump
 // use from wmain() to protect the whole program

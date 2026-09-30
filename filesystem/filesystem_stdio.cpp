@@ -1342,7 +1342,7 @@ size_t CWin32ReadOnlyFile::FS_fread( void *dest, size_t destSize, size_t size )
 	if ( m_hFileUnbuffered != INVALID_HANDLE_VALUE )
 	{
 		const int destBaseAlign = ( IsX360() ) ? 4 : m_SectorSize;
-		bool bDestBaseIsAligned = ( (DWORD)dest % destBaseAlign == 0 );
+		bool bDestBaseIsAligned = ( (uintp)dest % destBaseAlign == 0 );
 		bool bCanReadUnbufferedDirect = ( bDestBaseIsAligned && ( destSize % m_SectorSize == 0 ) && ( m_ReadPos % m_SectorSize == 0 ) );
 
 		if ( bCanReadUnbufferedDirect )
@@ -1392,7 +1392,7 @@ size_t CWin32ReadOnlyFile::FS_fread( void *dest, size_t destSize, size_t size )
 
 	while ( bReadOk && nBytesToRead > 0 )
 	{
-		int nCurBytesToRead = min( nBytesToRead, MAX_READ );
+		int nCurBytesToRead = MIN( nBytesToRead, MAX_READ );
 		DWORD nCurBytesRead = 0;
 
 		overlapped.Offset = currentOffset & 0xFFFFFFFF;
@@ -1461,7 +1461,7 @@ size_t CWin32ReadOnlyFile::FS_fread( void *dest, size_t destSize, size_t size )
 			}
 		}
 
-		result = min( nBytesRead, size );
+		result = MIN( nBytesRead, size );
 	}
 
 	if ( m_bOverlapped )
@@ -1491,7 +1491,7 @@ char *CWin32ReadOnlyFile::FS_fgets( char *dest, int destSize )
 		return NULL;
 	}
 
-	dest[min( nBytesRead, destSize - 1)] = 0;
+	dest[MIN( nBytesRead, destSize - 1)] = 0;
 	char *pNewline = strchr( dest, '\n' );
 	if ( pNewline )
 	{
@@ -1501,7 +1501,7 @@ char *CWin32ReadOnlyFile::FS_fgets( char *dest, int destSize )
 	}
 	else
 	{
-		pNewline = &dest[min( nBytesRead, destSize - 1)];
+		pNewline = &dest[MIN( nBytesRead, destSize - 1)];
 	}
 	m_ReadPos = nStartPos + ( pNewline - dest ) + 1;
 

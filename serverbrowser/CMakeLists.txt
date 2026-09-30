@@ -9,7 +9,6 @@ include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 add_definitions(-DVERSION_SAFE_STEAM_API_INTERFACES)
-add_definitions(-D_USE_32BIT_TIME_T)
 
 target_sources(${OUTBINNAME} PRIVATE "BaseGamesPage.cpp")
 target_sources(${OUTBINNAME} PRIVATE "blacklistedservers.cpp")

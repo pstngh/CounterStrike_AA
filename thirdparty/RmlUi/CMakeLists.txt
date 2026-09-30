@@ -316,13 +316,13 @@ foreach(library ${LIBRARIES})
 	#Kisak-Strike memoverride.cpp
 	if(APPLE)
 		target_compile_definitions(${NAME} PRIVATE POSIX OSX _OSX PLATFORM_64BITS COMPILER_GCC BASE NDEBUG GNUC)
-	else()
+	elseif(NOT WIN32)
 		target_compile_definitions(${NAME} PRIVATE LINUX _LINUX POSIX COMPILER_GCC BASE NDEBUG GNUC)
 	endif()
 	target_include_directories(${NAME} PRIVATE ../../public)
-	# On macOS these standalone libraries must not depend on Valve's allocator
-	# symbols from the game binary; use the system allocator instead.
-	if(NOT APPLE AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
+	# On macOS and Windows these standalone libraries must not depend on Valve's
+	# allocator symbols from the game binary; use the system allocator instead.
+	if(NOT APPLE AND NOT WIN32 AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
 		target_sources(${NAME} PRIVATE ../../public/tier0/memoverride.cpp)
 	endif()
 	#end
@@ -333,7 +333,8 @@ foreach(library ${LIBRARIES})
 	# Kisak-Strike: ship the libraries beside the game modules that load them.
 	if(GAME_BIN_DIR)
 		set_target_properties(${NAME} PROPERTIES
-			LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
+			LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}"
+			RUNTIME_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
 	endif()
 
 	if (MSVC)

@@ -100,10 +100,10 @@ typedef unsigned short uchar16;
 typedef wchar_t uchar32;
 #endif
 
-#ifdef GNUC
-typedef unsigned short ucs2; // wchar_t is 4 bytes on sane os's, specially define a ucs2 type so we can read out localization files and the list saved as 2 byte wchar (or ucs16 Matt tells me)
-#elif defined(_MSC_VER)
+#ifdef _WIN32
 typedef wchar_t ucs2; // under windows wchar_t is ucs2
+#else
+typedef unsigned short ucs2; // wchar_t is 4 bytes on sane os's, specially define a ucs2 type so we can read out localization files and the list saved as 2 byte wchar (or ucs16 Matt tells me)
 #endif
 
 // Turn valve defines back on

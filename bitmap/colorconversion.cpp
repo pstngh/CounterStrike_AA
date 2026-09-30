@@ -839,7 +839,7 @@ bool ConvertToDXT(  const uint8 *src, ImageFormat srcImageFormat,
  					uint8 *dst, ImageFormat dstImageFormat, 
 					int width, int height, int srcStride, int dstStride )
 {
-#if !defined( POSIX )
+#if defined( COMPILER_MSVC )
 	// from rgb(a) to dxtN
 	if( srcStride != 0 || dstStride != 0 )
 		return false;

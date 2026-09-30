@@ -33,8 +33,9 @@
 	#define NO_STEREO_D3D10 1
 #ifdef DX_TO_GL_ABSTRACTION
 	#define NO_STEREO_D3D9 1
-#endif
+#else
 	#include "hl2stereo.h"
+#endif
 #endif
 
 #ifdef NDEBUG

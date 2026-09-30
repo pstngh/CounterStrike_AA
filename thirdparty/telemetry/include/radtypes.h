@@ -335,7 +335,7 @@
 
 #if defined(__RADNT__)
   #define __RADWIN__
-  #if _MSC_VER >= 1400
+  #if _MSC_VER >= 1400 || defined( __GNUC__ )
     #define RADRESTRICT __restrict
   #else
     // vc6 and older

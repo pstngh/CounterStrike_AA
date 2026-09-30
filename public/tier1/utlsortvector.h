@@ -27,7 +27,7 @@
 //   into the constructor of the vector to determine the sort order.
 //-----------------------------------------------------------------------------
 
-#ifndef _WIN32
+#ifndef COMPILER_MSVC
 // gcc has no qsort_s, so i need to use a static var to hold the sort context. this makes cutlsortvector _not_ thread sfae under linux
 extern void *g_pUtlSortVectorQSortContext;
 #endif
@@ -114,7 +114,7 @@ protected:
 		LessFunc	*m_pLessFunc;
 	};
 
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 	static int CompareHelper( void *context, const T *lhs, const T *rhs )
 	{
 		QSortContext_t *ctx = reinterpret_cast< QSortContext_t * >( context );
@@ -236,7 +236,7 @@ int CUtlSortVector<T, LessFunc, BaseVector>::InsertAfter( int nIndex, const T &s
 template <class T, class LessFunc, class BaseVector> 
 void CUtlSortVector<T, LessFunc, BaseVector>::QuickSort( LessFunc& less, int nLower, int nUpper )
 {
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 	typedef int (__cdecl *QSortCompareFunc_t)(void *context, const void *, const void *);
 	if ( this->Count() > 1 )
 	{

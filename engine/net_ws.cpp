@@ -2840,7 +2840,7 @@ void NET_FlushAllSockets( void )
 }
 
 #if defined( IS_WINDOWS_PC )
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 
 // Simple helper class to enumerate and cache of IP addresses of local network adapters
 class CBindAddressHelper

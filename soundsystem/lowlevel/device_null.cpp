@@ -57,7 +57,7 @@ int Audio_EnumerateDevices( eSubSystems_t nSubsystem, audio_device_description_t
 	int nDeviceCount = 0;
 	switch( nSubsystem )
 	{
-#ifdef IS_WINDOWS_PC
+#if defined( IS_WINDOWS_PC ) && !defined( USE_SDL )
 	case AUDIO_SUBSYSTEM_XAUDIO:
 		nDeviceCount = Audio_EnumerateXAudio2Devices( pDeviceListOut, nListCount );
 		break;
@@ -65,7 +65,7 @@ int Audio_EnumerateDevices( eSubSystems_t nSubsystem, audio_device_description_t
 		nDeviceCount = Audio_EnumerateDSoundDevices( pDeviceListOut, nListCount );
 		break;
 #endif
-#ifdef POSIX
+#ifdef USE_SDL
 	case AUDIO_SUBSYSTEM_SDL:
 		nDeviceCount = Audio_EnumerateSDLDevices( pDeviceListOut, nListCount );
 		break;
@@ -167,7 +167,7 @@ bool CAudioDeviceList::UpdateDeviceList()
 
 void CAudioDeviceList::UpdateDefaultDevice()
 {
-#if IS_WINDOWS_PC
+#if IS_WINDOWS_PC && !defined( USE_SDL )
 	// BUG: DirectSound devices use a different string format for GUIDs.  Fix so this works?
 	wchar_t deviceName[256];
 	if ( GetWindowsDefaultAudioDevice( deviceName, sizeof(deviceName ) ) )
@@ -212,7 +212,7 @@ IAudioDevice2 *CAudioDeviceList::CreateDevice( audio_device_init_params_t &param
 	{
 		nSubsystem = params.m_nOverrideSubsystem;
 	}
-#if IS_WINDOWS_PC
+#if IS_WINDOWS_PC && !defined( USE_SDL )
 	// try xaudio2
 	if ( nSubsystem == AUDIO_SUBSYSTEM_XAUDIO )
 	{
@@ -234,7 +234,7 @@ IAudioDevice2 *CAudioDeviceList::CreateDevice( audio_device_init_params_t &param
 	}
 #endif
 
-#ifdef POSIX
+#ifdef USE_SDL
 	nSubsystem = AUDIO_SUBSYSTEM_SDL;
 
 	if ( nSubsystem == AUDIO_SUBSYSTEM_SDL )

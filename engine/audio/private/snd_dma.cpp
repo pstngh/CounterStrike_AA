@@ -871,7 +871,7 @@ void S_Startup( void )
 		snd_surround.InstallChangeCallback( &OnSndVarChanged );
 #endif
 
-#if IS_WINDOWS_PC
+#if IS_WINDOWS_PC && !defined( USE_SDL )
 		SetupWindowsMixerPreferences();
 #endif
 		bFirst = false;

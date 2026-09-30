@@ -40,7 +40,7 @@
 #include "tier0/platform.h"
 #include "commonmacros.h"
 #include "wchartypes.h"
-#if defined( PLATFORM_POSIX )
+#ifndef COMPILER_MSVC
 #include <math.h>
 #endif
 
@@ -296,7 +296,7 @@ inline bool IsFinite( const vec_t &f )
 	return ((FloatBits(f) & 0x7F800000) != 0x7F800000);
 }
 
-#if defined( WIN32 )
+#if defined( COMPILER_MSVC )
 
 //#include <math.h>
 // Just use prototype from math.h

@@ -374,7 +374,7 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( ScriptFunctionBindingStorageTy
 		convert.mfp.m_delta = 0;
 		return convert.pFunc;
 	}
-#elif defined( POSIX )
+#elif defined( GNUC )
 	AssertMsg( 0, "Note: This path has not been implemented yet." );
 #else
 #error "Need to implement code to crack non-offset member function pointer case"

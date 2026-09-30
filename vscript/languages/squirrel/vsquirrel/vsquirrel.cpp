@@ -1573,7 +1573,7 @@ public:
 		m_hVM->_sharedstate->_gc_disableDepth++;
 		m_pBuffer = pBuffer;
 		uint64 uniqueIdSerialNumber = (uint64)m_pBuffer->GetInt64();
-		m_iUniqueIdSerialNumber = max( m_iUniqueIdSerialNumber, uniqueIdSerialNumber );
+		m_iUniqueIdSerialNumber = MAX( m_iUniqueIdSerialNumber, uniqueIdSerialNumber );
 		Verify( pBuffer->GetInt() == OT_THREAD );
 		m_PtrMap.Insert( pBuffer->GetPtr(), m_hVM );
 		ReadVM( m_hVM );

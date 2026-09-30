@@ -16,10 +16,10 @@ include_directories(./languages/squirrel/sqplus)
 include_directories(./languages/lua/lua-5.1.4/src)
 
 target_sources(${OUTBINNAME} PRIVATE vscript.cpp)
-if( OSXALL )
-    # The original macOS VPC project embeds Lua 5.1 in vscript. Without these
-    # sources the dylib links with dynamic-lookup stubs for ScriptCreateLuaVM
-    # and fails as soon as the launcher loads it.
+if( OSXALL OR WIN64 )
+    # The original macOS and Windows VPC projects embed Lua 5.1 in vscript.
+    # Without these sources the macOS dylib links with dynamic-lookup stubs for
+    # ScriptCreateLuaVM and fails as soon as the launcher loads it.
     target_sources(${OUTBINNAME} PRIVATE
         ./languages/lua/vlua/vlua.cpp
         ./languages/lua/vlua/vec3.cpp

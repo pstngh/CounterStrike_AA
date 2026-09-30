@@ -1154,7 +1154,7 @@ FORCEINLINE fltx4 ReplicateX4( const float * flValue )
 FORCEINLINE float SubFloat( const fltx4 & a, int idx )
 {
 	// NOTE: if the output goes into a register, this causes a Load-Hit-Store stall (don't mix fpu/vpu math!)
-#ifndef POSIX
+#ifndef COMPILER_GCC
 	return a.m128_f32[ idx ];
 #else
 	return (reinterpret_cast<float const *>(&a))[idx];
@@ -1163,7 +1163,7 @@ FORCEINLINE float SubFloat( const fltx4 & a, int idx )
 
 FORCEINLINE float & SubFloat( fltx4 & a, int idx )
 {
-#ifndef POSIX
+#ifndef COMPILER_GCC
 	return a.m128_f32[ idx ];
 #else
 	return (reinterpret_cast<float *>(&a))[idx];
@@ -1177,7 +1177,7 @@ FORCEINLINE uint32 SubFloatConvertToInt( const fltx4 & a, int idx )
 
 FORCEINLINE uint32 SubInt( const fltx4 & a, int idx )
 {
-#ifndef POSIX
+#ifndef COMPILER_GCC
 	return a.m128_u32[idx];
 #else
 	return (reinterpret_cast<uint32 const *>(&a))[idx];
@@ -1186,7 +1186,7 @@ FORCEINLINE uint32 SubInt( const fltx4 & a, int idx )
 
 FORCEINLINE uint32 & SubInt( fltx4 & a, int idx )
 {
-#ifndef POSIX
+#ifndef COMPILER_GCC
 	return a.m128_u32[idx];
 #else
 	return (reinterpret_cast<uint32 *>(&a))[idx];
@@ -1735,7 +1735,7 @@ FORCEINLINE fltx4 CompressSIMD( fltx4 const & a, fltx4 const &b )
 // using it heavily.
 FORCEINLINE fltx4 LoadAndConvertUint16SIMD( const uint16 *pInts )
 {
-#ifdef POSIX
+#ifdef COMPILER_GCC
 	fltx4 retval;
 	SubFloat( retval, 0 ) = pInts[0];
 	SubFloat( retval, 1 ) = pInts[1];
@@ -1869,7 +1869,7 @@ FORCEINLINE void RotateLeftDoubleSIMD( fltx4 &a, fltx4 &b )
 
 // // Some convenience operator overloads, which are just aliasing the functions above.
 // Unneccessary on 360, as you already have them from xboxmath.h (same for PS3 PPU and SPU)
-#if !defined( POSIX )
+#if !defined( COMPILER_GCC )
 // Componentwise add
 FORCEINLINE fltx4 operator+( FLTX4 a, FLTX4 b )
 {

@@ -6,10 +6,29 @@ MacroRequired(SRCDIR)
 include_directories(${GENERATED_PROTO_DIR})
 include_directories(${SRCDIR}/thirdparty/protobuf-2.5.0/src)
 
-# This is a target added in /thirdparty/protobuf-2.x. Use its generated full
-# path: GUI generators happened to find `protoc` by name, but a clean Ninja
-# build on macOS does not put the build directory on PATH.
-set(PROTO_COMPILER "$<TARGET_FILE:protoc>")
+if(CMAKE_CROSSCOMPILING)
+    # A cross build can't run the protoc it builds, so build one for the host.
+    set(HOST_PROTOC_DIR "${CMAKE_BINARY_DIR}/host_protoc")
+    if(NOT TARGET host_protoc)
+        include(ExternalProject)
+        ExternalProject_Add(host_protoc
+            SOURCE_DIR "${SRCDIR}/thirdparty/protobuf-2.5.0/cmake"
+            BINARY_DIR "${HOST_PROTOC_DIR}"
+            CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+                       -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_WITH_ZLIB=OFF
+            BUILD_COMMAND "${CMAKE_COMMAND}" --build . --target protoc
+            BUILD_BYPRODUCTS "${HOST_PROTOC_DIR}/protoc"
+            INSTALL_COMMAND "")
+    endif()
+    set(PROTO_COMPILER "${HOST_PROTOC_DIR}/protoc")
+    set(PROTO_COMPILER_TARGET host_protoc)
+else()
+    # This is a target added in /thirdparty/protobuf-2.x. Use its generated full
+    # path: GUI generators happened to find `protoc` by name, but a clean Ninja
+    # build on macOS does not put the build directory on PATH.
+    set(PROTO_COMPILER "$<TARGET_FILE:protoc>")
+    set(PROTO_COMPILER_TARGET protoc)
+endif()
 
 #Built a .proto file and add the resulting C++ to the target.
 macro( TargetBuildAndAddProto TARGET_NAME PROTO_FILE PROTO_OUTPUT_FOLDER )
@@ -21,7 +40,7 @@ macro( TargetBuildAndAddProto TARGET_NAME PROTO_FILE PROTO_OUTPUT_FOLDER )
                    "${PROTO_OUTPUT_FOLDER}/${PROTO_FILENAME}.pb.h"
             COMMAND ${PROTO_COMPILER}
             ARGS --cpp_out=. --proto_path=${SRCDIR}/game/shared/cstrike15 --proto_path=${SRCDIR}/thirdparty/protobuf-2.5.0/src --proto_path=${SRCDIR}/gcsdk --proto_path=${SRCDIR}/game/shared --proto_path=${SRCDIR}/common ${PROTO_FILE}
-            DEPENDS ${PROTO_FILE} protoc
+            DEPENDS ${PROTO_FILE} ${PROTO_COMPILER_TARGET}
             WORKING_DIRECTORY ${PROTO_OUTPUT_FOLDER}
             COMMENT "Running homemade protoc compiler on ${PROTO_FILE} - output (${PROTO_OUTPUT_FOLDER}/${PROTO_FILENAME}.pb.cc)"
             VERBATIM

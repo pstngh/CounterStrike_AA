@@ -20,9 +20,10 @@
 #define OEMRESOURCE //for OCR_* cursor junk
 #define _WIN32_WINNT 0x502
 #include <windows.h>
+#include <mmsystem.h>
 #include <zmouse.h>
 #include "xbox/xboxstubs.h"
-#include "../../dx9sdk/include/XInput.h"
+#include <xinput.h>
 #endif
 
 #if defined( _WIN32 ) && defined( USE_SDL )

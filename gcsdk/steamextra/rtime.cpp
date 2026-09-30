@@ -6,7 +6,6 @@
 #ifdef POSIX
 #include <sys/time.h>
 #else
-#include "stdafx.h"
 #include "winlite.h"
 #endif
 #include "rtime.h"

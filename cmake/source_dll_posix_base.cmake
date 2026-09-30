@@ -4,7 +4,7 @@ include("${CMAKE_MODULE_PATH}/source_posix_base.cmake")
 MacroRequired(OUTBINNAME)
 MacroRequired(OUTBINDIR)
 
-if(LINUX64 OR OSX64)
+if(LINUX64 OR OSX64 OR WIN64)
     set(OUTBINDIR "${OUTBINDIR}${PLATSUBDIR}")
 endif()
 
@@ -28,11 +28,15 @@ if(OSXALL)
     # the equivalent behavior requested explicitly.
     target_link_options(${OUTBINNAME} PRIVATE "LINKER:-undefined,dynamic_lookup")
 endif()
+if(WIN64)
+    # Valve's Windows names: engine.dll, tier0.dll and so on.
+    string(REGEX REPLACE "^lib|_client$" "" WIN_OUTPUT_NAME "${OUTBINNAME}")
+    set_target_properties(${OUTBINNAME} PROPERTIES OUTPUT_NAME "${WIN_OUTPUT_NAME}")
+endif()
 
 message("Adding dll target: ${OUTBINNAME}${OUTDLLEXT}\n")
 
 set_target_properties( ${OUTBINNAME} PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "${OUTBINDIR}"
         LIBRARY_OUTPUT_DIRECTORY "${OUTBINDIR}"
         RUNTIME_OUTPUT_DIRECTORY "${OUTBINDIR}"
         )

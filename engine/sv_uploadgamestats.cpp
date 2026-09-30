@@ -8,7 +8,8 @@
 
 #ifdef _WIN32
 
-#include <winsock.h>
+#include <winsock2.h>
+#include <rpc.h>
 
 #elif POSIX
 #define INVALID_SOCKET -1

@@ -138,7 +138,7 @@ struct audio_device_init_params_t
 extern int Audio_EnumerateDevices( eSubSystems_t nSubsystem, audio_device_description_t *pDeviceListOut, int nListCount );
 extern int Audio_EnumerateXAudio2Devices( audio_device_description_t *pDeviceListOut, int nListCount );
 extern int Audio_EnumerateDSoundDevices( audio_device_description_t *pDeviceListOut, int nListCount );
-#ifdef POSIX
+#ifdef USE_SDL
 extern int Audio_EnumerateSDLDevices( audio_device_description_t *pDeviceListOut, int nListCount );
 #endif
 
@@ -199,7 +199,7 @@ protected:
 extern IAudioDevice2 *Audio_CreateXAudio2Device( const audio_device_init_params_t &params );
 extern IAudioDevice2 *Audio_CreateDSoundDevice( const audio_device_init_params_t &params );
 
-#ifdef POSIX
+#ifdef USE_SDL
 extern IAudioDevice2 *Audio_CreateSDLDevice( const audio_device_init_params_t &params );
 #endif
 

@@ -8,7 +8,7 @@ MacroRequired(OUTBINDIR)
 add_executable(${OUTBINNAME})
 
 set_target_properties(${OUTBINNAME} PROPERTIES OUTPUT_NAME "${OUTBINNAME}")
-set_target_properties(${OUTBINNAME} PROPERTIES SUFFIX "")
+set_target_properties(${OUTBINNAME} PROPERTIES SUFFIX "${CMAKE_EXECUTABLE_SUFFIX}")
 set_target_properties(${OUTBINNAME} PROPERTIES PREFIX "")
 
 message("Adding executable target: ${OUTBINNAME}\n")

@@ -82,6 +82,45 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+  windows-x64:
+    name: Windows x64
+    # Cross-compiled with MinGW-w64, as on a Linux desktop.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: src
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build ccache g++-mingw-w64-x86-64-win32
+          src/tools/install_windows_deps.sh
+
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-windows-x64-${{ github.sha }}
+          restore-keys: ccache-windows-x64-
+
+      - name: Configure
+        run: |
+          cmake -S src -B build $CMAKE_ARGS \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/windows-x64-mingw.cmake"
+
+      - name: Build
+        run: cmake --build build && ccache --show-stats
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: csgo-windows-x64
+          path: game
+          if-no-files-found: error
+
   macos-arm64:
     name: macOS arm64
     # Apple Silicon runner; the build refuses Intel Macs.

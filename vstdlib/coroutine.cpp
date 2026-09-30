@@ -30,6 +30,10 @@
 #include "tier0/minidump.h"
 #include "tier1/utllinkedlist.h"
 #include "tier1/utlvector.h"
+#ifdef __MINGW32__
+// Coroutines jump between copied stacks, so longjmp must not unwind SEH frames.
+#define __USE_MINGW_SETJMP_NON_SEH
+#endif
 #include <setjmp.h>
 
 // for debugging
@@ -124,11 +128,11 @@ static const int k_cubCoroutineStackGapSmall = 64;
 static const int k_cubMaxCoroutineStackSize = (32 * 1024);
 
 
-#ifdef _WIN64
+#ifdef COMPILER_MSVC64
 extern "C" byte *GetStackPtr64();
 #define GetStackPtr( pStackPtr)		byte *pStackPtr = GetStackPtr64();
 #else
-#ifdef WIN32
+#ifdef COMPILER_MSVC32
 #define GetStackPtr( pStackPtr )	byte *pStackPtr;	__asm mov pStackPtr, esp	
 #elif defined(GNUC)
 #define GetStackPtr( pStackPtr )	byte *pStackPtr = (byte*)__builtin_frame_address(0)
@@ -690,7 +694,7 @@ void NOINLINE Coroutine_Launch( CCoroutine &coroutine )
 
 	// set our marker
 	GetStackPtr( pEsp );
-	#ifdef _WIN64
+	#ifdef COMPILER_MSVC64
 		// Add a little extra padding, to capture the spill space for the registers
 		// that is required for us to reserve ABOVE the return address), and also
 		// align the stack

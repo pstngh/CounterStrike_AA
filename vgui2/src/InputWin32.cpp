@@ -8,7 +8,9 @@
 #if defined( WIN32 )
 #include <windows.h>
 #include <imm.h>
+#ifndef _WIN64 // the IME code keeps pointers in 32-bit handles
 #define DO_IME
+#endif
 #endif
 
 #include <string.h>

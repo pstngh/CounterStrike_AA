@@ -1,6 +1,6 @@
 # CounterStrike_AA
 
-CounterStrike_AA is a build of [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source port of the 2017 CS:GO engine, for Linux x64 and Apple Silicon Macs. It adds an optional gameplay preset that plays like Medal of Honor: Allied Assault, with leaning, Allied Assault movement speeds and scoped sniping, fixed loadouts and free-for-all deathmatch against bots.
+CounterStrike_AA is a build of [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source port of the 2017 CS:GO engine, for Linux x64, Windows x64 and Apple Silicon Macs. It adds an optional gameplay preset that plays like Medal of Honor: Allied Assault, with leaning, Allied Assault movement speeds and scoped sniping, fixed loadouts and free-for-all deathmatch against bots.
 
 The repository contains source code only. You need legally acquired CS:GO game files to play.
 
@@ -8,7 +8,8 @@ The repository contains source code only. You need legally acquired CS:GO game f
 
 - **Native Apple Silicon build.** arm64 code throughout, no Rosetta. It starts without the Steam desktop client, using an offline Steam API shim built from source.
 - **Linux x64 build.** It links Valve's `libsteam_api.so`.
-- **Allied Assault gameplay preset.** It's on by default on macOS and off on Linux; see [Gameplay preset](#gameplay-preset).
+- **Windows x64 build.** Cross-compiled on Linux with MinGW-w64. Like the Mac build, it uses the offline Steam API shim.
+- **Allied Assault gameplay preset.** It's on by default on macOS and off on Linux and Windows; see [Gameplay preset](#gameplay-preset).
 - **Mac launcher app.** Pick a map, the bot count and difficulty, resolution and graphics settings, then start the game.
 - **Open-source physics.** Choose between the Kisak-Strike rebuild of Valve's physics and a Bullet-based implementation, instead of Valve's closed `vphysics` library.
 - **RmlUi menus.** The open-source RocketUI replaces the proprietary Scaleform UI.
@@ -19,12 +20,13 @@ The project is experimental. Some legacy assets and features are incomplete.
 
 ## Prebuilt binaries
 
-Every push to `main` builds both platforms in GitHub Actions. Open the latest successful [Build run](https://github.com/pstngh/CounterStrike_AA/actions/workflows/build.yml) and download:
+Every push to `main` builds all three platforms in GitHub Actions. Open the latest successful [Build run](https://github.com/pstngh/CounterStrike_AA/actions/workflows/build.yml) and download:
 
 - `csgo-linux-x64` for Linux
+- `csgo-windows-x64` for Windows
 - `csgo-macos-arm64` for Apple Silicon Macs
 
-Each artifact is a tarball of the game directory's binaries, without Valve's assets. Unpack it over a game directory prepared as described in [Game files](#game-files).
+Each artifact holds the game directory's binaries, without Valve's assets: a tarball for Linux and macOS, and the files themselves for Windows. Unpack it over a game directory prepared as described in [Game files](#game-files).
 
 ## Building
 
@@ -100,7 +102,20 @@ cmake --build build
 
 ### Windows
 
-Windows is not supported: CMake stops when configuring on Windows. The engine's Windows code paths are still in the source, as a starting point for a port.
+The Windows x64 build is cross-compiled with MinGW-w64 on Linux, for example Ubuntu or WSL. It has no dedicated server. Install the compiler, then SDL2 and FreeType for it:
+
+```sh
+sudo apt install cmake ninja-build g++-mingw-w64-x86-64-win32 curl
+src/tools/install_windows_deps.sh
+```
+
+The script installs both libraries into the MinGW-w64 sysroot, `/usr/x86_64-w64-mingw32`. Configure with the bundled toolchain file, then build:
+
+```sh
+cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_KISAK_PHYSICS=ON \
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/src/cmake/toolchains/windows-x64-mingw.cmake"
+cmake --build build
+```
 
 ### Build options
 
@@ -123,11 +138,11 @@ Pass these to the configure step as `-D<option>=<value>`:
 | `USE_TRACY` | `OFF` | Enable the Tracy profiler. |
 | `TRACY_STORE_LOGS` | `OFF` | Make Tracy record from startup and send the data when a viewer connects, instead of only while one is connected. This uses memory quickly. |
 
-If neither physics option is on, the game loads Valve's closed-source physics library instead. On Linux, copy `vphysics_client.so` from Valve's Linux binaries; see [Game files](#game-files).
+If neither physics option is on, the game loads Valve's closed-source physics library instead. On Linux, copy `vphysics_client.so` from Valve's Linux binaries; see [Game files](#game-files). Valve never shipped that library for 64-bit Windows, so Windows builds need `USE_KISAK_PHYSICS`.
 
 ### Dedicated server
 
-Configure a separate build directory with `-DDEDICATED=ON`. It writes `srcds_linux` (`srcds_osx` on macOS) to the game directory, and its engine modules replace the game's there. Build the game again when you want to play.
+Configure a separate build directory with `-DDEDICATED=ON`. It writes `srcds_linux` (`srcds_osx` on macOS) to the game directory, and its engine modules replace the game's there. Build the game again when you want to play. Windows builds have no dedicated server.
 
 ## Game files
 
@@ -168,7 +183,14 @@ cd game
 arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 ```
 
-`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. On macOS, messages about the Steam API failing to start are expected and harmless.
+Windows:
+
+```bat
+cd game
+csgo.exe -insecure -novid +map de_dust2
+```
+
+`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. On macOS and Windows, messages about the Steam API failing to start are expected and harmless.
 
 To build the Mac launcher app into a game directory, run:
 
@@ -194,7 +216,7 @@ The preset changes shared client and server code, including the player network t
 
 ## Proprietary components
 
-- `lib/public/linux64/libsteam_api.so` is Valve's Steam API library. Linux builds link it and copy it to `game/bin/linux64`. macOS builds use the offline shim in `thirdparty/steam_api_offline` instead.
+- `lib/public/linux64/libsteam_api.so` is Valve's Steam API library. Linux builds link it and copy it to `game/bin/linux64`. macOS and Windows builds use the offline shim in `thirdparty/steam_api_offline` instead.
 - The optional files from Valve's Linux binaries depot are listed under [Game files](#game-files).
 
 ## Credits

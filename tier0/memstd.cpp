@@ -34,7 +34,7 @@
 
 #define DEF_REGION 0
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && defined( COMPILER_MSVC )
 #define USE_DLMALLOC
 #ifdef PLATFORM_WINDOWS_PC64
 #define MEMALLOC_REGIONS
@@ -144,7 +144,7 @@ void DumpMemoryInfoStats()
 #define msize_internal _msize
 #endif // POSIX
 #define compact_internal() (0)
-#define heapstats_internal(p) (void)(0)
+#define heapstats_internal(...) (void)(0)
 #else // USE_DLMALLOC
 #define MSPACES 1
 #include "dlmalloc/malloc-2.8.3.h"
@@ -369,7 +369,7 @@ CStdMemAlloc::CStdMemAlloc()
 	m_sMemoryAllocFailed( (size_t)0 ),
 	m_bInCompact( false )
 {
-#if IsPlatformWindowsPC()
+#if IsPlatformWindowsPC() && defined( USE_DLMALLOC )
 	char *pStr = (char*)Plat_GetCommandLineA();
 	if ( pStr )
 	{

@@ -11,7 +11,7 @@
 #include "p4lib/ip4.h"
 
 #ifdef PLATFORM_WINDOWS_PC
-#include <Windows.h>
+#include <windows.h>
 #endif // PLATFORM_WINDOWS_PC
 
 // NOTE: This has to be the last file included!

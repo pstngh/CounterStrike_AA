@@ -275,7 +275,7 @@ void CJob::InitCoroutine()
 	// Set the job name
 	if ( !m_pJobType && !m_pchJobName )
 	{
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 		m_pchJobName = typeid( *this ).raw_name();
 		if ( m_pchJobName[0] == '.' && m_pchJobName[1] == '?' && m_pchJobName[2] == 'A')
 			m_pchJobName += 4;

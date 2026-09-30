@@ -73,6 +73,9 @@
 	#include <signal.h>
 	#include <stdarg.h>
 #endif
+#if defined( _WIN32 ) && defined( COMPILER_GCC )
+	#include <intrin.h>		// the MSVC intrinsics the Windows code paths use
+#endif
 
 // This macro 
 #define SN_OPT_DISABLE
@@ -120,7 +123,7 @@
 // C functions for external declarations that call the appropriate C++ methods
 #ifndef EXPORT
 	#ifdef _WIN32
-		#define EXPORT	_declspec( dllexport )
+		#define EXPORT	__declspec( dllexport )
 	#else
 		#define EXPORT	/* */
 	#endif
@@ -327,7 +330,9 @@ typedef signed char					int8;
 		typedef int					intp;
 		typedef unsigned int		uintp;
 	#endif
+	#ifndef _WIN32
 	typedef void *HWND;
+	#endif
 
     // [u]int64 are actually defined as 'long long' and gcc 64-bit
     // doesn't automatically consider them the same as 'long int'.
@@ -563,7 +568,11 @@ typedef void * HINSTANCE;
 	#define TEMPLATE_STATIC
 
 	// Used for dll exporting and importing
+	#ifdef _WIN32
+		#define DLL_DECLARATION_DEFAULT_VISIBILITY __declspec( dllexport )
+	#else
 		#define DLL_DECLARATION_DEFAULT_VISIBILITY __attribute__ ((visibility("default")))
+	#endif
 	#define DLL_EXPORT				extern "C" DLL_DECLARATION_DEFAULT_VISIBILITY 
 	#define DLL_IMPORT				extern "C" 
 
@@ -776,6 +785,8 @@ typedef void * HINSTANCE;
 
 	#ifdef PLATFORM_OSX
 		#define mallocsize( _p )	( malloc_size( _p ) )
+	#elif defined( _WIN32 )
+		#define mallocsize( _p )	( _msize( _p ) )
 	#else
 		#define mallocsize( _p )	( malloc_usable_size( _p ) )
 	#endif
@@ -810,7 +821,7 @@ typedef void * HINSTANCE;
 		#else
 			#define DebuggerBreak()  if ( Plat_IsInDebugSession() ) asm( "int3" ); else { raise(SIGTRAP); }
 		#endif
-	#elif ( defined( PLATFORM_CYGWIN ) || defined( PLATFORM_POSIX ) ) && !defined( __e2k__ )
+	#elif ( defined( PLATFORM_CYGWIN ) || defined( PLATFORM_POSIX ) || defined( _WIN32 ) ) && !defined( __e2k__ )
 		#define DebuggerBreak()		__asm__( "int $0x3;")
 	#else
 		#define DebuggerBreak()	raise(SIGTRAP)

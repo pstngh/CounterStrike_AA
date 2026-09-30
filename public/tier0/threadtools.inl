@@ -461,7 +461,7 @@ INLINE_ON_PS3 void* CThread::ThreadProc(LPVOID pv)
 #if defined( POSIX )
 	ThreadInit_t *pInit = reinterpret_cast<ThreadInit_t*>(pv);
 #else
-	std::auto_ptr<ThreadInit_t> pInit((ThreadInit_t *)pv);
+	std::unique_ptr<ThreadInit_t> pInit((ThreadInit_t *)pv);
 #endif
 
 	AllocateThreadID();
@@ -511,7 +511,7 @@ INLINE_ON_PS3 void* CThread::ThreadProc(LPVOID pv)
 	}
 	else
 	{
-#if defined( _WIN32 )
+#if defined( COMPILER_MSVC )
 		CatchAndWriteMiniDumpForVoidPtrFn( ThreadProcRunWithMinidumpHandler, pv, false );
 #else
 		pInit->pThread->m_result = pInit->pThread->Run();

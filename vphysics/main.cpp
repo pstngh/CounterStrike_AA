@@ -40,8 +40,6 @@ BOOL WINAPI DllMain( HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved )
 {
  	if ( fdwReason == DLL_PROCESS_ATTACH )
 	{
-		ivp_set_message_print_function( ivu_string_print_function );
-
 		MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f, false, false, false, false );
 		// store out module handle
 		//gPhysicsDLLHandle = (HMODULE)hinstDLL;
@@ -228,7 +226,7 @@ void CPhysicsInterface::DestroyAllCollisionSets()
 // In release build, each of these libraries must contain a symbol that indicates it is also a release build
 // You MUST disable this in order to run a release vphysics.dll with a debug library.
 // This should not usually be necessary
-#if !defined(_DEBUG) && defined(_WIN32)
+#if !defined(_DEBUG) && defined(COMPILER_MSVC)
 extern int ivp_physics_lib_is_a_release_build;
 extern int ivp_compactbuilder_lib_is_a_release_build;
 extern int hk_base_lib_is_a_release_build;

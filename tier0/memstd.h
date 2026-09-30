@@ -45,7 +45,7 @@
 #define NUM_POOLS		42
 #endif
 
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && defined( COMPILER_MSVC )
 // Small block heap on win64 is expecting SLIST_HEADER to look different than it does on win64. It was disabled for a long time because of this.
 #define MEM_SBH_ENABLED 1
 #endif

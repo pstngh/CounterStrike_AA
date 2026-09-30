@@ -102,7 +102,7 @@ mat_fullbright 1 doesn't work properly on alpha materials in testroom_standards
 
 #include "winutils.h"
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( DX_TO_GL_ABSTRACTION )
 #include "nvapi.h"
 #include "NvApiDriverSettings.h"
 #endif
@@ -2036,7 +2036,7 @@ void PIXifyName( char *pDest, const char *pSrc )
 	memcpy( pDest, pLastSlash, nBytes );
 }
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( DX_TO_GL_ABSTRACTION )
 void PrintError( NvAPI_Status status, uint32 unStage, uint32 unProp, bool bPlus = false )
 {
 	NvAPI_ShortString szDesc = { 0 };
@@ -2407,7 +2407,9 @@ CShaderAPIDx8::CShaderAPIDx8() :
 	m_bUnlitMesh = false;
 
 #ifdef WIN32
+#ifndef DX_TO_GL_ABSTRACTION
 	ScanAndFixNvDriverProfiles();
+#endif
 	m_pNVAPI_registeredDepthStencilSurface = NULL;
 	m_pNVAPI_registeredDepthTexture = NULL;
 #endif

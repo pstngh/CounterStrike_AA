@@ -769,7 +769,7 @@ delaying_test:
 
     if( core[0]->temporarily_unmovable | core[1]->temporarily_unmovable ) {
 	IVP_IF(0) {
-	    printf("switched_to_temporarily_unmov %lx %lx %f\n",(long)core[0],(long)core[1],core[0]->environment->get_current_time().get_time());
+	    printf("switched_to_temporarily_unmov %lx %lx %f\n",(intptr_t)core[0],(intptr_t)core[1],core[0]->environment->get_current_time().get_time());
 	}
 	core[0]->environment->get_statistic_manager()->impact_unmov++;
 
@@ -1516,7 +1516,7 @@ IVP_BOOL IVP_Impact_System::test_loop_all_pairs()
 	    IVP_Contact_Point *my_fr = my_pair->fr_dists.element_at(k);
 	    if(my_fr->tmp_contact_info->coll_time_is_valid==IVP_TRUE) {
 	      IVP_IF(l_environment->get_debug_manager()->debug_imp_sys) {
-		printf("did_not_test %lx\n",0x0000ffff&(long)my_fr);
+		printf("did_not_test %lx\n",0x0000ffff&(intptr_t)my_fr);
 	      }
 	    } else {
 		l_environment->get_statistic_manager()->impact_coll_checks++;
@@ -1722,7 +1722,7 @@ void IVP_Contact_Point::calc_coll_distance(){
 	    IVP_Core *core0,*core1;
 	    core0=get_synapse(0)->l_obj->friction_core;
 	    core1=get_synapse(1)->l_obj->friction_core;
-	    fprintf(fp,"  %lx %lx-%lx: ",0x0000ffff&(long)this,0x0000ffff&(long)core0,0x0000ffff&(long)core1);
+	    fprintf(fp,"  %lx %lx-%lx: ",0x0000ffff&(intptr_t)this,0x0000ffff&(intptr_t)core0,0x0000ffff&(intptr_t)core1);
 	    fprintf(fp,"di %.4f  ",get_gap_length());
 	    IVP_DOUBLE debug_cs = closing_speed + info->impact.rescue_speed_addon*0.5f;
 	    fprintf(fp,"cs %.4f  ",debug_cs);
@@ -1730,7 +1730,7 @@ void IVP_Contact_Point::calc_coll_distance(){
 	}
 	IVP_IF(env->get_debug_manager()->debug_imp_sys) {
 	    printf("tested_frdist %lx di %.4f cs %.4f dr %.4f\n",
-		0x0000ffff&(long)this,
+		0x0000ffff&(intptr_t)this,
 		get_gap_length(),
 		closing_speed + info->impact.rescue_speed_addon*0.5f,
 		info->impact.distance_reached_in_time);

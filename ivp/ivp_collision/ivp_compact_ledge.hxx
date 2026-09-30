@@ -261,7 +261,7 @@ const IVP_Compact_Triangle *IVP_Compact_Edge::get_triangle() const
 #if defined(__i386__)
     return (IVP_Compact_Triangle *)(((unsigned int)this) & 0xfffffff0);
 #elif defined(__x86_64__) || defined(__aarch64__) || defined(__e2k__)
-    return (IVP_Compact_Triangle *)(((unsigned long int)this) & 0xFFFFFFFFFFFFFFF0);
+    return (IVP_Compact_Triangle *)(((uintptr_t)this) & 0xFFFFFFFFFFFFFFF0);
 #else
 #error fix this for your platform
 #endif

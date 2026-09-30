@@ -15,7 +15,7 @@
 typedef HMODULE LibraryHandle;
 #define LoadLibraryHandle(libname) LoadLibrary(libname)
 #define CloseLibraryHandle(handle) FreeLibrary(handle)
-#define LookupInLibraryHandle(handle, fn) GetProcAddress(handle, fn)
+#define LookupInLibraryHandle(handle, fn) (void *)GetProcAddress(handle, fn)
 #elif defined(POSIX)
 #include <dlfcn.h>
 typedef void *LibraryHandle;

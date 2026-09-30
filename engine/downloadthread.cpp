@@ -21,7 +21,7 @@
 
 #if defined( WIN32 )
 #include "winlite.h"
-#include <WinInet.h>
+#include <wininet.h>
 #endif
 #include <assert.h>
 #include <sys/stat.h>

@@ -23,7 +23,7 @@ IEventSystem *g_pEventSystem = 0;
 ILocalize *g_pLocalize = 0;
 
 // for utlsortvector.h
-#ifndef _WIN32
+#ifndef COMPILER_MSVC
 void *g_pUtlSortVectorQSortContext = NULL;
 #endif
 

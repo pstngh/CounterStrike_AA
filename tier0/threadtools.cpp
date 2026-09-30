@@ -15,7 +15,7 @@
 #ifdef PLATFORM_WINDOWS
 	#include <process.h>
 	#ifdef PLATFORM_WINDOWS_PC
-		#include <Mmsystem.h>
+		#include <mmsystem.h>
 		#pragma comment(lib, "winmm.lib")
 	#endif
 #elif PLATFORM_POSIX
@@ -47,6 +47,7 @@
 #include "tier0/dynfunction.h"
 
 #include <map>
+#include <memory>
 
 // Must be last header...
 #include "tier0/memdbgon.h"
@@ -548,7 +549,7 @@ bool ThreadJoin( ThreadHandle_t hThread, unsigned timeout )
 //-----------------------------------------------------------------------------
 void ThreadSetDebugName( ThreadHandle_t hThread, const char *pszName )
 {
-#ifdef WIN32
+#ifdef COMPILER_MSVC
 	if ( Plat_IsInDebugSession() )
 	{
 #define MS_VC_EXCEPTION 0x406d1388
@@ -1286,7 +1287,7 @@ bool ThreadInterlockedAssignIf64(volatile int64 *pDest, int64 value, int64 compe
 #endif
 }
 
-#ifdef _WIN64
+#ifdef COMPILER_MSVC64
 bool ThreadInterlockedAssignIf128( volatile int128 *pDest, const int128 &value, const int128 &comperand )
 {
 	DbgAssert( ( (size_t)pDest % 16 ) == 0 );
@@ -1583,7 +1584,7 @@ static CDynamicFunction<TryEnterCriticalSectionFunc_t> DynTryEnterCriticalSectio
 
 bool CThreadMutex::TryLock()
 {
-#if defined( MSVC )
+#if defined( _WIN32 )
 #ifdef THREAD_MUTEX_TRACING_ENABLED
 	uint thisThreadID = ThreadGetCurrentId();
 	if ( m_bTrace && m_currentOwnerID && ( m_currentOwnerID != thisThreadID ) )

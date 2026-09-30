@@ -8,6 +8,7 @@
 #define NET_WS_QUEUED_PACKET_SENDER_H
 #ifdef _WIN32
 #pragma once
+#include <winsock2.h>
 #endif
 
 // Used to match against certain debug values of cvars.

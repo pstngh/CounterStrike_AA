@@ -4765,7 +4765,7 @@ vgui::IImage *CMatSystemSurface::GetIconImageForFullPath( char const *pFullPath 
 {
 	vgui::IImage *newIcon = NULL;
 
-#if defined( WIN32 )
+#if defined( WIN32 ) && defined( COMPILER_MSVC ) // needs the deleted memorybitmap.cpp
 	SHFILEINFO info = { 0 };
 	DWORD_PTR dwResult = SHGetFileInfo( 
 		pFullPath,

@@ -84,7 +84,7 @@ BEGIN_BYTESWAP_DATADESC_( VTFFileHeaderPS3_t, VTFFileBaseHeader_t )
 	DEFINE_FIELD( compressedSize, FIELD_INTEGER ),
 END_DATADESC()
 
-#if defined( POSIX )
+#if !defined( COMPILER_MSVC )
 // stub functions
 const char* S3TC_GetBlock(
         const void *pCompressed,

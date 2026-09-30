@@ -21,7 +21,7 @@ inline void __cdecl VPurecallHandler()
 	Plat_ExitProcess( EXIT_FAILURE );
 }
 
-#if defined( _WIN32 )
+#if defined( COMPILER_MSVC )
 #define WIN_32_LEAN_AND_MEAN
 #include <windows.h>
 // set Windows pure virtual handler
@@ -37,7 +37,7 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 #include <stdio.h>
 #include "memdbgoff.h"
 
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 // ARG: crtdbg is necessary for certain definitions below,
 // but it also redefines malloc as a macro in release.
 // To disable this, we gotta define _DEBUG before including it.. BLEAH!
@@ -85,7 +85,7 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 //-----------------------------------------------------------------------------
 // Standard functions in the CRT that we're going to override to call our allocator
 //-----------------------------------------------------------------------------
-#if defined(_WIN32) && !defined(_STATIC_LINKED)
+#if defined(COMPILER_MSVC) && !defined(_STATIC_LINKED)
 
 // this magic only works under win32
 // under linux this malloc() overrides the libc malloc() and so we
@@ -439,7 +439,7 @@ void __cdecl operator delete[] ( void *pMem ) throw()
 // link to a debug static lib!!!
 //-----------------------------------------------------------------------------
 #ifndef _STATIC_LINKED
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 
 // This here just hides the internal file names, etc of allocations
 // made in the c runtime library
@@ -470,7 +470,7 @@ private:
 
 
 #define AttribIfCrt() CAttibCRT _attrib(nBlockUse)
-#elif defined(POSIX)
+#else
 #define AttribIfCrt()
 #endif // _WIN32
 
@@ -544,7 +544,7 @@ size_t __cdecl _msize_dbg( void *pMem, int nBlockUse )
 }
 
 
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 
 #if defined(_DEBUG) && _MSC_VER >= 1300
 // X360TBD: aligned and offset allocations may be important on the 360
@@ -637,7 +637,7 @@ ALLOC_CALL void * __cdecl _aligned_offset_recalloc( void * memblock, size_t coun
 //-----------------------------------------------------------------------------
 // Override some the _CRT debugging allocation methods in MSVC
 //-----------------------------------------------------------------------------
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 
 extern "C"
 {
@@ -899,7 +899,7 @@ int __cdecl _CrtReportBlockType(const void * pUserData)
 #endif
 
 // Extras added prevent dbgheap.obj from being included - DAL
-#ifdef _WIN32
+#ifdef COMPILER_MSVC
 
 extern "C"
 {

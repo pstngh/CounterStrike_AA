@@ -501,7 +501,7 @@ void IVP_Friction_System::test_hole_fr_system_data()
 	    IVP_Friction_Info_For_Core *fr_info = r_obj->get_friction_info(fs);
 
 	    if(fr_info->l_friction_system!=this){
-		printf("test_fr l_friction_system %f %lx\n",time.get_time(),(long)obj_obj); CORE;
+		printf("test_fr l_friction_system %f %lx\n",time.get_time(),(intptr_t)obj_obj); CORE;
 	    }
 	    
 	    int found_mine=0;
@@ -519,13 +519,13 @@ void IVP_Friction_System::test_hole_fr_system_data()
 			temp_dist=fs->get_next_friction_dist(temp_dist);
 		    }
 		    if(!is_in_collection){
-			printf("test_fr there was mindist %lx in obj which is not in system\n",(long)all_dists&0x0000ffff); CORE; 
+			printf("test_fr there was mindist %lx in obj which is not in system\n",(intptr_t)all_dists&0x0000ffff); CORE; 
 		    }
 		}
 	    }
 	    if(!found_mine)
 	    {
-		printf("test_fr mindist %lx missing in obj\n",(long)mindist); CORE;
+		printf("test_fr mindist %lx missing in obj\n",(intptr_t)mindist); CORE;
 	    }
 	}
 
@@ -542,7 +542,7 @@ void IVP_Friction_System::test_hole_fr_system_data()
 		}
 	    }
 	    if(!found_mine) {
-		printf("test_fr dist %lx not found in pairs\n",(long)mindist);
+		printf("test_fr dist %lx not found in pairs\n",(intptr_t)mindist);
 		CORE;
 	    }
 	}
@@ -564,7 +564,7 @@ void IVP_Friction_System::test_hole_fr_system_data()
 		    }
 		}
 		if(!found_mine)	{
-		    printf("test_fr pair %lx containing dist %lx not in system\n",(long)fr_pair,(long)fr_dist);
+		    printf("test_fr pair %lx containing dist %lx not in system\n",(intptr_t)fr_pair,(intptr_t)fr_dist);
 		    CORE;
 		}
 	    }
@@ -609,11 +609,11 @@ void out_friction_info_obj(IVP_Core *obj)
     IVP_IF(1) {
 	IVP_Friction_Info_For_Core *fr_info=obj->moveable_core_has_friction_info();
 	while(fr_info)    {
-	    printf("obj %lx fs %lx obj_ma %d",(long)obj&0x0000ffff,(long)fr_info->l_friction_system&0x0000ffff,obj->physical_unmoveable);
+	    printf("obj %lx fs %lx obj_ma %d",(intptr_t)obj&0x0000ffff,(intptr_t)fr_info->l_friction_system&0x0000ffff,obj->physical_unmoveable);
 	    
 	    for (int i = fr_info->friction_springs.len()-1; i>=0; i--){
 		IVP_Contact_Point *mindist = fr_info->friction_springs.element_at(i);
-		printf("  md %lx",(long)mindist&0x0000ffff);
+		printf("  md %lx",(intptr_t)mindist&0x0000ffff);
 	    }
 	    fr_info=NULL;
 	    printf("\n");
@@ -835,10 +835,10 @@ void IVP_Friction_System::exchange_friction_dists(IVP_Contact_Point *first_frd,I
 void IVP_Friction_System::ivp_debug_fs_pointers()
 {
     IVP_IF(1) {
-    printf("%lx  ",(long)first_friction_dist&0x0000ffff);
+    printf("%lx  ",(intptr_t)first_friction_dist&0x0000ffff);
     for(IVP_Contact_Point *fr_d=get_first_friction_dist();fr_d;fr_d=get_next_friction_dist(fr_d))
     {
-	printf("%lx %lx %d %lx  ",(long)fr_d->prev_dist_in_friction&0x0000ffff,(long)fr_d&0x0000ffff,fr_d->has_negative_pull_since,(long)fr_d->next_dist_in_friction&0x0000ffff);
+	printf("%lx %lx %d %lx  ",(intptr_t)fr_d->prev_dist_in_friction&0x0000ffff,(intptr_t)fr_d&0x0000ffff,fr_d->has_negative_pull_since,(intptr_t)fr_d->next_dist_in_friction&0x0000ffff);
     }
     printf("\n");
     }
