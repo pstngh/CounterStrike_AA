@@ -59,7 +59,9 @@ target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/utils/common/scriplib.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/lumpfiles.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/zip_utils.cpp")
 
-target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/filesystem/linux_support.cpp")
+if(POSIX)
+	target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/filesystem/linux_support.cpp")
+endif()
 
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/game/shared/cstrike15/cstrike15_item_inventory.cpp")
 

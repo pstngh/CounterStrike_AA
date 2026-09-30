@@ -36,6 +36,7 @@
 
 #if defined( _WIN32 ) || defined( WIN32 )
 #include <direct.h>
+#include <new.h>
 #endif
 
 // set these before calling CheckParm
