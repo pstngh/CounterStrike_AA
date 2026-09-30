@@ -27,9 +27,13 @@ if(APPLE)
     # hexadecimal bit patterns outside INT_MAX. Modern Clang diagnoses those
     # pre-C++11 initializers as errors even though the resulting bits are exact.
     add_compile_options(-Wno-c++11-narrowing)
+    # PRECISE_SQRT stays off: on arm64 it replaces the native, exactly rounded
+    # square root in _mm_sqrt_ps/_ss (FastSqrt) with an estimate and two Newton
+    # steps, which is slower and less exact. _mm_rsqrt_ps then refines its
+    # estimate once, which is still more precise than SSE's rsqrtps.
     add_compile_definitions(
         SSE2NEON_PRECISE_MINMAX=1
-        SSE2NEON_PRECISE_SQRT=1
+        SSE2NEON_PRECISE_SQRT=0
         SSE2NEON_PRECISE_DIV=1
     )
 
