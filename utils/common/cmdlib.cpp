@@ -36,7 +36,6 @@
 
 #if defined( _WIN32 ) || defined( WIN32 )
 #include <direct.h>
-#include <new.h>
 #endif
 
 // set these before calling CheckParm
@@ -366,6 +365,7 @@ void CmdLib_AllocError( unsigned long size )
 }
 
 
+#ifdef COMPILER_MSVC
 int CmdLib_NewHandler( size_t size )
 {
 	CmdLib_AllocError( size );
@@ -377,6 +377,7 @@ void InstallAllocationFunctions()
 	_set_new_mode( 1 ); // so if malloc() fails, we exit.
 	_set_new_handler( CmdLib_NewHandler );
 }
+#endif
 #endif
 
 void CmdLib_AtCleanup( CleanupFn pFn )

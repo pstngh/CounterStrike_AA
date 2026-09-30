@@ -842,7 +842,7 @@ unsigned char *ImgUtl_ReadPNGAsRGBA( const char *pngPath, int &width, int &heigh
 
 unsigned char		*ImgUtl_ReadPNGAsRGBAFromBuffer( CUtlBuffer &buffer, int &width, int &height, ConversionErrorType &errcode )
 {
-#if defined( WIN32 )
+#if defined( WIN32 ) && defined( COMPILER_MSVC ) // only MSVC builds link libpng
 
 	png_const_bytep pngData = (png_const_bytep)buffer.Base();
 	if (png_sig_cmp( pngData, 0, 8))
@@ -1967,7 +1967,7 @@ static void FlushPNGData( png_structp png_ptr )
 
 ConversionErrorType ImgUtl_WriteRGBAAsPNGToBuffer( const unsigned char *pRGBAData, int nWidth, int nHeight, CUtlBuffer &bufOutData, int nStride )
 {
-#if defined( WIN32 )
+#if defined( WIN32 ) && defined( COMPILER_MSVC ) // only MSVC builds link libpng
 	// Auto detect image stride
 	if ( nStride <= 0 )
 	{

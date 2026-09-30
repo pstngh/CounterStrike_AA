@@ -98,7 +98,7 @@ TEMPLATE_STATIC void SharedVar_MakeEmpty( Type *pValue, int iCount = 1 )
 }
 
 #ifdef GNUC
-#define SELECTOR __attribute__((weak))
+#define SELECTOR inline
 #else
 #define SELECTOR
 #endif
