@@ -2080,8 +2080,13 @@ FORCEINLINE void GLMContext::SetSamplerDirty( int sampler )
 FORCEINLINE void GLMContext::SetSamplerTex( int sampler, CGLMTex *tex ) 
 { 
 	Assert( sampler < GLM_SAMPLER_COUNT );
+	// The shader API sets some textures, such as the lightmap, again for every instance.
+	// Skip the bind when the unit already holds the texture: togl binds only through here
+	// and BindTexToTMU, which keep m_pBoundTex current, and ForceFlushStates rebinds
+	// every unit after code outside togl has used GL.
+	CGLMTex *pPrevTex = m_samplers[sampler].m_pBoundTex;
 	m_samplers[sampler].m_pBoundTex = tex;
-	if ( tex )
+	if ( tex && ( tex != pPrevTex ) )
 	{
 			if ( !gGL->m_bHave_GL_EXT_direct_state_access )
 			{

@@ -707,7 +707,10 @@ void GLMContext::ForceFlushStates()
 
 	for ( int i = 0; i < GLM_SAMPLER_COUNT; i++ )
 	{
-		SetSamplerTex( i, m_samplers[i].m_pBoundTex );
+		// Clear the cached texture so SetSamplerTex binds it again.
+		CGLMTex *pTex = m_samplers[i].m_pBoundTex;
+		m_samplers[i].m_pBoundTex = NULL;
+		SetSamplerTex( i, pTex );
 		SetSamplerDirty( i );
 	}
 

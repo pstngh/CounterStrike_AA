@@ -323,6 +323,11 @@ bool RocketRender::GenerateTexture(Rml::TextureHandle &texture_handle, const Rml
         return false;
     }
 
+    // RmlUi can load textures during layout, outside PrepareGLState/RestoreGLState.
+    // togl skips binding a texture it believes is still bound, so restore this unit.
+    GLint previous_texture = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
+
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, source_dimensions.x, source_dimensions.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, source);
@@ -331,6 +336,8 @@ bool RocketRender::GenerateTexture(Rml::TextureHandle &texture_handle, const Rml
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, (GLuint) previous_texture);
 
     texture_handle = (Rml::TextureHandle) texture_id;
 
