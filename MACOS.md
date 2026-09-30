@@ -90,8 +90,13 @@ Open `CSGO Launcher.app` in that directory to choose an installed map, bot count
 and difficulty, and windowed or fullscreen resolution. The overall Quality menu
 offers Low, Medium, High, and Very High presets; Custom appears when individual
 graphics choices differ from a preset. Graphics Settings still offers texture
-detail, texture filtering, anti-aliasing, shadows, shader detail, and VSync, and
-the saved individual choices remain authoritative. Graphics choices apply on the
+detail, texture filtering, anti-aliasing, shadows, shader detail, effect detail,
+and VSync, and the saved individual choices remain authoritative. Shadows also
+set the sun's cascaded shadow maps, the most expensive graphics feature here:
+Off disables them, and Low, Medium and High select `csm_quality_level` 0, 2 and
+3. Shaders, textures and effects set CS:GO's detail levels (`gpu_level`,
+`gpu_mem_level` and `cpu_level`), which otherwise stay at their highest values.
+Graphics choices apply on the
 next launch; anti-aliasing and VSync are also passed at startup so the video
 mode uses them immediately. The launcher saves the choices, writes
 `csgo/cfg/mac_launcher.cfg`, and starts the game with that config after the map

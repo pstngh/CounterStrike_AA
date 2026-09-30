@@ -200,17 +200,19 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     private let crosshairButton = NSButton(title: "Crosshair Settings…", target: nil, action: nil)
     private let qualityPopup = NSPopUpButton()
     // Custom is derived from the saved individual settings, which remain authoritative.
+    // Columns: textures, filtering, anti-aliasing, shadows, shaders, effects.
     private let qualityPresets = [
-        [0, 0, 0, 0, 0], // Low
-        [1, 0, 0, 1, 1], // Medium
-        [2, 2, 2, 2, 1], // High
-        [3, 4, 2, 3, 1], // Very High
+        [0, 0, 0, 0, 0, 0], // Low
+        [1, 0, 0, 1, 1, 1], // Medium
+        [2, 2, 2, 2, 1, 2], // High
+        [3, 4, 2, 3, 1, 2], // Very High
     ]
     private let texturePopup = NSPopUpButton()
     private let filteringPopup = NSPopUpButton()
     private let antialiasingPopup = NSPopUpButton()
     private let shadowsPopup = NSPopUpButton()
     private let shadersPopup = NSPopUpButton()
+    private let effectsPopup = NSPopUpButton()
     private let vsyncCheckbox = NSButton(checkboxWithTitle: "Limit frames to display refresh", target: nil, action: nil)
     private let crosshairStylePopup = NSPopUpButton()
     private let crosshairColorWell = NSColorWell()
@@ -275,6 +277,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         antialiasingPopup.addItems(withTitles: ["Off", "2× MSAA", "4× MSAA"])
         shadowsPopup.addItems(withTitles: ["Off", "Low", "Medium", "High"])
         shadersPopup.addItems(withTitles: ["Low", "High"])
+        effectsPopup.addItems(withTitles: ["Low", "Medium", "High"])
         crosshairStylePopup.addItems(withTitles: [
             "Default",
             "Default Static",
@@ -393,6 +396,15 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         antialiasingPopup.selectItem(at: storedInteger("antialiasing", defaultValue: 0, range: 0...2))
         shadowsPopup.selectItem(at: storedInteger("shadows", defaultValue: 1, range: 0...3))
         shadersPopup.selectItem(at: storedInteger("shaderDetail", defaultValue: 1, range: 0...1))
+        if defaults.object(forKey: "effectDetail") != nil {
+            effectsPopup.selectItem(at: storedInteger("effectDetail", defaultValue: 2, range: 0...2))
+        } else {
+            // Older launchers saved no effects choice; keep a saved quality preset intact.
+            let saved = [texturePopup, filteringPopup, antialiasingPopup, shadowsPopup, shadersPopup]
+                .map(\.indexOfSelectedItem)
+            let preset = qualityPresets.first { Array($0.prefix(5)) == saved }
+            effectsPopup.selectItem(at: preset?[5] ?? 2)
+        }
         vsyncCheckbox.state = defaults.bool(forKey: "vsync") ? .on : .off
         crosshairStylePopup.selectItem(at: storedInteger("crosshairStyle", defaultValue: 4, range: 0...5))
         let red = storedInteger("red", defaultValue: 50, range: 0...255)
@@ -788,7 +800,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
         ])
 
-        for control in [texturePopup, filteringPopup, antialiasingPopup, shadowsPopup, shadersPopup] {
+        for control in [texturePopup, filteringPopup, antialiasingPopup, shadowsPopup, shadersPopup, effectsPopup] {
             control.widthAnchor.constraint(equalToConstant: 280).isActive = true
             control.target = self
             control.action = #selector(settingsChanged)
@@ -798,6 +810,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(row("Anti-aliasing", control: antialiasingPopup))
         stack.addArrangedSubview(row("Shadows", control: shadowsPopup))
         stack.addArrangedSubview(row("Shaders", control: shadersPopup))
+        stack.addArrangedSubview(row("Effects", control: effectsPopup))
         vsyncCheckbox.target = self
         vsyncCheckbox.action = #selector(settingsChanged)
         stack.addArrangedSubview(row("VSync", control: vsyncCheckbox))
@@ -817,11 +830,12 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         antialiasingPopup.selectItem(at: preset[2])
         shadowsPopup.selectItem(at: preset[3])
         shadersPopup.selectItem(at: preset[4])
+        effectsPopup.selectItem(at: preset[5])
         saveSettings()
     }
 
     private func syncGraphicsQuality() {
-        let current = [texturePopup, filteringPopup, antialiasingPopup, shadowsPopup, shadersPopup]
+        let current = [texturePopup, filteringPopup, antialiasingPopup, shadowsPopup, shadersPopup, effectsPopup]
             .map(\.indexOfSelectedItem)
         let match = qualityPresets.firstIndex(of: current)
         qualityPopup.selectItem(at: match.map { $0 + 1 } ?? 0)
@@ -874,6 +888,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(antialiasingPopup.indexOfSelectedItem, forKey: "antialiasing")
         defaults.set(shadowsPopup.indexOfSelectedItem, forKey: "shadows")
         defaults.set(shadersPopup.indexOfSelectedItem, forKey: "shaderDetail")
+        defaults.set(effectsPopup.indexOfSelectedItem, forKey: "effectDetail")
         defaults.set(vsyncCheckbox.state == .on, forKey: "vsync")
         defaults.set(crosshair.style, forKey: "crosshairStyle")
         defaults.set(crosshair.red, forKey: "red")
@@ -923,6 +938,15 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         let anisotropy = [1, 2, 4, 8, 16][filtering]
         let antialiasing = [0, 2, 4][antialiasingPopup.indexOfSelectedItem]
         let shadows = shadowsPopup.indexOfSelectedItem
+        // Cascaded shadow maps (the sun shadows) cost the most here: each cascade redraws
+        // the scene. Off disables them; Low, Medium and High select CSM quality 0, 2 and 3.
+        let csmQuality = [0, 0, 2, 3][shadows]
+        // CS:GO's detail levels, which otherwise stay at their maxima on this renderer.
+        // They come first in the config because changing one reapplies its level's
+        // settings, including mat_picmip and the shadow settings written after it.
+        let gpuLevel = shadersPopup.indexOfSelectedItem == 0 ? 0 : 3
+        let gpuMemLevel = [0, 1, 2, 2][texturePopup.indexOfSelectedItem]
+        let cpuLevel = effectsPopup.indexOfSelectedItem
         let vsync = vsyncCheckbox.state == .on ? 1 : 0
         let config = """
         // Generated by CS:GO Mac Launcher. Recreated each time the game starts.
@@ -967,6 +991,11 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         cl_crosshair_dynamic_maxdist_splitratio \(commandNumber(crosshair.dynamicSplitRatio))
         cl_crosshair_sniper_width \(crosshair.sniperWidth)
         cl_crosshair_sniper_show_normal_inaccuracy \(crosshair.sniperShowsInaccuracy ? 1 : 0)
+        cpu_level \(cpuLevel)
+        gpu_level \(gpuLevel)
+        gpu_mem_level \(gpuMemLevel)
+        cl_csm_enabled \(shadows == 0 ? 0 : 1)
+        csm_quality_level \(csmQuality)
         mat_picmip \(texturePicmip)
         mat_forceaniso \(anisotropy)
         mat_antialias \(antialiasing)
