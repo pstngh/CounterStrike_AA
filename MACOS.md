@@ -80,22 +80,32 @@ Standalone listen servers intentionally fall back to LAN mode when Steam service
 
 ## Performance options
 
-These settings trade smoothness or old-driver workarounds for frame rate. Their
-effect on Apple's OpenGL has not been measured, so compare each one with
-`fps_max 0` and `cl_showfps 1` on the same map, spot and bot count.
+Engine threads, including the main and render threads, request macOS's
+user-interactive quality-of-service class, so Apple Silicon favors its
+performance cores for them.
 
-- `r_frameratesmoothing 0` in the console turns on Apple's multithreaded OpenGL
-  engine, which the default of 1 keeps off. Valve described the default as
-  reducing stutter at the expense of frame rate. The setting is saved.
-- `gl_swap_limit 0` in the console lets more than one frame queue for display,
-  at the cost of input latency.
-- By default each update to a dynamic vertex or index buffer maps and unmaps an
-  OpenGL buffer. Launch with `-gl_enable_static_buffer` to copy updates into
-  memory and upload them with `glBufferSubData` instead, or with
-  `-gl_enable_pseudobufs` to keep dynamic data in client memory. The game log
-  names the active mode on a line that starts with `GL buffer locks`. The Mac
-  launcher does not pass these options, so start the game from a terminal to
-  try them.
+The Mac launcher's Graphics Settings has a Performance section for settings
+whose effect on Apple's OpenGL has not been measured. Compare each one on the
+same map, spot and bot count with Show frame time breakdown turned on
+(`cl_showfps 5`). That overlay splits each frame into main-thread time (game
+logic and bots), render-thread time and the waits between them. On this
+renderer the render-thread time includes waiting for the GPU at present.
+
+- Frame limit sets `fps_max`. The default is 300; Unlimited is 0.
+- Multithreaded OpenGL engine sets `r_frameratesmoothing 0`, which turns on
+  Apple's multithreaded OpenGL engine. The default of 1 keeps it off, which
+  Valve described as reducing stutter at the expense of frame rate.
+- Buffer uploads chooses how dynamic vertex and index data reaches OpenGL. By
+  default each update maps and unmaps an OpenGL buffer. Copy into buffers
+  launches with `-gl_enable_static_buffer`, which copies updates into memory
+  and uploads them with `glBufferSubData`; Client memory launches with
+  `-gl_enable_pseudobufs`, which keeps dynamic data in client memory. The game
+  log names the mode on a line that starts with `GL buffer locks`.
+- Set up bones on worker threads sets `cl_threaded_bone_setup 1`, which moves
+  player animation off the main thread. CS:GO shipped with it off.
+
+In the console, `gl_swap_limit 0` also lets more than one frame queue for
+display, at the cost of input latency.
 
 ## Native Mac launcher
 
@@ -115,7 +125,8 @@ set the sun's cascaded shadow maps, the most expensive graphics feature here:
 Off disables them, and Low, Medium and High select `csm_quality_level` 0, 2 and
 3. Shaders, textures and effects set CS:GO's detail levels (`gpu_level`,
 `gpu_mem_level` and `cpu_level`), which otherwise stay at their highest values.
-Graphics choices apply on the
+Its Performance section is described under
+[Performance options](#performance-options). Graphics choices apply on the
 next launch; anti-aliasing and VSync are also passed at startup so the video
 mode uses them immediately. The launcher saves the choices, writes
 `csgo/cfg/mac_launcher.cfg`, and starts the game with that config after the map

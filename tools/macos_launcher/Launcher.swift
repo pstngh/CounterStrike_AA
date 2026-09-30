@@ -214,6 +214,14 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     private let shadersPopup = NSPopUpButton()
     private let effectsPopup = NSPopUpButton()
     private let vsyncCheckbox = NSButton(checkboxWithTitle: "Limit frames to display refresh", target: nil, action: nil)
+    // Performance options to compare on a given Mac; none is part of a quality preset.
+    private let fpsLimitPopup = NSPopUpButton()
+    private let fpsLimits = [60, 120, 144, 240, 300, 0] // fps_max; 0 is unlimited
+    private let multithreadedGLCheckbox = NSButton(checkboxWithTitle: "Multithreaded OpenGL engine", target: nil, action: nil)
+    private let threadedBonesCheckbox = NSButton(checkboxWithTitle: "Set up bones on worker threads", target: nil, action: nil)
+    private let bufferUploadsPopup = NSPopUpButton()
+    private let bufferUploadArguments: [[String]] = [[], ["-gl_enable_static_buffer"], ["-gl_enable_pseudobufs"]]
+    private let performanceOverlayCheckbox = NSButton(checkboxWithTitle: "Show frame time breakdown", target: nil, action: nil)
     private let crosshairStylePopup = NSPopUpButton()
     private let crosshairColorWell = NSColorWell()
     private let crosshairSizeField = NSTextField()
@@ -278,6 +286,8 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         shadowsPopup.addItems(withTitles: ["Off", "Low", "Medium", "High"])
         shadersPopup.addItems(withTitles: ["Low", "High"])
         effectsPopup.addItems(withTitles: ["Low", "Medium", "High"])
+        fpsLimitPopup.addItems(withTitles: fpsLimits.map { $0 == 0 ? "Unlimited" : "\($0) fps" })
+        bufferUploadsPopup.addItems(withTitles: ["Map buffers (default)", "Copy into buffers", "Client memory"])
         crosshairStylePopup.addItems(withTitles: [
             "Default",
             "Default Static",
@@ -406,6 +416,11 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             effectsPopup.selectItem(at: preset?[5] ?? 2)
         }
         vsyncCheckbox.state = defaults.bool(forKey: "vsync") ? .on : .off
+        fpsLimitPopup.selectItem(at: storedInteger("fpsLimit", defaultValue: 4, range: 0...5))
+        multithreadedGLCheckbox.state = storedBool("multithreadedGL", defaultValue: false) ? .on : .off
+        threadedBonesCheckbox.state = storedBool("threadedBoneSetup", defaultValue: false) ? .on : .off
+        bufferUploadsPopup.selectItem(at: storedInteger("bufferUploads", defaultValue: 0, range: 0...2))
+        performanceOverlayCheckbox.state = storedBool("performanceOverlay", defaultValue: false) ? .on : .off
         crosshairStylePopup.selectItem(at: storedInteger("crosshairStyle", defaultValue: 4, range: 0...5))
         let red = storedInteger("red", defaultValue: 50, range: 0...255)
         let green = storedInteger("green", defaultValue: 250, range: 0...255)
@@ -779,7 +794,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             return
         }
 
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 570),
                             styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
         panel.title = "Graphics Settings"
         panel.isFloatingPanel = false
@@ -814,6 +829,25 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         vsyncCheckbox.target = self
         vsyncCheckbox.action = #selector(settingsChanged)
         stack.addArrangedSubview(row("VSync", control: vsyncCheckbox))
+
+        let performanceHeading = NSTextField(labelWithString: "Performance")
+        performanceHeading.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
+        stack.addArrangedSubview(performanceHeading)
+        for control in [fpsLimitPopup, bufferUploadsPopup] {
+            control.widthAnchor.constraint(equalToConstant: 280).isActive = true
+            control.target = self
+            control.action = #selector(settingsChanged)
+        }
+        for checkbox in [multithreadedGLCheckbox, threadedBonesCheckbox, performanceOverlayCheckbox] {
+            checkbox.target = self
+            checkbox.action = #selector(settingsChanged)
+        }
+        stack.addArrangedSubview(row("Frame limit", control: fpsLimitPopup))
+        stack.addArrangedSubview(row("OpenGL", control: multithreadedGLCheckbox))
+        stack.addArrangedSubview(row("Buffer uploads", control: bufferUploadsPopup))
+        stack.addArrangedSubview(row("Animation", control: threadedBonesCheckbox))
+        stack.addArrangedSubview(row("Overlay", control: performanceOverlayCheckbox))
+
         let note = NSTextField(labelWithString: "Changes apply the next time you launch the game.")
         note.textColor = .secondaryLabelColor
         stack.addArrangedSubview(note)
@@ -890,6 +924,11 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(shadersPopup.indexOfSelectedItem, forKey: "shaderDetail")
         defaults.set(effectsPopup.indexOfSelectedItem, forKey: "effectDetail")
         defaults.set(vsyncCheckbox.state == .on, forKey: "vsync")
+        defaults.set(fpsLimitPopup.indexOfSelectedItem, forKey: "fpsLimit")
+        defaults.set(multithreadedGLCheckbox.state == .on, forKey: "multithreadedGL")
+        defaults.set(threadedBonesCheckbox.state == .on, forKey: "threadedBoneSetup")
+        defaults.set(bufferUploadsPopup.indexOfSelectedItem, forKey: "bufferUploads")
+        defaults.set(performanceOverlayCheckbox.state == .on, forKey: "performanceOverlay")
         defaults.set(crosshair.style, forKey: "crosshairStyle")
         defaults.set(crosshair.red, forKey: "red")
         defaults.set(crosshair.green, forKey: "green")
@@ -1004,6 +1043,10 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         r_flashlightdepthtexture \(shadows >= 3 ? 1 : 0)
         mat_reducefillrate \(shadersPopup.indexOfSelectedItem == 0 ? 1 : 0)
         mat_vsync \(vsync)
+        fps_max \(fpsLimits[fpsLimitPopup.indexOfSelectedItem])
+        r_frameratesmoothing \(multithreadedGLCheckbox.state == .on ? 0 : 1)
+        cl_threaded_bone_setup \(threadedBonesCheckbox.state == .on ? 1 : 0)
+        \(performanceOverlayCheckbox.state == .on ? "cl_showfps 5" : "")
 
         """
         let configURL = gameRoot.appendingPathComponent("csgo/cfg/mac_launcher.cfg")
@@ -1019,13 +1062,15 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             process.currentDirectoryURL = gameRoot
             process.standardOutput = logHandle
             process.standardError = logHandle
-            process.arguments = ["-arm64", game.path, "-insecure", "-novid", "-mac_launcher",
-                                 fullscreenCheckbox.state == .on ? "-fullscreen" : "-windowed",
-                                 "-w", "\(resolution.width)", "-h", "\(resolution.height)",
-                                 "-mat_antialias", "\(antialiasing)", "-mat_aaquality", "0",
-                                 "-mat_vsync", "\(vsync)",
-                                 "-maxplayers_override", "\(maxPlayers)",
-                                 "+exec", "mac_launcher.cfg", "+map", map]
+            var arguments = ["-arm64", game.path, "-insecure", "-novid", "-mac_launcher",
+                             fullscreenCheckbox.state == .on ? "-fullscreen" : "-windowed",
+                             "-w", "\(resolution.width)", "-h", "\(resolution.height)",
+                             "-mat_antialias", "\(antialiasing)", "-mat_aaquality", "0",
+                             "-mat_vsync", "\(vsync)",
+                             "-maxplayers_override", "\(maxPlayers)"]
+            arguments += bufferUploadArguments[bufferUploadsPopup.indexOfSelectedItem]
+            arguments += ["+exec", "mac_launcher.cfg", "+map", map]
+            process.arguments = arguments
             process.terminationHandler = { [weak self] finished in
                 try? logHandle.close()
                 DispatchQueue.main.async {
