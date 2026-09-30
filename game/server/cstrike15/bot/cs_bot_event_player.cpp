@@ -147,29 +147,6 @@ void CCSBot::OnPlayerDeath( IGameEvent *event )
 			{
 				// report if number of enemies left is few and we killed the last one we saw locally
 				GetChatter()->EnemiesRemaining();
-
-				Vector victimOrigin = GetCentroid( victim );
-				if (IsVisible( victimOrigin, CHECK_FOV ))
-				{						
-					// congratulate teammates on their kills
-					if (killer && killer != this)
-					{
-						float delay = RandomFloat( 2.0f, 3.0f );
-						if (killer->IsBot())
-						{
-							if (RandomFloat( 0.0f, 100.0f ) < 40.0f)
-								GetChatter()->Say( "NiceShot", 3.0f, delay );
-						}
-						else
-						{
-							// humans get the honorific
-							if (CSGameRules()->IsCareer())
-								GetChatter()->Say( "NiceShotCommander", 3.0f, delay );
-							else
-								GetChatter()->Say( "NiceShotSir", 3.0f, delay );
-						}
-					}
-				}
 			}
 		}
 	}

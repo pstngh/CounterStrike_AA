@@ -1018,8 +1018,6 @@ void CCSPlayer::Precache()
 	PrecacheScriptSound( "Music.Final_Round_Stinger" );
 	PrecacheScriptSound( "Music.Match_Point_Stinger" );
 	PrecacheScriptSound( "Music.GG_Nemesis" );
-	PrecacheScriptSound( "Music.GG_Revenge" );
-	PrecacheScriptSound( "Music.GG_Dominating" );
 	PrecacheScriptSound( "Player.Respawn" );
 	PrecacheScriptSound( "UI.DeathMatchBonusKill" );
 
@@ -6942,13 +6940,6 @@ void CCSPlayer::PreThink()
 				{
 					ClientPrint( this, HUD_PRINTTALK, "#Player_You_Are_Still_Dominating", fmtPrintEntName.Access() );
 				}
-				// Play gun game domination sound
-				CRecipientFilter filter;
-				filter.AddRecipient( this );
-				EmitSound( filter, entindex(), "Music.GG_Dominating" );
-
-				// have this player brag to his team about dominating someone
-				Radio( "NiceShot"/*"OnARollBrag"*/ );
 			}
 		}		
 		m_flDominateEffectDelayTime = -1;
