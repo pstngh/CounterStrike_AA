@@ -16,6 +16,10 @@
 #include <dlfcn.h>
 #include <limits.h>
 #include <string.h>
+#ifdef OSX
+#include <pthread.h>
+#include <pthread/qos.h>
+#endif
 #define MAX_PATH PATH_MAX
 #endif
 
@@ -148,6 +152,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 int main( int argc, char *argv[] )
 {
+#ifdef OSX
+	// The main thread runs the game and, on a listen server, the server. A process that
+	// another app starts may not get the user-interactive QoS class macOS gives apps it
+	// launches itself, so request it; on Apple Silicon it favors the performance cores.
+	pthread_set_qos_class_self_np( QOS_CLASS_USER_INTERACTIVE, 0 );
+#endif
+
 #ifdef PLATFORM_64BITS
 	#ifdef OSX
 		const char *pLauncherPath = "bin/osx64/launcher" DLL_EXT_STRING;

@@ -29,6 +29,8 @@
 #endif
 
 #ifdef OSX
+#include <pthread/qos.h>
+
 // Add some missing defines
 #define PTHREAD_MUTEX_TIMED_NP         PTHREAD_MUTEX_NORMAL
 #define PTHREAD_MUTEX_RECURSIVE_NP     PTHREAD_MUTEX_RECURSIVE

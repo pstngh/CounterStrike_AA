@@ -316,7 +316,16 @@ ThreadHandle_t CreateSimpleThread( ThreadFunc_t pfnThread, void *pParam, unsigne
 	return (ThreadHandle_t)hThread;
 #elif PLATFORM_POSIX
 	pthread_t tid;
+#ifdef OSX
+	// Same QoS class as CThread::Start gives engine threads.
+	pthread_attr_t attr;
+	pthread_attr_init( &attr );
+	pthread_attr_set_qos_class_np( &attr, QOS_CLASS_USER_INTERACTIVE, 0 );
+	pthread_create( &tid, &attr, ThreadProcConvert, new ThreadProcInfo_t( pfnThread, pParam ) );
+	pthread_attr_destroy( &attr );
+#else
 	pthread_create( &tid, NULL, ThreadProcConvert, new ThreadProcInfo_t( pfnThread, pParam ) );
+#endif
 	return ( ThreadHandle_t ) tid;
 #else
 	Assert( 0 );

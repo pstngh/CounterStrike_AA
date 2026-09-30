@@ -135,6 +135,12 @@ INLINE_ON_PS3 bool CThread::Start( unsigned nBytesStack, ThreadPriorityEnum_t nP
 	pthread_attr_t attr;
 	pthread_attr_init( &attr );
 	pthread_attr_setstacksize( &attr, MAX( nBytesStack, 1024u*1024 ) );
+#ifdef OSX
+	// Engine threads render, run jobs and mix audio for the current frame. Without a QoS
+	// class macOS schedules them below user-interactive work, which on Apple Silicon
+	// weakens their claim on the performance cores.
+	pthread_attr_set_qos_class_np( &attr, QOS_CLASS_USER_INTERACTIVE, 0 );
+#endif
 	//lwss - fix memory leak here
 	m_threadInit = ThreadInit_t( init );
 	//if ( pthread_create( &m_threadId, &attr, (void *(*)(void *))GetThreadProc(), new ThreadInit_t( init ) ) != 0 )
