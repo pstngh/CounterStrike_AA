@@ -5,9 +5,7 @@
 //===========================================================================//
 
 #ifdef _WIN32
-#if !defined(_X360)
 #include "winlite.h"
-#endif
 #include "tier0/memdbgon.h" // needed because in release builds crtdbg.h is handled specially if USE_MEM_DEBUG is defined
 #include "tier0/memdbgoff.h"
 #include <crtdbg.h>   // For getting at current heap size

@@ -7,9 +7,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#ifdef _PS3
-#include <wctype.h>
-#endif
 
 #include <vgui/MouseCode.h>
 #include <vgui/KeyCode.h>

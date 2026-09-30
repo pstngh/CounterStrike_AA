@@ -8,14 +8,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#ifdef _PS3
-#include <wctype.h>
-//!!BUG!! "wcsicmp is unsupported on PS3"
-#ifdef wcsicmp
-#undef wcsicmp
-#endif
-#define wcsicmp wcscmp
-#endif
 #include <stdio.h>
 #include <utlvector.h>
 
@@ -4001,7 +3993,7 @@ void TextEntry::ShowIMECandidates()
 		input()->GetCandidate( i, unicode, sizeof( unicode ) );
 
 		wchar_t label[ 64 ];
-#if defined( PLATFORM_WINDOWS) || defined( _GAMECONSOLE )
+#if defined( PLATFORM_WINDOWS)
 		V_snwprintf( label, sizeof( label ) / sizeof( wchar_t ) - 1, L"%i %s", i - pageStart + startAtOne, unicode );
 #else
 		V_snwprintf( label, sizeof( label ) / sizeof( wchar_t ) - 1, L"%i %S", i - pageStart + startAtOne, unicode );
@@ -4135,7 +4127,7 @@ void TextEntry::UpdateIMECandidates()
 		input()->GetCandidate( i, unicode, sizeof( unicode ) );
 
 		wchar_t label[ 64 ];
-#if defined( PLATFORM_WINDOWS ) || defined( _GAMECONSOLE )
+#if defined( PLATFORM_WINDOWS )
 		V_snwprintf( label, sizeof( label ) / sizeof( wchar_t ) - 1, L"%i %s", i - pageStart + startAtOne, unicode );
 #else
 		V_snwprintf( label, sizeof( label ) / sizeof( wchar_t ) - 1, L"%i %S", i - pageStart + startAtOne, unicode );

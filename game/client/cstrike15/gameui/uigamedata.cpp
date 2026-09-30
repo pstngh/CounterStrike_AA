@@ -34,10 +34,6 @@
 #include "messagebox_scaleform.h"
 
 
-#if defined( _PS3 )
-#include <cell/camera.h> // PS3 eye camera
-#endif
-
 // BaseModUI High-level windows
 
 //#include "VFoundGames.h"
@@ -55,9 +51,7 @@
 
 #include "netmessages.h"
 
-#ifndef _GAMECONSOLE
 #include "steam/steam_api.h"
-#endif
 
 #include "gameui_util.h"
 
@@ -121,102 +115,17 @@ struct X360MarketPlaceEntryPoint
 };
 static X360MarketPlaceEntryPoint g_MarketplaceEntryPoint;
 
-#ifdef _GAMECONSOLE
-struct X360MarketPlaceQuery
-{
-	uint64 uiOfferID;
-	HRESULT hResult;
-	XOVERLAPPED xOverlapped;
-};
-static CUtlVector< X360MarketPlaceQuery * > g_arrMarketPlaceQueries;
-#endif
-
 static void GoToMarketplaceForOffer()
 {
 // dgoodenough - this looks to be x360 specific, so tag it as such
 // PS3_BUILDFIX
-#ifdef _X360
-	// Stop installing to the hard drive, otherwise STFC fragmentation hazard, as multiple non sequential HDD writes will occur.
-	// This needs to be done before the DLC might be downloaded to the HDD, otherwise it could be fragmented.
-	// We restart the installer on DLC download completion. We do not handle the cancel/abort case. The installer
-	// will restart through the pre-dlc path, i.e. after attract or exiting a map back to the main menu.
-	if ( g_pXboxInstaller )
-		g_pXboxInstaller->Stop();
-
-	// See if we need to free some of the queries
-	for ( int k = 0; k < g_arrMarketPlaceQueries.Count(); ++ k )
-	{
-		X360MarketPlaceQuery *pQuery = g_arrMarketPlaceQueries[k];
-		if ( XHasOverlappedIoCompleted( &pQuery->xOverlapped ) )
-		{
-			delete pQuery;
-			g_arrMarketPlaceQueries.FastRemove( k -- );
-		}
-	}
-
-	// Allocate a new query
-	X360MarketPlaceQuery *pQuery = new X360MarketPlaceQuery;
-	memset( pQuery, 0, sizeof( *pQuery ) );
-	pQuery->uiOfferID = g_MarketplaceEntryPoint.uiOfferID;
-	g_arrMarketPlaceQueries.AddToTail( pQuery );
-
-	// Open the marketplace entry point
-	//int iSlot = ;
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-	xonline->XShowMarketplaceDownloadItemsUI( XBX_GetActiveUserId(),
-											  g_MarketplaceEntryPoint.dwEntryPoint,
-											  &pQuery->uiOfferID,
-											  1,
-											  &pQuery->hResult,
-											  &pQuery->xOverlapped );
-#endif
 }
 
 static void ShowMarketplaceUiForOffer()
 {
 // dgoodenough - this looks to be x360 specific, so tag it as such
 // PS3_BUILDFIX
-#ifdef _X360
-	// Stop installing to the hard drive, otherwise STFC fragmentation hazard, as multiple non sequential HDD writes will occur.
-	// This needs to be done before the DLC might be downloaded to the HDD, otherwise it could be fragmented.
-	// We restart the installer on DLC download completion. We do not handle the cancel/abort case. The installer
-	// will restart through the pre-dlc path, i.e. after attract or exiting a map back to the main menu.
-	if ( g_pXboxInstaller )
-		g_pXboxInstaller->Stop();
-
-	// Open the marketplace entry point
-	// DWenger - Pulled out temporarily - int iSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	// DWenger - Pulled out temporarily - int iCtrlr = XBX_GetUserIsGuest( iSlot ) ? XBX_GetPrimaryUserId() : XBX_GetUserId( iSlot );
-	// DWenger - Pulled out temporarily - DWORD ret = xonline->XShowMarketplaceUI( iCtrlr, g_MarketplaceEntryPoint.dwEntryPoint, g_MarketplaceEntryPoint.uiOfferID, DWORD( -1 ) );
-	// DWenger - Pulled out temporarily - DevMsg( "XShowMarketplaceUI for offer %llx entry point %d ctrlr%d returned %d\n",
-		// DWenger - Pulled out temporarily - g_MarketplaceEntryPoint.uiOfferID, g_MarketplaceEntryPoint.dwEntryPoint, iCtrlr, ret );
-#endif
 }
-
-#ifdef _GAMECONSOLE
-CON_COMMAND_F( x360_marketplace_offer, "Get a known offer from x360 marketplace", FCVAR_CLIENTCMD_CAN_EXECUTE )
-{
-	if ( args.ArgC() != 4 )
-	{
-		Warning( "Usage: x360_marketplace_offer type 0xOFFERID ui|dl\n" );
-		return;
-	}
-
-	int iEntryPoint = Q_atoi( args.Arg( 1 ) );
-	char const *szArg2 = args.Arg( 2 );
-	uint64 uiOfferId = 0ull;
-	if ( 1 != sscanf( szArg2, "0x%llx", &uiOfferId ) )
-		uiOfferId = 0ull;
-
-	// Go to marketplace
-	g_MarketplaceEntryPoint.dwEntryPoint = iEntryPoint;
-	g_MarketplaceEntryPoint.uiOfferID = uiOfferId;
-	if ( !Q_stricmp( args.Arg( 3 ), "ui" ) )
-		ShowMarketplaceUiForOffer();
-	else
-		GoToMarketplaceForOffer();
-}
-#endif
 
 // Console command that's fired from the destructive action confirmation for joining a new session while already in a previous session.
 CON_COMMAND_F( confirm_join_new_session_exit_current, "Confirm that we wish to join a new session, destroying a previous session", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_HIDDEN )
@@ -239,7 +148,7 @@ CUIGameData::CUIGameData() :
 	m_CallbackUserStatsReceived( NULL, NULL ),
 #endif
 
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	m_CallbackPersonaStateChanged( NULL, NULL ),
 
@@ -252,7 +161,7 @@ CUIGameData::CUIGameData() :
 	m_CallbackUserStatsStored.Register(this, &CUIGameData::Steam_OnUserStatsStored);
 	m_CallbackUserStatsReceived.Register(this, &CUIGameData::Steam_OnUserStatsReceived);
 #endif
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_CallbackPersonaStateChanged.Register(this, &CUIGameData::Steam_OnPersonaStateChanged);
 #endif
 
@@ -304,30 +213,6 @@ void CUIGameData::Shutdown()
 	}
 }
 
-#ifdef _GAMECONSOLE
-CON_COMMAND( ui_fake_connection_problem, "" )
-{
-	int numMilliSeconds = 1000;
-	if ( args.ArgC() > 1 )
-	{
-		numMilliSeconds = Q_atoi( args.Arg( 1 ) );
-	}
-	
-	float flTime = Plat_FloatTime();
-	DevMsg( "ui_fake_connection_problem %d @%.2f\n", numMilliSeconds, flTime );
-
-	int numTries = 2;
-	while ( ( 1000 * ( Plat_FloatTime() - flTime ) < numMilliSeconds ) &&
-		numTries --> 0 )
-	{
-		ThreadSleep( numMilliSeconds + 50 );
-	}
-
-	flTime = Plat_FloatTime();
-	DevMsg( "ui_fake_connection_problem finished @%.2f\n", flTime );
-}
-#endif
-
 //=============================================================================
 void CUIGameData::RunFrame()
 {
@@ -337,11 +222,6 @@ void CUIGameData::RunFrame()
 	// DWenger - Pulled out temporarily - RunFrame_Invite();
 
 	// msmith - Put in the RunFrame for PS3.
-#if defined( _PS3 )
-
-	GetPs3SaveSteamInfoProvider()->RunFrame();
-
-#endif
 
 
 	if ( m_flShowConnectionProblemTimer > 0.0f )
@@ -440,23 +320,7 @@ bool CUIGameData::CanPlayer2Join()
 	if ( demo_ui_enable.GetString()[0] )
 		return false;
 
-#ifdef _GAMECONSOLE
-	if ( XBX_GetNumGameUsers() != 1 )
-		return false;
-
-	if ( XBX_GetPrimaryUserIsGuest() )
-		return false;
-
-	// DWenger - Pulled out temporarily
-	/*
-	if ( CBaseModPanel::GetSingleton().GetActiveWindowType() != WT_MAINMENU )
-		return false;
-	*/
-
-	return true;
-#else
 	return false;
-#endif
 }
 
 //=============================================================================
@@ -464,43 +328,16 @@ void CUIGameData::OpenFriendRequestPanel(int index, uint64 playerXuid)
 {
 // dgoodenough - this looks to be x360 specific, so tag it as such
 // PS3_BUILDFIX
-#ifdef _X360 
-	XShowFriendRequestUI(index, playerXuid);
-#endif
 }
 
 //=============================================================================
 void CUIGameData::OpenInviteUI( char const *szInviteUiType )
 {
-#ifdef _GAMECONSOLE 
-	// DWenger - Pulled out temporarily - int iSlot = CBaseModPanel::GetSingleton().GetLastActiveUserId();
-	// DWenger - Pulled out temporarily - int iCtrlr = XBX_GetUserIsGuest( iSlot ) ? XBX_GetPrimaryUserId() : XBX_GetUserId( iSlot );
-	
-	// DWenger - Pulled out temporarily - if ( !Q_stricmp( szInviteUiType, "friends" ) )
-		// DWenger - Pulled out temporarily - ::XShowFriendsUI( iCtrlr );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "players" ) )
-		// DWenger - Pulled out temporarily - xonline->XShowGameInviteUI( iCtrlr, NULL, 0, 0 );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "party" ) )
-		// DWenger - Pulled out temporarily - xonline->XShowPartyUI( iCtrlr );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "inviteparty" ) )
-		// DWenger - Pulled out temporarily - xonline->XPartySendGameInvites( iCtrlr, NULL );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "community" ) )
-		// DWenger - Pulled out temporarily - xonline->XShowCommunitySessionsUI( iCtrlr, XSHOWCOMMUNITYSESSION_SHOWPARTY );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "voiceui" ) )
-		// DWenger - Pulled out temporarily - ::XShowVoiceChannelUI( iCtrlr );
-	// DWenger - Pulled out temporarily - else if ( !Q_stricmp( szInviteUiType, "gamevoiceui" ) )
-		// DWenger - Pulled out temporarily - ::XShowGameVoiceChannelUI();
-	// DWenger - Pulled out temporarily - else
-	// DWenger - Pulled out temporarily - {
-		// DWenger - Pulled out temporarily - DevWarning( "OpenInviteUI with wrong parameter `%s`!\n", szInviteUiType );
-		// DWenger - Pulled out temporarily - Assert( 0 );
-	// DWenger - Pulled out temporarily - }
-#endif
 }
 
 void CUIGameData::ExecuteOverlayCommand( char const *szCommand )
 {
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( steamapicontext && steamapicontext->SteamFriends() &&
 		 steamapicontext->SteamUtils() && steamapicontext->SteamUtils()->IsOverlayEnabled() )
 	{
@@ -519,67 +356,18 @@ void CUIGameData::ExecuteOverlayCommand( char const *szCommand )
 //=============================================================================
 bool CUIGameData::SignedInToLive()
 {
-#ifdef _GAMECONSOLE
-
-	if ( XBX_GetNumGameUsers() <= 0 ||
-		 XBX_GetPrimaryUserIsGuest() )
-		 return false;
-
-	for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		int iController = XBX_GetUserId( k );
-		IPlayer *player = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-		if ( !player )
-			return false;
-		if ( player->GetOnlineState() != IPlayer::STATE_ONLINE )
-			return false;
-	}
-#endif
 	
 	return true;
 }
 
 bool CUIGameData::AnyUserSignedInToLiveWithMultiplayerDisabled()
 {
-#ifdef _GAMECONSOLE
-	if ( XBX_GetNumGameUsers() <= 0 ||
-		XBX_GetPrimaryUserIsGuest() )
-		return false;
-
-	for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		int iController = XBX_GetUserId( k );
-		IPlayer *player = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-		if ( player && player->GetOnlineState() == IPlayer::STATE_NO_MULTIPLAYER )
-			return true;
-	}
-#endif
 
 	return false;
 }
 
 bool CUIGameData::CheckAndDisplayErrorIfOffline( CBaseModFrame *pCallerFrame, char const *szMsg )
 {
-#ifdef _GAMECONSOLE
-	bool bOnlineFound = false;
-	if ( XBX_GetNumGameUsers() > 0 &&
-		!XBX_GetPrimaryUserIsGuest() )
-	{
-		for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-		{
-			int iController = XBX_GetUserId( k );
-			IPlayer *player = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-			if ( player && player->GetOnlineState() > IPlayer::STATE_OFFLINE )
-				return false;
-		}
-	}
-
-	if ( bOnlineFound )
-		return false;
-
-	DisplayOkOnlyMsgBox( pCallerFrame, "#SFUI_XboxLive", szMsg );
-	return true;
-#endif
 
 	return false;
 }
@@ -598,25 +386,11 @@ bool CUIGameData::CheckAndDisplayErrorIfNotSignedInToLive( CBaseModFrame *pCalle
 	{
 		szMsg = "#SFUI_MsgBx_NeedLiveNonGoldMsg";
 
-#ifdef _GAMECONSOLE
-		// Show the splitscreen version if there are 2 non-guest accounts
-		if ( XBX_GetNumGameUsers() > 1 && XBX_GetUserIsGuest( 0 ) == false && XBX_GetUserIsGuest( 1 ) == false )
-		{
-			szMsg = "#SFUI_MsgBx_NeedLiveNonGoldSplitscreenMsg";
-		}
-#endif
 	}
 	else
 	{
 		szMsg = "#SFUI_MsgBx_NeedLiveSinglescreenMsg";
 
-#ifdef _GAMECONSOLE
-		// Show the splitscreen version if there are 2 non-guest accounts
-		if ( XBX_GetNumGameUsers() > 1 && XBX_GetUserIsGuest( 0 ) == false && XBX_GetUserIsGuest( 1 ) == false )
-		{
-			szMsg = "#SFUI_MsgBx_NeedLiveSplitscreenMsg";
-		}
-#endif
 	}
 
 	DisplayOkOnlyMsgBox( pCallerFrame, "#SFUI_XboxLive", szMsg );
@@ -812,9 +586,6 @@ void CUIGameData::FinishPasswordUI( bool bOk )
 
 IImage *CUIGameData::GetAvatarImage( XUID playerID )
 {
-#ifdef _GAMECONSOLE
-	return NULL;
-#else
 	if ( !playerID )
 		return NULL;
 
@@ -843,7 +614,6 @@ IImage *CUIGameData::GetAvatarImage( XUID playerID )
 
 	// DWenger - Pulled out temporarily - return pImage;
 	return NULL; // DWenger - Added temporarily
-#endif // !_GAMECONSOLE
 }
 
 char const * CUIGameData::GetPlayerName( XUID playerID, char const *szPlayerNameSpeculative )
@@ -852,7 +622,7 @@ char const * CUIGameData::GetPlayerName( XUID playerID, char const *szPlayerName
 	if ( cl_names_debug.GetInt() )
 		return "WWWWWWWWWWWWWWW";
 
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( steamapicontext && steamapicontext->SteamUtils() &&
 		steamapicontext->SteamFriends() && steamapicontext->SteamUser() )
 	{
@@ -874,7 +644,7 @@ char const * CUIGameData::GetPlayerName( XUID playerID, char const *szPlayerName
 	return szPlayerNameSpeculative;
 }
 
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 void CUIGameData::Steam_OnPersonaStateChanged( PersonaStateChange_t *pParam )
 {
 	if ( !pParam->m_ulSteamID )
@@ -1004,9 +774,6 @@ void CUIGameData::OnEvent( KeyValues *pEvent )
 	}
 	else if ( !Q_stricmp( "OnProfileUnavailable", szEvent ) )
 	{
-#if defined( _DEMO ) && defined( _GAMECONSOLE )
-		return;
-#endif
 		// Activate game ui to see the dialog
 		// DWenger - Pulled out temporarily - if ( !CBaseModPanel::GetSingleton().IsVisible() )
 		// DWenger - Pulled out temporarily - {
@@ -1110,9 +877,6 @@ void CUIGameData::OnEvent( KeyValues *pEvent )
 	}
 	else if ( !Q_stricmp( "OnSysStorageDevicesChanged", szEvent ) )
 	{
-#if defined( _DEMO ) && defined( _GAMECONSOLE )
-		return;
-#endif
 
 		// If a storage device change is in progress, the simply ignore
 		// the notification callback, but pop the dialog
@@ -1141,42 +905,6 @@ void CUIGameData::OnEvent( KeyValues *pEvent )
 
 		// DWenger - Pulled out temporarily - confirmation->SetUsageData( data );
 	}
-#if defined( _PS3 )
-	else if ( !Q_stricmp( "OnPSMoveOutOfViewChanged", szEvent ) )
-	{
-		int inViewStatus = pEvent->GetInt( "OutOfViewBool" );
-		if ( inViewStatus == 0 )
-		{	
-			if ( g_pInputSystem->MotionControllerActive() )
-			{
-			// here is where we open the "move out of view" message box!
-				PopupManager::ShowSingleUsePopup( POPUP_TYPE_PSMOVE_OUT_OF_VIEW );
-			}
-		}
-		else
-		{
-			PopupManager::HideSingleUsePopup( POPUP_TYPE_PSMOVE_OUT_OF_VIEW );
-		}
-	}
-	else if ( !Q_stricmp( "OnPSEyeChangedStatus", szEvent ) )
-	{
-		int32 camStatus = pEvent->GetInt( "CamStatus" );
-		if ( camStatus == CELL_OK )
-		{		
-				// remove message box either way.
-				PopupManager::HideSingleUsePopup( POPUP_TYPE_PSEYE_DISCONNECTED );
-		}
-		else
-		{
-			// only show this warning if the camera is removed AND we're using the move or sharpshooter
-			// otherwise it's not important
-			if ( g_pInputSystem->MotionControllerActive() )
-			{
-				PopupManager::ShowSingleUsePopup( POPUP_TYPE_PSEYE_DISCONNECTED );
-			}
-		}
-	}
-#endif
 	else if ( !Q_stricmp( "OnSysInputDevicesChanged", szEvent ) )
 	{
 		unsigned int nInactivePlayers = 0;  // Number of users on the spectating team (ie. idle), or disconnected in this call
@@ -1264,13 +992,6 @@ void CUIGameData::OnEvent( KeyValues *pEvent )
 
 			// DWenger - Pulled out temporarily - confirmation->SetUsageData(data);
 
-#ifdef _GAMECONSOLE
-			// When a confirmation shows up it prevents attract screen from opening, so reset user slots here:
-			// DWenger - Pulled out temporarily - XBX_ResetUserIdSlots();
-			// DWenger - Pulled out temporarily - XBX_SetPrimaryUserId( XBX_INVALID_USER_ID );
-			// DWenger - Pulled out temporarily - XBX_SetPrimaryUserIsGuest( 0 );	
-			// DWenger - Pulled out temporarily - XBX_SetNumGameUsers( 0 ); // users not selected yet
-#endif
 		// DWenger - Pulled out temporarily - }
 	}
 	else if ( !Q_stricmp( "OnEngineDisconnectReason", szEvent ) )
@@ -1294,9 +1015,6 @@ void CUIGameData::OnEvent( KeyValues *pEvent )
 			{ "Kicked and banned", "#SessionError_Kicked", RemapText_t::MATCH_SUBSTR },
 			{ "You have been voted off", "#SessionError_Kicked", RemapText_t::MATCH_SUBSTR },
 			{ "All players idle", "#L4D_ServerShutdownIdle", RemapText_t::MATCH_SUBSTR },
-#ifdef _GAMECONSOLE
-			{ "", "#DisconnectReason_Unknown", RemapText_t::MATCH_START },	// Catch all cases for X360
-#endif
 			{ NULL, NULL, RemapText_t::MATCH_FULL }
 		};
 
@@ -1601,22 +1319,10 @@ GC_REG_CLIENT_JOB( ClientJob_EMsgGCCStrike15_v2_ClientRequestJoinServerData, k_E
 void CUIGameData::Steam_OnUserStatsStored( UserStatsStored_t *pParam )
 {
 
-#if defined( _PS3 )
-
-	GetPs3SaveSteamInfoProvider()->WriteSteamStats();
-
-#endif
-
 }
 
 void CUIGameData::Steam_OnUserStatsReceived( UserStatsReceived_t *pParam )
 {
-
-#if defined( _PS3 )
-
-	GetPs3SaveSteamInfoProvider()->WriteSteamStats();
-
-#endif
 
 }
 

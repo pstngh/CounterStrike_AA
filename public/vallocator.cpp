@@ -8,9 +8,7 @@
 
 #if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
 
-#ifndef _PS3
 #include <malloc.h>
-#endif
 #include "vallocator.h"
 #include "basetypes.h"
 

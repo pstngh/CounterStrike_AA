@@ -589,13 +589,6 @@ public:
 		CannotSupport();
 	}
 
-#ifdef _PS3
-	void DrawReloadZcullQuad()
-	{
-		CannotSupport();
-	}
-#endif // _PS3
-
 	void BeginBatch( IMesh* pIndices );
 	void BindBatch( IMesh* pVertices, IMaterial *pAutoBind = NULL );
 	void DrawBatch( MaterialPrimitiveType_t primType, int firstIndex, int numIndices );
@@ -628,46 +621,10 @@ public:
 		return m_LastSetToneMapScale;
 	}
 	
-#if defined( _GAMECONSOLE )
-	void BeginConsoleZPass( const WorldListIndicesInfo_t &indicesInfo )
-	{
-		uint nSpaceLeft = Indices().GetSize() - Indices().GetUsed();
-		if( nSpaceLeft >= indicesInfo.m_nTotalIndices )
-		{
-			// there's enough indices in the primary (non-spillover) index buffer that's resident in memory for 3 frames, 
-			// and that's not a ring buffer. We don't need to worry about these indices being overwritten by anything due 
-			// to ring buffer ending and restarting: there's another (spillover) ring buffer that does that
-			BeginConsoleZPass2( 0 );
-		}
-		else
-		{
-			// there's some spillover from the main dynamic index buffer; thus, we need to compute the spillover and defer the decision
-			// about whether we have enough space in spillover buffer to start z prepass for later
-			// in the very worst case, we'll waste ( indicesInfo.m_nMaxBatchIndices - 1 ) indices 
-			// in the end of the main dynamic IB
-			BeginConsoleZPass2( indicesInfo.m_nTotalIndices - nSpaceLeft + indicesInfo.m_nMaxBatchIndices - 1 );
-		}
-	}
-#endif
-
 	void DeferredBeginBatch( );
 	void DeferredDrawPrimList( IMesh *pMesh, CPrimList *pLists, int nLists );
 	void DeferredSetFlexMesh( IMesh *pStaticMesh, int nVertexOffsetInBytes );
 
-#if defined( _X360 )
-	DEFINE_QUEUED_CALL_1(					PushVertexShaderGPRAllocation, int, IMatRenderContext, m_pHardwareContext );
-	DEFINE_QUEUED_CALL_0(					PopVertexShaderGPRAllocation, IMatRenderContext, m_pHardwareContext );
-	DEFINE_QUEUED_CALL_0(					FlushHiStencil, IMatRenderContext, m_pHardwareContext );
-#endif
-
-#if defined( _GAMECONSOLE )
-	DEFINE_QUEUED_CALL_1(					BeginConsoleZPass2, int, IMatRenderContext, m_pHardwareContext );
-	DEFINE_QUEUED_CALL_0(					EndConsoleZPass, IMatRenderContext, m_pHardwareContext );
-#endif
-
-#if defined( _PS3 )
-	DEFINE_QUEUED_CALL_0(					FlushTextureCache, IMatRenderContext, m_pHardwareContext );
-#endif
 	DEFINE_QUEUED_CALL_1(					AntiAliasingHint, int, IMatRenderContext, m_pHardwareContext );
 
 	// A special path used to tick the front buffer while loading on the 360
@@ -706,7 +663,7 @@ public:
 	virtual void							PrintfVA( char *fmt, va_list vargs ){};
 	virtual float							Knob( char *knobname, float *setvalue=NULL ) { return 0.0f; };	
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	void									DoStartupShaderPreloading( void ) {}
 #endif
 

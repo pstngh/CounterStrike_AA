@@ -335,13 +335,6 @@ bool CBonusMapsDatabase::ReadBonusMapSaveData( void )
 		return false;
 	}
 
-#ifdef _GAMECONSOLE
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Slamming controller for xbox storage id to 0" )
-	// Nothing to read
-	if ( XBX_GetStorageDeviceId( 0 ) == XBX_INVALID_STORAGE_ID || XBX_GetStorageDeviceId( 0 ) == XBX_STORAGE_DECLINED )
-		return false;
-#endif
-
 	char	szFilename[_MAX_PATH];
 
 	if ( IsGameConsole() )

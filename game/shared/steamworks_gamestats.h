@@ -4,7 +4,7 @@
 //
 //=============================================================================//
 
-#if !defined( STEAMWORKS_GAMESTATS_H ) && !defined( _GAMECONSOLE )
+#if !defined( STEAMWORKS_GAMESTATS_H )
 #define STEAMWORKS_GAMESTATS_H
 #ifdef _WIN32
 #pragma once
@@ -18,9 +18,7 @@
 #include "tier1/utlstring.h"
 #include "networkvar.h"
 
-#ifndef	 _GAMECONSOLE
 #include "steam/isteamgamestats.h"
-#endif
 
 // Container to hold all the KeyValue stats to send only if the convar "steamworks_immediate_upload" is set to 0.
 // Otherwise, the stats are uploaded as they are received.

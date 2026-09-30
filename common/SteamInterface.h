@@ -84,9 +84,7 @@ public:
 	virtual long				SizeFile( SteamHandle_t hFile, TSteamError *pError ) = 0;
 	virtual SteamHandle_t		FindFirst( const char *cszPattern, ESteamFindFilter eFilter, TSteamElemInfo *pFindInfo, TSteamError *pError ) = 0;
 	virtual int					FindNext( SteamHandle_t hDirectory, TSteamElemInfo *pFindInfo, TSteamError *pError ) = 0;
-#if !defined( _X360 ) // X360TBD: Macro defined in winbase.h 
 	virtual int					FindClose( SteamHandle_t hDirectory, TSteamError *pError ) = 0;
-#endif
 	virtual int					GetLocalFileCopy( const char *cszName, TSteamError *pError ) = 0;
 	virtual int					IsFileImmediatelyAvailable( const char *cszName, TSteamError *pError ) = 0;
 	virtual int					HintResourceNeed( const char *cszMasterList, int bForgetEverything, TSteamError *pError ) = 0;

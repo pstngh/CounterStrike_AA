@@ -234,7 +234,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 //--------------------------------------------------------------------------------------------------------
 // Origin debugging
 //--------------------------------------------------------------------------------------------------------
-#if (defined(_WIN32) && (!defined(_GAMECONSOLE) ) )
+#if (defined(_WIN32) )
 #include "filesystem.h"
 
 struct SOriginDebugFP

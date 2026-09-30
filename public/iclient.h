@@ -36,18 +36,7 @@ inline bool IsCrossPlayPlatformAConsole( CrossPlayPlatform_t platform )
 }
 
 //provide the compiled code's platform for convenience
-#if defined( _GAMECONSOLE )
-#	if defined( PLATFORM_X360 )
-#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_X360
-#	elif defined( PLATFORM_PS3 )
-#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_PS3
-#	else
-#pragma message( "Unknown console, please update this platform definition" )
-#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_UNKNOWN
-#	endif
-#else
 #	define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_PC
-#endif
 
 struct HltvReplayParams_t
 {

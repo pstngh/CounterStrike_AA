@@ -38,11 +38,6 @@
 #include "vprof.h"
 #include "paint.h"
 
-#if defined(_PS3)
-#include "buildindices_PS3.h"
-#include "buildworldlists_PS3.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -127,10 +122,6 @@ void R_Init (void)
 
 	UpdateMaterialSystemConfig();
 
-#if defined( _PS3 )
-	g_pBuildIndicesJob->Init();
-	g_pBuildWorldListsJob->Init();
-#endif
 }
 
 //-----------------------------------------------------------------------------

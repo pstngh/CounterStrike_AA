@@ -75,7 +75,7 @@ FUNC_GENERATE_ALL( DEFINE_CONST_MEMBER_FUNC_TYPE_DEDUCER );
 template <typename FUNCPTR_TYPE>
 inline ScriptFunctionBindingStorageType_t ScriptConvertFreeFuncPtrToVoid( FUNCPTR_TYPE pFunc )
 {
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 	COMPILE_TIME_ASSERT( sizeof( FUNCPTR_TYPE ) == sizeof( void* ) * 2 || sizeof( FUNCPTR_TYPE ) == sizeof( void* ) );
 	
 	if ( sizeof( FUNCPTR_TYPE ) == 4 )
@@ -120,7 +120,7 @@ inline ScriptFunctionBindingStorageType_t ScriptConvertFreeFuncPtrToVoid( FUNCPT
 template <typename FUNCPTR_TYPE>
 inline FUNCPTR_TYPE ScriptConvertFreeFuncPtrFromVoid( ScriptFunctionBindingStorageType_t p )
 {
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 	COMPILE_TIME_ASSERT( sizeof( FUNCPTR_TYPE ) == sizeof(void*)*2 || sizeof( FUNCPTR_TYPE ) == sizeof(void*) );
 
 	if ( sizeof( FUNCPTR_TYPE ) == 4 )
@@ -176,7 +176,7 @@ inline ScriptFunctionBindingStorageType_t ScriptConvertFuncPtrToVoid( FUNCPTR_TY
 	FUNCPTR_TYPE *pStoredFunc = new FUNCPTR_TYPE;
 	*pStoredFunc = pFunc;
 	return reinterpret_cast<ScriptFunctionBindingStorageType_t>( pStoredFunc );
-#elif defined(_PS3) || defined(POSIX)
+#elif defined(POSIX)
 	return ScriptConvertFreeFuncPtrToVoid<FUNCPTR_TYPE>( pFunc );
 #else
 
@@ -316,7 +316,7 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( ScriptFunctionBindingStorageTy
 {
 #if defined(OSX) && defined(__aarch64__)
 	return *reinterpret_cast<FUNCPTR_TYPE *>( p );
-#elif defined(_PS3) || defined(POSIX)
+#elif defined(POSIX)
 	return ScriptConvertFreeFuncPtrFromVoid<FUNCPTR_TYPE>( p );
 #else
 

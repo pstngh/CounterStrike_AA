@@ -156,23 +156,6 @@ struct TitleData3
 	struct ConVarsUser_t
 	{
 
-#if defined( _PS3 )
-
-		// Two other sets of button bindings.
-		struct MoveBindings_t
-		{
-#include "xlast_csgo/inc_gameconsole_device_specific_settings_usr.inc"
-		};
-		MoveBindings_t PSMove;
-
-		struct SharpShooterBindings_t
-		{
-#include "xlast_csgo/inc_gameconsole_device_specific_settings_usr.inc"
-		};
-		SharpShooterBindings_t SharpShooter;
-
-#endif // _PS3
-
 #undef CFG
 
 		//uint32 unused_values[10];
@@ -192,27 +175,6 @@ struct TitleData3
 
 	struct JoystickBindings_t
 	{
-
-#if defined( _PS3 )
-
-		// Keyboard bindings.
-#include "xlast_csgo/inc_ps3_key_bindings_usr.inc"
-
-		// Two other sets of button bindings.
-		struct MoveBindings_t
-		{
-#include "xlast_csgo/inc_bindings_usr.inc"
-		};
-		MoveBindings_t PSMove;
-
-		struct SharpShooterBindings_t
-		{
-#include "xlast_csgo/inc_bindings_usr.inc"
-		};
-		SharpShooterBindings_t SharpShooter;
-
-
-#endif
 
 #undef BINDING
 #undef ACTION

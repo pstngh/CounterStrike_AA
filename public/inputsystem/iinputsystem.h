@@ -50,12 +50,6 @@ enum InputStandardCursor_t
 };
 
 
-#ifdef _PS3
-#include "cell/pad.h"
-typedef bool (*BCellPadDataHook_t)( CellPadData &data );
-typedef bool (*BCellPadNoDataHook_t)();
-#endif
-
 ///-----------------------------------------------------------------------------
 /// Main interface for input. This is a low-level interface, creating an
 /// OS-independent queue of low-level input events which were sampled since
@@ -189,18 +183,6 @@ public:
 	
 	// Mouse visibility, tell inputsystem when we hide stuff rather than querying the OS which is expensive on OSX
 	virtual void SetMouseCursorVisible( bool bVisible ) = 0;
-
-#ifdef _PS3
-	virtual void SetPS3CellPadDataHook( BCellPadDataHook_t hookFunc ) = 0;
-	virtual void SetPS3CellPadNoDataHook( BCellPadNoDataHook_t hookFunc ) = 0;
-
-	virtual void SetPS3StartButtonIdentificationMode() = 0;
-	virtual bool GetPS3CursorPos( int &x, int &y ) = 0;
-	virtual void PS3SetupHardwareCursor( void* image ) = 0;
-
-	virtual void DisableHardwareCursor( void ) = 0;
-	virtual void EnableHardwareCursor( void ) = 0;
-#endif
 
 #if defined( USE_SDL ) || defined( LINUX )
 	virtual void DisableHardwareCursor( void ) = 0;

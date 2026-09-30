@@ -139,10 +139,8 @@
 #include "cloak_blended_pass_ps20.inc"
 #include "cloak_blended_pass_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "cloak_blended_pass_vs30.inc"
 #include "cloak_blended_pass_ps30.inc"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -205,9 +203,7 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 		int userDataSize = 0;
 		pShaderShadow->VertexShaderVertexFormat( flags, nTexCoordCount, NULL, userDataSize );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			// Vertex Shader
 			DECLARE_STATIC_VERTEX_SHADER( cloak_blended_pass_vs20 );
@@ -228,7 +224,6 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 				SET_STATIC_PIXEL_SHADER( cloak_blended_pass_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			// The vertex shader uses the vertex id stream
@@ -244,7 +239,6 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 			SET_STATIC_PIXEL_SHADER_COMBO( BUMPMAP, bBumpMapping ? 1 : 0 );
 			SET_STATIC_PIXEL_SHADER( cloak_blended_pass_ps30 );
 		}
-#endif
 
 		// Textures
 		pShaderShadow->EnableTexture( SHADER_SAMPLER0, true ); // Refraction texture
@@ -274,9 +268,7 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 			pShader->SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, info.m_nBumpTransform );
 		}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			// Set Vertex Shader Combos
 			DECLARE_DYNAMIC_VERTEX_SHADER( cloak_blended_pass_vs20 );
@@ -296,7 +288,6 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 				SET_DYNAMIC_PIXEL_SHADER( cloak_blended_pass_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -311,7 +302,6 @@ void DrawCloakBlendedPass( CBaseVSShader *pShader, IMaterialVar** params, IShade
 			DECLARE_DYNAMIC_PIXEL_SHADER( cloak_blended_pass_ps30 );
 			SET_DYNAMIC_PIXEL_SHADER( cloak_blended_pass_ps30 );
 		}
-#endif
 
 		// Bind textures
 		pShaderAPI->BindStandardTexture( SHADER_SAMPLER0, TEXTURE_BINDFLAGS_SRGBREAD, TEXTURE_FRAME_BUFFER_FULL_TEXTURE_0 ); // Refraction Map

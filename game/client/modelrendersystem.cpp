@@ -673,20 +673,10 @@ void CModelRenderSystem::SetupBones( int nModelTypeCount, ModelListByType_t *pMo
 		else
 		{
 			mstudiolinearbone_t *pLinearBones = list.m_pStudioHdr->pLinearBones();
-#if defined(_X360) || defined (_PS3)
-			const int iOffsetToCacheline = 2; // == 128/sizeof(mstudiolinearbone_t) == 128/64
-			int iNextPrefetch = 0;
-#endif
 
 			// convert bone to world transformations into pose to world transformations
 			for ( int k = 0; k < nBoneCount; k++)
 			{
-#if defined(_X360) || defined (_PS3)
-				if ( k == iNextPrefetch && (iNextPrefetch = k + iOffsetToCacheline) < nBoneCount )
-				{
-					PREFETCH360( &pLinearBones->poseToBone(iNextPrefetch), 0 );
-				}
-#endif
 				MatrixCopy( pLinearBones->poseToBone(k), pPoseToBone[k] );
 			}
 		}
@@ -700,25 +690,8 @@ void CModelRenderSystem::SetupBones( int nModelTypeCount, ModelListByType_t *pMo
 			CMatRenderData< matrix3x4a_t > rdPoseToWorld( m_pRenderContext, nBoneCount );
 			pModel->m_pPoseToWorld = rdPoseToWorld.Base();
 
-#if defined(_X360) || defined (_PS3)
-			if ( j + 1 < list.m_nCount )
-			{
-				PREFETCH360( list.m_pRenderModels[j + 1].m_pBoneToWorld, 0 );
-				PREFETCH360( pModel->m_pPoseToWorld + nBoneCount, 0 );
-			}
-
-			const int iOffsetToCacheline = 3; // == 128/sizeof(matrix3x4a_t) == 128/48
-			int iNextPrefetch = 0;
-#endif
 			for ( int b = 0; b < nBoneCount; b++ )
 			{
-#if defined(_X360) || defined (_PS3)
-				if ( b == iNextPrefetch && (iNextPrefetch = b + iOffsetToCacheline) < nBoneCount )
-				{
-					PREFETCH360( &pModel->m_pBoneToWorld[iNextPrefetch], 0 );
-					PREFETCH360( &pModel->m_pPoseToWorld[iNextPrefetch], 0 );
-				}
-#endif
 				ConcatTransforms_Aligned( pModel->m_pBoneToWorld[b], pPoseToBone[b], pModel->m_pPoseToWorld[b] );
 			}
 		}
@@ -1254,26 +1227,12 @@ void CModelRenderSystem::RenderModels( StudioModelArrayInfo2_t *pInfo, int nMode
 			// Render all models without stencil
 			g_pStudioRender->DrawModelArray( *pInfo, nNonStencilModelTypeCount, rdArray.Base(), sizeof(RenderModelInfo_t), nFlags );
 
-			#if defined( _GAMECONSOLE )
-				// end z prepass here
-				CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-				pRenderContext->EndConsoleZPass();
-			#endif
-
 			// Render all models with stencil
 			g_pStudioRender->DrawModelArray( *pInfo, nModelTypeCount - nNonStencilModelTypeCount, rdArray.Base() + nNonStencilModelTypeCount,
 				sizeof(RenderModelInfo_t), nFlags );
 		}
 		else
 		{
-			#if defined( _PS3 )
-			if( r_fastzreject.GetBool() )
-			{
-				// end z prepass here
-				CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-				pRenderContext->EndConsoleZPass();
-			}
-			#endif
 
 			// PC renders all models in one go regardless of stencil state
 			// PS/3 renders all models in one go because models have a lot of vertices and few pixels (as of Portal2). So we end Z Pass earlier, before we RenderModels()

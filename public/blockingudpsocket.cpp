@@ -4,10 +4,8 @@
 //
 //=============================================================================//
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 #include <winsock.h>
-#elif defined( _PS3 )
-#include "blockingudpsocket.h"
 #elif POSIX
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
@@ -22,19 +20,6 @@
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
-
-#ifdef _PS3
-
-CBlockingUDPSocket::CBlockingUDPSocket() : m_pImpl( NULL ), m_Socket( 0 ) {}
-CBlockingUDPSocket::~CBlockingUDPSocket() {}
-
-bool CBlockingUDPSocket::WaitForMessage( float timeOutInSeconds ) { return false; }
-unsigned int CBlockingUDPSocket::ReceiveSocketMessage( struct sockaddr_in *packet_from, unsigned char *buf, size_t bufsize ) { return 0; }
-bool CBlockingUDPSocket::SendSocketMessage( const struct sockaddr_in& rRecipient, const unsigned char *buf, size_t bufsize ) { return false; }
-
-bool CBlockingUDPSocket::CreateSocket (void) { return false; }
-
-#else
 
 class CBlockingUDPSocket::CImpl	
 {
@@ -165,6 +150,4 @@ bool CBlockingUDPSocket::SendSocketMessage( const struct sockaddr_in & rRecipien
 
 	return true;
 }
-
-#endif
 

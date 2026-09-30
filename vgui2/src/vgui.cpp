@@ -6,7 +6,7 @@
 //===========================================================================//
 
 
-#if defined( WIN32 ) && !defined( _GAMECONSOLE )
+#if defined( WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -26,9 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
-#ifndef _PS3
 #include <malloc.h>
-#endif // _PS3
 #include <tier0/dbg.h>
 #include <tier1/utlhandletable.h>
 #include "vgui_internal.h"
@@ -43,10 +41,6 @@
 #include "vgui/ILocalize.h"
 #include "matchmaking/imatchframework.h"
 #include "tier2/tier2.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 #undef GetCursorPos // protected_things.h defines this, and it makes it so we can't access g_pInput->GetCursorPos.
 
@@ -822,16 +816,6 @@ bool CVGui::DispatchMessages()
 				// HPE_END
 				//=============================================================================
 			}
-#ifdef _GAMECONSOLE
-			else if ( messageItem->_messageTo == 0xFFFFFFFE ) // special tag to always give message to the active key focus
-			{
-				VPanel *vto = (VPanel *) g_pInput->GetCalculatedFocus();
-				if (vto)
-				{
-					vto->SendMessage(params, g_pIVgui->HandleToPanel(messageItem->_from));
-				}
-			}
-#endif
 			else
 			{
 				VPanel *vto = (VPanel *)g_pIVgui->HandleToPanel(messageItem->_messageTo);
@@ -916,16 +900,6 @@ void CVGui::PostMessage(VPANEL target, KeyValues *params, VPANEL from, float del
 
 	MessageItem_t messageItem;
 	 
-#ifdef _GAMECONSOLE
-	// Special coded target that will always send the message to the key focus
-	// this is needed since we might send two messages on a tice, and the first
-	// could change the focus.
-	if( target == (VPANEL) MESSAGE_CURRENT_KEYFOCUS )
-	{
-		messageItem._messageTo = 0xFFFFFFFE;
-	}
-	else
-#endif	
 	{
 		messageItem._messageTo = (target != (VPANEL) MESSAGE_CURSOR_POS ) ? g_pIVgui->PanelToHandle(target) : 0xFFFFFFFF;
 	}

@@ -168,9 +168,6 @@
 #include "tier1/utldict.h"
 #include "keybindinglistener.h"
 
-#if defined(_PS3)
-#include "buildrenderables_PS3.h"
-#endif
 #include "viewrender.h"
 
 #include "irendertorthelperobject.h"
@@ -942,22 +939,11 @@ public:
 	virtual bool			IsLoadingScreenRaised( void );
 #endif
 
-#if defined(_PS3)
-	virtual int				GetDrawFlags( void );
-	virtual int				GetBuildViewID( void );
-	virtual bool			IsSPUBuildWRJobsOn( void );
-	virtual void			CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace );
-	virtual void			*GetBuildViewVolumeCuller( void );
-	virtual Frustum_t		*GetBuildViewFrustum( void );
-	virtual Frustum_t		*GetBuildViewAreaFrustum( void );
-	virtual unsigned char	*GetBuildViewRenderAreaBits( void );
-#else
 	virtual bool			IsBuildWRThreaded( void );
 	virtual void			QueueBuildWorldListJob( CJob* pJob );
 	virtual void			CacheFrustumData( const Frustum_t& frustum, const CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > >& aeraFrustums );
 	virtual const Frustum_t* GetBuildViewFrustum( void ) const;
 	virtual const CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > >* GetBuildViewAeraFrustums( void ) const;
-#endif
 
 	virtual bool IsSubscribedMap( const char *pchMapName, bool bOnlyOnDisk );
 	virtual bool IsFeaturedMap( const char *pchMapName, bool bOnlyOnDisk );
@@ -1367,10 +1353,8 @@ int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGl
 #endif
 
 #ifndef NO_STEAM
-	#ifndef _PS3
 	SteamAPI_InitSafe();
 	SteamAPI_SetTryCatchCallbacks( false ); // We don't use exceptions, so tell steam not to use try/catch in callback handlers
-	#endif
 
 	ClientSteamContext().Activate();
 
@@ -1456,7 +1440,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGloba
 	if ( IsPC() && !IsPosix() && (avi = (IAvi *)appSystemFactory(AVI_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 #endif
-#if ( !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE ) ) && defined( BINK_VIDEO )
+#if defined( BINK_VIDEO )
 	if ( (bik = (IBik *)appSystemFactory(BIK_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 #endif
@@ -1498,10 +1482,8 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGloba
 	}
 #endif
 
-#ifndef _GAMECONSOLE
 	if ( ( gamestatsuploader = (IUploadGameStats *)appSystemFactory( INTERFACEVERSION_UPLOADGAMESTATS, NULL )) == NULL )
 		return false;
-#endif
 	if (!g_pMatSystemSurface)
 		return false;
 
@@ -1516,15 +1498,6 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGloba
 	if ( IMatchExtensions *pIMatchExtensions = g_pMatchFramework->GetMatchExtensions() )
 		pIMatchExtensions->RegisterExtensionInterface(
 		CLIENT_DLL_INTERFACE_VERSION, static_cast< IBaseClientDLL * >( this ) );
-
-#if defined(_PS3)
-	// VJOBS is used to spawn jobs on SPUs
-	if ( (g_pVJobs = (IVJobs *)appSystemFactory( VJOBS_INTERFACE_VERSION, NULL )) == NULL)
-		return false;
-
-	// init client SPURS jobs
-	g_pBuildRenderablesJob->Init();
-#endif
 
 	if ( !CommandLine()->CheckParm( "-noscripting") )
 	{
@@ -2038,7 +2011,7 @@ void CHLClient::View_Render( vrect_t *rect )
 
 	view->Render( rect );
 
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	UpdatePerfStats();
 #endif
 }
@@ -3912,50 +3885,6 @@ bool CHLClient::IsLoadingScreenRaised( void )
 
 #endif // CSTRIKE15
 
-#if defined(_PS3)
-
-int CHLClient::GetDrawFlags( void )
-{
-	return g_viewBuilder.GetDrawFlags();
-}
-
-int CHLClient::GetBuildViewID( void )
-{
-	return g_viewBuilder.GetBuildViewID();
-}
-
-bool CHLClient::IsSPUBuildWRJobsOn( void )
-{
-	return g_viewBuilder.IsSPUBuildRWJobsOn();
-}
-
-void CHLClient::CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace )
-{
-	g_viewBuilder.CacheFrustumData( pFrustum, pAreaFrustum, pRenderAreaBits, numArea, bViewerInSolidSpace );
-}
-
-void *CHLClient::GetBuildViewVolumeCuller( void )
-{
-	return g_viewBuilder.GetBuildViewVolumeCuller();
-}
-
-Frustum_t *CHLClient::GetBuildViewFrustum( void )
-{
-	return g_viewBuilder.GetBuildViewFrustum();
-}
-
-Frustum_t *CHLClient::GetBuildViewAreaFrustum( void )
-{
-	return g_viewBuilder.GetBuildViewAreaFrustum();
-}
-
-unsigned char *CHLClient::GetBuildViewRenderAreaBits( void )
-{
-	return g_viewBuilder.GetBuildViewRenderAreaBits();
-}
-
-#else
-
 bool CHLClient::IsBuildWRThreaded( void )
 {
 	return g_viewBuilder.GetBuildWRThreaded();
@@ -3980,8 +3909,6 @@ const CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > >* CHLClient::Get
 {
 	return g_viewBuilder.GetBuildViewAeraFrustums();
 }
-
-#endif // PS3, CConcurrentView helper fns
 
 
 bool CHLClient::IsSubscribedMap( const char *pchMapName, bool bOnlyOnDisk )
@@ -4532,9 +4459,6 @@ GC_REG_CLIENT_JOB( ClientJob_EMsgGCCStrike15_GotvSyncPacket, k_EMsgGCCStrike15_v
 //-----------------------------------------------------------------------------
 void SpewInstallStatus( void )
 {
-#if defined( _X360 )
-	g_pXboxInstaller->SpewStatus();
-#endif
 }
 
 

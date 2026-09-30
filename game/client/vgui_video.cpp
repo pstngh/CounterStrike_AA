@@ -176,7 +176,6 @@ VideoPanel::~VideoPanel( void )
 
 	g_vecVideoPanels.FindAndRemove( this );
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	// Shut down this video
 	if ( m_BIKHandle != BIKHANDLE_INVALID )
 	{
@@ -184,7 +183,6 @@ VideoPanel::~VideoPanel( void )
 		m_BIKHandle = BIKHANDLE_INVALID;
 		m_pMaterial = NULL;
 	}
-#endif
 }
 
 void VideoPanel::LoadLayout()
@@ -255,8 +253,6 @@ bool VideoPanel::BeginPlayback( const char *pFilename )
 {
 	if ( !pFilename || pFilename[ 0 ] == '\0' )
 		return false;
-
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 
 	// Destroy any previously allocated video
 	if ( m_BIKHandle != BIKHANDLE_INVALID )
@@ -332,9 +328,6 @@ bool VideoPanel::BeginPlayback( const char *pFilename )
 	m_flStartPlayTime = gpGlobals->realtime;
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -531,7 +524,6 @@ float VideoPanel::DrawMovieFrame( void )
 	if ( m_BIKHandle == BIKHANDLE_INVALID || m_pMaterial == NULL )
 		return 0;
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	// Update our frame, but only if Bink is ready for us to process another frame.
 	// We aren't really swapping here, but ReadyForSwap is a good way to throttle.
 	// We'd rather throttle this way so that we don't limit the overall frame rate of the system.
@@ -545,9 +537,6 @@ float VideoPanel::DrawMovieFrame( void )
 			OnClose();
 		}
 	}
-#else
-	return 0;
-#endif
 
 	// Sit in the "center"
 	int xpos, ypos;

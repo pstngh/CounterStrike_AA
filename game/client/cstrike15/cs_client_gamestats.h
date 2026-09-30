@@ -47,7 +47,6 @@ enum CSClientCsgoGameEventType_t
 //
 // OGS Gamestats
 //
-#if !defined( _GAMECONSOLE )
 struct SRoundData : public BaseStatData 
 {
 	explicit SRoundData( const StatsCollection_t *pRoundData ) 
@@ -136,12 +135,9 @@ struct SRoundData : public BaseStatData
 		REGISTER_STAT_NAMED( llExperimental, "Experimental" )
 	END_STAT_TABLE()
 };
-#endif
 
 class CCSClientGameStats : public CAutoGameSystem, public CGameEventListener
-#if !defined( _GAMECONSOLE )
 	, public IGameStatTracker
-#endif
 {
 public:
 	CCSClientGameStats();
@@ -191,7 +187,6 @@ public:
 	void WriteLeaderboardStats( void );
 
 	// Public OGS functions and data
-#if !defined( _GAMECONSOLE )
 	
 	virtual void SubmitGameStats( KeyValues *pKV )
 	{
@@ -210,7 +205,6 @@ public:
 	}
 
 	void	UploadRoundStats();
-#endif
 
 	CUserMessageBinder m_UMCMsgPlayerStatsUpdate;
 	CUserMessageBinder m_UMCMsgXRankGet;
@@ -249,63 +243,15 @@ private:
 	bool						m_bSteamStatsDownload;
 
 	// Private OGS functions and data
-#if !defined( _GAMECONSOLE )
 	
 	int							m_RoundEndReason;
 	bool						m_bObjectiveAttempted;
 
 	// A static list of all the stat containers, one for each data structure being tracked
 	static StatContainerList_t * s_StatLists;
-#endif
 };
 
 extern CCSClientGameStats g_CSClientGameStats;
 
-
-#ifdef _X360
-
-#define MAX_PROPS_CONTRIBSCORE		8
-#define MAX_PROPS_KILLDEATH			6
-#define MAX_PROPS_WINS				7
-#define MAX_PROPS_STARS				5
-#define MAX_PROPS_GAMESPLAYED		23
-
-#define NUM_VIEW_PROPERTIES			5
-
-class CAsyncLeaderboardWriteThread
-{
-public:
-	CAsyncLeaderboardWriteThread();
-	~CAsyncLeaderboardWriteThread();
-
-	struct LeaderboardWriteData_t
-	{
-		int							userID;
-		XUID						xuid;
-		XSESSION_VIEW_PROPERTIES	viewProperties[NUM_VIEW_PROPERTIES];
-		XUSER_PROPERTY				propertiesContribScore[MAX_PROPS_CONTRIBSCORE];
-		XUSER_PROPERTY				propertiesKillDeath[MAX_PROPS_KILLDEATH];
-		XUSER_PROPERTY				propertiesWins[MAX_PROPS_WINS];
-		XUSER_PROPERTY				propertiesStars[MAX_PROPS_STARS];
-		XUSER_PROPERTY				propertiesGamesPlayed[MAX_PROPS_GAMESPLAYED];
-	};
-
-	LeaderboardWriteData_t* CreateLeaderboardWriteData( void );
-
-	static unsigned CallbackThreadProc( void *pvParam ) { reinterpret_cast<CAsyncLeaderboardWriteThread*>(pvParam)->ThreadProc(); return 0; }
-	void ThreadProc( void );
-	void QueueData( LeaderboardWriteData_t* pData );
-
-protected:
-	ThreadHandle_t		m_hThread;
-	CThreadFastMutex	m_mutex;
-	CUtlVector<LeaderboardWriteData_t*>	m_queue;
-	HANDLE				m_hEvent;
-};
-
-
-void MsgFunc_ClientInfo( bf_read &msg );
-
-#endif // _X360
 
 #endif //CS_STEAMSTATS_H

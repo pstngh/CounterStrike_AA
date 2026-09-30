@@ -84,13 +84,6 @@ CON_COMMAND_F( hunk_print_allocations, "", FCVAR_CLIENTCMD_CAN_EXECUTE )
 	}
 	delete [] items;
 	
-#if defined( _X360 )
-	xBudgetInfo_t budgetInfo;
-
-	budgetInfo.BSPSize = total;
-	XBX_rBudgetInfo( &budgetInfo );
-#endif
-
 }
 
 
@@ -132,11 +125,6 @@ void *Hunk_AllocName(int size, const char *name, bool bClear)
 		}
 	}
 	void *p = g_HunkMemoryStack.Alloc( size, bClear );
-#ifdef _GAMECONSOLE
-	int overflowAmt = g_HunkMemoryStack.GetCurrentAllocPoint() - HUNK_COMMIT_FLOOR;
-	if ( ( overflowAmt > 0 ) && ( overflowAmt <= size ) )
-		Warning( "HUNK OVERFLOW! Map BSP data consuming %d bytes more memory than expected...\n", overflowAmt );
-#endif
 	if ( p )
 		return p;
 #ifdef HUNK_USE_16MB_PAGE

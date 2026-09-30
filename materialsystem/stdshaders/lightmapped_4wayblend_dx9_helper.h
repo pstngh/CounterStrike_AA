@@ -113,9 +113,6 @@ class CLightmapped_4WayBlend_DX9_Context : public CBasePerMaterialContextData
 public:
 	uint8 *m_pStaticCmds;
 	CCommandBufferBuilder< CFixedCommandStorageBuffer< 900 > > m_SemiStaticCmdsOut;
-#ifdef _PS3
-	CCommandBufferBuilder< CFixedCommandStorageBuffer< 256 > > m_flashlightECB;
-#endif
 
 	bool m_bVertexShaderFastPath;
 	bool m_bPixelShaderFastPath;

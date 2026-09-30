@@ -6,9 +6,7 @@
 
 #include "pch_materialsystem.h"
 
-#ifndef _PS3
 #define MATSYS_INTERNAL
-#endif
 
 #include "cmaterialdict.h"
 

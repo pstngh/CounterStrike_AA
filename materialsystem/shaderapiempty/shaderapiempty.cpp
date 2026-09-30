@@ -361,17 +361,6 @@ public:
 	virtual void PerpareForCascadeDraw( int cascade, float fShadowSlopeScaleDepthBias, float fShadowDepthBias ) {}
 
 	// Methods of IShaderDynamicAPI
-#ifdef _PS3
-	virtual void ExecuteSingleCommandBuffer( uint8 *pCmdBuffer, int size ) {}
-
-
-	virtual void ExecuteCommandBuffer( uint8 *pCmdBuffer1, int size1,
-		uint8 *pCmdBuffer2, int size2) {}
-
-	virtual void ExecuteCommandBuffer(  uint8 *pCmdBuffer1, int size1,
-		uint8 *pCmdBuffer2, int size2,
-		uint8 *pCmdBuffer3, int size3) {}
-#endif
 	virtual void GetBackBufferDimensions( int& width, int& height ) const
 	{
 		s_ShaderDeviceEmpty.GetBackBufferDimensions( width, height );
@@ -418,12 +407,6 @@ public:
 	virtual void BindPixelShader( PixelShaderHandle_t hPixelShader ) {}
 	virtual void SetRasterState( const ShaderRasterState_t& state ) {}
 	virtual void MarkUnusedVertexFields( unsigned int nFlags, int nTexCoordCount, bool *pUnusedTexCoords ) {}
-#if defined( _GAMECONSOLE )
-	virtual bool PostQueuedTexture( const void *pData, int nSize, ShaderAPITextureHandle_t *pHandles, int nHandles, int nWidth, int nHeight, int nDepth, int nMips, int *pRefCount )
-	{ 
-		return false;
-	}
-#endif
 	virtual bool OwnGPUResources( bool bEnable ) { return false; }
 	virtual void OnPresent( void ) {}
 
@@ -818,21 +801,6 @@ public:
 	// Level of anisotropic filtering
 	virtual void SetAnisotropicLevel( int nAnisotropyLevel );
 
-#ifdef _GAMECONSOLE
-	// Vitaliy: need HDR to run with -noshaderapi on console
-	bool SupportsHDR() const
-	{
-		return true;
-	}
-	HDRType_t GetHDRType() const
-	{
-		return HDR_TYPE_INTEGER;
-	}
-	HDRType_t GetHardwareHDRType() const
-	{
-		return HDR_TYPE_INTEGER;
-	}
-#else
 	bool SupportsHDR() const
 	{
 		return false;
@@ -845,7 +813,6 @@ public:
 	{
 		return HDR_TYPE_NONE;
 	}
-#endif
 	virtual bool NeedsATICentroidHack() const
 	{
 		return false;
@@ -1170,12 +1137,7 @@ public:
 	virtual int  GetVertexBufferCompression( void ) const { return 0; };
 
 	virtual bool ShouldWriteDepthToDestAlpha( void ) const { return false; };
-#ifdef _GAMECONSOLE
-	// Vitaliy: need HDR to run with -noshaderapi on console
-	virtual bool SupportsHDRMode( HDRType_t nMode ) const { return nMode == HDR_TYPE_NONE || nMode == HDR_TYPE_INTEGER; }
-#else
 	virtual bool SupportsHDRMode( HDRType_t nMode ) const { return false; }
-#endif
 	virtual bool IsDX10Card() const { return false; };
 
 	void PushDeformation( const DeformationBase_t *pDeformation )

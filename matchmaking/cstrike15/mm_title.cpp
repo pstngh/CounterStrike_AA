@@ -8,11 +8,6 @@
 #include "mm_title_richpresence.h"
 #include "csgo.spa.h"
 
-#ifdef _PS3
-#include <netex/net.h>
-#include <netex/libnetctl.h>
-#endif
-
 #include "fmtstr.h"
 #include "gametypes/igametypes.h"
 #include "netmessages_signon.h"
@@ -49,12 +44,6 @@ InitReturnVal_t CMatchTitle::Init()
 		mgr->AddListener( this, "player_disconnect", false );
 	}
 
-#ifdef _GAMECONSOLE
-	// Initialize Title Update version
-	extern ConVar mm_tu_string;
-	mm_tu_string.SetValue( "00000000" );
-#endif
-
 	g_pGameTypes->Initialize();
 
 	return INIT_OK;
@@ -75,9 +64,7 @@ void CMatchTitle::Shutdown()
 
 uint64 CMatchTitle::GetTitleID()
 {
-#ifdef _X360
-	return TITLEID_COUNTER_STRIKE__GO;
-#elif !defined( SWDS ) && !defined( NO_STEAM )
+#if !defined( SWDS ) && !defined( NO_STEAM )
 	static uint64 uiAppID = 0ull;
 	if ( !uiAppID && steamapicontext && steamapicontext->SteamUtils() )
 	{
@@ -91,25 +78,8 @@ uint64 CMatchTitle::GetTitleID()
 
 uint64 CMatchTitle::GetTitleServiceID()
 {
-#ifdef _X360
-	return 0x45410880ull; // Left 4 Dead 1 Service ID
-#else
 	return 0ull;
-#endif
 }
-
-#ifdef _PS3
-
-uint64 CMatchTitle::GetTitleSettingsFlags()
-{
-	return MATCHTITLE_SETTING_MULTIPLAYER
-		| MATCHTITLE_VOICE_INGAME
-		| MATCHTITLE_FORCE_PSN_NAMES
-		| MATCHTITLE_PLAYERMGR_DISABLED
-		| MATCHTITLE_SERVERMGR_DISABLED;
-}
-
-#else
 
 uint64 CMatchTitle::GetTitleSettingsFlags()
 {
@@ -127,66 +97,14 @@ uint64 CMatchTitle::GetTitleSettingsFlags()
 	;
 }
 
-#endif
-
-#ifdef _PS3
-void *g_pMatchTitle_NetMemory;
-#endif
-
 void CMatchTitle::PrepareNetStartupParams( void *pNetStartupParams )
 {
-#ifdef _X360
-	XNetStartupParams &xnsp = *( XNetStartupParams * ) pNetStartupParams;
 
-	xnsp.cfgQosDataLimitDiv4 = 64; // 256 bytes
-
-	// Increase outstanding QoS responses significantly
-	// See: https://forums.xboxlive.com/AnswerPage.aspx?qid=493b207b-66b9-42bc-b23d-ddc306e09749&tgt=1
-	xnsp.cfgQosSrvMaxSimultaneousResponses = 255;
-
-	xnsp.cfgSockDefaultRecvBufsizeInK = 64; // Increase receive size for UDP to 64k
-	xnsp.cfgSockDefaultSendBufsizeInK = 64; // Keep send size at 64k too
-
-	int numGamePlayersMax = GetTotalNumPlayersSupported();
-
-	int numConnections = 4 * ( numGamePlayersMax - 1 );
-	//   - the max number of connections to members of your game party
-	//   - the max number of connections to members of your social party
-	//   - the max number of connections to a pending game party (if you are joining a new one ).
-	//   - matchmakings client info structure also creates a connection per client for the lobby.
-
-	//   1 - the main game session
-	int numTotalConnections = 1 + numConnections;
-
-	//   29 - total Connections (XNADDR/XNKID pairs) ,using 5 sessions (XNKID/XNKEY pairs).
-
-	xnsp.cfgKeyRegMax = 16; //adding some extra room because of lazy dealocation of these pairs.
-	xnsp.cfgSecRegMax = MAX( 64, numTotalConnections ); //adding some extra room because of lazy dealocation of these pairs.
-	
-	xnsp.cfgSockMaxDgramSockets = xnsp.cfgSecRegMax;
-	xnsp.cfgSockMaxStreamSockets = xnsp.cfgSecRegMax;
-#endif
-
-#if defined( _PS3 ) && defined( NO_STEAM )
-	MEM_ALLOC_CREDIT_( "NO_STEAM: CMatchTitle::PrepareNetStartupParams" );
-	sys_net_initialize_parameter_t &snip = *( sys_net_initialize_parameter_t * ) pNetStartupParams;
-
-	snip.memory_size = 512 * 1024;
-	snip.memory = malloc( snip.memory_size ); // alternatively this can be a global array
-
-	g_pMatchTitle_NetMemory = snip.memory;	// bookmark the memory address for later inspection if necessary
-#endif
 }
 
 int CMatchTitle::GetTotalNumPlayersSupported()
 {
-#ifdef _GAMECONSOLE
-	//  [jason] Rounding this up to 16, since this was the value used on cstrike15 xbla.  Among other things, this
-	//		controls how many remote talker voice channels are reserved for each client in XHV
-	return 16;
-#else
 	return 64; // On PC this is not limited, return max number dedicated servers can ever run with
-#endif
 }
 
 // Get a guest player name
@@ -211,9 +129,6 @@ void CMatchTitle::PrepareClientForConnect( KeyValues *pSettings )
 {
 #ifndef SWDS
 	int numPlayers = 1;
-#ifdef _GAMECONSOLE
-	numPlayers = XBX_GetNumGameUsers();
-#endif
 
 	//
 	// Now we set the convars
@@ -222,9 +137,6 @@ void CMatchTitle::PrepareClientForConnect( KeyValues *pSettings )
 	for ( int k = 0; k < numPlayers; ++ k )
 	{
 		int iController = k;
-#ifdef _GAMECONSOLE
-		iController = XBX_GetUserId( k );
-#endif
 		IPlayerLocal *pPlayerLocal = g_pPlayerManager->GetLocalPlayer( iController );
 		if ( !pPlayerLocal )
 			continue;
@@ -248,9 +160,6 @@ void CMatchTitle::PrepareClientForConnect( KeyValues *pSettings )
 bool CMatchTitle::StartServerMap( KeyValues *pSettings )
 {
 	int numPlayers = 1;
-#ifdef _GAMECONSOLE
-	numPlayers = XBX_GetNumGameUsers();
-#endif
 
 	char const *szMap = pSettings->GetString( "game/map", NULL );
 	if ( !szMap )

@@ -8,12 +8,8 @@
 #include "bitmap/imageformat.h"
 #include "basetypes.h"
 #include "tier0/dbg.h"
-#ifndef _PS3
 #include <malloc.h>
 #include <memory.h>
-#else
-#include <stdlib.h>
-#endif
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
 #include "tier1/utlmemory.h"

@@ -30,11 +30,6 @@
 #include "mathlib/volumeculler.h"
 #include "iinput.h"
 
-#if defined(_PS3)
-#include "ps3/spu_job_shared.h"
-#include "buildrenderables_PS3.h"
-#endif
-
 //#include "tier0/miniprofiler.h" 
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -56,14 +51,6 @@ static ConVar r_shadows_on_renderables_enable( "r_shadows_on_renderables_enable"
 static ConVar cl_leafsystemvis( "cl_leafsystemvis", "0", FCVAR_CHEAT );
 
 static ConVar r_alphafade_usefov( "r_alphafade_usefov", "1", FCVAR_CHEAT, "Account for FOV when computing an entity's distance-based alpha fade" );
-
-#if defined(_PS3)
-ConVar r_PS3_SPU_buildrenderables("r_PS3_SPU_buildrenderables", "1");
-ConVar r_PS3_SPU_BuildWRLists_ImmediateSync("r_PS3_SPU_BuildWRLists_ImmediateSync", "0");
-
-// temp - debugging
-ConVar r_PS3_SPU_BuildR_VolR("r_PS3_SPU_BuildR_VolR", "1");
-#endif
 
 extern ConVar cl_csm_disable_culling;
 extern ConVar cl_csm_shadows;
@@ -150,9 +137,6 @@ public:
 	virtual void RenderableChanged( ClientRenderHandle_t handle );
 	virtual void CollateViewModelRenderables( CViewModelRenderablesList *pList );
 	virtual void BuildRenderablesList( const SetupRenderInfo_t &info );
-#if defined(_PS3)
-	virtual void BuildRenderablesList_PS3_Epilogue( void );
-#endif
 	virtual void DrawStaticProps( bool enable );
 	virtual void DrawSmallEntities( bool enable );
 	virtual void EnableForceOpaquePass( ClientRenderHandle_t handle, bool bEnable );
@@ -229,9 +213,6 @@ private:
 		RENDER_FLAGS_FORCE_OPAQUE_PASS		= 0x100,
 	};
 
-#if defined(_PS3) // to ease SPU job
-public:
-#endif
 	// All the information associated with a particular handle
 	struct RenderableInfo_t
 	{
@@ -255,9 +236,6 @@ public:
 		Vector				m_vecAbsMins;			// NOTE: These members are not threadsafe!!
 		Vector				m_vecAbsMaxs;			// They can be updated from any viewpoint (based on RENDER_FLAGS_BOUNDS_VALID)
 	};
-#if defined(_PS3)
-private:
-#endif
 
 	// The leaf contains an index into a list of renderables
 	struct ClientLeaf_t
@@ -293,9 +271,6 @@ private:
 		ClientRenderHandle_t handle;
 	};
 
-#if defined(_PS3)  // to ease SPU job
-public:
-#endif
 	struct BuildRenderListInfo_t
 	{
 		Vector	m_vecMins;
@@ -305,9 +280,6 @@ public:
 		bool	m_bPerformOcclusionTest : 1;
 		bool	m_bIgnoreZBuffer : 1;
 	};
-#if defined(_PS3)
-private:
-#endif
 
 	struct AlphaInfo_t
 	{
@@ -350,14 +322,6 @@ private:
 
 	// Methods related to renderable list building
 	void BuildRenderablesListForFastReflections( const SetupRenderInfo_t &info );
-#if defined(_PS3)
-	void BuildRenderablesList_SPURSJob( const SetupRenderInfo_t &info, 
-		RenderableInfo_t **ppEA_Renderables, int *pEA_RenderablesCount, 
-		DetailRenderableInfo_t *pEA_DetailRenderables, int *pEA_DetailRenderablesCount,
-		BuildRenderListInfo_t *pEA_RLInfo );
-
-	virtual void PrepRenderablesListForSPU( void );
-#endif
 	void BuildRenderablesListForCSMView( const SetupRenderInfo_t &info );
 		
 	int ExtractStaticProps( int nCount, RenderableInfo_t **ppRenderables );
@@ -2171,23 +2135,8 @@ int CClientLeafSystem::ExtractDuplicates( int nFrameNumber, int nCount, Renderab
 	{
 		// I expect this is the typical case; nothing needs alternate sorting
 		// look 8 entries ahead and precache to minimize cache misses
-#if defined( _X360 ) || defined( _PS3 )
-		const int nNumPrefetchLookahead = 8;
-		int nPrefCount = MIN(nCount,nNumPrefetchLookahead);
-		int nPrefIterCount = MAX(nCount-nNumPrefetchLookahead,0);
-		for ( int i = 0; i < nPrefCount; i++ )
-		{
-			PREFETCH_128( ppRenderables[i], 0 );
-		}
-#endif
 		for ( int i = 0; i < nCount; i++ )
 		{
-#if defined( _X360 ) || defined( _PS3 )
-			if ( i < nPrefIterCount )
-			{
-				PREFETCH_128( ppRenderables[i+nNumPrefetchLookahead], 0 );
-			}
-#endif
 			RenderableInfo_t *pInfo = ppRenderables[i];
 			if ( !IsLeafMarker( pInfo ) )
 			{
@@ -2290,10 +2239,8 @@ int CClientLeafSystem::ExtractTranslucentRenderables( int nCount, RenderableInfo
 	return nUniqueCount;
 }
 
-#ifndef _GAMECONSOLE
 static ConVar r_disable_distance_fade_on_big_props( "r_disable_distance_fade_on_big_props", "0", FCVAR_CHEAT, "Completely disable distance fading on large props" );
 static ConVar r_disable_distance_fade_on_big_props_thresh( "r_disable_distance_fade_on_big_props_thresh", "48000", FCVAR_CHEAT, "Distance prop fade disable threshold size" );
-#endif
 
 //-----------------------------------------------------------------------------
 // Computes translucency for all renderables
@@ -2310,10 +2257,8 @@ void CClientLeafSystem::ComputeDistanceFade( int nCount, AlphaInfo_t *pAlphaInfo
 	}
 	flDistFactorSq *= flDistScale*flDistScale;
 
-#ifndef _GAMECONSOLE
 	const bool bDisableDistanceFadeOnBigProps = r_disable_distance_fade_on_big_props.GetBool();
 	const float flDistanceFadeDisableThreshold = r_disable_distance_fade_on_big_props_thresh.GetFloat();
-#endif
 		
 	for ( int i = 0; i < nCount; ++i )
 	{
@@ -2325,7 +2270,6 @@ void CClientLeafSystem::ComputeDistanceFade( int nCount, AlphaInfo_t *pAlphaInfo
 		if ( pAlphaProp->m_nDistFadeEnd == 0 )
 			continue;
 
-#ifndef _GAMECONSOLE
 		if ( bDisableDistanceFadeOnBigProps ) 
 		{
 			// Just disable distance fading on very large props for CS:GO - it looks terrible and is distracting in many cases, and doesn't help CPU perf much if at all.
@@ -2335,7 +2279,6 @@ void CClientLeafSystem::ComputeDistanceFade( int nCount, AlphaInfo_t *pAlphaInfo
 			if ( flFakeVol > flDistanceFadeDisableThreshold )
 				continue;
 		}
-#endif
 
 		float flCurrentDistanceSq;
 		if ( pAlphaProp->m_nDistanceFadeMode == CLIENT_ALPHA_DISTANCE_FADE_USE_CENTER )
@@ -3012,247 +2955,6 @@ void CClientLeafSystem::HighlightAllTranslucentRenderables()
 }
 
 
-#if defined(_PS3)
-
-// 7LS TODO: get rid of these literals!
-struct SPURenderListData
-{
-	int m_orderedListCount_PS3;
-	int m_detailRenderablesCount_PS3;
-	bool m_bEpilogue;
-
-	SetupRenderInfo_t m_info;
-
-	CClientLeafSystem::RenderableInfo_t *m_orderedList_PS3[4096] ALIGN16;
-	DetailRenderableInfo_t m_detailRenderables_PS3[2048] ALIGN16;
-	CClientLeafSystem::BuildRenderListInfo_t m_RLInfo_PS3[4096] ALIGN16;
-};
-
-SPURenderListData g_SPURLData[ MAX_CONCURRENT_BUILDVIEWS ] ALIGN16;
-
-//-----------------------------------------------------------------------------
-// Init and push SPURS job for BuildRenderablesList
-//-----------------------------------------------------------------------------
-int g_debugViewID_DEBUG= 0; 
-uint32 g_debugRendAddr = 0;
-
-void CClientLeafSystem::BuildRenderablesList_SPURSJob( const SetupRenderInfo_t &info, 
-													   RenderableInfo_t **ppEA_Renderables, int *pEA_RenderablesCount, 
-													   DetailRenderableInfo_t *pEA_DetailRenderables, int *pEA_DetailRenderablesCount,
-													   BuildRenderListInfo_t *pEA_RLInfo )
-{
-	SNPROF("CClientLeafSystem::BuildRenderablesList_SPURSJob");
-
-	static ConVarRef r_occlusion("r_occlusion");
-	static int  cascadeID = 0;
-	static bool bLastJobPushedCSM = false;
-
-
-	PS3BuildRenderablesJobData *pJobData	= g_pBuildRenderablesJob->GetJobData( g_viewBuilder.GetBuildViewID() );
-
-
-	// fill SPU job struct
-	buildRenderablesJob_SPU *pJob_SPU		= &pJobData->buildRenderablesJobSPU;
-
-	pJob_SPU->debugJob						= r_PS3_SPU_buildrenderables.GetInt();
-	pJob_SPU->debugViewID					= g_viewBuilder.GetBuildViewID();
-	pJob_SPU->debugViewID_DEBUG				= g_debugViewID_DEBUG;
-	pJob_SPU->pEA_debugRenderable           = g_debugRendAddr;
-
-	pJob_SPU->info							= info;
-	
-	pJob_SPU->pEA_worldbrush_leafs			= engine->GetHostStateWorldBrush();
-
-	pJob_SPU->viewOrigin					= CurrentViewOrigin();
-
-	pJob_SPU->pEA_clientRenderablesList_RenderGroups = (void *)info.m_pRenderList->m_RenderGroups;
-	pJob_SPU->pEA_clientRenderablesList_RenderGroupCounts = (void *)info.m_pRenderList->m_RenderGroupCounts;
-
-	pJob_SPU->pEA_clientleafsystem_mleaf	= s_ClientLeafSystem.m_Leaf.Base(); 
-
-	void **ppTmp							= (void **)&m_RenderablesInLeaf;
-	pJob_SPU->pEA_renderablesInLeafLIST	    = (void *)(*ppTmp);
-
-	void **ppRenderables					= (void **)&m_Renderables;
-	pJob_SPU->pEA_renderablesLIST			= (void *)(*ppRenderables);
-	pJob_SPU->renderablesHeadIdx			= m_Renderables.Head();
-
-	pJob_SPU->info_mpRenderList_mDetailFade	= info.m_pRenderList->m_DetailFade;
-
-	pJob_SPU->maxCount				        = m_Renderables.Count(); // what about duplicates??
-	pJob_SPU->buildFastReflectionRenderables= info.m_bFastEntityRendering && r_fastreflectionfastpath.GetBool();
-
-	// Get Frustums
-	pJob_SPU->pEA_frustums[ 0 ]			=  g_viewBuilder.GetBuildViewFrustum();
-	for( int lp = 0; lp < g_viewBuilder.GetNumAreaFrustum(); lp++ )
-	{
-		if( engine->ShouldUseAreaFrustum( lp ) )
-		{
-			pJob_SPU->pEA_frustums[ lp+1 ] = g_viewBuilder.GetBuildViewAreaFrustumID( lp );
-		}
-		else
-		{
-			pJob_SPU->pEA_frustums[ lp+1 ] = g_viewBuilder.GetBuildViewFrustum();
-		}
-	}
-
-	pJob_SPU->numAreaFrustums               = g_viewBuilder.GetNumAreaFrustum() + 1;
-
-	C_BasePlayer *pLocal					= C_BasePlayer::GetLocalPlayer();
-	float flFactor							= pLocal ? pLocal->GetFOVDistanceAdjustFactor() : 1.0f;
-	pJob_SPU->flFactor						= flFactor;
-	g_pDetailObjectSystem->GetDetailFadeValues( pJob_SPU->flDetailFadeStart, pJob_SPU->flDetailFadeEnd );
-
-	modelinfo->GetLevelScreenFadeRange( &pJob_SPU->flMinLevelFadeArea, &pJob_SPU->flMaxLevelFadeArea );
-	view->GetScreenFadeDistances( &pJob_SPU->flMinGlobalFadeArea, &pJob_SPU->flMaxGlobalFadeArea, &pJob_SPU->flGlobalDistFadeScale );
-
-	pJob_SPU->bComputeScreenFade			= 0;
-	if( ( pJob_SPU->flMinLevelFadeArea > 0.0f ) || ( pJob_SPU->flMinGlobalFadeArea > 0.0f ) )
-	{
-		ScreenSizeComputeInfo_t ssinfo;
-
-		CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
-		VMatrix viewMatrix, projectionMatrix;
-		pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
-		pRenderContext->GetMatrix( MATERIAL_PROJECTION, &projectionMatrix );
-		MatrixMultiply( projectionMatrix, viewMatrix, ssinfo.m_matViewProj );
-
-		int x, y, w, h;
-		pRenderContext->GetViewport( x, y, w, h );
-		ssinfo.m_nViewportHeight = h;
-
-		pRenderContext->GetWorldSpaceCameraVectors( NULL, NULL, &ssinfo.m_vecViewUp );
-
-		pJob_SPU->bComputeScreenFade = 1;
-		pJob_SPU->screensizecomputeinfo = ssinfo;
-	}
-
-	pJob_SPU->shouldDrawDetailObjects		= g_pDetailObjectSystem->ShouldDrawDetailObjects();
-	pJob_SPU->detailObjects_count			= g_pDetailObjectSystem->GetDetailObjectsCount();
-
-	if( pJob_SPU->detailObjects_count )
-	{
-		pJob_SPU->pEA_detailObjects			= g_pDetailObjectSystem->GetDetailObjectsBase();
-		pJob_SPU->pEA_detailObjects_origin	= g_pDetailObjectSystem->GetDetailObjectsOriginOffset();
-	}
-	pJob_SPU->strideCDetailModel			= g_pDetailObjectSystem->GetCDetailModelStride();
-
-
-	pJob_SPU->r_drawallrenderables			= r_drawallrenderables.GetInt();
-	pJob_SPU->r_portaltestents_AND_NOTr_portalsopenall = r_PortalTestEnts.GetBool() && !r_portalsopenall.GetBool();
-	pJob_SPU->r_occlusion					= r_occlusion.GetBool();
-
-	pJob_SPU->clientleafsystem_alternateSortCount = m_nAlternateSortCount;
-	pJob_SPU->clientleafsystem_drawStaticProps    = m_DrawStaticProps;
-	pJob_SPU->clientleafsystem_disableShadowDepthCount = m_nDisableShadowDepthCount;
-	
-	pJob_SPU->frameCount					= gpGlobals->framecount;
-	pJob_SPU->curTime						= gpGlobals->curtime;
-
-	//out
-	pJob_SPU->ppEA_Renderables				= ppEA_Renderables;
-	pJob_SPU->pEA_RenderablesCount			= pEA_RenderablesCount;
-	pJob_SPU->pEA_DetailRenderables			= pEA_DetailRenderables;
-	pJob_SPU->pEA_DetailRenderablesCount	= pEA_DetailRenderablesCount;
-	pJob_SPU->pEA_RLInfo				    = pEA_RLInfo;
-
-	// push
-	job_buildrenderables::JobDescriptor_t *pJobDescriptor = &pJobData->jobDescriptor;
-	pJobDescriptor->header					= g_buildRenderablesJobDescriptor.header;
-	pJobDescriptor->header.useInOutBuffer	= 1;
-	pJobDescriptor->header.sizeStack		= (32*1024)/16;
-	pJobDescriptor->header.sizeInOrInOut	= 0;
-	pJobDescriptor->header.sizeDmaList		= 0;
-
-	AddInputDma( pJobDescriptor, sizeof(buildRenderablesJob_SPU), pJob_SPU );
-
-	if( info.m_bCSMView )
-	{
-		pJob_SPU->bCSMView				= true;
-
-		if( info.m_bCSMView )
-		{
-			if( bLastJobPushedCSM )
-			{
-				cascadeID++;
-			}
-			else
-			{
-				cascadeID = 0;
-				bLastJobPushedCSM = true;
-			}
-		}
-
-		pJob_SPU->cascadeID				= cascadeID;
-
-		pJob_SPU->bDisableCSMCulling	= cl_csm_disable_culling.GetBool();
-		pJob_SPU->bShadowEntities		= cl_csm_entity_shadows.GetBool() && cl_csm_shadows.GetBool();
-		pJob_SPU->bShadowStaticProps	= cl_csm_static_prop_shadows.GetBool() && cl_csm_shadows.GetBool();
-		pJob_SPU->bShadowSprites		= cl_csm_sprite_shadows.GetBool() && cl_csm_shadows.GetBool();
-		pJob_SPU->bIgnoreDisableShadowDepthRendering = cl_csm_ignore_disable_shadow_depth_rendering.GetBool();
-
-		void *pVolColForSPU = g_viewBuilder.GetBuildViewVolumeCuller();
-		AddInputDma( pJobDescriptor, sizeof(CVolumeCuller), pVolColForSPU );
-	}
-	else
-	{
-		pJob_SPU->bCSMView = false;
-	}
-
-	if( r_PS3_SPU_BuildWRLists_ImmediateSync.GetInt() )
-	{
-		SNPROF("CClientLeafSystem::BuildRenderablesList_SPURSJob->Sync");
-		CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].pushJob( &pJobDescriptor->header, sizeof(*pJobDescriptor), 0, CELL_SPURS_JOBQUEUE_FLAG_SYNC_JOB ) );
-		CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].sync( 0 ) );
-	}
-	else
-	{
-		// OLD method of pushing buildrenderable jobs - we now do this at the end of pass1 allowing us to better schedule those jobs given the buildworld jobs can
-		// all run concurrently. The problem is in the documentation /implementation of pushsync and the impact it has on all jobs pushed prior to it.
-		// See implementation of push of buildrenderable jobs in viewrender.cpp - CConcurrentViewBuilder::PushBuildRenderableJobs 
-	}
-
-}
-
-//-----------------------------------------------------------------------------
-// only call once per frame
-//-----------------------------------------------------------------------------
-void CClientLeafSystem::PrepRenderablesListForSPU( void )
-{
-	// only want to do this once
-	SNPROF("CClientLeafSystem::PrepRenderablesListForSPU");
-
-	// reset view count
-
-
-	// update aabb's
-	if( ( r_PS3_SPU_buildrenderables.GetInt() > 0 ) )
-	{
-		// SPU path only - update all AABB's - see how long this takes, moving this code over to SPU not straightforward
-		// one time hit may be acceptable given the CSM views, etc
-		// will make the SPU code more manageable
-		VectorAligned vecAbsMins, vecAbsMaxs;
-
-		for ( int i = m_Renderables.Head(); i != m_Renderables.InvalidIndex(); i = m_Renderables.Next( i ) )
-		{
-			RenderableInfo_t *pInfo = &m_Renderables[ i ];
-
-			if ( ( pInfo->m_Flags & RENDER_FLAGS_BOUNDS_VALID ) == 0 )
-			{
-				CalcRenderableWorldSpaceAABB( pInfo->m_pRenderable, vecAbsMins, vecAbsMaxs );
-				pInfo->m_vecAbsMins = vecAbsMins;
-				pInfo->m_vecAbsMaxs = vecAbsMaxs;
-				//if ( ( pInfo->m_Flags & RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE ) == 0 ) // should be valid this frame for all views regardless, right? TODO - which ents have this set?
-				{
-					pInfo->m_Flags |= RENDER_FLAGS_BOUNDS_VALID;
-				}
-			}
-		}
-	}
-}
-
-#endif
-
 void CClientLeafSystem::BuildRenderablesListForCSMView( const SetupRenderInfo_t &setupInfo )
 {	
 	//Frustum_t *list[MAX_MAP_AREAS];
@@ -3341,44 +3043,12 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 	}
 #endif // _CERT
 
-#if defined(_PS3)
-	int viewId = g_viewBuilder.GetBuildViewID(); 
-	SPURenderListData *pSPUDst = &g_SPURLData[ viewId ];
-	pSPUDst->m_bEpilogue = false;
-#endif
-
 	if ( info.m_bFastEntityRendering && r_fastreflectionfastpath.GetBool() )
 	{
 		BuildRenderablesListForFastReflections( info );
 
 		return;
 	}
-
-#if defined(_PS3)
-
-	int nCount_PS3;
-	RenderableInfo_t **ppRenderables_PS3;
-
-
-	if( ( r_PS3_SPU_buildrenderables.GetInt() > 0 ) && g_viewBuilder.IsSPUBuildRWJobsOn() )
-	{
-		// Run BuildRenderables on SPU
-
-		// this goes hand-in-hand with building worldlists on SPU and runs the job in parallel while the PPU continues 
-		// a sync point is required while drawing and entry into here assumes 2 passes over the rendering
-		// lists are built during the 1st pass, drawn during the 2nd (where/when the jobs started in pass 1 are synced)
-		// world lists must be built before the renderables list can be. When kicking the renderables job, we must ensure
-		// we sync to the appropriate buildworldlist job (using pushsync command with the appropriate mask)
-
-		pSPUDst->m_bEpilogue = !info.m_bCSMView;
-
-		memcpy( &pSPUDst->m_info, &info, sizeof(SetupRenderInfo_t) );
-
-		BuildRenderablesList_SPURSJob( pSPUDst->m_info, pSPUDst->m_orderedList_PS3, &pSPUDst->m_orderedListCount_PS3, pSPUDst->m_detailRenderables_PS3, &pSPUDst->m_detailRenderablesCount_PS3, pSPUDst->m_RLInfo_PS3 );
-	}
-	else
-	{
-#endif
 
 
 	if ( info.m_bCSMView )
@@ -3481,37 +3151,8 @@ void CClientLeafSystem::BuildRenderablesList( const SetupRenderInfo_t &info )
 
 	stackfree( pRLInfo );
 
-#if defined(_PS3)
-	}
-#endif
-
 
 }
-
-
-#if defined(_PS3)
-void CClientLeafSystem::BuildRenderablesList_PS3_Epilogue( void )
-{
-	if( r_PS3_SPU_buildrenderables.GetInt() > 0  )
-	{
-		int nCount_PS3;
-		RenderableInfo_t **ppRenderables_PS3;
-
-		int viewId = g_viewBuilder.GetBuildViewID(); 
-
-		SPURenderListData *pSPUDst = &g_SPURLData[ viewId ];
-
-		// epilogue for non csm, non fast reflection views
-		if( pSPUDst->m_bEpilogue )
-		{
-			nCount_PS3			= pSPUDst->m_orderedListCount_PS3;
-			ppRenderables_PS3	= pSPUDst->m_orderedList_PS3;
-			nCount_PS3			= ExtractOccludedRenderables( nCount_PS3, ppRenderables_PS3, pSPUDst->m_RLInfo_PS3 );
-			AddRenderablesToRenderLists( pSPUDst->m_info, nCount_PS3, ppRenderables_PS3, pSPUDst->m_RLInfo_PS3, pSPUDst->m_detailRenderablesCount_PS3, pSPUDst->m_detailRenderables_PS3 );
-		}
-	}
-}
-#endif
 
 
 RenderGroup_t CClientLeafSystem::GenerateRenderListEntry( IClientRenderable *pRenderable, CClientRenderablesList::CEntry &entryOut )

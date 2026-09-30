@@ -1653,10 +1653,8 @@ public:
 private:
 	CAudioSourceStreamWave( const CAudioSourceStreamWave & ); // not implemented, not accessible
 
-#if !defined( _GAMECONSOLE )
 	// We need this for -tools mode to get access to the raw samples
 	FileHandle_t		m_hWaveFileAccess;
-#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -1690,9 +1688,7 @@ CAudioSourceStreamWave::CAudioSourceStreamWave( CSfxTable *pSfx ) : CAudioSource
 
 CAudioSourceStreamWave::CAudioSourceStreamWave( CSfxTable *pSfx, CAudioSourceCachedInfo *info ) : 
 	CAudioSourceWave( pSfx, info ) 
-#if !defined( _GAMECONSOLE )
 	,m_hWaveFileAccess( FILESYSTEM_INVALID_HANDLE )
-#endif
 {
 	m_pSfx = pSfx;
 	m_dataStart = info->DataStart();
@@ -1706,13 +1702,11 @@ CAudioSourceStreamWave::CAudioSourceStreamWave( CSfxTable *pSfx, CAudioSourceCac
 //-----------------------------------------------------------------------------
 CAudioSourceStreamWave::~CAudioSourceStreamWave( void )
 {
-#if !defined( _GAMECONSOLE )
 	if ( m_hWaveFileAccess != FILESYSTEM_INVALID_HANDLE )
 	{
 		g_pFullFileSystem->Close( m_hWaveFileAccess );
 		m_hWaveFileAccess = FILESYSTEM_INVALID_HANDLE;
 	}
-#endif
 }
 
 
@@ -1900,7 +1894,6 @@ void CAudioSourceStreamWave::ParseChunk( IterateRIFF &walk, int chunkName )
 //-----------------------------------------------------------------------------
 int CAudioSourceStreamWave::GetOutputData( void **pData, int64 samplePosition, int sampleCount, char copyBuf[AUDIOSOURCE_COPYBUF_SIZE] )
 {
-#if !defined( _GAMECONSOLE )
 	// Only -tools mode uses this to build a "preview" of the wave form for PCM data only
 	if ( GetType() == WAVE_FORMAT_PCM ) 
 	{
@@ -1922,7 +1915,6 @@ int CAudioSourceStreamWave::GetOutputData( void **pData, int64 samplePosition, i
 			return sampleCount;
 		}
 	}
-#endif
 	return 0;
 }
 

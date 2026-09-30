@@ -135,7 +135,7 @@ public:
 
 	void			CheckTitleDataStorageConnected( void );
 
-#if !defined(NO_STEAM) && !defined (_PS3)
+#if !defined(NO_STEAM)
 	STEAM_CALLBACK_MANUAL( ClientModeCSNormal, OnScreenshotRequested, ScreenshotRequested_t, m_CallbackScreenshotRequested );
 #endif
 

@@ -1,13 +1,7 @@
 #ifndef TIER0_CACHE_HINTS_HDR
 #define TIER0_CACHE_HINTS_HDR
 
-#if defined(_X360)
-#define PREFETCH_128(POINTER,OFFSET)	{ __dcbt((OFFSET), (POINTER)); }
-#define PREZERO_128(POINTER, OFFSET)	{ __dcbz128((OFFSET), (POINTER)); }
-#elif defined( _PS3 ) && !defined( SPU )
-#define PREFETCH_128(POINTER,OFFSET)	{ __dcbt( ( char * )( POINTER ) + ( size_t )( OFFSET ) ); }
-#define PREZERO_128(POINTER,OFFSET)		{ __dcbz( ( char * )( POINTER ) + ( size_t )( OFFSET ) ); }
-#elif defined(WIN32)
+#if defined(WIN32)
 // NOTE: In every case I've tested so far using this prefetch on PC is actually slower.  Changing it actually 
 // prefetch 128-bytes (tested on a PC with 64-byte cache lines) makes it even slower
 // It is much more difficult to improve performance with prefetch on the PC.  I suggest trying to make your data

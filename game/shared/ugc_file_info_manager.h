@@ -13,7 +13,7 @@
 
 #include "ugc_utils.h"
 
-#if !defined( NO_STEAM ) && !defined( _PS3 )
+#if !defined( NO_STEAM )
 
 class IWorkshopFileInfoManagerCallbackInterface
 {
@@ -177,13 +177,11 @@ private:
 	void UpdatePublishedFileInfoQueries( void );
 	void UpdatePublishedFileVotingInfoQueries( void );
 
-#if !defined( _GAMECONSOLE )
 	CCallResult<CWorkshopFileInfoManager, RemoteStorageGetPublishedFileDetailsResult_t> m_callbackGetPublishedFileDetails;
 	void Steam_OnGetPublishedFileDetails( RemoteStorageGetPublishedFileDetailsResult_t *pResult, bool bError );
 
 	CCallResult<CWorkshopFileInfoManager, RemoteStorageGetPublishedItemVoteDetailsResult_t> m_callbackGetPublishedItemVoteDetails;
 	void Steam_OnGetPublishedItemVoteDetails( RemoteStorageGetPublishedItemVoteDetailsResult_t *pResult, bool bError );
-#endif // !_GAMECONSOLE
 
 	CUtlMap< PublishedFileId_t, PublishedFileInfo_t >	m_mapPublishedFileInfoDepot;			// Master list of all published file information we've queried for
 	CUtlQueue< CBasePublishedFileRequest * >			m_vecPublishedFileInfoQueryList;		// List of file IDs that need to be queried for information

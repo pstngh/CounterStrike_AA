@@ -87,22 +87,6 @@ const wchar_t * NumAsWString( int val )
 #endif
 // dgoodenough - PS3 needs this guy as well.
 // PS3_BUILDFIX
-#ifdef _PS3
-const wchar_t * NumAsWString( int val )
-{
-	const int BufLen = 16;
-	static wchar_t buf[BufLen];
-	char szBuf[BufLen];
-
-	Q_snprintf(szBuf, BufLen, "%d", val );
-	szBuf[BufLen - 1] = 0;
-	for ( int i = 0; i < BufLen; ++i )
-	{
-		buf[i] = szBuf[i];
-	}
-	return buf;
-}
-#endif
 //--------------------------------------------------------------------------------------------------------------
 const char * NumAsString( int val )
 {

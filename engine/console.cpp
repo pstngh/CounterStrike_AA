@@ -13,9 +13,6 @@
 #include "server.h"
 #include "MapReslistGenerator.h"
 #include "tier2/socketcreator.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#endif
 #include "toolframework/itoolframework.h"
 #include "netconsole.h"
 #include "host_cmd.h"
@@ -24,11 +21,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if !defined( _X360 )
 #define	MAXPRINTMSG	4096
-#else
-#define	MAXPRINTMSG	1024
-#endif
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_CONSOLE, "Console" );
 
@@ -765,12 +758,7 @@ Handles cursor positioning, line wrapping, etc
 */
 static bool g_fColorPrintf = false;
 static bool g_bInColorPrint = false;
-#ifdef _PS3
-#include "tls_ps3.h"
-#define g_bInSpew GetTLSGlobals()->bEngineConsoleIsInSpew
-#else
 extern CTHREADLOCALINT g_bInSpew;
-#endif
 
 void Con_Printf( const char *fmt, ... );
 
@@ -874,31 +862,6 @@ void Con_ColorPrint( const Color& clr, char const *msg )
 		}
 	}
 
-#if defined( _X360 )
-	int			r,g,b,a;
-	char		buffer[MAXPRINTMSG];
-	const char	*pFrom;
-	char		*pTo;
-
-	clr.GetColor(r, g, b, a);
-
-	// fixup percent printers
-	pFrom = msg;
-	pTo   = buffer;
-	while ( *pFrom && pTo < buffer+sizeof(buffer)-1 )
-	{
-		*pTo = *pFrom++;
-		if ( *pTo++ == '%' )
-			*pTo++ = '%';
-	}
-	*pTo = '\0';
-
-	XBX_DebugString( XMAKECOLOR(r,g,b), buffer );
-#endif
-
-#if defined( _PS3 )
-	Sys_OutputDebugString( msg );
-#endif
 }
 #endif
 
@@ -942,11 +905,7 @@ void Con_Print( const char *msg )
 	}
 	else
 	{
-#if !defined( _X360 )
 		Color clr( 255, 255, 255, 255 );
-#else
-		Color clr( 0, 0, 0, 255 );
-#endif
 		Con_ColorPrint( clr, msg );
 	}
 #endif
@@ -976,11 +935,7 @@ void Con_Printf( const char *fmt, ... )
 	}
 	else
 	{
-#if !defined( _X360 )
 		Color clr( 255, 255, 255, 255 );
-#else
-		Color clr( 0, 0, 0, 255 );
-#endif
 		Con_ColorPrint( clr, msg );
 	}
 #endif

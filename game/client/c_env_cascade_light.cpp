@@ -15,10 +15,6 @@
 #include "c_world.h"
 #include "materialsystem/materialsystem_config.h"
 
-#if defined (_PS3 )
-#include <algorithm>
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -215,13 +211,6 @@ static void Add3DLineOverlay( const Vector &s, const Vector &e, const Vector &co
 	NDebugOverlay::Line( s, e, (int)(color.x * 255.0f), (int)(color.y * 255.0f), (int)(color.z * 255.0f), !bDepthTest, NDEBUG_PERSIST_TILL_NEXT_SERVER );
 }
 
-#if defined(_X360)
-template <class T> void _swap ( T& a, T& b )
-{
-	T c(a); a=b; b=c;
-}
-#endif
-
 static void DebugRenderConvexPolyhedron( const Vector4D *pPlanes, uint nNumPlanes, const Vector &color, bool zTest )
 {
 #ifdef _DEBUG
@@ -300,11 +289,7 @@ static void DebugRenderConvexPolyhedron( const Vector4D *pPlanes, uint nNumPlane
 			int nClipped = ClipPolyToPlane_Precise( pSrcVerts, nVerts, pDstVerts, vClipNormal, flClipDist, .000000125f );
 			
 			nVerts = nClipped;
-#if defined(_X360)
-			_swap( pSrcVerts, pDstVerts );
-#else
 			std::swap( pSrcVerts, pDstVerts );
-#endif
 			if ( nVerts < 3 )
 				break;
 		}
@@ -628,16 +613,10 @@ void CDebugPrimRenderer2D::AddScreenspaceWireframeFrustum2D( const VMatrix &xfor
 
 // TODO: Break CCascadeLightManager out to a separate file?
 
-#if defined( _X360 )
-	#define CSM_DEFAULT_DEPTH_TEXTURE_RESOLUTION 704*2
-#elif defined( _PS3 )
-	#define CSM_DEFAULT_DEPTH_TEXTURE_RESOLUTION 640*2
-#else
 	// Important note: On PC, this depth texture resolution (or the inverse of it) is effectively hardcoded into the filter kernels sample offsets. Don't change it unless you fix this dependency.
 	#define CSM_DEFAULT_DEPTH_TEXTURE_RESOLUTION 1024*2
 	#define CSM_FALLBACK_DEPTH_TEXTURE_RESOLUTION 768*2
 	#define CSM_FALLBACK2_DEPTH_TEXTURE_RESOLUTION 640*2
-#endif
 
 CCascadeLightManager::CCascadeLightManager() :
 	m_bRenderTargetsAllocated( false ),
@@ -744,9 +723,7 @@ bool CCascadeLightManager::InitRenderTargets()
 	m_bRenderTargetsAllocated = true;
 			
 	ImageFormat dstFormat  = g_pMaterialSystemHardwareConfig->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
-#ifndef _X360
 	ImageFormat nullFormat = g_pMaterialSystemHardwareConfig->GetNullTextureFormat();			// Vendor-dependent null texture format (takes as little memory as possible)
-#endif
 		
 	RenderTargetSizeMode_t sizeMode = RT_SIZE_OFFSCREEN;
 	
@@ -774,33 +751,10 @@ bool CCascadeLightManager::InitRenderTargets()
 
 	materials->BeginRenderTargetAllocation();
 	
-#if defined(_PS3)
-	
-	m_DummyColorTexture.InitRenderTarget( 8, 8, sizeMode, nullFormat, 
- 										  MATERIAL_RT_DEPTH_NONE, false, "_rt_CSMDummy" );
-	m_ShadowDepthTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, sizeMode, dstFormat, 
-											MATERIAL_RT_DEPTH_NONE, false, "_rt_CSMShadowDepth" );
-
-#elif defined(_X360)
-
-	// For the 360, we'll be rendering depth directly into the dummy depth and Resolve()ing to the depth texture.
-	// only need the dummy surface, don't care about color results
-	m_DummyColorTexture.InitRenderTargetTexture( m_nDepthTextureResolution/2, m_nDepthTextureResolution/2, RT_SIZE_OFFSCREEN, IMAGE_FORMAT_BGR565, //IMAGE_FORMAT_BGRA8888, 
-												 MATERIAL_RT_DEPTH_SHARED, false, "_rt_CSMShadowDummy", CREATERENDERTARGETFLAGS_ALIASCOLORANDDEPTHSURFACES );
-	m_DummyColorTexture.InitRenderTargetSurface( m_nDepthTextureResolution/2, m_nDepthTextureResolution/2, IMAGE_FORMAT_BGR565, false );
-
-	m_ShadowDepthTexture.InitRenderTargetTexture( m_nDepthTextureResolution, m_nDepthTextureResolution, RT_SIZE_OFFSCREEN, 
-												  dstFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_CSMShadowDepth" );
-	m_ShadowDepthTexture.InitRenderTargetSurface( 1, 1, dstFormat, false );
-
-#else
-
 	m_DummyColorTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, sizeMode, nullFormat, 
 		MATERIAL_RT_DEPTH_NONE, false, "_rt_CSMShadowDummy" );
 	m_ShadowDepthTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, sizeMode, dstFormat, 
 		MATERIAL_RT_DEPTH_NONE, false, "_rt_CSMShadowDepth" );
-
-#endif
 
 	materials->EndRenderTargetAllocation();
 
@@ -1090,13 +1044,8 @@ void CCascadeLightManager::Draw2DDebugInfo()
 	int nFirstCascadeIndex = 0;
 	int nLastCascadeIndex = (int)lightState.m_nShadowCascadeSize - 1;
 	
-#if defined( _GAMECONSOLE )	
-	const int nShadowBufferDebugVisWidth  = 256;
-	const int nShadowBufferDebugVisHeight = 256;
-#else
 	const int nShadowBufferDebugVisWidth  = 512;
 	const int nShadowBufferDebugVisHeight = 512;
-#endif
 
 	for ( int nCascadeIndex = nFirstCascadeIndex; nCascadeIndex <= nLastCascadeIndex; ++nCascadeIndex )
 	{
@@ -1107,13 +1056,8 @@ void CCascadeLightManager::Draw2DDebugInfo()
 		
 		Rect_t destRect;
 
-#if defined( _GAMECONSOLE )		
-		destRect.x = 64 + ( nShadowBufferDebugVisWidth + 75 ) * nPlacementX;
-		destRect.y = 64 + ( nShadowBufferDebugVisHeight + 75 ) * nPlacementY;
-#else
 		destRect.x = 16 + ( nShadowBufferDebugVisWidth + 75 ) * nPlacementX;
 		destRect.y = 16 + ( nShadowBufferDebugVisHeight + 75 ) * nPlacementY;
-#endif		
 		destRect.width = nShadowBufferDebugVisWidth;
 		destRect.height = nShadowBufferDebugVisHeight;
 
@@ -1321,15 +1265,6 @@ void CCascadeLightManager::RenderViews( CCascadeLightManager::CFullCSMState &sta
 		shadowView.width = lightState.m_CascadeViewports[nCascadeIndex].width;
 		shadowView.height = lightState.m_CascadeViewports[nCascadeIndex].height;
 		shadowView.m_bRenderToSubrectOfLargerScreen = true;
-
-#if defined(_X360)
-		// render into top left viewport
-		// resolve to appropriate quadrant of final texture
-		shadowView.xCsmDstOffset = shadowView.x;
-		shadowView.yCsmDstOffset = shadowView.y;
-		shadowView.x = 0;
-		shadowView.y = 0;
-#endif
 
 		const CFrustum &cascadeFrustum = lightState.m_CascadeFrustums[nCascadeIndex];
 

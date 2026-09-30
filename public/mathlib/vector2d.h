@@ -251,13 +251,11 @@ inline void Vector2D::Init( vec_t ix, vec_t iy )
 	Assert( IsValid() );
 }
 
-#if !defined(__SPU__)
 inline void Vector2D::Random( float minVal, float maxVal )
 {
 	x = RandomFloat( minVal , maxVal );
 	y = RandomFloat( minVal , maxVal );
 }
-#endif
 
 inline void Vector2DClear( Vector2D& a )
 {

@@ -36,14 +36,7 @@
 #include "c_cs_player.h"
 #endif
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#else
 #include "../common/xbox/xboxstubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -94,11 +87,7 @@ static ConVar joy_pitchsensitivity( "joy_pitchsensitivity", "-1", FCVAR_ARCHIVE 
 static ConVar joy_yawsensitivity( "joy_yawsensitivity", "-1", FCVAR_ARCHIVE | FCVAR_ARCHIVE_GAMECONSOLE | FCVAR_SS, "joystick yaw sensitivity", true, -5.0f, true, -0.1f );
 
 // Advanced sensitivity and response
-#ifdef _X360 //tmuaer
-static ConVar joy_response_move( "joy_response_move", "9", FCVAR_ARCHIVE, "'Movement' stick response mode: 0=Linear, 1=quadratic, 2=cubic, 3=quadratic extreme, 4=power function(i.e., pow(x,1/sensitivity)), 5=two-stage" );
-#else
 static ConVar joy_response_move( "joy_response_move", "1", FCVAR_ARCHIVE, "'Movement' stick response mode: 0=Linear, 1=quadratic, 2=cubic, 3=quadratic extreme, 4=power function(i.e., pow(x,1/sensitivity)), 5=two-stage" );
-#endif
 
 ConVar joy_response_move_vehicle("joy_response_move_vehicle", "6");
 static ConVar joy_response_look( "joy_response_look", "0", FCVAR_ARCHIVE, "'Look' stick response mode: 0=Default, 1=Acceleration Promotion" );
@@ -444,32 +433,16 @@ envelope_t	controlEnvelope[ MAX_SPLITSCREEN_PLAYERS ];
 static bool IsJoystickPegged( float input, float otherAxis )
 {
 
-#if defined( _X360 )
-	static float fPower = 1.25f;
-#elif defined( _PS3 )
-	static float fPower = 0.9f;
-#else
 	static float fPower = 0.9f; // pc
-#endif
 
 
 	float fMinimumVal = 0.01f; // accomodate dead zone
 	float algorythmX = abs(input); 
 	float algorythmY = MAX( abs(otherAxis),fMinimumVal ); 
 
-#if defined( _PS3 )
-	float fltempAlgorythmSample = MAX( algorythmX, algorythmY );
-#else
 	float fltempAlgorythmSample = pow(  pow(algorythmX,fPower)+pow(algorythmY,fPower),fPower); 
-#endif
 
-#if defined( _X360 )
-	float flJoyAddititiveDistComparison = 0.98f;
-#elif defined( _PS3 )
-	float flJoyAddititiveDistComparison = 0.91f;
-#else
 	float flJoyAddititiveDistComparison = 0.94f;
-#endif
 	bool result = fltempAlgorythmSample >= flJoyAddititiveDistComparison;
 
 	return result;
@@ -987,8 +960,6 @@ void CInput::Joystick_Advanced( bool bSilent )
 		}
 	}
 
-#if !defined( _PS3 )
-
 	// [Forrest] For CStrike 1.5 we want to load 360controller.cfg on Xbox as well as PC.
 	// If we have an xcontroller on the PC, load the cfg file if it hasn't been loaded.
 	// [Forrest] engine->ClientCmd didn't go through (FCVAR_CLIENTCMD_CAN_EXECUTE prevented running command).
@@ -1013,8 +984,6 @@ void CInput::Joystick_Advanced( bool bSilent )
 		}
 		joy_xcontroller_cfg_loaded.SetValue( 0 );
 	}
-
-#endif
 
 }
 

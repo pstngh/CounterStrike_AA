@@ -22,7 +22,7 @@ bool UnzipFile( const char* szPathToZipFile, const char* szOutputDir = NULL );
 
 bool UGCUtil_IsOfficialMap( PublishedFileId_t id );
 
-#if !defined( NO_STEAM ) && !defined ( _PS3 )
+#if !defined( NO_STEAM )
 
 #include "steam/steam_api.h"
 #include "filesystem.h"

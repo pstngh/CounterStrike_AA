@@ -17,12 +17,10 @@
 #include "vertexlit_and_unlit_generic_bump_ps20.inc"
 #include "vertexlit_and_unlit_generic_bump_ps20b.inc"
 
-#if !defined( _GAMECONSOLE )
 	#include "vertexlit_and_unlit_generic_vs30.inc"
 	#include "vertexlit_and_unlit_generic_ps30.inc"
 	#include "vertexlit_and_unlit_generic_bump_vs30.inc"
 	#include "vertexlit_and_unlit_generic_bump_ps30.inc"
-#endif
 
 #include "shaderapifast.h"
 #include "shaderlib/commandbuilder.h"
@@ -40,11 +38,7 @@ static ConVar mat_displacementmap( "mat_displacementmap", "1", FCVAR_CHEAT );
 extern ConVar lm_test;
 static ConVar mat_force_vertexfog( "mat_force_vertexfog", "0", FCVAR_DEVELOPMENTONLY );
 
-#if defined( CSTRIKE15 ) && defined( _X360 )
-static ConVar r_shader_srgbread( "r_shader_srgbread", "1", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#else
 static ConVar r_shader_srgbread( "r_shader_srgbread", "0", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#endif
 
 
 // r_staticlight_streams
@@ -470,9 +464,6 @@ class CVertexLitGeneric_DX9_Context : public CBasePerMaterialContextData
 {
 public:
 	CCommandBufferBuilder< CFixedCommandStorageBuffer< 800 > > m_SemiStaticCmdsOut;
-#ifdef _PS3
-	CCommandBufferBuilder< CFixedCommandStorageBuffer< 256 > > m_flashlightECB;
-#endif
 };
 
 
@@ -497,9 +488,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 	bool bSFM = ( ToolsEnabled() && IsPlatformWindowsPC() && bSupportsSM3 ) ? true : false;
 
 	bool bHasBump = IsTextureSet( info.m_nBumpmap, params );
-#if !defined( _GAMECONSOLE )
 	bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
-#endif
 
 	float fSinglePassFlashlight = bSinglePassFlashlight ? 1.0f : 0.0f;
 
@@ -601,9 +590,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 	int nTreeSwayMode = GetIntParam( info.m_nTreeSway, params, 0 );
 	nTreeSwayMode = clamp( nTreeSwayMode, 0, 2 );
 
-#if !defined( _GAMECONSOLE )
 	bool bMorphing = ( !pShaderAPI || pShaderAPI->IsHWMorphingEnabled() ) && !bTreeSway && bSFM && g_pHardwareConfig->HasFastVertexTextures();
-#endif
 
 	if ( pShader->IsSnapshotting() || (! pContextData ) || ( pContextData->m_bMaterialVarsChanged ) )
 	{
@@ -877,13 +864,11 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 				pTexCoordDim[1] = 0;
 			}
 
-#ifndef _GAMECONSOLE
 			// Special morphed decal information 
 			if ( bIsDecal && bMorphing )
 			{
 				nTexCoordCount = 3;
 			}
-#endif
 
 			// This shader supports compressed vertices, so OR in that flag:
 			flags |= VERTEX_FORMAT_COMPRESSED;
@@ -892,17 +877,12 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 
 			if ( bHasBump || bHasDiffuseWarp )
 			{
-				#ifndef _GAMECONSOLE
 				if ( !bSupportsSM3 )
-				#endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( vertexlit_and_unlit_generic_bump_vs20 );
 					SET_STATIC_VERTEX_SHADER_COMBO( SFM, bSFM );
 					SET_STATIC_VERTEX_SHADER_COMBO( HALFLAMBERT,  bHalfLambert);
 					SET_STATIC_VERTEX_SHADER_COMBO( USE_WITH_2B,  g_pHardwareConfig->SupportsPixelShaders_2_b() );
-					#ifdef _GAMECONSOLE
-						SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT,  bHasFlashlight );
-					#endif
 					SET_STATIC_VERTEX_SHADER_COMBO( WORLD_NORMAL, 0 );
 					SET_STATIC_VERTEX_SHADER_COMBO( FLATTEN_STATIC_CONTROL_FLOW, !bUseStaticControlFlow );
 					bool bCSMEnabled_ps2b = false;
@@ -961,7 +941,6 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 						SET_STATIC_PIXEL_SHADER( vertexlit_and_unlit_generic_bump_ps20 );
 					}
 				}
-				#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 				else
 				{
 					// The vertex shader uses the vertex id stream
@@ -1007,7 +986,6 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( CSM_MODE, ( g_pHardwareConfig->SupportsCascadedShadowMapping() && !bSFM && !bHasFlashlight && !bDisableCSMLookup ) ? nCSMQualityComboValue : 0 );
 					SET_STATIC_PIXEL_SHADER( vertexlit_and_unlit_generic_bump_ps30 );
 				}
-				#endif
 			}
 			else // !(bHasBump || bHasDiffuseWarp)
 			{
@@ -1027,9 +1005,7 @@ bool bDistanceAlphaFromDetail = false;
 					bOutline = IsBoolSet( info.m_nOutline, params );
 				}
 
-				#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 				if ( !bSupportsSM3 )
-				#endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( vertexlit_and_unlit_generic_vs20 );
 					SET_STATIC_VERTEX_SHADER_COMBO( SFM, bSFM );
@@ -1121,7 +1097,6 @@ bool bDistanceAlphaFromDetail = false;
 						SET_STATIC_PIXEL_SHADER( vertexlit_and_unlit_generic_ps20 );
 					}
 				}
-				#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 				else
 				{
 					// The vertex shader uses the vertex id stream
@@ -1183,7 +1158,6 @@ bool bDistanceAlphaFromDetail = false;
 					SET_STATIC_PIXEL_SHADER_COMBO( CSM_BLENDING, bCSMBlending );
 					SET_STATIC_PIXEL_SHADER( vertexlit_and_unlit_generic_ps30 );
 				}
-				#endif
 			}
 
 			if ( bHasFlashlight && !bSinglePassFlashlight )
@@ -1215,13 +1189,8 @@ bool bDistanceAlphaFromDetail = false;
 			}
 			pContextData->m_bMaterialVarsChanged = false;
 			pContextData->m_SemiStaticCmdsOut.Reset();
-#ifndef _PS3
 			pContextData->m_SemiStaticCmdsOut.SetPixelShaderFogParams( 21 );
-#endif
 
-#ifdef _PS3	
-		    pContextData->m_flashlightECB.Reset();
-#endif
 			bool bSampler0SrgbRead = false;
 			if ( bHasBaseTexture )
 			{
@@ -1541,11 +1510,6 @@ bool bDistanceAlphaFromDetail = false;
 
 			if ( bHasFlashlight )
 			{
-#ifdef _PS3
-				{
-					pContextData->m_flashlightECB.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6 );
-				}
-#endif
 				if( IsX360() || !bHasBump )
 				{
 					pContextData->m_SemiStaticCmdsOut.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6 );
@@ -1565,17 +1529,9 @@ bool bDistanceAlphaFromDetail = false;
 				state.m_bFlashlightNoLambert = bFlashlightNoLambert;
 				state.m_bSinglePassFlashlight = bSinglePassFlashlight;
 
-#ifdef _PS3
-				{
-					pContextData->m_flashlightECB.SetPixelShaderFlashlightState( state );
-					pContextData->m_flashlightECB.End();
-				}
-#else
-
 				{
 					pContextData->m_SemiStaticCmdsOut.SetPixelShaderFlashlightState( state );
 				}
-#endif
 
 				if ( !( IsX360() || IsPS3() ) && ( g_pHardwareConfig->GetDXSupportLevel() > 92 ) )
 				{
@@ -1688,15 +1644,8 @@ bool bDistanceAlphaFromDetail = false;
 	if ( pShaderAPI )
 	{
 
-#ifdef _PS3
-		CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_SemiStaticCmdsOut.Base() );
-		if (bHasFlashlight) ShaderApiFast( pShaderAPI )->ExecuteCommandBufferPPU( pContextData->m_flashlightECB.Base() );
-
-#else
 		CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
-#endif
 
 		if ( bHasEnvmap )
 		{
@@ -1740,7 +1689,6 @@ bool bDistanceAlphaFromDetail = false;
 			bWriteWaterFogToAlpha = false;
 		}
 
-#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 		bool bWorldNormal = ShaderApiFast( pShaderAPI )->GetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING ) == ENABLE_FIXED_LIGHTING_OUTPUTNORMAL_AND_DEPTH;
 
 		TessellationMode_t nTessellationMode = ( bSFM && g_pHardwareConfig->HasFastVertexTextures() ) ? ShaderApiFast( pShaderAPI )->GetTessellationMode() : TESSELLATION_MODE_DISABLED;
@@ -1768,7 +1716,6 @@ bool bDistanceAlphaFromDetail = false;
 			// Also mutually exclusive with these in the non-bump case:
 			//$STATICLIGHT3 || $VERTEXCOLOR || $SEAMLESS_BASE || $SEAMLESS_DETAIL || $SEPARATE_DETAIL_UVS
 		}
-#endif
 
 		int nLightingPreviewMode = ShaderApiFast( pShaderAPI )->GetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING );
 		nLightingPreviewMode = clamp( nLightingPreviewMode, 0, 1 );
@@ -1836,9 +1783,7 @@ bool bDistanceAlphaFromDetail = false;
 			bool bStaticLight3 = lightState.m_bStaticLight && bStaticLight3Streams;
 			int32 nStaticLightVsCombo = bStaticLight3 ? ( !r_staticlight_streams_indirect_only.GetBool() ? 2 : 1 ) : 0;
 
-			#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 			if ( !bSupportsSM3 )
-			#endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( vertexlit_and_unlit_generic_bump_vs20 );
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING,  numBones > 0 );
@@ -1887,7 +1832,6 @@ bool bDistanceAlphaFromDetail = false;
 					SET_DYNAMIC_PIXEL_SHADER_CMD( DynamicCmdsOut, vertexlit_and_unlit_generic_bump_ps20 );
 				}
 			}
-			#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 			else
 			{
 				if ( bMorphing )
@@ -1929,7 +1873,6 @@ bool bDistanceAlphaFromDetail = false;
 				bool bUnusedTexCoords[3] = { false, false, !ShaderApiFast( pShaderAPI )->IsHWMorphingEnabled() || !bIsDecal };
 				ShaderApiFast( pShaderAPI )->MarkUnusedVertexFields( 0, 3, bUnusedTexCoords );
 			}
-			#endif
 		}
 		else // !( bHasBump || bHasDiffuseWarp )
 		{
@@ -1947,9 +1890,7 @@ bool bDistanceAlphaFromDetail = false;
 				bCSMEnabled = false;
 			}
 
-			#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 			if ( !bSupportsSM3 )
-			#endif
 			{
 				int staticLight3VSCombo = (lightState.m_bStaticLight && bStaticLight3Streams) ? ( ( lightState.m_bStaticLightIndirectOnly )? 2 : 1) : 0;
 
@@ -1997,7 +1938,6 @@ bool bDistanceAlphaFromDetail = false;
 					SET_DYNAMIC_PIXEL_SHADER_CMD( DynamicCmdsOut, vertexlit_and_unlit_generic_ps20 );
 				}
 			}
-			#if !defined( _GAMECONSOLE ) && !defined( _PS3 )
 			else
 			{
 				if ( bMorphing )
@@ -2055,7 +1995,6 @@ bool bDistanceAlphaFromDetail = false;
 				bool bUnusedTexCoords[3] = { false, false, !bMorphing || !bIsDecal };
 				ShaderApiFast( pShaderAPI )->MarkUnusedVertexFields( 0, 3, bUnusedTexCoords );
 			}
-			#endif
 		}
 
 		if ( bHasBump || bHasDiffuseWarp )
@@ -2107,9 +2046,6 @@ bool bDistanceAlphaFromDetail = false;
 		//*/
 
 		DynamicCmdsOut.End();
-#ifdef _PS3
-		ShaderApiFast( pShaderAPI )->SetPixelShaderFogParams( 21 );
-#endif
 		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( DynamicCmdsOut.Base() );
 	}
 	pShader->Draw();

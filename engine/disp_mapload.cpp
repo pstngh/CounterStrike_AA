@@ -640,27 +640,11 @@ bool DispInfo_LoadDisplacements( model_t *pWorld, bool bRestoring )
 
 	// Now setup each displacement one at a time.
 	// using temporary storage that is not the stack for compatibility with console stack
-#ifndef _GAMECONSOLE
 	CDispVert tempVerts[MAX_DISPVERTS];
-#else
-	CUtlMemory< CDispVert > m_DispVertsBuf( 0, MAX_DISPVERTS );
-	CDispVert *tempVerts = m_DispVertsBuf.Base();
-#endif
 
-#ifndef _GAMECONSOLE
 	CDispTri tempTris[MAX_DISPTRIS];
-#else
-	// using temporary storage that is not the stack for compatibility with console stack
-	CUtlMemory< CDispTri > m_DispTrisBuf( 0, MAX_DISPTRIS );
-	CDispTri *tempTris = m_DispTrisBuf.Base();
-#endif
 
-#ifndef _GAMECONSOLE
 	CDispMultiBlend tempMultiBlend[MAX_DISPVERTS];
-#else
-	CUtlMemory< CDispMultiBlend > m_DispMultiBlendBuf( 0, MAX_DISPVERTS );
-	CDispMultiBlend *tempMultiBlend = m_DispMultiBlendBuf.Base();
-#endif
 
 	int iCurVert = 0;
 	int iCurTri = 0;

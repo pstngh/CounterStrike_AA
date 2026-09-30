@@ -4,7 +4,7 @@
 //
 //=============================================================================
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -20,15 +20,6 @@
 #include "tier1/utlvector.h"
 #include "tier1/generichash.h"
 #include "tier0/fasttimer.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#ifdef _PS3
-#include "tls_ps3.h"
-#include "ps3/ps3_win32stubs.h"
-#endif
 
 #include "tier0/memdbgon.h"
 
@@ -781,16 +772,6 @@ void CThreadPool::InsertJobInQueue( CJob *pJob )
 	}
 
 
-#ifdef SN_TARGET_PS3
-	// GSidhu
-	// Make sure render job goes on shared q rather than direct q.
-	// Direct q jobs get picked up only after jobs appear on shared q or
-	// wait times out on shared q.
-	// This is a fix for Eurogamer, look at this in more detail later
-
-	pQueue = &m_SharedQueue;
-#endif 
-
 	m_nJobs -= pQueue->Push( pJob );
 }
 
@@ -1189,21 +1170,6 @@ void CThreadPool::Distribute( bool bDistribute, int *pAffinityTable )
 
 bool CThreadPool::Stop( int timeout )
 {
-#ifdef _PS3
-	if ( GetTLSGlobals()->bNormalQuitRequested )
-	{
-		// When PS3 system requests a quit we
-		// might leave some of our threads suspended
-		// we need to resume them so that they could
-		// receive TPM_EXIT command
-		AUTO_LOCK( m_SuspendMutex );
-		if ( m_nSuspend >= 1 )
-		{
-			m_nSuspend = 1;
-			ResumeExecution();
-		}
-	}
-#endif
 
 	CUtlVector< ThreadHandle_t > arrHandles;
 	arrHandles.SetCount( m_Threads.Count() );

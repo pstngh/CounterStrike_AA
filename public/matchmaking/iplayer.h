@@ -88,13 +88,6 @@ public:
 
 	virtual void SetNeedsSave( void ) = 0;
 
-#if defined ( _X360 )
-	virtual bool IsTitleDataValid( void ) = 0;
-	virtual bool IsTitleDataBlockValid( int blockId ) = 0;
-	virtual void SetIsTitleDataValid( bool isValid ) = 0;
-	virtual bool IsFreshPlayerProfile( void ) = 0;
-	virtual void ClearBufTitleData( void ) = 0;
-#endif
 	virtual bool IsTitleDataStorageConnected( void ) = 0;
 };
 

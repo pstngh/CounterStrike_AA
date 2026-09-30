@@ -142,19 +142,7 @@ bool CEnvProjectedTexture::KeyValue( const char *szKeyName, const char *szValue 
 	}
 	else if ( FStrEq( szKeyName, "texturename" ) )
 	{
-#if defined( _GAMECONSOLE )
-		if ( Q_strcmp( szValue, "effects/flashlight001" ) == 0 )
-		{
-			// Use this as the default for Xbox
-			Q_strcpy( m_SpotlightTextureName.GetForModify(), "effects/flashlight_border" );
-		}
-		else
-		{
-			Q_strcpy( m_SpotlightTextureName.GetForModify(), szValue );
-		}
-#else
 		Q_strcpy( m_SpotlightTextureName.GetForModify(), szValue );
-#endif
 	}
 	else
 	{

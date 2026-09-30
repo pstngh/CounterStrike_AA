@@ -12,9 +12,7 @@
 
 
 #ifdef _WIN32
-#if !defined( _X360 )
 #include "winlite.h"
-#endif
 #endif
 
 #include "vstdlib/random.h"
@@ -33,11 +31,7 @@
 
 #if defined(_WIN32)
 
-#if !defined( _X360 )
 #include <winsock2.h>
-#else
-#include "winsockx.h"
-#endif
 
 // #include <process.h>
 typedef int socklen_t;
@@ -50,23 +44,11 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
-#ifdef _PS3
-#include <netex/errno.h>
-#include <netex/net.h>
-#include <netex/libnetctl.h>
-#include <sys/time.h>
-#include <sys/select.h>
-#define PF_INET AF_INET
-#define WSA_SOCKET_ERROR_CODE_FIXUP( ecode ) SYS_NET_##ecode
-#define select socketselect
-#define WSAGetLastError() sys_net_errno
-#else
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/uio.h>
 #define WSA_SOCKET_ERROR_CODE_FIXUP( ecode ) ecode
 #define WSAGetLastError() errno
-#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -89,11 +71,6 @@ typedef int socklen_t;
 typedef int SOCKET;
 #define FAR
 
-#ifdef _PS3
-#define ioctl( s, cmd, pVal ) setsockopt( s, SOL_SOCKET, cmd, pVal, sizeof( *( pVal ) ) )
-#define FIONBIO SO_NBIO
-#endif
-
 #endif
 
 #include "sv_rcon.h"
@@ -101,16 +78,8 @@ typedef int SOCKET;
 #include "cl_rcon.h"
 #endif
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 void Con_RunFrame( void );									// call to handle socket updates, etc.
 
-
-#ifdef _PS3
-//#define ONLY_USE_STEAM_SOCKETS 1
-#endif
 
 #ifdef ONLY_USE_STEAM_SOCKETS
 #define OnlyUseSteamSockets() true

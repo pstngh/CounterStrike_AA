@@ -127,29 +127,13 @@ protected:
 	{
 		SEARCH_NONE,
 		SEARCH_QUEUED,
-#ifdef _X360
-		SEARCH_XNKID,
-		SEARCH_QOS,
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		SEARCH_WAIT_LOBBY_DATA,
 #endif
 		SEARCH_COMPLETED
 	};
 	SearchState_t m_eSearchState;
-#ifdef _X360
-	XSESSION_INFO m_xsiSearchState;
-	XNADDR const *m_pQOS_xnaddr;
-	XNKID const  *m_pQOS_xnkid;
-	XNKEY const  *m_pQOS_xnkey;
-	XNQOS		*m_XNQOS;
-	XOVERLAPPED m_SessionSearchOverlapped;
-	
-	CUtlBuffer m_bufSessionSearchResults;
-	XSESSION_SEARCHRESULT_HEADER * GetXSearchResults() { return ( XSESSION_SEARCHRESULT_HEADER * ) m_bufSessionSearchResults.Base(); }
-
-	void Live_Update_SearchXNKID();
-	void Live_Update_Search_QOS();
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	STEAM_CALLBACK_MANUAL( PlayerFriend, Steam_OnLobbyDataUpdate, LobbyDataUpdate_t, m_CallbackOnLobbyDataUpdate );
 #endif
 };
@@ -185,14 +169,6 @@ public:
 
 	virtual void SetNeedsSave( void );
 
-#if defined ( _X360 )
-	virtual bool IsTitleDataValid() { return m_bIsTitleDataValid; };
-	virtual bool IsTitleDataBlockValid( int blockId );
-	virtual void SetIsTitleDataValid( bool isValid ) { m_bIsTitleDataValid = isValid; }
-	virtual bool IsFreshPlayerProfile( void ) { return m_bIsFreshPlayerProfile; }
-	virtual void ClearBufTitleData( void );
-#endif
-
 	//
 	// Player<IPlayerLocal> implementation
 	//
@@ -210,10 +186,6 @@ public:
 	void OnLeaderboardRequestFinished( KeyValues *pLeaderboardData );
 
 	void SetFlag_AwaitingTitleData() { m_uiPlayerFlags |= PLAYER_INVITE_AWAITING_TITLEDATA; }
-#if defined ( _X360 )
-	bool m_bIsTitleDataValid;
-	bool m_bIsFreshPlayerProfile;
-#endif
 
 protected:
 	//stats
@@ -237,39 +209,11 @@ protected:
 	CUtlVector<int> m_arrAchievementsEarned, m_arrAvatarAwardsEarned;
 	char m_bufTitleData[TITLE_DATA_COUNT][XPROFILE_SETTING_MAX_SIZE];
 	bool m_bSaveTitleData[TITLE_DATA_COUNT];
-#if defined ( _X360 )
-		bool m_bIsTitleDataBlockValid[TITLE_DATA_COUNT];
-#endif
 
 	KeyValues *m_pLeaderboardData;
 	KeyValues::AutoDelete m_autodelete_pLeaderboardData;
 
-#ifdef _X360
-	struct XPendingAsyncAward_t
-	{
-		float m_flStartTimestamp;
-		XOVERLAPPED m_xOverlapped;
-		PlayerLocal *m_pLocalPlayer;
-		enum Type_t
-		{
-			TYPE_ACHIEVEMENT,
-			TYPE_AVATAR_AWARD
-		};
-		Type_t m_eType;
-		union
-		{
-			TitleAchievementsDescription_t const *m_pAchievementDesc;
-			TitleAvatarAwardsDescription_t const *m_pAvatarAwardDesc;
-		};
-		union
-		{
-			XUSER_ACHIEVEMENT m_xAchievement;
-			XUSER_AVATARASSET m_xAvatarAsset;
-		};
-	};
-	static CUtlVector< XPendingAsyncAward_t * > s_arrPendingAsyncAwards;
-	void UpdatePendingAwardsState();
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	void UpdatePlayersSteamLogon();
 
 	STEAM_CALLBACK_MANUAL( PlayerLocal, Steam_OnUserStatsReceived, UserStatsReceived_t, m_CallbackOnUserStatsReceived );

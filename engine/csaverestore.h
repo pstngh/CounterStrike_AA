@@ -13,10 +13,6 @@
 #ifndef CSAVERESTORE_H
 #define CSAVERESTORE_H
 
-#ifdef _PS3
-#include "ps3/saverestore_ps3_api_ui.h"
-#endif
-
 extern ConVar save_noxsave;
 
 
@@ -91,9 +87,6 @@ public:
 		m_szSaveGameName[ 0 ] = 0;
 		m_bIsXSave = IsX360();
 		m_bOverrideLoadGameEntsOn = false;
-#ifdef _PS3
-		m_PS3AutoSaveAsyncStatus.m_bUseSystemDialogs = true;
-#endif
 	}
 
 	void					Init( void );
@@ -124,12 +117,7 @@ public:
 	virtual char const		*GetSaveFileName();
 
 	virtual void			SetIsXSave( bool bIsXSave );
-#ifdef _PS3
-#pragma message("TODO: fix querying of user ID in ps3 (sony has them too)")
-	virtual bool			IsXSave() { return ( m_bIsXSave && !save_noxsave.GetBool()  ); }
-#else
 	virtual bool			IsXSave() { return ( m_bIsXSave && !save_noxsave.GetBool() && XBX_GetPrimaryUserId() != -1 ); }
-#endif
 
 	virtual void			FinishAsyncSave() { ::FinishAsyncSave(); }
 
@@ -258,9 +246,6 @@ private:
 protected:
 	RecentSaveInfo_t m_MostRecentSaveInfo;
 
-#ifdef _PS3
-	CPS3SaveRestoreAsyncStatus m_PS3AutoSaveAsyncStatus;
-#endif
 };
 
 #endif

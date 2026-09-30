@@ -19,20 +19,6 @@
 #define ALIGN8_POST
 #endif
 
-#if defined(_PS3)
-
-#if defined(__SPU__)
-#include <spu_intrinsics.h>
-#include <vmx2spu.h>
-#include <vectormath/c/vectormath_soa.h>
-#else
-#include <ppu_intrinsics.h>
-#include <altivec.h>
-#include <vectormath/c/vectormath_soa.h>
-#endif
-
-#endif
-
 // plane_t structure
 // !!! if this is changed, it must be changed in asm code too !!!
 // FIXME: does the asm code even exist anymore?
@@ -482,45 +468,7 @@ size_t Q_log2( unsigned int val );
 // Math routines done in optimized assembly math package routines
 void inline SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosine )
 {
-#if defined( _X360 )
-	XMScalarSinCos( sine, cosine, radians );
-#elif defined( _PS3 )
-#if ( __GNUC__ == 4 ) && ( __GNUC_MINOR__ == 1 ) && ( __GNUC_PATCHLEVEL__ == 1 )
-	vector_float_union s;
-	vector_float_union c;
-
-	vec_float4 rad = vec_splats( radians );
-	vec_float4 sin;
-	vec_float4 cos;
-
-	sincosf4( rad, &sin, &cos );
-
-	vec_st( sin, 0, s.f );
-	vec_st( cos, 0, c.f );
-
-	*sine   = s.f[0];
-	*cosine = c.f[0];
-#else //__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 1
-	vector_float_union r;
-	vector_float_union s;
-	vector_float_union c;
-
-	vec_float4 rad;
-	vec_float4 sin;
-	vec_float4 cos;
-
-	r.f[0] = radians;
-	rad = vec_ld( 0, r.f );
-
-	sincosf4( rad, &sin, &cos );
-
-	vec_st( sin, 0, s.f );
-	vec_st( cos, 0, c.f );
-
-	*sine   = s.f[0];
-	*cosine = c.f[0];
-#endif //__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 1
-#elif defined( COMPILER_MSVC32 )
+#if defined( COMPILER_MSVC32 )
 	_asm
 	{
 		fld		DWORD PTR [radians]
@@ -956,73 +904,6 @@ inline float anglemod(float a)
 }
 
 //// CLAMP
-#if defined(__cplusplus) && defined(PLATFORM_PPC)
-
-#ifdef _X360
-#define __fsels __fsel
-#endif
-
-template< >
-inline double clamp( double const &val, double const &minVal, double const &maxVal )
-{
-	float diffmin = val - minVal;
-	float diffmax = maxVal - val;
-	float r;
-	r = __fsel(diffmin, val, minVal);
-	r = __fsel(diffmax, r, maxVal);
-	return r;
-}
-
-template< >
-inline double clamp( double const &val, float const &minVal, float const &maxVal )
-{
-	// these typecasts are actually free since all FPU regs are 64 bit on PPC anyway
-	return clamp ( val, (double) minVal, (double) maxVal );
-}
-template< >
-inline double clamp( double const &val, float const &minVal, double const &maxVal )
-{
-	return clamp ( val, (double) minVal, (double) maxVal );
-}
-template< >
-inline double clamp( double const &val, double const &minVal, float const &maxVal )
-{
-	return clamp ( val, (double) minVal, (double) maxVal );
-}
-
-template< >
-inline float clamp( float const &val, float const &minVal, float const &maxVal )
-{
-	float diffmin = val - minVal;
-	float diffmax = maxVal - val;
-	float r;
-	r = __fsels(diffmin, val, minVal);
-	r = __fsels(diffmax, r, maxVal);
-	return r;
-}
-
-template< >
-inline float clamp( float const &val, double const &minVal, double const &maxVal )
-{
-	float diffmin = val - minVal;
-	float diffmax = maxVal - val;
-	float r;
-	r = __fsels(diffmin, val, minVal);
-	r = __fsels(diffmax, r, maxVal);
-	return r;
-}
-template< >
-inline float clamp( float const &val, double const &minVal, float const &maxVal )
-{
-	return clamp ( val, (float) minVal, maxVal );
-}
-template< >
-inline float clamp( float const &val, float const &minVal, double const &maxVal )
-{
-	return clamp ( val, minVal, (float) maxVal );
-}
-
-#endif
 
 // Remap a value in the range [A,B] to [C,D].
 inline float RemapVal( float val, float A, float B, float C, float D)
@@ -1655,26 +1536,6 @@ inline float SimpleSplineRemapValClamped( float val, float A, float B, float C, 
 
 FORCEINLINE int RoundFloatToInt(float f)
 {
-#if defined( _X360 )
-#ifdef Assert
-	Assert( IsFPUControlWordSet() );
-#endif
-	union
-	{
-		double flResult;
-		int pResult[2];
-	};
-	flResult = __fctiw( f );
-	return pResult[1];
-#elif defined ( _PS3 )
-#if defined(__SPU__)
-	int nResult;
-	nResult = static_cast<int>(f);
-	return nResult;
-#else
-	return  __fctiw( f );
-#endif
-#else // !X360
 	int nResult;
 #if defined( COMPILER_MSVC32 )
 	__asm
@@ -1692,36 +1553,10 @@ FORCEINLINE int RoundFloatToInt(float f)
 	nResult = static_cast<int>(f);
 #endif
 	return nResult;
-#endif
 }
 
 FORCEINLINE unsigned char RoundFloatToByte(float f)
 {
-#if defined( _X360 )
-#ifdef Assert
-	Assert( IsFPUControlWordSet() );
-#endif
-	union
-	{
-		double flResult;
-		int pIntResult[2];
-		unsigned char pResult[8];
-	};
-	flResult = __fctiw( f );
-#ifdef Assert
-	Assert( pIntResult[1] >= 0 && pIntResult[1] <= 255 );
-#endif
-	return pResult[7];
-
-#elif defined ( _PS3 )
-#if defined(__SPU__)
-	int nResult;
-	nResult = static_cast<unsigned int> (f) & 0xff;
-	return nResult;
-#else
-	return __fctiw( f );
-#endif
-#else // !X360
 	
 	int nResult;
 
@@ -1746,31 +1581,10 @@ FORCEINLINE unsigned char RoundFloatToByte(float f)
 #endif 
 	return nResult;
 
-#endif
 }
 
 FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
 {
-#if defined( _X360 )
-#ifdef Assert
-	Assert( IsFPUControlWordSet() );
-#endif
-	union
-	{
-		double flResult;
-		int pIntResult[2];
-		unsigned long pResult[2];
-	};
-	flResult = __fctiw( f );
-	Assert( pIntResult[1] >= 0 );
-	return pResult[1];
-#elif defined ( _PS3 )
-#if defined(__SPU__)
-	return static_cast<unsigned long>(f);
-#else
-	return __fctiw( f );
-#endif
-#else  // !X360
 
 #if defined( COMPILER_MSVC32 )
 	unsigned char nResult[8];
@@ -1792,7 +1606,6 @@ FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
 	return static_cast<unsigned long>(f);
 #endif
 
-#endif
 }
 
 FORCEINLINE bool IsIntegralValue( float flValue, float flTolerance = 0.001f )
@@ -1803,23 +1616,6 @@ FORCEINLINE bool IsIntegralValue( float flValue, float flTolerance = 0.001f )
 // Fast, accurate ftol:
 FORCEINLINE int Float2Int( float a )
 {
-#if defined( _X360 )
-	union
-	{
-		double flResult;
-		int pResult[2];
-	};
-	flResult = __fctiwz( a );
-	return pResult[1];
-#elif defined ( _PS3 )
-#if defined(__SPU__)
-	int RetVal;
-	RetVal = static_cast<int>( a );
-	return RetVal;
-#else
-	return __fctiwz( a );
-#endif
-#else  // !X360
 	
 	int RetVal;
 
@@ -1843,7 +1639,6 @@ FORCEINLINE int Float2Int( float a )
 #endif
 
 	return RetVal;
-#endif
 }
 
 
@@ -1853,9 +1648,7 @@ inline int Floor2Int( float a )
 {
    int RetVal;
 
-#if defined( PLATFORM_PPC )
-	RetVal = (int)floor( a );
-#elif defined( COMPILER_MSVC32 )
+#if defined( COMPILER_MSVC32 )
    int CtrlwdHolder;
    int CtrlwdSetter;
    __asm 
@@ -1888,11 +1681,7 @@ FORCEINLINE unsigned char FastFToC( float c )
 	dc = c * 255.0f + (float)(1 << 23);
 	
 	// return the lsb
-#if defined( _X360 ) || defined( _PS3 )
-	return ((unsigned char*)&dc)[3];
-#else
 	return *(unsigned char*)&dc;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1911,9 +1700,7 @@ inline int Ceil2Int( float a )
 {
    int RetVal;
 
-#if defined( PLATFORM_PPC )
-	RetVal = (int)ceil( a );
-#elif defined( COMPILER_MSVC32 )
+#if defined( COMPILER_MSVC32 )
    int CtrlwdHolder;
    int CtrlwdSetter;
    __asm 
@@ -2749,25 +2536,6 @@ FORCEINLINE void RGB2YUV( int &nR, int &nG, int &nB, float &fY, float &fU, float
 	}
 }
 
-#ifdef _X360
-// Used for direct CPU access to VB data on 360 (used by shaderapi, studiorender and engine)
-struct VBCPU_AccessInfo_t
-{
-	// Points to the GPU data pointer in the CVertexBuffer struct (VB data can be relocated during level transitions)
-	const byte **ppBaseAddress;
-	// pBaseAddress should be computed from ppBaseAddress immediately before use
-	const byte  *pBaseAddress;
-	int          nStride;
-	int          nPositionOffset;
-	int          nTexCoord0_Offset;
-	int          nNormalOffset;
-	int          nBoneIndexOffset;
-	int          nBoneWeightOffset;
-	int          nCompressionType;
-	// TODO: if needed, add colour and tangents
-};
-#endif
-
 //-----------------------------------------------------------------------------
 // Convert RGB to HSV
 //-----------------------------------------------------------------------------
@@ -2783,18 +2551,10 @@ void HSVtoRGB( const Vector &hsv, Vector &rgb );
 //-----------------------------------------------------------------------------
 // Fast version of pow and log
 //-----------------------------------------------------------------------------
-#ifndef _PS3 // these actually aren't fast (or correct) on the PS3
 float FastLog2(float i);			// log2( i )
 float FastPow2(float i);			// 2^i
 float FastPow(float a, float b);	// a^b
 float FastPow10( float i );			// 10^i
-#else
-inline float FastLog2(float i) {return logbf(i);}			// log2( i )
-inline float FastPow2(float i) {return exp2f(i);}			// 2^i
-inline float FastPow(float a, float b) {return powf(a,b);}	// a^b
-#define LOGBASE2OF10 3.3219280948873623478703194294893901758648313930
-inline float FastPow10( float i ) { return exp2f( i * LOGBASE2OF10 ); }			// 10^i, transform to base two, so log2(10^y) = y log2(10) . log2(10) = 3.3219280948873623478703194294893901758648313930
-#endif
 
 //-----------------------------------------------------------------------------
 // For testing float equality
@@ -2847,17 +2607,6 @@ inline float Approach( float target, float value, float speed )
 {
 	float delta = target - value;
 
-#if defined(_X360) || defined( _PS3 ) // use conditional move for speed on 360
-
-	return fsel( delta-speed,	// delta >= speed ?
-				 value + speed,	// if delta == speed, then value + speed == value + delta == target  
-				 fsel( (-speed) - delta, // delta <= -speed
-						value - speed,
-						target )
-				);  // delta < speed && delta > -speed
-
-#else
-
 	if ( delta > speed )
 		value += speed;
 	else if ( delta < -speed )
@@ -2867,7 +2616,6 @@ inline float Approach( float target, float value, float speed )
 		
 	return value;
 
-#endif
 }
 
 
@@ -2885,31 +2633,10 @@ inline float interpstep(float edge0, float edge1, float x)
 }
 
 // on PPC we can do this truncate without converting to int
-#if defined(_X360) || defined(_PS3)
-inline double TruncateFloatToIntAsFloat( double flVal )
-{
-#if defined(_X360)
-	double flIntFormat = __fctiwz( flVal );
-	return __fcfid( flIntFormat );
-#elif defined(_PS3)
-#if defined(__SPU__)
-	int iVal = int(flVal);
-	return static_cast<double>(iVal);
-#else
-	double flIntFormat = __builtin_fctiwz( flVal );
-	return __builtin_fcfid( flIntFormat );
-#endif
-#endif
-}
-#endif
 
 inline double SubtractIntegerPart( double flVal )
 {
-#if defined(_X360) || defined(_PS3)
-	return flVal - TruncateFloatToIntAsFloat(flVal);
-#else
 	return flVal - int(flVal);
-#endif
 }
 
 

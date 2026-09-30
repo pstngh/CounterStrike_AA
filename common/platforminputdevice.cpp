@@ -103,10 +103,6 @@ const InputDevicePlatform_t PlatformInputDevice::s_LocalInputPlatform =
 		INPUT_DEVICE_PLATFORM_WINDOWS;
 	#elif defined( PLATFORM_OSX )
 		INPUT_DEVICE_PLATFORM_OSX;
-	#elif defined( PLATFORM_X360 )
-		INPUT_DEVICE_PLATFORM_XBOX360;
-	#elif defined( PLATFORM_PS3 )
-		INPUT_DEVICE_PLATFORM_PS3;
 	#elif defined( PLATFORM_LINUX )
 		INPUT_DEVICE_PLATFORM_LINUX;
 	#else
@@ -157,15 +153,6 @@ void PlatformInputDevice::InitPlatfromInputDeviceInfo( void )
 		s_numberPlatformInputDevices[n] = countBits( s_validPlatformInputDevices[n] );
 		s_AllInputDevices = s_AllInputDevices | s_validPlatformInputDevices[n];
 	}
-
-#if defined ( _PS3 )
-
-	// On PS3 we need to make sure steamworks gets updated with all the required ELO data slots.
-	// If we change how many devices we have, we need to update steamworks with the proper number
-	// of ELO variables.
-	AssertMsg( s_numberPlatformInputDevices[INPUT_DEVICE_PLATFORM_PS3] == 4, "You must update Steamworks with the correct number of input devices for the ELO values." );
-
-#endif
 
 	s_Initialized = true;
 }
@@ -233,11 +220,7 @@ const char *PlatformInputDevice::GetInputDeviceNameUI( InputDevice_t device )
 	switch ( device )
 	{
 		case INPUT_DEVICE_KEYBOARD_MOUSE:			return "#INPUT_DEVICE_KBMOUSE";
-#if defined( _PS3 )
-		case INPUT_DEVICE_GAMEPAD:					return "#INPUT_DEVICE_GAMEPAD_PS3";
-#else
 		case INPUT_DEVICE_GAMEPAD:					return "#INPUT_DEVICE_GAMEPAD_XBOX";
-#endif
 		case INPUT_DEVICE_PLAYSTATION_MOVE:			return "#INPUT_DEVICE_PSMOVE";
 		case INPUT_DEVICE_HYDRA:					return "#INPUT_DEVICE_HYDRA";
 		case INPUT_DEVICE_SHARPSHOOTER:				return "#INPUT_DEVICE_SHARPSHOOTER";

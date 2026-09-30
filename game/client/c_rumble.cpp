@@ -12,10 +12,6 @@
 #include "inputsystem/iinputsystem.h"
 #include "iinput.h"
 
-#ifdef _PS3
-#include "ps3/ps3_core.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 

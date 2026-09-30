@@ -12,11 +12,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef _PS3
-#define _vscprintf vprintf
-#define vsprintf_s vsnprintf
-#endif
-
 
 CGlobalEventLog	GlobalEventLog;
 
@@ -309,7 +304,7 @@ void CGlobalEventLog::AddKeyValue( CGlobalEvent *pEvent, bool bVarying, const ch
 
 	va_start( Args, pszValueFormat );
 
-#if defined(_WIN32) || defined(_PS3)
+#if defined(_WIN32)
 	nLen = _vscprintf( pszValueFormat, Args ) + 1;
 #else
 	nLen = vsnprintf( NULL, 0, pszValueFormat, Args ) + 1;

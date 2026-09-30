@@ -1,11 +1,6 @@
 #include "client_pch.h"
 #include "cl_splitscreen.h"
 
-#if defined( _PS3 )
-#include "tls_ps3.h"
-#define m_SplitSlot reinterpret_cast< SplitSlot_t *& >(GetTLSGlobals()->pEngineSplitSlot)
-#endif // _PS3
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -68,13 +63,7 @@ private:
 	SplitPlayer_t *m_SplitScreenPlayers[ MAX_SPLITSCREEN_CLIENTS ];
 	int			m_nActiveSplitScreenUserCount;
 
-#if defined( _PS3 )
-#elif !defined( _X360 )
 	// Each thread (mainly an issue in the client .dll) can have it's own "active" context.  The per thread data is allocated as needed
-#else
-	// xbox uses 12 bit thread id key to do direct lookup
-	SplitSlot_t						m_SplitSlotTable[0x1000];
-#endif
 
 	SplitSlot_t *GetSplitSlot();
 
@@ -92,28 +81,13 @@ CSplitScreen::CSplitScreen()
 	m_bInitialized = false;
 }
 
-#if defined( _X360 )
-inline int BucketForThreadId()
-{
-	DWORD id = GetCurrentThreadId();
-	// e.g.:  0xF9000028 -- or's the 9 and the 28 to give 12 bits (slot array is 0x1000 in size), the first nibble is(appears to be) always F so is masked off (0x0F00)
-	return ( ( id >> 16 ) & 0x00000F00 ) | ( id & 0x000000FF );
-}
-#endif
-
 CSplitScreen::SplitSlot_t *CSplitScreen::GetSplitSlot()
 {
-#if defined( _X360 )
-	// pix shows this function to be enormously expensive due to high frequency of inner loop calls
-	// avoid conditionals and TLS, use a direct lookup instead
-	return &m_SplitSlotTable[ BucketForThreadId() ];
-#else
 	if ( !s_SplitSlot )
 	{
 		s_SplitSlot = new SplitSlot_t();
 	}
 	return s_SplitSlot;
-#endif
 }
 
 bool CSplitScreen::Init()

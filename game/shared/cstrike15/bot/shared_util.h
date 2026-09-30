@@ -86,9 +86,6 @@ const wchar_t * NumAsWString( int val );
 #endif
 // dgoodenough - PS3 needs this guy as well.
 // PS3_BUILDFIX
-#ifdef _PS3
-const wchar_t * NumAsWString( int val );
-#endif
 //--------------------------------------------------------------------------------------------------------------
 /**
  *  convenience function that prints an int into a static char*

@@ -956,11 +956,7 @@ bool IsHeadTrackingEnabled();
 #endif
 
 #if defined ( CSTRIKE15 )
-#if defined( _GAMECONSOLE )
-	#define MAX_SPLITSCREEN_PLAYERS 1 // Split screen removed from console.
-#else
 	#define MAX_SPLITSCREEN_PLAYERS 1
-#endif
 #else
 	#define MAX_SPLITSCREEN_PLAYERS 1
 #endif

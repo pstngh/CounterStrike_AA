@@ -117,14 +117,8 @@ static const int k_iSetJmpDone		= 0x02;
 static const int k_iSetJmpDbgBreak	= 0x03;
 
 // distance up the stack that coroutine functions stacks' start
-#ifdef _PS3
-// PS3 has a small stack. Hopefully we dont need 64k of padding!
-static const int k_cubCoroutineStackGap = (3 * 1024);	
-static const int k_cubCoroutineStackGapSmall = 64;	
-#else
 static const int k_cubCoroutineStackGap = (64 * 1024);	
 static const int k_cubCoroutineStackGapSmall = 64;	
-#endif
 
 // cap the size of allocated stacks
 static const int k_cubMaxCoroutineStackSize = (32 * 1024);
@@ -137,8 +131,6 @@ extern "C" byte *GetStackPtr64();
 #ifdef WIN32
 #define GetStackPtr( pStackPtr )	byte *pStackPtr;	__asm mov pStackPtr, esp	
 #elif defined(GNUC)
-#define GetStackPtr( pStackPtr )	byte *pStackPtr = (byte*)__builtin_frame_address(0)
-#elif defined(__SNC__)
 #define GetStackPtr( pStackPtr )	byte *pStackPtr = (byte*)__builtin_frame_address(0)
 #else
 #error
@@ -159,9 +151,6 @@ int CalcAlignOffset( const unsigned char *p )
 //-----------------------------------------------------------------------------
 // Purpose: single coroutine descriptor
 //-----------------------------------------------------------------------------
-#if defined( _PS3 ) && defined( _DEBUG )
-byte rgStackTempBuffer[65535];
-#endif
 class CCoroutine
 {
 public:
@@ -225,18 +214,6 @@ public:
 			Assert( m_pStackHigh );
 			Assert( m_pSavedStack );
 			
-#if defined( _PS3 ) && defined( _DEBUG )
-			// Our (and Sony's) memory tracking tools may try to walk the stack during a free() call
-			// if we do the free here at our normal point though the stack is invalid since it's in 
-			// the middle of swapping.  Instead move it to a temp buffer now and free  while the stack 
-			// frames in place are still ok.
-			Assert( m_cubSavedStack < Q_ARRAYSIZE( rgStackTempBuffer ) );
-			memcpy( &rgStackTempBuffer[0], m_pSavedStack, m_cubSavedStack );
-
-			FreePv( m_pSavedStack );
-			m_pSavedStack = &rgStackTempBuffer[0];
-#endif
-
 			// Assert we're not about to trash our own immediate stack
 			GetStackPtr( pStack );
 			if ( pStack >= m_pStackLow && pStack <= m_pStackHigh )
@@ -268,9 +245,7 @@ public:
 
 			// free the saved stack info
 			pThis->m_cubSavedStack = 0;
-#if !defined( _PS3 ) || !defined( _DEBUG )
 			FreePv( pThis->m_pSavedStack );
-#endif
 			pThis->m_pSavedStack = NULL;
 
 			// If we were the "main thread", reset our stack pos to zero
@@ -714,23 +689,7 @@ void NOINLINE Coroutine_Launch( CCoroutine &coroutine )
 #endif
 
 	// set our marker
-#ifndef _PS3
 	GetStackPtr( pEsp );
-#else
-	// The stack pointer for the current stack frame points to the top of the stack which already includes space for the 
-	// ABI linkage area. We need to include this area as part of our coroutine stack, as the calling function will copy
-	// the link register (return address to this function) into this area after calling m_pFunc below. Failing to do so
-	// could result in the coroutine to return to garbage when complete
-	uint64 *pStackFrameTwoUp = (uint64*)__builtin_frame_address(2);
-
-	// Need to terminate the stack frame sequence so if someone tries to walk the stack in a co-routine they don't go forever.
-	*pStackFrameTwoUp = 0;	
-
-	// Need to track where we we save up to on yield, add a few bytes so we save just the beginning linkage area of the stack frame 
-	// we added  the null termination to.
-	byte * pEsp = ((byte*)pStackFrameTwoUp)+32;
-
-#endif
 	#ifdef _WIN64
 		// Add a little extra padding, to capture the spill space for the registers
 		// that is required for us to reserve ABOVE the return address), and also

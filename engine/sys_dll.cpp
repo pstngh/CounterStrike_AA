@@ -7,7 +7,7 @@
 //=============================================================================//
 
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 #include "winlite.h"
 #endif
 #ifdef OSX
@@ -58,17 +58,9 @@
 #include "vgui_baseui_interface.h"
 #include "tier0/systeminformation.h"
 #ifdef _WIN32
-#if !defined( _X360 )
 #include <io.h>
 #endif
-#endif
 #include "toolframework/itoolframework.h"
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#include "sys/tty.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -439,8 +431,6 @@ void Sys_Error_Internal( bool bMinidump, const char *error, va_list argsList )
 		DebuggerBreak(); 
 	}
 
-#if !defined( _X360 )
-
 #if !defined(NO_STEAM) && !defined(DEDICATED) && !defined(LINUX)
 	Status_Update();
 	BuildMinidumpComment( text );
@@ -490,7 +480,6 @@ void Sys_Error_Internal( bool bMinidump, const char *error, va_list argsList )
 //!!BUG!! "need minidump impl on sys_error"
 #endif
 	}
-#endif // _X360
 
 	host_initialized = false;
 	Plat_ExitProcess( 100 );
@@ -553,7 +542,7 @@ void Sys_Sleep( int msec )
 //			lpReserved - 
 // Output : BOOL WINAPI   DllMain
 //-----------------------------------------------------------------------------
-#if defined(_WIN32) && !defined( _X360 )
+#if defined(_WIN32)
 BOOL WINAPI DllMain(HANDLE hInst, ULONG ulInit, LPVOID lpReserved)
 {
 	InitCRTMemDebug();
@@ -772,8 +761,6 @@ void Sys_InitMemory( void )
 		host_parms.memsize = MAXIMUM_WIN_MEMORY;
 	}
 	
-#elif defined( _PS3 )
-	host_parms.memsize = 128*1024*1024;
 #else
 	#error Write me.
 #endif
@@ -807,12 +794,7 @@ void Sys_ShutdownAuthentication( void )
 //-----------------------------------------------------------------------------
 // Debug library spew output
 //-----------------------------------------------------------------------------
-#ifdef _PS3
-#include "tls_ps3.h"
-#define g_bInSpew GetTLSGlobals()->bEngineConsoleIsInSpew
-#else
 CTHREADLOCALINT g_bInSpew;
-#endif
 
 #include "tier1/fmtstr.h"
 
@@ -824,7 +806,7 @@ static CThreadFastMutex g_SpewMutex;
 
 static void AddSpewRecord( char const *pMsg )
 {
-#if !defined( DEDICATED ) && !defined( _GAMECONSOLE )
+#if !defined( DEDICATED )
 	CUtlString str;
 	str.Format( "%d(%f):  %s", g_nSpewLines, Plat_FloatTime(), pMsg );
 
@@ -870,13 +852,6 @@ void GetSpew( char *buf, size_t buflen )
 
 
 
-#ifdef _PS3
-DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_PSGL, "PSGL" );
-DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_VJOBS, "VJOBS" );
-DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_PHYSICS, "PHYSICS" );
-DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_LOADING, "LOADING" );
-#endif
-
 class CEngineConsoleLoggingListener : public ILoggingListener
 {
 public:
@@ -890,38 +865,6 @@ public:
 			}
 			return;
 		}
-#if defined( _PS3 ) && !defined( _CERT )
-		if( pContext->m_ChannelID == LOG_PSGL )
-		{
-			uint wrote;
-			// write to TTY USR1
-			sys_tty_write( SYS_TTYP3, pMessage, V_strlen(pMessage), &wrote );
-			return;
-		}
-		else if( pContext->m_ChannelID == LOG_VJOBS )
-		{
-			uint wrote;
-			// write to TTY USR2
-			sys_tty_write( SYS_TTYP4, pMessage, V_strlen(pMessage), &wrote );
-			return;
-		}
-		else if( pContext->m_ChannelID == LOG_PHYSICS )
-		{
-			uint wrote;
-			// write to TTY USR3
-			sys_tty_write( SYS_TTYP5, pMessage, V_strlen(pMessage), &wrote );
-			return;
-		}
-		else if( pContext->m_ChannelID == LOG_LOADING )
-		{
-			uint wrote;
-			// write to TTY USR4
-			sys_tty_write( SYS_TTYP6, pMessage, V_strlen(pMessage), &wrote );
-			return;
-		}
-		// NOTE: SYS_TTYP13 is taken by vxconsole
-		COMPILE_TIME_ASSERT( SYS_TTYP13 == 13 );
-#endif
 		
 
 		bool suppress = g_bInSpew ? true : false;
@@ -963,11 +906,7 @@ public:
 			case LS_MESSAGE:
 				if ( pContext->m_Color == UNSPECIFIED_LOGGING_COLOR )
 				{
-#if !defined( _X360 )
 					spewColor.SetColor( 255, 255, 255, 255 );
-#else
-					spewColor.SetColor( 0, 0, 0, 255 );
-#endif
 				}
 				break;
 			case LS_WARNING:
@@ -1347,9 +1286,6 @@ void LoadEntityDLLs( const char *szBaseDir, bool bServerOnly )
 		LoadThisDll( szDllFilename, bServerOnly );
 	}
 
-#elif defined( _PS3 )
-	Q_snprintf( szDllFilename, sizeof( szDllFilename ), "server" DLL_EXT_STRING );
-	LoadThisDll( szDllFilename, bServerOnly );
 #elif defined( LINUX )
 	if ( s_bIsDedicatedServer && !CommandLine()->FindParm( "-novalveds" ) )
 	{
@@ -1692,8 +1628,6 @@ CON_COMMAND( star_memory, "Dump memory stats" )
 	struct mstats memstats = mstats( );
 	Msg( "Available %.2f MB, Used: %.2f MB, #mallocs = %d\n",
 		 memstats.bytes_free / ( 1024.0 * 1024.0), memstats.bytes_used / ( 1024.0 * 1024.0 ), memstats.chunks_used );
-#elif defined( _PS3 )
-	Msg( "Memory info on PS3: not implemented.\n" );
 #else
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof( MEMORYSTATUSEX );

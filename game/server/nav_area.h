@@ -38,11 +38,7 @@ private:
 	static int m_nBytesCurrent;
 };
 
-#if !defined(_GAMECONSOLE)
 typedef CUtlVectorUltraConservativeAllocator CNavVectorAllocator;
-#else
-typedef CNavVectorNoEditAllocator CNavVectorAllocator;
-#endif
 
 
 //-------------------------------------------------------------------------------------------------------------------

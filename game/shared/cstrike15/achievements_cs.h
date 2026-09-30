@@ -11,10 +11,6 @@
 #include "cs_gamestats_shared.h"
 #include "baseachievement.h"
 
-#ifdef _PS3
-#include "steam/steam_api.h"
-#endif
-
 #ifdef CLIENT_DLL
 
 bool CheckWinNoEnemyCaps( IGameEvent *event, int iRole );
@@ -97,33 +93,6 @@ private:
 	void OnPlayerStatsUpdate( int nUserSlot );
 	CSStatType_t m_StatId;
 };
-
-#if defined (_X360)
-static const int NumXboxMappedAchievements = 11; // number of xbox achievements that have a one to one correspondence with a medal
-static const int MedalToXBox[NumXboxMappedAchievements][2] = { { CSEnemyKillsHigh, ACHIEVEMENT_KILL_ENEMY_HIGH }, 
-{ CSGiveDamageLow, ACHIEVEMENT_GIVE_DAMAGE_LOW }, 
-{ CSMoneyEarnedLow, ACHIEVEMENT_EARN_MONEY_LOW }, 
-{ CSGunGameProgressiveRampage, ACHIEVEMENT_GUN_GAME_RAMPAGE }, 
-{ CSHeadshots, ACHIEVEMENT_HEADSHOTS }, 
-{ CSFlawlessVictory, ACHIEVEMENT_FLAWLESS_VICTORY }, 
-{ CSDominationsLow, ACHIEVEMENT_DOMINATIONS_LOW }, 
-{ CSKillWithEveryWeapon, ACHIEVEMENT_KILL_WITH_EVERY_WEAPON }, 
-{ CSKillEnemyLastBullet, ACHIEVEMENT_KILL_ENEMY_LAST_BULLET }, 
-{ CSKillEnemyTerrTeamBeforeBombPlant, ACHIEVEMENT_GUN_GAME_FIRST_THING_FIRST }, 
-{ CSGGRoundsHigh, ACHIEVEMENT_GUN_GAME_ROUNDS_HIGH }};
-
-class CAchievementListener : public CAutoGameSystem, public CGameEventListener
-{
-public:
-	CAchievementListener();
-
-	virtual bool Init();
-
-protected:
-	void FireGameEvent( IGameEvent *event );
-
-};
-#endif
 
 
 extern CAchievementMgr g_AchievementMgrCS;	// global achievement mgr for CS

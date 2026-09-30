@@ -191,13 +191,8 @@ public:
 //
 // To use this function, derive a class from CBaseTesselateHelper that supports the TesselateHelper functions.
 
-#ifdef _PS3
-template< class TesselateHelper >
-NOINLINE void TesselateDisplacement( TesselateHelper *pHelper )
-#else
 template< class TesselateHelper >
 inline void TesselateDisplacement( TesselateHelper *pHelper )
-#endif
 {
 	pHelper->m_nIndices = 0;
 	

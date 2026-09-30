@@ -107,7 +107,6 @@ private:
 	CCallResult<CWorkshopManager, RemoteStorageDeletePublishedFileResult_t> m_callbackDeletePublishedFile;
 	void Steam_OnDeletePublishedFile( RemoteStorageDeletePublishedFileResult_t *pResult, bool bError );
 
-#if !defined( _GAMECONSOLE )
 	void Steam_OnUpdateUserPublishedItemVote( RemoteStorageUpdateUserPublishedItemVoteResult_t *pResult, bool bError );
 	void Steam_OnFileSubscribed( RemoteStoragePublishedFileSubscribed_t *pCallback );
 	void Steam_OnFileUnsubscribed( RemoteStoragePublishedFileUnsubscribed_t *pCallback );
@@ -115,7 +114,6 @@ private:
 	CCallResult<CWorkshopManager, RemoteStorageUpdateUserPublishedItemVoteResult_t> m_callbackUpdateUserPublishedItemVote;
 	CCallback< CWorkshopManager, RemoteStoragePublishedFileSubscribed_t, false> m_callbackFileSubscribed;
 	CCallback< CWorkshopManager, RemoteStoragePublishedFileUnsubscribed_t, false> m_callbackFileUnsubscribed;
-#endif // !_GAMECONSOLE
 
 	// 
 	// File Information Manager

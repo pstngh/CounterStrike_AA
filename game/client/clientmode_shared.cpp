@@ -46,9 +46,6 @@
 #include <localize/ilocalize.h>
 #include "gameui_interface.h"
 #include "menu.h" // CHudMenu
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#endif
 #include "matchmaking/imatchframework.h"
 #include "clientmode_csnormal.h"
 

@@ -1920,9 +1920,7 @@ void CStudioRender::DrawInstancedMultiBoneDecals( CMeshBuilder& meshBuilder, con
 				if ( j != verts.InvalidIndex() )
 				{
 					const DecalVertex_t& nextVertex = verts[j];
-#ifdef _X360
-					PREFETCH360( &nextVertex, 0 );
-#elif _SSE1
+#if _SSE1
 					_mm_prefetch( reinterpret_cast<const char *>(&nextVertex) , _MM_HINT_T0 );
 #endif
 				}

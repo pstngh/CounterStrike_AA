@@ -31,18 +31,10 @@
 //-----------------------------------------------------------------------------
 // Used to visualizes what the occlusion system is doing.
 //-----------------------------------------------------------------------------
-#ifdef _GAMECONSOLE
-#define DEFAULT_MIN_OCCLUDER_AREA  70.0f
-#else
 #define DEFAULT_MIN_OCCLUDER_AREA  5.0f
-#endif
 #define DEFAULT_MAX_OCCLUDEE_AREA  5.0f
 
-#ifdef _GAMECONSOLE
-#define DEFAULT_OCCLUSION_STATE "0"
-#else
 #define DEFAULT_OCCLUSION_STATE "1"
-#endif
 
 // Used by ViewData ring buffer
 #define OCCLUSION_SYSTEM_VIEWDATA_MAX	32

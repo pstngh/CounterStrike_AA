@@ -109,24 +109,9 @@ edict_t *ED_Alloc( int iForceEdictIndex )
 
 	// This misses cache a lot because it has to touch the entire table (32KB in the worst case)
 	// We could use a free list here!!!  For now, try to prefetch it and keep an "lowest free" index to help
-#if defined(_GAMECONSOLE)
-	int nPrefetchCount = sv.num_edicts - nFirstIndex;
-	nPrefetchCount = imin( nPrefetchCount, 8 );
-	int nLastPrefetch = sv.num_edicts - 8;
-	for ( int i = 0; i < nPrefetchCount; i++ )
-	{
-		PREFETCH_128( ( (byte *)pEdict ) + i * 128, 0 );
-	}
-#endif
 	g_nLowestFreeEdict = sv.num_edicts;
 	for ( int i = nFirstIndex; i < sv.num_edicts; i++ )
 	{
-#if defined(_GAMECONSOLE)
-		if ( !(i & 7) && i < nLastPrefetch )
-		{
-			PREFETCH_128( ( (byte *)pEdict ) + 128, 0 );
-		}
-#endif
 		if ( pEdict->IsFree() )
 		{
 			g_nLowestFreeEdict = imin( i, g_nLowestFreeEdict );

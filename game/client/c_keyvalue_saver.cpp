@@ -173,15 +173,6 @@ void C_KeyValueSaver::MarkKeyValuesDirty( const char *pchFileName )
 bool C_KeyValueSaver::ReadKeyValues( KeyValueSaverData *pKeyValueData )
 {
 #if !defined( CSTRIKE15 )
-#ifdef _GAMECONSOLE
-	DevMsg( "Read Game Instructor for splitscreen slot %d\n", m_nSplitScreenSlot );
-
-	if ( m_nSplitScreenSlot < 0 )
-		return false;
-
-	if ( m_nSplitScreenSlot >= (int) XBX_GetNumGameUsers() )
-		return false;
-#endif
 
 	char szFilename[_MAX_PATH];
 	Q_snprintf( szFilename, sizeof( szFilename ), VarArgs( "save/%s", pKeyValueData->szFileName ) );
@@ -218,16 +209,6 @@ bool C_KeyValueSaver::WriteDirtyKeyValues( KeyValueSaverData *pKeyValueData, boo
 	// subsequent frames when storage device might be
 	// in a yet-unmounted state.
 	pKeyValueData->bDirtySaveData = false;
-
-#ifdef _GAMECONSOLE
-	DevMsg( "Write KeyValueSaver for splitscreen slot %d at time: %.1f\n", m_nSplitScreenSlot, Plat_FloatTime() );
-
-	if ( m_nSplitScreenSlot < 0 )
-		return false;
-
-	if ( m_nSplitScreenSlot >= (int) XBX_GetNumGameUsers() )
-		return false;
-#endif
 
 	// Build key value data to save
 	if ( pKeyValueData->pKeyValues )

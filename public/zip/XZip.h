@@ -96,7 +96,7 @@
 // use in Windows/C++.
 
 #if !defined( DWORD )
-#if defined( _WIN32 ) || defined( _PS3 )
+#if defined( _WIN32 )
 typedef unsigned long DWORD;
 #else
 typedef unsigned int DWORD;

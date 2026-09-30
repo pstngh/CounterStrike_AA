@@ -96,10 +96,6 @@ protected:
 
 	// LINK HOST STATE
 	float m_flCreationTime;
-#ifdef _X360
-	CXlspConnection *m_pXlspConnection;
-	CXlspConnectionCmdBatch *m_pXlspCommandBatch;
-#endif
 };
 
 class CMatchSessionOnlineTeamSearchLinkBase : public CMatchSessionOnlineTeamSearch

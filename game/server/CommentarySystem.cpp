@@ -1282,9 +1282,7 @@ void CPointCommentaryNode::SpinThink( void )
 //------------------------------------------------------------------------------
 void CPointCommentaryNode::PlayerActivated( void )
 {
-	#ifndef _GAMECONSOLE
 	gamestats->Event_Commentary();
-	#endif
 
 	if ( m_bActive )
 	{

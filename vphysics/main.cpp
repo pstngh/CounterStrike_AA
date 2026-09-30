@@ -15,7 +15,7 @@
 #include <cstdint> //lwss - x64 fixes
 
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif	// _WIN32 && !_X360
@@ -31,7 +31,7 @@ static void ivu_string_print_function( const char *str )
 	Msg("%s", str);
 }
 
-#if defined(_WIN32) && !defined(_XBOX)
+#if defined(_WIN32)
 //HMODULE	gPhysicsDLLHandle;
 
 #pragma warning (disable:4100)

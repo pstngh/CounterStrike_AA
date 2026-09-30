@@ -29,9 +29,7 @@
 
 #include "ixboxsystem.h"
 
-#if !defined( _GAMECONSOLE )
 #include "xbox/xboxstubs.h"
-#endif
 
 enum
 {
@@ -321,10 +319,6 @@ public:
 	bool LoadingProgressWantsIsolatedRender( bool bContextValid );
 
 	bool IsLevelLoading( void ) const { return m_bLevelLoading; }
-
-#if defined( _GAMECONSOLE )
-	CON_COMMAND_MEMBER_F( CBaseModPanel, "gameui_reload_resources", Reload_Resources, "Reload the Xbox 360 UI res files", 0 );
-#endif
 
 protected:
 	virtual void PaintBackground();

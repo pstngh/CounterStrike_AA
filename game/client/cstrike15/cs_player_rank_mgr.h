@@ -19,11 +19,6 @@
 #include "cs_player_rank_shared.h"
 #include "cs_gamestats_shared.h"
 
-#if defined ( _GAMECONSOLE ) 
-#include "matchmaking/cstrike15/imatchext_cstrike15.h"
-#include "cs_client_gamestats.h"
-#endif
-
 class KeyValues;
 class CBaseAchievement;
 class CAchievement_StatGoal;
@@ -95,14 +90,6 @@ public:
 	// 'elo changed' update to the user beacuse we don't want to miss displaying this update.
 	int GetEloBracketChange( int &iOutNewEloBracket );
 	void ResetRecordedEloBracketChange( void ); 
-
-#if defined( _GAMECONSOLE ) 
-	// On consoles, this object holds the elo brackets instead of the GC. 
-	int Console_GetEloBracket( ELOGameType_t game_mode, PlayerELOBracketInfo_t *pOutBracket = NULL );
-	bool Console_SetEloBracket( ELOGameType_t game_mode, uint8 display_bracket, uint8 prev_bracket, uint8 num_games_in_bracket );
-	bool Console_SetEloBracket( ELOGameType_t game_mode, const PlayerELOBracketInfo_t& bracket );
-	void ServerRequestBracketInfo( ELOGameType_t game_mode );
-#endif 
 
 	// Debug spew.
 	void PrintRankProgressThisRound() const;

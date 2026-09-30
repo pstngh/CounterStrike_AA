@@ -10,9 +10,6 @@
 #include "tier0/platform.h"
 
 #include "appframework/ilaunchermgr.h"
-#if defined( PLATFORM_PS3)
-#include "ps3/ps3_helpers.h"
-#endif
 
 #include "tier0/platwindow.h"
 #include "appframework/IAppSystemGroup.h"
@@ -73,11 +70,7 @@ AppModule_t CAppSystemGroup::LoadModule( const char *pDLLName )
 	CSysModule *pSysModule = LoadModuleDLL( pDLLName );
 	if (!pSysModule)
 	{
-#ifdef _X360
-		Warning("AppFramework : Unable to load module %s! (err #%d)\n", pDLLName, GetLastError() );
-#else
 		Warning("AppFramework : Unable to load module %s!\n", pDLLName );
-#endif
 		return APP_MODULE_INVALID;
 	}
 
@@ -141,11 +134,7 @@ int CAppSystemGroup::ReloadModule( const char * pDLLName )
 	for ( int i = 0; i < m_Modules.Count(); ++i ) 
 	{
 		Module_t &module = m_Modules[i];
-		#ifdef _PS3
-		Msg( "%25s %llx %p %6d %6d bytes\n", module.m_pModuleName, (uint64)module.m_Factory, module.m_pModule, ( ( PS3_PrxLoadParametersBase_t *)module.m_pModule )->sysPrxId, ( ( PS3_PrxLoadParametersBase_t *)module.m_pModule )->cbSize );
-		#else
 		Msg("%25s %p %p\n", module.m_pModuleName, (void*)module.m_Factory, module.m_pModule );
-		#endif
 	}
 	
 	return m_pParentAppSystem ? m_pParentAppSystem->ReloadModule( pDLLName ) : -1;

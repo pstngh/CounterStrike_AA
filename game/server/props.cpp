@@ -1591,9 +1591,7 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 		}
 		if ( bSmashed )
 		{
-			#ifndef _GAMECONSOLE
 			gamestats->Event_CrateSmashed();
-			#endif
 		}
 	}
 

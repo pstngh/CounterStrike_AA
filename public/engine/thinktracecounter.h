@@ -18,7 +18,7 @@
 
 #ifdef THINK_TRACE_COUNTER_COMPILED
 	// create a macro that is true if we are allowed to debug traces during thinks, and compiles out to nothing otherwise.
-	#if defined( _GAMECONSOLE ) || defined( NO_STEAM )
+	#if defined( NO_STEAM )
 		#define DEBUG_THINK_TRACE_COUNTER_ALLOWED()  (!IsCert())
 	#else
 		#ifdef THINK_TRACE_COUNTER_COMPILE_FUNCTIONS_ENGINE

@@ -13,7 +13,7 @@
 #include "ndebugoverlay.h"
 #include "wcedit.h"
 
-#if defined( DEDICATED ) || defined( _PS3 ) || defined( POSIX )
+#if defined( DEDICATED ) || defined( POSIX )
 #include "ai_basenpc.h"
 #include "ai_network.h"
 #include "ai_networkmanager.h"

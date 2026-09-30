@@ -18,7 +18,7 @@
 #pragma warning( disable : 4700 )
 #endif
 
-#if defined( USE_NATIVE_SLIST ) && !defined( _X360 )
+#if defined( USE_NATIVE_SLIST )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -27,10 +27,6 @@
 #include "tier0/threadtools.h"
 #include "tier0/memalloc.h"
 #include "tier0/memdbgoff.h"
-
-#if defined( _X360 )
-#define USE_NATIVE_SLIST
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -80,15 +76,6 @@ inline bool ThreadInterlockedAssignIf64x128( volatile int64 *pDest, const int64 
 #define TSLIST_NODE_ALIGN 
 #define TSLIST_HEAD_ALIGN_POST DECL_ALIGN(TSLIST_HEAD_ALIGNMENT)
 #define TSLIST_NODE_ALIGN_POST DECL_ALIGN(TSLIST_NODE_ALIGNMENT)
-#elif defined( _PS3 )
-#define TSLIST_HEAD_ALIGNMENT 8
-#define TSLIST_NODE_ALIGNMENT 8
-
-#define TSLIST_HEAD_ALIGN ALIGN8
-#define TSLIST_NODE_ALIGN ALIGN8
-#define TSLIST_HEAD_ALIGN_POST ALIGN8_POST
-#define TSLIST_NODE_ALIGN_POST ALIGN8_POST
-
 #else
 #error
 #endif
@@ -217,19 +204,10 @@ public:
 #endif
 
 #ifdef USE_NATIVE_SLIST
-#ifdef _X360
-		// integrated write-release barrier
-		return (TSLNodeBase_t *)InterlockedPushEntrySListRelease( &m_Head, pNode );
-#else
 		return (TSLNodeBase_t *)InterlockedPushEntrySList( &m_Head, pNode );
-#endif
 #else
 		TSLHead_t oldHead;
 		TSLHead_t newHead;
-
-#if defined( PLATFORM_PS3 ) || defined( PLATFORM_X360 )
-		__lwsync(); // write-release barrier
-#endif
 
 #if defined( PLATFORM_64BITS ) && !defined( PLATFORM_E2K )
 		newHead.value.Padding = 0;
@@ -257,12 +235,7 @@ public:
 	TSLNodeBase_t *Pop()
 	{
 #ifdef USE_NATIVE_SLIST
-#ifdef _X360
-		// integrated read-acquire barrier
-		TSLNodeBase_t *pNode = (TSLNodeBase_t *)InterlockedPopEntrySListAcquire( &m_Head );
-#else
 		TSLNodeBase_t *pNode = (TSLNodeBase_t *)InterlockedPopEntrySList( &m_Head );
-#endif
 		return pNode;
 #else
 		TSLHead_t oldHead;
@@ -283,9 +256,6 @@ public:
 
 			if ( ThreadInterlockedAssignIf64x128( &m_Head.value64x128, newHead.value64x128, oldHead.value64x128 ) )
 			{
-#if defined( PLATFORM_PS3 ) || defined( PLATFORM_X360 )
-				__lwsync(); // read-acquire barrier
-#endif
 				break;
 			}
 			ThreadPause();
@@ -299,9 +269,6 @@ public:
 	{
 #ifdef USE_NATIVE_SLIST
 		TSLNodeBase_t *pBase = (TSLNodeBase_t *)InterlockedFlushSList( &m_Head );
-#if defined( _X360 ) || defined( _PS3 )
-		__lwsync(); // read-acquire barrier
-#endif
 		return pBase;
 #else
 		TSLHead_t oldHead;

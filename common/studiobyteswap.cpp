@@ -37,11 +37,7 @@ static bool					g_bVerbose = true;
 static bool					g_bNativeSrc;
 static CByteswap			g_Swap;
 static IPhysicsCollision	*pCollision;
-#ifdef _PS3
-static char					*g_pFilename;	// Used for warnings only, don't eat TLS slot on PS3
-#else
 CTHREADLOCALPTR(char)		g_pFilename;
-#endif
 
 void ActivateByteSwapping( bool activate )
 {
@@ -277,12 +273,6 @@ BEGIN_BYTESWAP_DATADESC( swapcompactsurfaceheader_t )
 END_BYTESWAP_DATADESC()
 
 // Fake header declaration for old style phy format
-#if defined( _X360 )
-#pragma bitfield_order( push, lsb_to_msb )
-#elif defined( _PS3 )
-#pragma ms_struct on
-#pragma reverse_bitfields on
-#endif
 struct legacysurfaceheader_t
 {
 	DECLARE_BYTESWAP_DATADESC();
@@ -297,12 +287,6 @@ struct legacysurfaceheader_t
 	int		offset_ledgetree_root;
 	int		dummy[3];
 };
-#if defined( _X360 )
-#pragma bitfield_order( pop )
-#elif defined( _PS3 )
-#pragma ms_struct off
-#pragma reverse_bitfields off
-#endif
 
 BEGIN_BYTESWAP_DATADESC( legacysurfaceheader_t )
 	DEFINE_FIELD( size, FIELD_INTEGER ),

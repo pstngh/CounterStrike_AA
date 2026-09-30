@@ -10,9 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#if !defined( _PS3 )
 #include <malloc.h>
-#endif // ! _PS3
 #include "vgui_surfacelib/BitmapFont.h"
 #include "vgui_surfacelib/fontmanager.h"
 #include "tier0/dbg.h"

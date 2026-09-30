@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "ugc_request_manager.h"
 
-#if !defined(NO_STEAM) && !defined(_PS3)
+#if !defined(NO_STEAM)
 
 static uint64 g_TimeStampIncr = 0;
 

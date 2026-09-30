@@ -143,23 +143,9 @@ static ConVar r_shadow_debug_spew( "r_shadow_debug_spew", "0", FCVAR_CHEAT );
 
 static ConVar r_flashlight_info( "r_flashlight_info", "0", 0, "Information about currently enabled flashlights" );
 
-#if defined( _PS3 )
-ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
-ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "640" );
-ConVar r_flashlightdepthres( "r_flashlightdepthres", "640" );
-#elif defined( _X360 )
-ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
-ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "720" );
-ConVar r_flashlightdepthres( "r_flashlightdepthres", "720" );
-#else
 ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
 ConVar r_flashlightdepthreshigh( "r_flashlightdepthreshigh", "2048" );
 ConVar r_flashlightdepthres( "r_flashlightdepthres", "1024" );
-#endif
-
-#if defined( _GAMECONSOLE )
-#define RTT_TEXTURE_SIZE_640
-#endif
 
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
@@ -227,11 +213,7 @@ private:
 		TEXTURE_PAGE_SIZE	    = 1024,
 		MAX_TEXTURE_POWER    	= 8,
 #endif
-#if !defined( _GAMECONSOLE )
 		MIN_TEXTURE_POWER	    = 4,
-#else
-		MIN_TEXTURE_POWER	    = 5,	// per resolve requirements to ensure 32x32 aligned offsets
-#endif
 		MAX_TEXTURE_SIZE	    = (1 << MAX_TEXTURE_POWER),
 		MIN_TEXTURE_SIZE	    = (1 << MIN_TEXTURE_POWER),
 		BLOCK_SIZE			    = MAX_TEXTURE_SIZE,
@@ -310,29 +292,8 @@ void CTextureAllocator::Init()
 
 void CTextureAllocator::InitRenderTargets( void )
 {
-#if !defined( _X360 )
 	// don't need depth buffer for shadows
 	m_TexturePage.InitRenderTarget( TEXTURE_PAGE_SIZE, TEXTURE_PAGE_SIZE, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Shadows" );
-#else
-	// unfortunate explicit management required for this render target
-	// 32bpp edram is only largest shadow fragment, but resolved to actual shadow atlas
-	// because full-res 1024x1024 shadow buffer is too large for EDRAM
-	m_TexturePage.InitRenderTargetTexture( TEXTURE_PAGE_SIZE, TEXTURE_PAGE_SIZE, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Shadows" );
-
-#ifdef RTT_TEXTURE_SIZE_640
-	// use 4x multisampling for smoother shadows
-	m_TexturePage.InitRenderTargetSurface( MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE, IMAGE_FORMAT_ARGB8888, false, RT_MULTISAMPLE_4_SAMPLES );
-#else
-	// edram footprint is only 256x256x4 = 256K
-	m_TexturePage.InitRenderTargetSurface( MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE, IMAGE_FORMAT_ARGB8888, false );
-#endif
-
-	// due to texture/surface size mismatch, ensure texture page is entirely cleared translucent
-	// otherwise border artifacts at edge of shadows due to pixel shader averaging of unwanted bits
-	// should also set m_bRenderTargetNeedsClear
-	m_TexturePage->ClearTexture( 0, 0, 0, 0 );
-
-#endif
 
 }
 
@@ -384,11 +345,7 @@ void CTextureAllocator::Reset()
 	m_Blocks[24].m_FragmentPower = MAX_TEXTURE_POWER;	// 199 slots total
 #else
 	// FIXME: Improve heuristic?!?
-#if !defined( _GAMECONSOLE )
 	m_Blocks[0].m_FragmentPower  = MAX_TEXTURE_POWER-4;	// 128 cells at ExE resolution
-#else
-	m_Blocks[0].m_FragmentPower  = MAX_TEXTURE_POWER-3;	// 64 cells at DxD resolution
-#endif
 	m_Blocks[1].m_FragmentPower  = MAX_TEXTURE_POWER-3;	// 64 cells at DxD resolution
 	m_Blocks[2].m_FragmentPower  = MAX_TEXTURE_POWER-2;	// 32 cells at CxC resolution
 	m_Blocks[3].m_FragmentPower  = MAX_TEXTURE_POWER-2;		 
@@ -793,10 +750,6 @@ void CTextureAllocator::GetTextureRect(TextureHandle_t handle, int& x, int& y, i
 static ConVar r_shadows( "r_shadows", "1" ); // hook into engine's cvars..
 static ConVar r_shadowmaxrendered("r_shadowmaxrendered", "32");
 static ConVar r_shadows_gamecontrol( "r_shadows_gamecontrol", "-1", FCVAR_CHEAT );	 // hook into engine's cvars..
-
-#ifdef _PS3
-uint32 g_ps3_ShadowDepth_TextureCache;
-#endif
 
 //-----------------------------------------------------------------------------
 // The class responsible for dealing with shadows on the client side
@@ -1660,9 +1613,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 		m_bDepthTexturesAllocated = true;
 
 		ImageFormat dstFormat  = g_pMaterialSystemHardwareConfig->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
-#if !defined( _X360 )
 		ImageFormat nullFormat = g_pMaterialSystemHardwareConfig->GetNullTextureFormat();			// Vendor-dependent null texture format (takes as little memory as possible)
-#endif
 		materials->BeginRenderTargetAllocation();
 		
 		RenderTargetSizeMode_t sizeMode = RT_SIZE_OFFSCREEN;
@@ -1673,16 +1624,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 			sizeMode = RT_SIZE_NO_CHANGE;
 		}
 		
-#if defined( _X360 )
-		// For the 360, we'll be rendering depth directly into the dummy depth and Resolve()ing to the depth texture.
-		// only need the dummy surface, don't care about color results
-		m_DummyColorTexture.InitRenderTargetTexture( m_nDepthTextureResolution, m_nDepthTextureResolution, RT_SIZE_OFFSCREEN, IMAGE_FORMAT_BGR565, MATERIAL_RT_DEPTH_SHARED, false, "_rt_ShadowDummy", CREATERENDERTARGETFLAGS_ALIASCOLORANDDEPTHSURFACES );
-		m_DummyColorTexture.InitRenderTargetSurface( m_nDepthTextureResolution, m_nDepthTextureResolution, IMAGE_FORMAT_BGR565, false );
-#elif defined (_PS3)
-		m_DummyColorTexture.InitRenderTarget( 8, 8, sizeMode, nullFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_ShadowDummy" );
-#else
 		m_DummyColorTexture.InitRenderTarget( m_nDepthTextureResolution, m_nDepthTextureResolution, sizeMode, nullFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_ShadowDummy" );
-#endif
 
 		// Create some number of depth-stencil textures
 		m_DepthTextureCache.Purge();
@@ -1697,14 +1639,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 
 			int nTextureResolution = ( i < MAX_DEPTH_TEXTURE_HIGHRES_SHADOWS ? m_nDepthTextureResolutionHigh : m_nDepthTextureResolution );
 
-#if defined( _X360 )
-			// create a render target to use as a resolve target to get the shared depth buffer
-			// surface is effectively never used
-			depthTex.InitRenderTargetTexture( nTextureResolution, nTextureResolution, RT_SIZE_OFFSCREEN, dstFormat, MATERIAL_RT_DEPTH_NONE, false, strRTName );
-			depthTex.InitRenderTargetSurface( 1, 1, dstFormat, false );
-#else
 			depthTex.InitRenderTarget( nTextureResolution, nTextureResolution, sizeMode, dstFormat, MATERIAL_RT_DEPTH_NONE, false, strRTName );
-#endif
 
 			m_DepthTextureCache.AddToTail( depthTex );
 			m_DepthTextureCacheLocks.AddToTail( bFalse );
@@ -1818,11 +1753,6 @@ void CClientShadowMgr::InitDeferredShadows()
 
 	if ( r_shadow_deferred_downsample.GetBool() )
 	{
-#if defined( _X360 )
-		m_downSampledNormals.InitRenderTargetTexture( DEFERRED_SHADOW_BUFFER_WIDTH, DEFERRED_SHADOW_BUFFER_HEIGHT, RT_SIZE_OFFSCREEN, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_SEPARATE, false, "_rt_DownsampledNormals" );
-		m_downSampledNormals.InitRenderTargetSurface( DEFERRED_SHADOW_BUFFER_WIDTH, DEFERRED_SHADOW_BUFFER_HEIGHT, IMAGE_FORMAT_ARGB8888, true );
-		m_downSampledDepth.InitRenderTargetTexture( DEFERRED_SHADOW_BUFFER_WIDTH, DEFERRED_SHADOW_BUFFER_HEIGHT, RT_SIZE_OFFSCREEN, IMAGE_FORMAT_D24FS8, MATERIAL_RT_DEPTH_NONE, false, "_rt_DownsampledDepth" );
-#endif
 	}
 }
 
@@ -6450,16 +6380,6 @@ void CClientShadowMgr::DrawDeferredShadows( const CViewSetup &view, int leafCoun
 	state.m_PassOp = SHADER_STENCILOP_KEEP;
 	state.m_FailOp = SHADER_STENCILOP_KEEP;
 	state.m_ZFailOp = SHADER_STENCILOP_KEEP;
-#if defined( _X360 )
-	state.m_bHiStencilEnable = true;
-	state.m_bHiStencilWriteEnable = false;
-	state.m_HiStencilCompareFunc = SHADER_HI_STENCILFUNC_EQUAL;
-	state.m_nHiStencilReferenceValue = 0;
-#endif
-
-#ifdef _X360
-	pRenderContext->PushVertexShaderGPRAllocation( 16 );
-#endif
 
 	if ( r_shadow_deferred_downsample.GetBool() )
 	{
@@ -6472,9 +6392,6 @@ void CClientShadowMgr::DrawDeferredShadows( const CViewSetup &view, int leafCoun
 	else
 	{
 		pRenderContext->SetStencilState( state );
-#if defined( _X360 )
-		pRenderContext->FlushHiStencil();
-#endif
 	}
 
 	pRenderContext->MatrixMode( MATERIAL_MODEL );
@@ -6671,15 +6588,7 @@ void CClientShadowMgr::DrawDeferredShadows( const CViewSetup &view, int leafCoun
 
 	ShaderStencilState_t stateDisable;
 	stateDisable.m_bEnable = false;
-#if defined( _X360 )
-	stateDisable.m_bHiStencilEnable = false;
-	stateDisable.m_bHiStencilWriteEnable = false;
-#endif
 	pRenderContext->SetStencilState( stateDisable );
-
-#ifdef _X360
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 
 	// NOTE: We could use geometry instancing for drawing the extruded bounding boxes
 }

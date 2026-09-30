@@ -5,11 +5,6 @@
 //=============================================================================//
 
 #include "client_pch.h"
-#ifdef _PS3
-void CL_CreateTextureListPanel( vgui::Panel * ) {}
-void CL_TextureListPanel_ClearState() {}
-void VGui_UpdateTextureListPanel() {}
-#else
 #include "ivideomode.h"
 #include "client_class.h"
 #include "icliententitylist.h"
@@ -66,14 +61,6 @@ void VGui_UpdateTextureListPanel() {}
 #define KEYNAME_TEXTURE_GROUP	"TexGroup"
 
 #define COPYTOCLIPBOARD_CMDNAME "CopyToClipboard"
-
-#if defined( _X360 )
-CON_COMMAND( mat_get_textures, "VXConsole command" )
-{
-	g_pMaterialSystemDebugTextureInfo->EnableDebugTextureList( true );
-	g_pMaterialSystemDebugTextureInfo->EnableGetAllTextures( args.ArgC() >= 2 && ( Q_stricmp( args[1], "all" ) == 0 ) );
-}
-#endif
 
 static ConVar mat_texture_list( "mat_texture_list", "0", FCVAR_CHEAT, "For debugging, show a list of used textures per frame" );
 
@@ -3057,4 +3044,3 @@ void mat_texture_list_off_f()
 	s_eTxListPanelRequest = TXR_HIDE;
 }
 
-#endif

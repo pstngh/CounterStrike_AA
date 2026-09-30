@@ -35,10 +35,6 @@ public:
 
 	virtual bool	Interpolate( float flCurrentTime );
 
-#if defined( _PS3 )
-	virtual void AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &boneSetup, BoneVector pos[], BoneQuaternion q[], float currentTime );
-#endif
-
 
 public:
 	enum

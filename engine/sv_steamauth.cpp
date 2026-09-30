@@ -5,10 +5,8 @@
 //===========================================================================//
 
 #ifdef _WIN32
-#if !defined( _X360 )
 #include "winlite.h"
 #include <winsock2.h> // INADDR_ANY defn
-#endif
 #elif POSIX
 #include <netinet/in.h>
 #endif
@@ -43,14 +41,6 @@ extern EUniverse GetSteamUniverse( void );
 extern ConVar sv_lan;
 extern ConVar sv_region;
 extern ConVar cl_hideserverip;
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -112,12 +102,6 @@ EServerMode CSteam3Server::GetCurrentServerMode()
 	{
 		return eServerModeNoAuthentication;
 	}
-#ifdef _PS3
-	else if ( MAX( XBX_GetNumGameUsers(), 1 ) >= sv.GetMaxClients() ) // PS3 local game
-	{
-		return eServerModeNoAuthentication;
-	}
-#endif
 	else if ( !Host_IsSecureServerAllowed() || CommandLine()->FindParm( "-insecure" ) )
 	{
 		return eServerModeAuthentication;
@@ -233,7 +217,6 @@ void CSteam3Server::Activate()
 		return;
 	}
 	
-#ifndef _X360
 	#if defined( NO_STEAM )
 	m_eServerMode = eServerModeNoAuthentication;
 	sv_lan.SetValue( true );
@@ -257,13 +240,8 @@ void CSteam3Server::Activate()
 			break;
 	}
 
-	#ifdef _PS3
-	extern SteamPS3Params_t g_EngineSteamPS3Params;
-	if ( !SteamGameServer_Init( &g_EngineSteamPS3Params,
-    #else
 	SteamAPI_SetTryCatchCallbacks( false ); // We don't use exceptions, so tell steam not to use try/catch in callback handlers
 	if ( !SteamGameServer_Init(
-	#endif
 				m_unIP, 
 				m_usPort+1,	// Steam lives on -steamport + 1, master server updater lives on -steamport.
 				usGamePort, 
@@ -340,8 +318,6 @@ steam_no_good:
 		// TODO: Change this to use just the token when the SDK is updated
 		SteamGameServer()->LogOn( m_sAccountToken );
 	}
-
-#endif
 
 	NET_SteamDatagramServerListen();
 

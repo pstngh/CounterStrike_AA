@@ -131,9 +131,6 @@ public:
 
 	virtual void SetReplaySoundFade( float flReplayVolume ) = 0;
 	virtual float GetReplaySoundFade()const = 0;
-#if defined( _GAMECONSOLE )
-	virtual void	UnloadSound( const char *pSample ) = 0;
-#endif
 };
 
 

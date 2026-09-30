@@ -11,7 +11,7 @@
 #include "tier0/memdbgon.h"
 #define MENU_SEPARATOR_HEIGHT 3
 
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 //!!BUG!! "wcsnicmp unsupported on PS3"
 #ifdef wcsicmp
 #undef wcsicmp

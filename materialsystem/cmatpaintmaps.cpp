@@ -6,9 +6,7 @@
 
 #include "pch_materialsystem.h"
 
-#ifndef _PS3
 #define MATSYS_INTERNAL
-#endif
 
 #include "cmaterialsystem.h"
 #include "IHardwareConfigInternal.h"
@@ -182,18 +180,7 @@ void CMatPaintmaps::FillRect( int paintmap, Rect_t* RESTRICT pRect, BYTE* RESTRI
 			BYTE paintData = pPaintData[index + s + pRect->x];
 			const Color &color = GetColor( paintData );
 			float alpha = GetAlpha( paintData );
-#ifndef _PS3
 			m_PaintmapPixelWriter.WritePixel( color.r(), color.g(), color.b(), alpha * 255 );
-#else // is PS3
-			Assert( m_PaintmapPixelWriter.IsUsing16BitFloatFormat() );
-			m_PaintmapPixelWriter.WritePixelNoAdvance16F( 
-				(float)color.r() / 255.0f, 
-				(float)color.g() / 255.0f, 
-				(float)color.b() / 255.0f,
-				alpha );
-			m_PaintmapPixelWriter.SkipPixels(1);
-				
-#endif
 		}
 	}
 }
@@ -318,16 +305,7 @@ void CMatPaintmaps::AllocatePaintmapTexture( int paintmap, int iWidth, int iHeig
 	Q_snprintf( debugName, sizeof( debugName ), "[paintmap %d]", paintmap );
 
 	ImageFormat imageFormat;
-#if !defined( _X360 )
 	imageFormat = IMAGE_FORMAT_RGBA8888;
-#else
-	imageFormat = IMAGE_FORMAT_LINEAR_RGBA8888;
-#endif
-
-#ifdef _PS3
-	// PS3 needs 16F textures...but the HDR_TYPE_FLOAT codepath has a lot of other baggage with it.  Just lie here.
-	imageFormat = IMAGE_FORMAT_RGBA16161616F;
-#endif // _PS3
 
 	m_PaintmapTextureHandles[paintmap] = g_pShaderAPI->CreateTexture( 
 		iWidth, iHeight, 1,

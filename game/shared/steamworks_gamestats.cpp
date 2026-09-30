@@ -6,8 +6,6 @@
 
 #include "cbase.h"
 
-#if !defined( _GAMECONSOLE )
-
 #include "cdll_int.h"
 #include "tier2/tier2.h"
 #include <time.h>
@@ -817,4 +815,3 @@ void IGameStatTracker::PrintGamestatMemoryUsage( void )
 	}
 }
 
-#endif

@@ -53,10 +53,6 @@ class CJiggleBones;
 class IBoneSetup;
 class C_BaseAnimatingOverlay;
 
-#if defined( _PS3 )
-class IBoneSetup_PS3;
-#endif
-
 
 FORWARD_DECLARE_HANDLE( memhandle_t );
 typedef unsigned short MDLHandle_t;
@@ -178,16 +174,6 @@ public:
 
 	// model specific
 	virtual bool SetupBones( matrix3x4a_t *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime );
-#if defined( _PS3 )
-	virtual bool StandardBlendingRules_Pass1( CStudioHdr *hdr, float currentTime, int nMaxBones, int boneMask, int bonesMaskNeedRecalc, int oldReadableBones, matrix3x4_t &parentTransform );
-	virtual bool StandardBlendingRules_Pass2( void );
-
-	virtual bool SetupBones_Pass1( float currentTime );
-	virtual bool SetupBones_Pass2( void );
-
-	void MaintainSequenceTransitions_AddPoseCalls( IBoneSetup_PS3 &boneSetup, float flCycle, BoneVector pos[], BoneQuaternion q[] );
-	virtual void AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &boneSetup, BoneVector pos[], BoneQuaternion q[], float currentTime );
-#endif
 
 	virtual void UpdateIKLocks( float currentTime );
 	virtual void CalculateIKLocks( float currentTime );
@@ -476,22 +462,6 @@ public:
 	static void						ShutdownBoneSetupThreadPool();
 	void							MarkForThreadedBoneSetup();
 	static void						SetupBonesOnBaseAnimating( C_BaseAnimating *&pBaseAnimating );
-
-#if defined( _PS3 )
-	void							SaveSetupBones_PS3( void );
-	void							RestoreSetupBones_PS3( void );
-	static int						InitAllPS3BoneJobs( int nCount );
-
-	void							PS3BoneJob_PreInit( void );
-	void							PS3BoneJob_Start( float currentTime );
-	void							PS3BoneJob_End( void );
-	void							PS3BoneJob_Run( CStudioHdr *hdr, float currentTime, float fCycle, int nMaxBones, int boneMask, int bonesMaskNeedRecalc, int oldReadableBones, matrix3x4_t &parentTransform, float* poseparam );
-	void							PS3BoneJob_WaitForFinish( void );
-	void							PS3BoneJob_RestartPPU( void );
-
-	static void						ThreadedBoneSetup_PS3( int nCount );
-	static int						SetupBonesOnBaseAnimating_PS3( C_BaseAnimating *&pBaseAnimating, int nGen );
-#endif
 
 	// Invalidate bone caches so all SetupBones() calls force bone transforms to be regenerated.
 	static void						InvalidateBoneCaches();
@@ -814,21 +784,6 @@ private:
 #endif
 
 
-#if defined( _PS3 )
-	int								m_iPS3BoneJob_ID;			// index into bone job data, -1 => not running 
-	int								m_iPS3BoneJob_DependantID;	// id of job that must complete before me
-	int								m_iPS3BoneJob_Gen;			// generation (for sorting)
-	int								m_iPS3BoneJob_Port;			// for syncing SPU jobs
-
-	// SAVE DATA, used to reset C_BaseAnimating so we can run again
-	unsigned long					m_iMostRecentModelBoneCounter_SAVE;
-	unsigned long					m_iMostRecentBoneSetupRequest_SAVE;
-	int								m_iPrevBoneMask_SAVE;
-	int								m_iAccumulatedBoneMask_SAVE;
-	int								m_iOldReadableBones_SAVE;
-	int								m_iOldWriteableBones_SAVE;
-	float							m_flLastBoneSetupTime_SAVE;
-#endif
 	friend class C_BaseAnimatingOverlay;
 };
 
@@ -959,11 +914,9 @@ inline float C_BaseAnimating::GetCycle() const
 inline CStudioHdr *C_BaseAnimating::GetModelPtr() const
 { 
 #ifdef _DEBUG
-#ifndef _GAMECONSOLE
 	// Consoles don't need to lock the modeldata cache since it never flushes
 	static IDataCacheSection *pModelCache = g_pDataCache->FindSection( "ModelData" );
 	AssertOnce( pModelCache->IsFrameLocking() );
-#endif
 #endif
 	// GetModelPtr() is often called before OnNewModel() so go ahead and set it up first chance.
 	if ( !m_pStudioHdr && GetModel() )

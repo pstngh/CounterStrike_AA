@@ -55,9 +55,7 @@
 
 #ifdef POSIX
 
-#ifndef _PS3
 #include <iconv.h>
-#endif // _PS3
 
 #include <ctype.h>
 #include <unistd.h>
@@ -67,10 +65,8 @@
 #define _strtoui64 strtoull
 #elif _WIN32
 #include <direct.h>
-#if !defined( _X360 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 #endif
 
 #ifdef _WIN32
@@ -86,13 +82,6 @@
 #include "tier1/characterset.h"
 #include "tier1/utlstring.h"
 #include "tier1/fmtstr.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#elif defined( _PS3 )
-#include "ps3_pathinfo.h"
-#include <cell/l10n.h> // for UCS-2 to UTF-8 conversion
-#endif
 
 #include "tier0/vprof.h"
 #include "tier0/memdbgon.h"
@@ -344,11 +333,7 @@ int	_V_stricmp_NegativeForUnequal( const char *s1, const char *s2 )
 
 char *_V_strstr( const char *s1, const char *search )
 {
-#if defined( _X360 )
-	return (char *)strstr( (char *)s1, search );
-#else
 	return (char *)strstr( s1, search );
-#endif
 }
 
 char *_V_strupr( char *start )
@@ -1439,7 +1424,7 @@ int _V_UCS2ToUnicode( const ucs2 *pUCS2, wchar_t *pUnicode, int cubDestSizeInByt
 int _V_UnicodeToUCS2( const wchar_t *pUnicode, int cubSrcInBytes, char *pUCS2, int cubDestSizeInBytes )
 {
 	 // TODO: MACMERGE: Figure out how to convert from 2-byte Win32 wchars to platform wchar_t type that can be 4 bytes
-#if defined( _WIN32 ) || defined( _PS3 )
+#if defined( _WIN32 )
 	// Figure out which buffer is smaller and convert from bytes to character
 	// counts.
 	int cchResult = MIN(cubSrcInBytes/sizeof(wchar_t), cubDestSizeInBytes/sizeof(wchar_t) );
@@ -1514,9 +1499,6 @@ int _V_UTF8ToUCS2( const char *pUTF8, int cubSrcInBytes, ucs2 *pUCS2, int cubDes
 #ifdef _WIN32
 	// under win32 wchar_t == ucs2, sigh
 	int cchResult = MultiByteToWideChar( CP_UTF8, 0, pUTF8, -1, pUCS2, cubDestSizeInBytes / sizeof(wchar_t) );
-#elif defined( _PS3 ) // bugbug JLB
-	int cchResult = 0;
-	Assert( 0 );
 #elif defined(POSIX)
 	iconv_t conv_t = iconv_open( "UCS-2LE", "UTF-8" );
 	size_t cchResult = -1;
@@ -2268,16 +2250,10 @@ V_MakeAbsolutePath( char *pOut, int outLen, const char *pPath, const char *pStar
 		}
 		else
 		{
-#ifdef _PS3 
-			{
-				V_strncpy( pOut, g_pPS3PathInfo->GameImagePath(), outLen );
-			}
-#else
 			{
 				if ( !_getcwd( pOut, outLen ) )
 					Plat_FatalError( "V_MakeAbsolutePath: _getcwd failed." );
 			}
-#endif
 
 			if ( pStartingDir )
 			{
@@ -2732,23 +2708,13 @@ void V_SplitWString( const wchar_t *pString, const wchar_t *pSeparator, CUtlVect
 
 bool V_GetCurrentDirectory( char *pOut, int maxLen )
 {
-#if defined( _PS3 )
-	Assert( 0 );
-	return false; // not supported
-#else // !_PS3
     return _getcwd( pOut, maxLen ) == pOut;
-#endif // _PS3
 }
 
 
 bool V_SetCurrentDirectory( const char *pDirName )
 {
-#if defined( _PS3 )
-	Assert( 0 );
-	return false; // not supported
-#else // !_PS3
     return _chdir( pDirName ) == 0;
-#endif // _PS3
 }
 
 
@@ -3413,7 +3379,7 @@ bool AsianWordWrap::CanBreakRepeated( wchar_t wcCandidate )
 	return true;
 }
 
-#if defined( _PS3 ) || defined( LINUX )
+#if defined( LINUX )
 inline int __cdecl iswascii(wchar_t c) { return ((unsigned)(c) < 0x80); } // not defined in wctype.h on the PS3
 #endif
 
@@ -3749,7 +3715,7 @@ size_t Q_URLDecodeRaw( char *pchDecodeDest, int nDecodeDestLen, const char *pchE
 	return Q_URLDecodeInternal( pchDecodeDest, nDecodeDestLen, pchEncodedSource, nEncodedSourceLen, false );
 }
 
-#if defined( LINUX ) || defined( _PS3 )
+#if defined( LINUX )
 extern "C" void qsort_s( void *base, size_t num, size_t width, int (*compare )(void *, const void *, const void *), void * context );
 #endif
 

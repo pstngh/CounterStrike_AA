@@ -100,10 +100,6 @@ public:
 	// well after ICVar, so we can't use the standard connect pattern
 	virtual void			InstallCVarQuery( ICvarQuery *pQuery ) = 0;
 
-#if defined( USE_VXCONSOLE )
-	virtual void			PublishToVXConsole( ) = 0;
-#endif
-
 	virtual void			SetMaxSplitScreenSlots( int nSlots ) = 0;
 	virtual int				GetMaxSplitScreenSlots() const = 0;
 

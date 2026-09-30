@@ -34,12 +34,6 @@
 #pragma once
 #endif
 
-#ifdef _PS3
-#include "tls_ps3.h"
-inline IMatRenderContextInternal *& Ps3TlsMaterialSystemRenderContextFn() { void **ppv = &( GetTLSGlobals()->pMaterialSystemRenderContext ); return *( IMatRenderContextInternal ** ) ppv; }
-#define Ps3TlsMaterialSystemRenderContext Ps3TlsMaterialSystemRenderContextFn()
-#endif
-
 //-----------------------------------------------------------------------------
 
 class CJob;
@@ -148,16 +142,8 @@ public:
 	IMatRenderContext *						CreateRenderContext( MaterialContextType_t type );
 	IMatRenderContext *						SetRenderContext( IMatRenderContext * );
 
-#ifdef _PS3
-	const IMatRenderContextInternal *		GetRenderContextInternal() const	{ IMatRenderContextInternal *pRenderContext = Ps3TlsMaterialSystemRenderContext; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
-	IMatRenderContextInternal *				GetRenderContextInternal()			{ IMatRenderContextInternal *pRenderContext = Ps3TlsMaterialSystemRenderContext; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
-#elif defined(_X360)
-	const IMatRenderContextInternal *		GetRenderContextInternal() const	{ IMatRenderContextInternal *pRenderContext = m_pRenderContexts[(int)ThreadInMainThread()]; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
-	IMatRenderContextInternal *				GetRenderContextInternal()			{ IMatRenderContextInternal *pRenderContext = m_pRenderContexts[(int)ThreadInMainThread()]; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
-#else
 	const IMatRenderContextInternal *		GetRenderContextInternal() const	{ IMatRenderContextInternal *pRenderContext = m_pRenderContext; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
 	IMatRenderContextInternal *				GetRenderContextInternal()			{ IMatRenderContextInternal *pRenderContext = m_pRenderContext; return ( pRenderContext ) ? pRenderContext : &m_HardwareRenderContext; }
-#endif
 
 	const CMaterialDict *					GetMaterialDict() const		{ return &m_MaterialDict; }
 	CMaterialDict *							GetMaterialDict()			{ return &m_MaterialDict; }
@@ -472,24 +458,6 @@ public:
    	virtual ICustomMaterialManager			*GetCustomMaterialManager();
 	virtual ICompositeTextureGenerator		*GetCompositeTextureGenerator();
 
-#if defined( _X360 )
-
-	// Create a texture for displaying gamerpics.
-	// This function allocates the texture in the correct gamerpic format, but it does not fill in the gamerpic data.
-	virtual ITexture *						CreateGamerpicTexture( const char *pTextureName,
-																   const char *pTextureGroupName,
-																   int nFlags );
-
-	// Update the given texture with the player gamerpic for the local player at the given index.
-	// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-	virtual bool							UpdateLocalGamerpicTexture( ITexture *pTexture, DWORD userIndex );
-
-	// Update the given texture with a remote player's gamerpic.
-	// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-	virtual bool							UpdateRemoteGamerpicTexture( ITexture *pTexture, XUID xuid );
-
-#endif // _X360
-
 	//
 	// Render targets
 	//
@@ -640,45 +608,10 @@ public:
 	DELEGATE_TO_OBJECT_0( MorphFormat_t,	GetBoundMorphFormat, &m_HardwareRenderContext );
 	DELEGATE_TO_OBJECT_1( ITexture *,		GetRenderTargetEx, int, &m_HardwareRenderContext );
 	DELEGATE_TO_OBJECT_7V(					DrawClearBufferQuad, unsigned char, unsigned char, unsigned char, unsigned char, bool, bool, bool, &m_HardwareRenderContext );
-#if defined( _PS3 )
-	DELEGATE_TO_OBJECT_0V(					DrawReloadZcullQuad, &m_HardwareRenderContext );
-#endif // _PS3
 	DELEGATE_TO_OBJECT_0C( int,				MaxHWMorphBatchCount, g_pMorphMgr );
 	DELEGATE_TO_OBJECT_1V(					GetCurrentColorCorrection, ShaderColorCorrectionInfo_t*, g_pColorCorrectionSystem );
 	virtual ShaderAPITextureHandle_t		GetShaderAPITextureBindHandle( ITexture *pTexture, int nFrameVar, int nTextureChannel = 0 );
 
-#if defined( _X360 )
-	void									ListUsedMaterials();
-	HXUIFONT								OpenTrueTypeFont( const char *pFontname, int tall, int style );
-	void									CloseTrueTypeFont( HXUIFONT hFont );
-	bool									GetTrueTypeFontMetrics( HXUIFONT hFont, wchar_t wchFirst, wchar_t wchLast, XUIFontMetrics *pFontMetrics, XUICharMetrics *pCharMetrics );
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	bool									GetTrueTypeGlyphs( HXUIFONT hFont, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pOffset );
-	void									ReadBackBuffer( Rect_t *pSrcRect, Rect_t *pDstRect, unsigned char *pData, ImageFormat dstFormat, int nDstStride );
-	void									PersistDisplay();
-	void									*GetD3DDevice();
-	bool									OwnGPUResources( bool bEnable );
-#elif defined( _PS3 )
-	void									ListUsedMaterials();
-	virtual HPS3FONT						OpenTrueTypeFont( const char *pFontname, int tall, int style );
-	virtual void							CloseTrueTypeFont( HPS3FONT hFont );
-	virtual bool							GetTrueTypeFontMetrics( HPS3FONT hFont, int nFallbackTall, wchar_t wchFirst, wchar_t wchLast, CPS3FontMetrics *pFontMetrics, CPS3CharMetrics *pCharMetrics );
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	virtual bool							GetTrueTypeGlyphs( HPS3FONT hFont, int nFallbackTall, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset );
-	virtual void TransmitScreenshotToVX();
-	virtual void CompactRsxLocalMemory( char const *szReason );
-	virtual void SetFlipPresentFrequency( int nNumVBlanks );
-
-	static  void RunQMS(void* cmat, void* ptr)
-	{
-		((CMaterialSystem*)cmat)->ThreadExecuteQueuedContext((CMatQueuedRenderContext *)ptr);
-	}
-
-#endif
 	virtual void SpinPresent( uint nFrames );
 
 	MaterialLock_t							Lock();
@@ -706,10 +639,6 @@ private:
 	CON_COMMAND_MEMBER_F( CMaterialSystem, "mat_reloadtextures", ReloadTextures, "Reloads all textures", FCVAR_CHEAT );
 	CON_COMMAND_MEMBER_F( CMaterialSystem, "mat_showaspectratioinfo", DebugPrintAspectRatioInfo, "Spew info about the hardware aspect ratio", FCVAR_DEVELOPMENTONLY );
 
-#if defined( _X360 ) || defined(_PS3)
-	CON_COMMAND_MEMBER_F( CMaterialSystem, "mat_material_list", ListUsedMaterials, "Show used textures.", 0 );
-#endif
-
 	friend void* InstantiateMaterialSystemV76Interface();
 	friend CMaterialSystem *CMatLightmaps::GetMaterialSystem() const;
 	friend CMaterialSystem *CMatPaintmaps::GetMaterialSystem() const;
@@ -719,7 +648,7 @@ private:
 	IThreadPool * CreateMatQueueThreadPool();
 	void DestroyMatQueueThreadPool();
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	void									DoStartupShaderPreloading( void );
 #endif
 	
@@ -733,11 +662,7 @@ private:
 	CMatPaintmaps							m_Paintmaps;
 
 
-#if defined(_X360)
-	static IMatRenderContextInternal *CMaterialSystem::m_pRenderContexts[2];
-#elif !defined(_PS3)
 	static CTHREADLOCALPTR(IMatRenderContextInternal) m_pRenderContext;
-#endif
 	CMatRenderContext						m_HardwareRenderContext;
 
 	CMatQueuedRenderContext					m_QueuedRenderContexts[2];
@@ -873,28 +798,12 @@ private:
 	uint									m_ThreadOwnershipID;
 #endif	
 
-#ifndef _PS3
 	CJob *									m_pActiveAsyncJob;
-#else
-	bool									m_bQMSJobSubmitted;
-#endif
 	CUtlVector<uint32>						m_threadEvents;
 
 	IThreadPool *							m_pMatQueueThreadPool;
 
-#if defined(_PS3)	// some PS3-specific font info (hey, it was either do this or have a pointer to a pimpl struct)
-	CUtlVector< HPS3FONT > m_vExtantFonts; // used to catch leaks -- can't store a vector of the CellFonts directly bc the handle is a pointer and can't store pointers into a vector
-	void InitializePS3Fonts();
-	enum { kPS3_DEFAULT_MAX_USER_FONTS = 256 };
-public:
-	virtual bool PS3InitFontLibrary( unsigned fontFileCacheSizeInBytes, unsigned maxNumFonts );
-	virtual void PS3DumpFontLibrary();
-	virtual void *PS3GetFontLibPtr();
-
-protected:
-#else
 	inline void InitializePS3Fonts(){};
-#endif
 };
 
 

@@ -207,15 +207,7 @@ void CalcBoneQuaternion( int frame, float s,
 			AngleQuaternion( angle1, q1 );
 			AngleQuaternion( angle2, q2 );
 
-	#ifdef _X360
-			fltx4 q1simd, q2simd, qsimd;
-			q1simd = LoadAlignedSIMD( q1 );
-			q2simd = LoadAlignedSIMD( q2 );
-			qsimd = QuaternionBlendSIMD( q1simd, q2simd, s );
-			StoreUnalignedSIMD( q.Base(), qsimd );
-	#else
 			QuaternionBlend( q1, q2, s, q );
-	#endif
 		}
 		else
 		{
@@ -664,131 +656,6 @@ static void CalcZeroframeData( const CStudioHdr *pStudioHdr, const studiohdr_t *
 inline byte *ExtractTwoFrames( byte flags, float s, byte *RESTRICT pFrameData, byte *&pConstantData, int framelength, BoneQuaternion &q, BoneVector &pos, bool bIsDelta = false, const mstudiolinearbone_t *pLinearBones = NULL, int bone = 0 )
 {
 	BONE_PROFILE_FUNC();
-#ifdef _GAMECONSOLE
-	if (flags & STUDIO_FRAME_ANIM_ROT)
-	{
-		fltx4 q1 = UnpackQuaternion48SIMD( (Quaternion48 *)(pFrameData) );
-		fltx4 q2 = UnpackQuaternion48SIMD( (Quaternion48 *)(pFrameData + framelength) );
-		
-		fltx4 qBlend = QuaternionBlendSIMD( q1, q2, s );
-		StoreAlignedSIMD( (QuaternionAligned*)&q, qBlend );
-		pFrameData += sizeof( Quaternion48 );
-	}
-	else if (flags & STUDIO_FRAME_ANIM_ROT2)
-	{
-		if ( false ) // slow/naive 
-		{
-			Quaternion q1;
-			Quaternion q2;
-			q1 = *((Quaternion48S *)(pFrameData));
-			q2 = *((Quaternion48S *)(pFrameData + framelength));
-			QuaternionBlend( q1, q2, s, q );
-			Assert( q.IsValid() );
-			pFrameData += sizeof( Quaternion48S );
-		}
-		else // simd
-		{
-			fltx4 q1;
-			fltx4 q2;
-			q1 = *((Quaternion48S *)(pFrameData));
-			q2 = *((Quaternion48S *)(pFrameData + framelength));
-			StoreUnalignedSIMD( q.Base(), QuaternionBlendSIMD( q1, q2, s ) );
-			Assert( q.IsValid() );
-			pFrameData += sizeof( Quaternion48S );
-		}
-	}
-	else if (flags & STUDIO_FRAME_CONST_ROT)
-	{
-		fltx4 flt = UnpackQuaternion48SIMD( (Quaternion48 *)(pConstantData) );
-		
-		StoreAlignedSIMD( (QuaternionAligned*)&q, flt );
-		
-		pConstantData += sizeof( Quaternion48 );
-	}
-	else if (flags & STUDIO_FRAME_CONST_ROT2)
-	{
-		if ( false )  // slow/naive 
-		{
-			q = *((Quaternion48S *)(pConstantData));
-			Assert( q.IsValid() );
-			pConstantData += sizeof( Quaternion48S );
-		}
-		else
-		{
-			// q = *((Quaternion48S *)(pConstantData));
-			StoreUnalignedSIMD(  q.Base(), (fltx4) *((Quaternion48S *)(pConstantData)) );
-			Assert( q.IsValid() );
-			pConstantData += sizeof( Quaternion48S );
-		}
-	}
-	// the non-virtual version needs initializers for no-animation
-	else if (pLinearBones)
-	{
-		if (bIsDelta)
-		{
-			q.Init( 0.0f, 0.0f, 0.0f, 1.0f );
-		}
-		else
-		{
-			q = pLinearBones->quat( bone );
-		}
-	}
-	if (flags & STUDIO_FRAME_ANIM_POS)
-	{
-		fltx4 p1 = UnpackVector48SIMD( (Vector48 *)(pFrameData) );
-		fltx4 p2 = UnpackVector48SIMD( (Vector48 *)(pFrameData + framelength) );
-		fltx4 f2 = ReplicateX4( s );
-		fltx4 f1 = SubSIMD( Four_Ones, f2 );
-
-		p2 = MulSIMD( p2, f2 );
-		p1 = MaddSIMD( p1, f1, p2 );
-		StoreUnaligned3SIMD( pos.Base(), p1 );
-
-		pFrameData += sizeof( Vector48 );
-	}
-	else if (flags & STUDIO_FRAME_CONST_POS)
-	{
-		fltx4 flt = UnpackVector48SIMD( (Vector48 *)(pConstantData) );
-		
-		StoreUnaligned3SIMD( pos.Base(), flt );
-		
-		pConstantData += sizeof( Vector48 );
-	}
-	else if (flags & STUDIO_FRAME_ANIM_POS2)
-	{
-		fltx4 p1 = LoadUnaligned3SIMD( (float *)(pFrameData) );
-		fltx4 p2 = LoadUnaligned3SIMD( (float *)(pFrameData + framelength) );
-		fltx4 f2 = ReplicateX4( s );
-		fltx4 f1 = SubSIMD( Four_Ones, f2 );
-
-		p2 = MulSIMD( p2, f2 );
-		p1 = MaddSIMD( p1, f1, p2 );
-		StoreUnaligned3SIMD( pos.Base(), p1 );
-
-		pFrameData += sizeof( Vector );
-	}
-	else if (flags & STUDIO_FRAME_CONST_POS2)
-	{
-		fltx4 flt = LoadUnaligned3SIMD( (float *)(pConstantData) );
-
-		StoreUnaligned3SIMD( pos.Base(), flt );
-
-		pConstantData += sizeof( Vector );
-	}
-	// the non-virtual version needs initializers for no-animation
-	else if (pLinearBones)
-	{
-		if (bIsDelta)
-		{
-			pos.Init( 0.0f, 0.0f, 0.0f );
-		}
-		else
-		{
-			pos = pLinearBones->pos( bone );
-		}
-	}
-
-#else
 	Quaternion q1, q2;
 	// Making these aligned.  Could be VectorAligned instead, but I don't want to change the behavior of this code.
 	ALIGN16 Vector p1;
@@ -876,7 +743,6 @@ inline byte *ExtractTwoFrames( byte flags, float s, byte *RESTRICT pFrameData, b
 			pos = pLinearBones->pos( bone );
 		}
 	}
-#endif
 	return pFrameData;
 }
 
@@ -887,114 +753,6 @@ inline byte *ExtractTwoFrames( byte flags, float s, byte *RESTRICT pFrameData, b
 inline byte *ExtractSingleFrame( byte flags, byte *pFrameData, byte *&pConstantData, BoneQuaternion &q, BoneVector &pos, bool bIsDelta = false, const mstudiolinearbone_t *pLinearBones = NULL, int bone = 0 )
 {
 	BONE_PROFILE_FUNC();
-#ifdef _GAMECONSOLE
-	if (flags & STUDIO_FRAME_ANIM_ROT)
-	{
-		fltx4 flt = UnpackQuaternion48SIMD( (Quaternion48 *)(pFrameData) );
-		
-		StoreAlignedSIMD( (QuaternionAligned*)&q, flt );
-		// FIXME: If this path needs to work on PS3, this might be the right line to replace the 360-specific code above.
-//		StoreAlignedSIMD( ( QuaternionAligned * )&q, flt );
-		
-		pFrameData += sizeof( Quaternion48 );
-	}
-	else if (flags & STUDIO_FRAME_ANIM_ROT2)
-	{
-		if ( false )  // slow/naive 
-		{
-			q = *((Quaternion48S *)(pFrameData));
-			Assert( q.IsValid() );
-			pFrameData += sizeof( Quaternion48S );
-		}
-		else
-		{
-			StoreUnalignedSIMD(  q.Base(), (fltx4) *((Quaternion48S *)(pFrameData)) );
-			Assert( q.IsValid() );
-		Assert( QuaternionsAreEqual( q, (Quaternion) *((Quaternion48S *)(pFrameData)), 0.001f ) );
-			pFrameData += sizeof( Quaternion48S );
-		}
-	}
-	else if (flags & STUDIO_FRAME_CONST_ROT)
-	{
-		fltx4 flt = UnpackQuaternion48SIMD( (Quaternion48 *)(pConstantData) );
-		
-		StoreAlignedSIMD( (QuaternionAligned*)&q, flt );
-		// FIXME: If this path needs to work on PS3, this might be the right line to replace the 360-specific code above.
-//		StoreAlignedSIMD( ( QuaternionAligned * )&q, flt );
-		
-		pConstantData += sizeof( Quaternion48 );
-	}
-	else if (flags & STUDIO_FRAME_CONST_ROT2)
-	{
-		if ( false )  // slow/naive 
-		{
-			q = *((Quaternion48S *)(pConstantData));
-			Assert( q.IsValid() );
-			pConstantData += sizeof( Quaternion48S );
-		}
-		else
-		{
-			StoreUnalignedSIMD(  q.Base(), (fltx4) *((Quaternion48S *)(pConstantData)) );
-			Assert( q.IsValid() );
-		Assert( QuaternionsAreEqual( q, (Quaternion) *((Quaternion48S *)(pConstantData)), 0.001f ) );
-			pConstantData += sizeof( Quaternion48S );
-		}
-	}
-	// the non-virtual version needs initializers for no-animation
-	else if (pLinearBones)
-	{
-		if (bIsDelta)
-		{
-			q.Init( 0.0f, 0.0f, 0.0f, 1.0f );
-		}
-		else
-		{
-			q = pLinearBones->quat( bone );
-		}
-	}
-	if (flags & STUDIO_FRAME_ANIM_POS)
-	{
-		fltx4 flt = UnpackVector48SIMD( (Vector48 *)(pFrameData) );
-		
-		StoreUnaligned3SIMD( pos.Base(), flt );
-		
-		pFrameData += sizeof( Vector48 );
-	}
-	else if (flags & STUDIO_FRAME_CONST_POS)
-	{
-		fltx4 flt = UnpackVector48SIMD( (Vector48 *)(pConstantData) );
-		
-		StoreUnaligned3SIMD( pos.Base(), flt );
-		
-		pConstantData += sizeof( Vector48 );
-	}
-	else if (flags & STUDIO_FRAME_ANIM_POS2)
-	{
-		fltx4 flt = LoadUnaligned3SIMD( (float *)(pFrameData) );
-		StoreUnaligned3SIMD( pos.Base(), flt );
-
-		pFrameData += sizeof( Vector );
-	}
-	else if (flags & STUDIO_FRAME_CONST_POS2)
-	{
-		fltx4 flt = LoadUnaligned3SIMD( (float *)(pConstantData) );
-		StoreUnaligned3SIMD( pos.Base(), flt );
-
-		pConstantData += sizeof( Vector );
-	}
-	// the non-virtual version needs initializers for no-animation
-	else if (pLinearBones)
-	{
-		if (bIsDelta)
-		{
-			pos.Init( 0.0f, 0.0f, 0.0f );
-		}
-		else
-		{
-			pos = pLinearBones->pos( bone );
-		}
-	}
-#else
 	if (flags & STUDIO_FRAME_ANIM_ROT)
 	{
 		q = *((Quaternion48 *)(pFrameData));
@@ -1069,7 +827,6 @@ inline byte *ExtractSingleFrame( byte flags, byte *pFrameData, byte *&pConstantD
 			pos = pLinearBones->pos( bone );
 		}
 	}
-#endif
 
 	return pFrameData;
 }
@@ -1239,11 +996,9 @@ static void CalcVirtualAnimation( virtualmodel_t *pVModel, const CStudioHdr *pSt
 
 #if _DEBUG
 	extern IDataCache *g_pDataCache;
-#ifndef _GAMECONSOLE
 	// Consoles don't need to lock the modeldata cache since it never flushes
 	static IDataCacheSection *pModelCache = g_pDataCache->FindSection( "ModelData" );
 	AssertOnce( pModelCache->IsFrameLocking() );
-#endif
 	static IDataCacheSection *pAnimblockCache = g_pDataCache->FindSection( "AnimBlock" );
 	AssertOnce( pAnimblockCache->IsFrameLocking() );
 #endif
@@ -1479,11 +1234,9 @@ void CalcAnimation( const CStudioHdr *pStudioHdr, BoneVector *pos, BoneQuaternio
 
 #if _DEBUG
 	extern IDataCache *g_pDataCache;
-#ifndef _GAMECONSOLE
 	// Consoles don't need to lock the modeldata cache since it never flushes
 	static IDataCacheSection *pModelCache = g_pDataCache->FindSection( "ModelData" );
 	AssertOnce( pModelCache->IsFrameLocking() );
-#endif
 	static IDataCacheSection *pAnimblockCache = g_pDataCache->FindSection( "AnimBlock" );
 	AssertOnce( pAnimblockCache->IsFrameLocking() );
 #endif

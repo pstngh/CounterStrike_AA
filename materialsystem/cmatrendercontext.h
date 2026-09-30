@@ -46,11 +46,7 @@ class CMatCallQueue;
 //-----------------------------------------------------------------------------
 // Render targets
 //-----------------------------------------------------------------------------
-#if !defined( _X360 ) && !defined( _PS3 )
 #define MAX_RENDER_TARGETS 4
-#else
-#define MAX_RENDER_TARGETS 1
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -276,9 +272,6 @@ protected:
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-#if defined( _PS3 )
-#define g_pShaderAPI ShaderAPI()
-#endif
 
 class CMatRenderContext : public CMatRenderContextBase
 {
@@ -493,10 +486,6 @@ public:
 	void									PushScissorRect( const int nLeft, const int nTop, const int nRight, const int nBottom );
 	void									PopScissorRect();
 	
-#if defined( _GAMECONSOLE )
-	void BeginConsoleZPass( const WorldListIndicesInfo_t &indicesInfo ){ BeginConsoleZPass2( indicesInfo.m_nTotalIndices ); }
-#endif
-
 	// Creates/destroys morph data associated w/ a particular material
 	IMorph *								CreateMorph( MorphFormat_t format, const char *pDebugName );
 	void									DestroyMorph( IMorph *pMorph );
@@ -531,9 +520,6 @@ public:
 	void									GetLightmapDimensions( int *w, int *h );
 
 	void									DrawClearBufferQuad( unsigned char r, unsigned char g, unsigned char b, unsigned char a, bool bClearColor, bool bClearAlpha, bool bClearDepth );
-#ifdef _PS3
-	void									DrawReloadZcullQuad();
-#endif // _PS3
 
 	void									UpdateHeightClipUserClipPlane( void );
 
@@ -615,20 +601,6 @@ public:
 
 	virtual void							SetFullScreenDepthTextureValidityFlag( bool bIsValid );
 
-#if defined( _X360 )
-	DELEGATE_TO_OBJECT_1V(                  PushVertexShaderGPRAllocation, int, g_pShaderAPI );
-	DELEGATE_TO_OBJECT_0V(                  PopVertexShaderGPRAllocation, g_pShaderAPI );
-	DELEGATE_TO_OBJECT_0V(                  FlushHiStencil, g_pShaderAPI );
-#endif
-
-#if defined( _GAMECONSOLE )
-	DELEGATE_TO_OBJECT_1V(                  BeginConsoleZPass2, int, g_pShaderAPI );
-	DELEGATE_TO_OBJECT_0V(                  EndConsoleZPass, g_pShaderAPI );
-#endif
-
-#if defined( _PS3 )
-	DELEGATE_TO_OBJECT_0V(					FlushTextureCache, g_pShaderAPI );
-#endif
 	DELEGATE_TO_OBJECT_1V(					AntiAliasingHint, int, g_pShaderAPI );
 
 	// A special path used to tick the front buffer while loading on the 360
@@ -655,7 +627,7 @@ public:
 	virtual void							PrintfVA( char *fmt, va_list vargs );;
 	virtual float							Knob( char *knobname, float *setvalue=NULL );	
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	void									DoStartupShaderPreloading( void );
 #endif
 
@@ -828,9 +800,7 @@ inline IMesh* CMatRenderContext::CreateStaticMesh( VertexFormat_t vertexFormat, 
 
 inline void CMatRenderContext::SyncToken( const char *pToken )
 {
-#if !defined( _PS3 )
 	if ( g_pShaderAPI )
-#endif
 	{
 		g_pShaderAPI->SyncToken( pToken );
 	}
@@ -850,10 +820,6 @@ inline CMaterialSystem *CMatRenderContext::GetMaterialSystem() const
 {
 	return m_pMaterialSystem;
 }
-
-#if defined( _PS3 )
-#undef g_pShaderAPI
-#endif
 
 //-----------------------------------------------------------------------------
 

@@ -9,9 +9,7 @@
 //
 //===========================================================================//
 
-#ifndef _PS3
 #include <memory.h>
-#endif
 
 #include "tier0/vprof.h"
 #include "tier0/icommandline.h"
@@ -58,11 +56,7 @@
 #define MdlCacheMsg		if ( !LogMdlCache() ) ; else Msg
 #define MdlCacheWarning if ( !LogMdlCache() ) ; else Warning
 
-#if defined( _X360 )
-#define AsyncMdlCache() 0	// Explicitly !!!OFF!!! for 360 (incompatible), specific compatible resources opt in individually.
-#else
 #define AsyncMdlCache() 0
-#endif
 
 #define ERROR_MODEL		"models/error.mdl"
 #define IDSTUDIOHEADER	(('T'<<24)+('S'<<16)+('D'<<8)+'I')

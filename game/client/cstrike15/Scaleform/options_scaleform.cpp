@@ -26,9 +26,7 @@
 #include "vgui/ISurface.h"
 #include "platforminputdevice.h"
 
-#ifndef _GAMECONSOLE
 #include "steam/steam_api.h"
-#endif
 
 #define CSGO_TOTAL_OPTION_SLOTS_PER_SCREEN 20
 
@@ -53,11 +51,7 @@ static const char * s_rgszDialogScripts[] =
 {
 	"scripts/mouse_keyboard_options" PLATFORM_EXT ".txt",		// DIALOG_TYPE_KEYBOARD and DIALOG_TYPE_MOUSE
 	"scripts/controller_options.txt",			// DIALOG_TYPE_CONTROLLER
-#if defined( _X360 ) || defined( _PS3 )
-	"scripts/game_options.consoles.txt", // DIALOG_TYPE_SETTINGS
-#else
 	"scripts/game_options.txt", // DIALOG_TYPE_SETTINGS
-#endif // _X360
 	"scripts/motion_controller_options.txt",				// DIALOG_TYPE_MOTION_CONTROLLER
 	"scripts/motion_controller_move_options.txt",			// DIALOG_TYPE_MOTION_CONTROLLER_MOVE
 	"scripts/motion_controller_sharpshooter_options.txt",	// DIALOG_TYPE_MOTION_CONTROLLER_SHARPSHOOTER
@@ -169,13 +163,6 @@ void COptionsScaleform::LoadDialog( DialogType_e type )
 
 		m_DialogType = type;
 
-#if defined( _PS3 )
-
-		// Load the bindings for the specific device.
-		engine->ExecuteClientCmd( VarArgs( "cl_read_ps3_bindings %d %d", GET_ACTIVE_SPLITSCREEN_SLOT(), GetDeviceFromDialogType( m_DialogType ) ) );
-
-#endif
-
 		// this is a convenient place to make sure scaleform has the correct keybindings
 		g_pScaleformUI->RefreshKeyBindings();
 		g_pScaleformUI->ShowActionNameWhenActionIsNotBound( false );
@@ -218,19 +205,6 @@ void COptionsScaleform::UnloadDialog( void )
 		// Flash elements are removed after hide animation completes
 		m_pInstanceOptions->Hide();
 	}
-
-#if defined( _PS3 )
-	
-	// We need to restore our settings based on our active device since we may have loaded other settings by entering this screen.
-	InputDevice_t currentDevice = g_pInputSystem->GetCurrentInputDevice();
-	// open the message box, but make sure we don't have a selected device and aren't already sampling for a device
-	if( currentDevice != INPUT_DEVICE_NONE  )
-	{
-		// Load the bindings for the specific device.
-		engine->ExecuteClientCmd( VarArgs( "cl_read_ps3_bindings %d %d", GET_ACTIVE_SPLITSCREEN_SLOT(), (int)currentDevice ) );
-	}
-
-#endif // _PS3
 
 }
 
@@ -1624,16 +1598,6 @@ void COptionsScaleform::ResetToDefaults( void )
 		IsMotionControllerDialog() )
 	{
 
-#if defined( _PS3 )
-
-		// Reset the convars etc. related to controllers.  Does NOT reset bindings.
-		engine->ExecuteClientCmd( "exec controller.ps3.cfg"  );
-
-		// Now reset the bindings for the active device.
-		engine->ExecuteClientCmd( VarArgs( "cl_reset_ps3_bindings %d %d", m_iSplitScreenSlot, GetDeviceFromDialogType( m_DialogType ) ) );
-
-#else
-
 		// Reset all bind options with defaults
 		const char * szConfigFile = "cfg/controller" PLATFORM_EXT ".cfg";
 
@@ -1702,8 +1666,6 @@ void COptionsScaleform::ResetToDefaults( void )
 				}
 			}
 		}
-
-#endif // _PS3
 
 	}
 
@@ -1891,7 +1853,7 @@ void COptionsScaleform::GetSafeZoneXMin( SCALEFORM_CALLBACK_ARGS_DECL )
 
 void COptionsScaleform::OnSetupMic( SCALEFORM_CALLBACK_ARGS_DECL )
 {
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( steamapicontext && steamapicontext->SteamFriends() &&
 		steamapicontext->SteamUtils() && steamapicontext->SteamUtils()->IsOverlayEnabled() )
 	{
@@ -2016,13 +1978,6 @@ void COptionsScaleform::OnEvent( KeyValues *kvEvent )
 
 void COptionsScaleform::WriteUserSettings( int iSplitScreenSlot )
 {
-
-#if defined( _PS3 )
-
-	// Save out the current bindings for the active device.
-	engine->ClientCmd_Unrestricted( VarArgs( "cl_write_ps3_bindings %d %d", iSplitScreenSlot, GetDeviceFromDialogType( m_DialogType ) ) );
-
-#endif
 
 	// Save the values to the user's profile.
 	engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", iSplitScreenSlot ) );

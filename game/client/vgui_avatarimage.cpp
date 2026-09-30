@@ -11,15 +11,6 @@
 #include "vgui_avatarimage.h"
 #include "engineinterface.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#endif
-
 #ifndef NO_STEAM
 #include "steam/steam_api.h"
 #endif

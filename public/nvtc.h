@@ -17,7 +17,7 @@
 #ifndef NVTC_H
 #define NVTC_H
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #if _MSC_VER >= 1400
 // This assumes that src\public is somewhere on the path
 // ddraw.h doesn't actually live in the system headers in VS2005.
@@ -40,7 +40,7 @@
 #define _S3TC_ENCODE_ALPHA_MASK			0xff00
 
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 // common encoding types
 //@@@TBD
 

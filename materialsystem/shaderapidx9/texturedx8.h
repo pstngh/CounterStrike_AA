@@ -49,10 +49,6 @@ int GetD3DTextureRefCount( IDirect3DBaseTexture *pTex );
 //-----------------------------------------------------------------------------
 // Texture heap methods
 //-----------------------------------------------------------------------------
-#if defined( _X360 )
-void SetD3DTextureImmobile( IDirect3DBaseTexture *pTex, bool bImmobile );
-void CompactTextureHeap();
-#endif
 
 //-----------------------------------------------------------------------------
 // Stats...
@@ -76,10 +72,6 @@ struct TextureLoadInfo_t
 	ImageFormat					m_SrcFormat;
 	unsigned char				*m_pSrcData;
 
-#if defined( _X360 )
-	bool						m_bSrcIsTiled;			// format may not be, but data could be
-	bool						m_bCanConvertFormat;	// allow format conversion
-#endif
 };
 
 

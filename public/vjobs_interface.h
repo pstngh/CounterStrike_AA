@@ -6,10 +6,6 @@
 
 #define VJOBS_INTERFACE_VERSION "VJobs01"
 
-#ifdef _PS3
-#define VJOBS_ON_SPURS 1
-#endif
-
 enum RunTargetEnum
 {
 	RUN_TARGET_MAIN_CPU,

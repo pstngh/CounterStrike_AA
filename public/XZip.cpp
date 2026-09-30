@@ -104,22 +104,11 @@
 #define STRICT
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#elif !defined(_X360)
+#else
 #define far
 #define near
 #define INVALID_HANDLE_VALUE (void*)-1
 #define _tzset tzset
-#endif
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "basetypes.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#include "tls_ps3.h"
 #endif
 
 #include <time.h>
@@ -127,9 +116,7 @@
 #include <stdarg.h>
 
 #ifdef POSIX
-#ifndef _PS3
 #include <sys/mman.h>
-#endif
 #define _stricmp strcasecmp
 #endif
 
@@ -139,8 +126,6 @@
 
 #ifdef XZIP_NOT_THREAD_SAFE
 static ZRESULT lasterrorZ=ZR_OK;
-#elif defined( _PS3 )
-#define lasterrorZ GetTLSGlobals()->uiEngineZipLastErrorZ
 #elif defined( LINUX )
 static ZRESULT lasterrorZ=ZR_OK;
 #else
@@ -2420,11 +2405,7 @@ ZRESULT TZip::Create(void *z,unsigned int len,DWORD flags)
 				return ZR_NOALLOC;
 			}
 #endif
-#ifdef _PS3
-			obuf = (char*) malloc( len );
-			if (obuf==NULL)
-				return ZR_NOALLOC;
-#elif defined( POSIX )
+#if defined( POSIX )
 			obuf = (char*) calloc( len, 1 );
 			hmapout = (void*)-1; // sentinel to let close know it's a file in posix.
 			if ( !obuf )
@@ -2541,9 +2522,7 @@ ZRESULT TZip::Close()
 #ifdef _WIN32
     UnmapViewOfFile(obuf); 
 #endif
-#ifdef _PS3
-  free( obuf );
-#elif defined( POSIX )
+#if defined( POSIX )
 	free(obuf);
 #endif
   obuf=0;
@@ -2986,9 +2965,7 @@ typedef struct
 
 HZIP CreateZipZ(void *z,unsigned int len,DWORD flags)
 { 
-#ifndef _PS3
 	_tzset();
-#endif
 	TZip *zip = new TZip();
 	lasterrorZ = zip->Create(z,len,flags);
 	if (lasterrorZ != ZR_OK) 

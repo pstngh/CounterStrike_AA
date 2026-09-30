@@ -870,7 +870,7 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 #if defined( _DEBUG )
 #if defined( __clang__ ) 
 	COMPILE_TIME_ASSERT( sizeof( func ) == sizeof( m_pfnThink ) );
-#elif defined( GNUC ) || defined( COMPILER_PS3 ) || defined( PLATFORM_64BITS )
+#elif defined( GNUC ) || defined( PLATFORM_64BITS )
 	//lwss update: newer compilers will make class member pointers 2x the size of a pointer
 	COMPILE_TIME_ASSERT( sizeof(func) == 8 || sizeof(func) == 16 );
 #else
@@ -2124,11 +2124,9 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 	if ( IsPlayer() && flCumulativeDamage > 0.0f )
 	{
-		#ifndef _GAMECONSOLE
 		CTakeDamageInfo dmgInfo( this, pAttacker, flCumulativeDamage, nDamageType );
 		CBasePlayer *pPlayer = static_cast< CBasePlayer * >( this );
 		gamestats->Event_WeaponHit( pPlayer, info.m_bPrimaryAttack, pPlayer->GetActiveWeapon()->GetClassname(), dmgInfo );
-		#endif
 	}
 #endif
 }

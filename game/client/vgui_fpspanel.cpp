@@ -35,10 +35,6 @@ extern unsigned int g_nNumBonesSetupBlendingRulesOnly;
 extern unsigned int g_nNumBonesSetupAll;
 ConVar cl_countbones( "cl_countbones", "0", FCVAR_CHEAT, "" );
 
-#ifdef _GAMECONSOLE
-static ConVar cl_showlowmemory( "cl_showlowmemory", "0", FCVAR_CHEAT, "Set to N to display a warning message if we have less than N MB of free memory (0 disables)." );
-#endif
-
 struct PerfStatRecord
 {
 	float m_lastUpdateTime;
@@ -220,11 +216,7 @@ void CFPSPanel::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
-#if defined( _GAMECONSOLE )
-	m_hFont = pScheme->GetFont( "CloseCaption_Normal" );
-#else
 	m_hFont = pScheme->GetFont( "MenuLarge" );
-#endif
 	Assert( m_hFont );
 
 	ComputeSize();
@@ -254,9 +246,6 @@ bool CFPSPanel::ShouldDraw( void )
 	if ( ( !cl_showfps.GetInt( ) || ( gpGlobals->absoluteframetime <= 0 ) ) && !cl_showpos.GetInt( ) 
 #ifdef CSTRIKE15		 
 		 && !cl_countbones.GetBool()
-#endif
-#ifdef _GAMECONSOLE
-		&& !cl_showlowmemory.GetInt()
 #endif
 	)
 	{
@@ -884,21 +873,6 @@ void CFPSPanel::Paint()
 		}
 	}
 
-
-#ifdef _GAMECONSOLE
-	// Display a warning message if free memory dips below a certain threshold
-	size_t nUsedMem = 0, nFreeMem = 0, nMemoryThreshold = 1024*1024*cl_showlowmemory.GetInt();
-	if ( nMemoryThreshold )
-	{
-		g_pMemAlloc->GlobalMemoryStatus( &nUsedMem, &nFreeMem );
-		if ( nFreeMem < nMemoryThreshold )
-		{
-			i += 2;
-			g_pMatSystemSurface->DrawColoredText(	m_hFont, x, 2 + i * lineHeight, 255, 150, 40, 255,
-													"WARNING: low memory! (%3.1fMB)  Report if seen at a test station...\n", nFreeMem/(float)(1024*1024) );
-		}
-	}
-#endif // _GAMECONSOLE
 
 	if ( m_nLinesNeeded != i )
 	{

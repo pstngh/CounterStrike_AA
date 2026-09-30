@@ -554,15 +554,6 @@ public:
 	virtual void ShowCursor( void ) = 0;
 	virtual void HideCursor( void ) = 0;
 
-#if defined( _PS3 )
-	virtual void PS3UseMoveCursor( void ) = 0;
-	virtual void PS3UseStandardCursor( void ) = 0;
-	virtual void PS3ForceCursorStart( void ) = 0;
-	virtual void PS3ForceCursorEnd( void ) = 0;
-
-
-#endif
-
 	virtual void SetCursorShape( int shapeIndex ) = 0;
 
 	virtual void ForceCollectGarbage( int slot ) = 0;

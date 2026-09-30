@@ -21,14 +21,6 @@ public:
 	virtual ~IHandleEntity() {}
 	virtual void SetRefEHandle( const CBaseHandle &handle ) = 0;
 	virtual const CBaseHandle& GetRefEHandle() const = 0;
-#ifdef _GAMECONSOLE
-	IHandleEntity() :
-		m_bIsStaticProp( false )
-	{
-	}
-
-	bool m_bIsStaticProp;
-#endif
 };
 
 

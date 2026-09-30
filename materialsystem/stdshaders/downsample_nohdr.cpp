@@ -81,9 +81,6 @@ BEGIN_VS_SHADER_FLAGS( Downsample_nohdr, "Help for Downsample_nohdr", SHADER_NOT
 			{
 				DECLARE_STATIC_PIXEL_SHADER( downsample_nohdr_ps20 );
 				SET_STATIC_PIXEL_SHADER_COMBO( BLOOMTYPE, params[BLOOMTYPE]->GetIntValue() );
-#ifdef _GAMECONSOLE
-				SET_STATIC_PIXEL_SHADER_COMBO( SRGB_INPUT_ADAPTER, bForceSRGBReadAndWrite );
-#endif
 				SET_STATIC_PIXEL_SHADER_COMBO( PS3REGCOUNT48, 0 );
 				SET_STATIC_PIXEL_SHADER( downsample_nohdr_ps20 );
 			}

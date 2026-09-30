@@ -44,9 +44,6 @@
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
 #include "GameEventManager.h"
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#endif
 
 extern IFileSystem *g_pFileSystem;
 #ifndef DEDICATED
@@ -92,18 +89,10 @@ static CTextureReference g_QuarterSizedFBTexture3;
 static CTextureReference g_TeenyFBTexture0;
 static CTextureReference g_TeenyFBTexture1;
 static CTextureReference g_TeenyFBTexture2;
-#ifdef _PS3
-static CTextureReference g_FullFrameRawBufferAliasPS3_BackBuffer;
-static CTextureReference g_FullFrameRawBufferAliasPS3_DepthBuffer;
-#endif
 static CTextureReference g_FullFrameFBTexture0;
 static CTextureReference g_FullFrameFBTexture1;
 static CTextureReference g_FullFrameFBTexture2;
 static CTextureReference g_FullFrameDepth;
-
-#if defined( _X360 )
-	static CTextureReference g_RtGlowTexture360;
-#endif
 
 // each sort ID's mesh for the depth fill render
 CUtlVector<IMesh *> g_DepthMeshForSortID;
@@ -144,11 +133,7 @@ ConVar r_drawbrushmodels( "r_drawbrushmodels", "1", FCVAR_CHEAT, "Render brush m
 
 ConVar r_shadowrendertotexture( "r_shadowrendertotexture", "0" );
 
-#if ( defined( CSTRIKE15 ) && defined( _PS3 ) )
 ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
-#else
-ConVar r_flashlightdepthtexture( "r_flashlightdepthtexture", "1" );
-#endif
 
 // On non-gameconsoles mat_motion_blur_enabled now comes from video.txt/videodefaults.txt
 ConVar mat_motion_blur_enabled( "mat_motion_blur_enabled", IsGameConsole() ? "1" : "0" );
@@ -245,7 +230,7 @@ void ClearMaterialConfigLightingChanged()
 //-----------------------------------------------------------------------------
 static void ReadMaterialSystemConfigFromRegistry( MaterialSystem_Config_t &config )
 {
-#if defined(DEDICATED) || defined(_GAMECONSOLE)
+#if defined(DEDICATED)
 	return;
 #else
 	// Create and Init the video config block.
@@ -337,7 +322,7 @@ int GetScreenAspectMode( int width, int height )
 //-----------------------------------------------------------------------------
 static void WriteMaterialSystemConfigToRegistry( const MaterialSystem_Config_t &config )
 {
-#if defined(DEDICATED) || defined(_GAMECONSOLE)
+#if defined(DEDICATED)
 	return;
 #else
 	ConVarRef defaultres_restart( "defaultres_restart" );
@@ -509,11 +494,7 @@ void InitMaterialSystemConfig( bool bInEditMode )
 	// Capture autoconfig.
 	if ( CommandLine()->FindParm( "-autoconfig" ) )
 	{
-#ifdef _GAMECONSOLE
-		AssertMsg( false, "VideoCFG not supported on Xbox 360." );
-#else
 		ResetVideoConfigToDefaults();
-#endif
 	}
 
 	ReadMaterialSystemConfigFromRegistry( config );
@@ -627,7 +608,7 @@ CON_COMMAND( mat_configcurrent, "show the current video control panel config for
 	PrintMaterialSystemConfig( config );
 }
 
-#if !defined(DEDICATED) && !defined( _X360 )
+#if !defined(DEDICATED)
 CON_COMMAND( mat_setvideomode, "sets the width, height, windowed state of the material system" )
 {
 	if ( args.ArgC() < 4 )
@@ -657,7 +638,7 @@ CON_COMMAND( mat_savechanges, "saves current video configuration to the registry
 	WriteMaterialSystemConfigToRegistry( *g_pMaterialSystemConfig );
 }
 
-#if !defined( _GAMECONSOLE ) && !defined( DEDICATED )
+#if !defined( DEDICATED )
 CON_COMMAND( mat_updateconvars, "updates the video config convars" )
 {
 	UpdateVideoConfigConVars();
@@ -907,39 +888,12 @@ void InitWellKnownRenderTargets( void )
 #endif
 
 
-#if defined( _X360 )
-	g_RtGlowTexture360.InitRenderTargetTexture( 8, 8, RT_SIZE_NO_CHANGE, IMAGE_FORMAT_ARGB8888, MATERIAL_RT_DEPTH_NONE, false, "_rt_Glows360" );
-
-	// NOTE: The 360 requires render targets generated with 1xMSAA to be 80x16 aligned in EDRAM
-	//       Using 1120x624 since this seems to be the largest surface we can fit in EDRAM next to the back buffer
-	g_RtGlowTexture360.InitRenderTargetSurface( 1120, 624, IMAGE_FORMAT_ARGB8888, false );
-#endif
-
 	if ( IsPC() )
 	{
 		g_TeenyFBTexture0.Init( CreateTeenyFBTexture( 0 ) );
 		g_TeenyFBTexture1.Init( CreateTeenyFBTexture( 1 ) );
 		g_TeenyFBTexture2.Init( CreateTeenyFBTexture( 2 ) );
 	}
-
-#ifdef _PS3
-	g_FullFrameRawBufferAliasPS3_BackBuffer.Init(
-		materials->CreateNamedRenderTargetTextureEx2(
-		"^PS3^BACKBUFFER",
-		1, 1, RT_SIZE_FULL_FRAME_BUFFER,
-		materials->GetBackBufferFormat(), 
-		MATERIAL_RT_DEPTH_SHARED,
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT,
-		CREATERENDERTARGETFLAGS_HDR ) );
-	g_FullFrameRawBufferAliasPS3_DepthBuffer.Init(
-		materials->CreateNamedRenderTargetTextureEx2(
-		"^PS3^DEPTHBUFFER",
-		1, 1, RT_SIZE_FULL_FRAME_BUFFER,
-		g_pMaterialSystemHardwareConfig->GetShadowDepthTextureFormat(),
-		MATERIAL_RT_DEPTH_NONE,
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | TEXTUREFLAGS_POINTSAMPLE,
-		CREATERENDERTARGETFLAGS_NOEDRAM ) );
-#endif
 
 	g_FullFrameFBTexture0.Init( CreateFullFrameFBTexture( 0 ) );
 
@@ -951,9 +905,7 @@ void InitWellKnownRenderTargets( void )
 
 	g_FullFrameFBTexture1.Init( CreateFullFrameFBTexture( 1, CREATERENDERTARGETFLAGS_TEMP ) );
 
-#ifndef _PS3
 	g_FullFrameDepth.Init( CreateFullFrameDepthTexture() );
-#endif
 
 	// Allow the client to init their own mod-specific render targets
 	if ( g_pClientRenderTargets )
@@ -1009,10 +961,6 @@ void ShutdownWellKnownRenderTargets( void )
 
 	g_QuarterSizedFBTexture2.Shutdown();
 	g_QuarterSizedFBTexture3.Shutdown();
-
-	#if defined( _X360 )
-		g_RtGlowTexture360.Shutdown();
-	#endif
 
 	g_TeenyFBTexture0.Shutdown();
 	g_TeenyFBTexture1.Shutdown();

@@ -274,11 +274,7 @@ int CNetSupportImpl::SendPacket (
 	if ( !inetAddr.GetPort() && inetAddr.GetType() == NA_BROADCAST )
 	{
 		inetAddr.SetPort(
-#ifdef _X360
-			NET_GetUDPPort( NS_X360_SYSTEMLINK )
-#else
 			PORT_SERVER
-#endif
 			);
 	}
 

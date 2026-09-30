@@ -9,10 +9,8 @@
 #include "solidenergy_ps20b.inc"
 #include "common_hlsl_cpp_consts.h"
 
-#if !defined( _GAMECONSOLE )
 	#include "solidenergy_vs30.inc"
 	#include "solidenergy_ps30.inc"
-#endif
 
 #include "shaderlib/commandbuilder.h"
 
@@ -156,9 +154,7 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			pShaderShadow->VertexShaderVertexFormat( flags, nTexCoordCount, NULL, userDataSize );
 
 			// Vertex Shader
-#if !defined( _GAMECONSOLE )
 			if ( g_pHardwareConfig->GetDXSupportLevel() < 95 )
-#endif
 			{
 				DECLARE_STATIC_VERTEX_SHADER( solidenergy_vs20 );
 				SET_STATIC_VERTEX_SHADER_COMBO( VERTEXCOLOR,  bHasVertexColor || bHasVertexAlpha );
@@ -171,7 +167,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 				SET_STATIC_VERTEX_SHADER_COMBO( MODELFORMAT, bModel );
 				SET_STATIC_VERTEX_SHADER( solidenergy_vs20 );
 			}
-#if !defined( _GAMECONSOLE )
 			else
 			{
 				DECLARE_STATIC_VERTEX_SHADER( solidenergy_vs30 );
@@ -185,12 +180,9 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 				SET_STATIC_VERTEX_SHADER_COMBO( MODELFORMAT, bModel );
 				SET_STATIC_VERTEX_SHADER( solidenergy_vs30 );
 			}
-#endif
 
 			// Pixel Shader
-#if !defined( _GAMECONSOLE )
 			if ( g_pHardwareConfig->GetDXSupportLevel() < 95 )
-#endif
 			{
 				DECLARE_STATIC_PIXEL_SHADER( solidenergy_ps20b );
 				SET_STATIC_PIXEL_SHADER_COMBO( ADDITIVE, bAdditiveBlend );
@@ -207,7 +199,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 				SET_STATIC_PIXEL_SHADER_COMBO( FLOW_CHEAP, bHasCheapFlow );
 				SET_STATIC_PIXEL_SHADER( solidenergy_ps20b );
 			}
-#if !defined( _GAMECONSOLE )
 			else
 			{
 				DECLARE_STATIC_PIXEL_SHADER( solidenergy_ps30 );
@@ -225,7 +216,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 				SET_STATIC_PIXEL_SHADER_COMBO( FLOW_CHEAP, bHasCheapFlow );
 				SET_STATIC_PIXEL_SHADER( solidenergy_ps30 );
 			}
-#endif
 
 			// Textures
 			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Base
@@ -342,9 +332,7 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 				memcpy( flConsts, kDefaultFalloffRanges, sizeof( kDefaultFalloffRanges ) );
 			pContextData->m_SemiStaticCmdsOut.SetPixelShaderConstant( 2, flConsts, 1 );
 
-#ifndef _PS3
 			pContextData->m_SemiStaticCmdsOut.SetDepthFeatheringShaderConstants( 4, params[info.m_nDepthBlendScale]->GetFloatValue() );
-#endif
 
 			float flOutputIntensity = params[ info.m_nOutputIntensity ]->GetFloatValue();
 
@@ -392,13 +380,8 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			return;
 		}
 
-#ifdef _PS3
-		CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_SemiStaticCmdsOut.Base() );
-#else
 		CCommandBufferBuilder< CFixedCommandStorageBuffer< 400 > > DynamicCmdsOut;
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
-#endif
 
 
 
@@ -421,9 +404,7 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 		bool bVortex2 = bActive && bHasFlowmap && ( info.m_nFlowVortex2 != -1 ) && ( params[info.m_nFlowVortex2]->GetIntValue() != 0 );
 
 		// VERTEX SHADER SETUP
-#if !defined( _GAMECONSOLE )
 		if ( g_pHardwareConfig->GetDXSupportLevel() < 95 )
-#endif
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( solidenergy_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
@@ -432,7 +413,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( VORTEX2, bVortex2 );
 			SET_DYNAMIC_VERTEX_SHADER( solidenergy_vs20 );
 		}
-#if !defined( _GAMECONSOLE )
 		else
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( solidenergy_vs30 );
@@ -442,7 +422,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( VORTEX2, bVortex2 );
 			SET_DYNAMIC_VERTEX_SHADER( solidenergy_vs30 );
 		}
-#endif
 
 		// VS constants
 		float flConsts[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -480,9 +459,7 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 
 		// PIXEL SHADER SETUP
 
-#if !defined( _GAMECONSOLE )
 		if ( g_pHardwareConfig->GetDXSupportLevel() < 95 )
-#endif
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( solidenergy_ps20b );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( ACTIVE, bActive );
@@ -491,7 +468,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( VORTEX2, bVortex2 );
 			SET_DYNAMIC_PIXEL_SHADER( solidenergy_ps20b );
 		}
-#if !defined( _GAMECONSOLE )
 		else
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( solidenergy_ps30 );
@@ -501,7 +477,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( VORTEX2, bVortex2 );
 			SET_DYNAMIC_PIXEL_SHADER( solidenergy_ps30 );
 		}
-#endif
 
 		if ( bDetail1 )
 		{
@@ -527,9 +502,6 @@ void DrawSolidEnergy(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 		DynamicCmdsOut.End();
 
 		// end dynamic block
-#ifdef _PS3
-		pShaderAPI->SetDepthFeatheringShaderConstants( 4, params[info.m_nDepthBlendScale]->GetFloatValue() );
-#endif
 		pShaderAPI->ExecuteCommandBuffer( DynamicCmdsOut.Base() );
 
 		//no dynamic combos

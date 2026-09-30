@@ -151,11 +151,7 @@ DEFPARTICLE_ATTRIBUTE( GLOW_ALPHA, 23, ATTRDATATYPE_FLOAT );	// glow alpha
 #define ATTRIBUTES_WHICH_ARE_HITBOX (PARTICLE_ATTRIBUTE_HITBOX_INDEX_MASK | PARTICLE_ATTRIBUTE_HITBOX_RELATIVE_XYZ_MASK)
 #define ATTRIBUTES_WHICH_ARE_NORMAL (PARTICLE_ATTRIBUTE_NORMAL_MASK)
 
-#if defined( _GAMECONSOLE )
-#define MAX_PARTICLES_IN_A_SYSTEM 2000
-#else
 #define MAX_PARTICLES_IN_A_SYSTEM 5000
-#endif
 
 // Set this to 1 or 0 to enable or disable particle profiling.
 // Note that this profiling is expensive on Linux, and some anti-virus

@@ -15,10 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef _PS3
-#include "ps3/ps3_helpers.h"
-#endif
-
 #if defined( PLATFORM_WINDOWS_PC )
 #define WIN_32_LEAN_AND_MEAN
 #include <windows.h>				// Currently needed for LARGE_INTEGER
@@ -168,20 +164,6 @@ void RemoveMiniProfilerFromList( CLinkedMiniProfiler *pProfiler )
 #if ENABLE_HARDWARE_PROFILER
 DLL_CLASS_EXPORT  void CMiniProfiler::Publish(const char *szMessage, ...)
 {
-#ifdef _X360
-	if(m_numCalls >= 100 || m_numTimeBaseTicks > 50) // 500 timebase ticks is 1 microsecond
-	{
-		char szBuf[256];
-		va_list args;
-		va_start(args, szMessage);
-		vsnprintf(szBuf, sizeof(szBuf), szMessage, args);
-		PIXAddNamedCounter(float(INT32(m_numTimeBaseTicks-m_numTimeBaseTicksInCallees))*0.02f, "Ex:%s,mcs", szBuf);
-		PIXAddNamedCounter(float(INT32(m_numTimeBaseTicks))*0.02f, "%s,mcs", szBuf);
-		if(m_numCalls)
-			PIXAddNamedCounter((float)(64*INT32(m_numTimeBaseTicks)/INT32(m_numCalls)), "%s,ticks", szBuf);
-		PIXAddNamedCounter((float)(INT32(m_numCalls)), "%s,calls", szBuf);
-	}
-#endif
 	Reset();
 }
 #endif
@@ -268,8 +250,6 @@ static void GetPerformanceFrequency( int64 *pFreqOut )
 {
 #ifdef PLATFORM_POSIX
 	*pFreqOut = 2000000000;
-#elif defined( _PS3 )
-	*pFreqOut = 3200000000ll;
 #else
 	QueryPerformanceFrequency( ( LARGE_INTEGER* ) pFreqOut );
 #endif
@@ -296,13 +276,9 @@ DLL_EXPORT void PublishAllMiniProfilers(int nHistoryMax)
 			{
 				int nVersion = 0x0101;
 				fwrite(&nVersion, 4, 1, g_pPurgeFile);
-#ifdef _X360
-				int nFrequency = 49875; // ticks per millisecond
-#else
 				// even though this is not correct on older computers, I think most modern computers have the multimedia clock that has the same frequency as the CPU
 				int64 nActualFrequency = GetCPUInformation().m_Speed;
 				int nFrequency = int((nActualFrequency+500) / 1000);
-#endif
 				fwrite(&nFrequency, 4, 1, g_pPurgeFile);
 			}
 		}

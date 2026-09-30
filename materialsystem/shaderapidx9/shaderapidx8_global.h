@@ -28,15 +28,10 @@
 #define DEBUG_BOARD_STATE 0
 #endif
 
-#if !defined( _GAMECONSOLE )
 #include "d3d_async.h"
 typedef D3DDeviceWrapper D3DDev_t;
 D3DDev_t *Dx9Device();
 IDirect3D9 *D3D();
-#else
-#define SHADERAPI_NO_D3DDeviceWrapper 1
-typedef IDirect3DDevice D3DDeviceWrapper;
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -69,18 +64,10 @@ enum
 // The main shader API
 //-----------------------------------------------------------------------------
 extern IShaderAPIDX8 *g_pShaderAPIDX8;
-#ifdef _PS3
-class CPs3NonVirt_IShaderAPIDX8;
-inline CPs3NonVirt_IShaderAPIDX8* ShaderAPI()
-{
-	return ( CPs3NonVirt_IShaderAPIDX8 * ) 1;
-}
-#else
 inline IShaderAPIDX8* ShaderAPI()
 {
 	return g_pShaderAPIDX8;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // The shader shadow
@@ -104,14 +91,10 @@ IMeshMgr* MeshMgr();
 //-----------------------------------------------------------------------------
 // The main hardware config interface
 //-----------------------------------------------------------------------------
-#ifdef _PS3
-#include "shaderapidx9/hardwareconfig_ps3nonvirt.h"
-#else
 inline IMaterialSystemHardwareConfig* HardwareConfig()
 {	
 	return g_pMaterialSystemHardwareConfig;
 }
-#endif
 
 
 #endif // SHADERAPIDX8_GLOBAL_H

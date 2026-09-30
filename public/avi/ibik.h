@@ -117,19 +117,10 @@ public:
 	virtual void SetFrame( BIKMaterial_t hMaterial, float flFrame ) = 0;
 
 #ifdef WIN32
-#if !defined( _X360 )
 	// Sets the direct sound device that Bink will decode to
 	virtual bool SetDirectSoundDevice( void	*pDevice ) = 0;
 	virtual bool SetMilesSoundDevice( void *pDevice ) = 0;
-#else
-	//needs to be called after xaudio is initialized
-	virtual bool HookXAudio( void ) = 0;
 #endif
-#endif
-
-#if defined( _PS3 )
-	virtual bool SetPS3SoundDevice( int nChannelCount ) = 0;
-#endif // _PS3
 
 	// Pause and unpause the movie playback
 	virtual void Pause( BIKMaterial_t hMaterial ) = 0;

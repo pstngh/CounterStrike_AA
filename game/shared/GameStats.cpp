@@ -39,10 +39,6 @@ extern const ConVar *sv_cheats;
 #include "materialsystem/materialsystem_config.h"
 #endif
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -1244,9 +1240,6 @@ void CBaseGameStats_Driver::CollectData( StatSendType_t sendType )
 
 	// The base stat system holds memory until "APPSHUTDOWN" which on the Xbox isn't good.
 	// When on the Xbox, neither server nor clients collect stats, but the base system still does.
-#ifdef _X360
-	return;
-#endif
 
 	CGamestatsData *pGamestatsData = NULL;
 #ifdef GAME_DLL
@@ -1316,7 +1309,6 @@ void CBaseGameStats_Driver::CollectData( StatSendType_t sendType )
 	pGamestatsData->m_bHaveData |= AddBaseDataForSend( pKV, sendType );
     
 #if defined(CLIENT_DLL) && !defined(NO_STEAM)
-#if !defined( _GAMECONSOLE )
 	// At the end of every map, clients submit their perfdata for the map
 	if ( sendType == STATSEND_LEVELSHUTDOWN && pGamestatsData && pGamestatsData->m_bHaveData )
 	{
@@ -1329,10 +1321,8 @@ void CBaseGameStats_Driver::CollectData( StatSendType_t sendType )
 	ResetData();
     // The ResetData call realloced m_pGamestatsData. Need to point pGamestatsData to the new m_pGamestatsData !
     pGamestatsData = m_pGamestatsData;
-#endif
 	if ( sendType == STATSEND_LEVELSHUTDOWN )
 	{
-#if !defined( _GAMECONSOLE )
 		KeyValues *pKVFileStats = new KeyValues( "FileSystemStats" );
 		filesystem->GetVPKFileStatisticsKV( pKVFileStats );
 		GetSteamWorksGameStatsClient().AddVPKLoadStats( pKVFileStats );
@@ -1343,7 +1333,6 @@ void CBaseGameStats_Driver::CollectData( StatSendType_t sendType )
 		// Alternately you could place ClientPerfData and VPK in the cs_game_disconnected event, but this event may fire more frequently than we want for CPD/VPK.
 		GetSteamWorksGameStatsClient().EndSession();
 		GetSteamWorksGameStatsClient().ResetServerState();
-#endif
 	}
 #endif
 	// add game-specific data

@@ -17,9 +17,6 @@
 #include "cdll_int.h"
 #include "eiface.h"
 #include "igameevents.h"
-#ifdef _X360
-#include "ixboxsystem.h"
-#endif
 #include "eiface.h"
 
 #include "mm_framework.h"
@@ -66,10 +63,6 @@ public:
 	IServerGameDLL * GetIServerGameDLL() { return m_exts.m_pIServerGameDLL; }
 	IGameEventManager2 * GetIGameEventManager2() { return m_exts.m_pIGameEventManager2; }
 	IBaseClientDLL * GetIBaseClientDLL() { return m_exts.m_pIBaseClientDLL; }
-#ifdef _X360
-	IXboxSystem * GetIXboxSystem() { return m_exts.m_pIXboxSystem; }
-	IXOnline * GetIXOnline() { return m_exts.m_pIXOnline; }
-#endif
 
 protected:
 	// Known extension interfaces
@@ -85,10 +78,6 @@ protected:
 		IServerGameDLL *m_pIServerGameDLL;
 		IGameEventManager2 *m_pIGameEventManager2;
 		IBaseClientDLL *m_pIBaseClientDLL;
-#ifdef _X360
-		IXboxSystem *m_pIXboxSystem;
-		IXOnline *m_pIXOnline;
-#endif
 	}
 	m_exts;
 };

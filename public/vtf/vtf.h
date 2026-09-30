@@ -144,9 +144,7 @@ public:
 	// The look dir indicates the direction of the center of the sphere
 	// NOTE: Only call this *after* cube faces have been correctly
 	// oriented (using FixCubemapFaceOrientation)
-#if !defined (_PS3)
 	virtual void GenerateSpheremap( LookDir_t lookDir = LOOK_DOWN_Z ) = 0;
-#endif
 
 	// Generate spheremap based on the current cube faces (only works for cubemaps)
 	// The look dir indicates the direction of the center of the sphere
@@ -193,21 +191,6 @@ public:
 	virtual void SetAlphaTestThreshholds( float flBase, float flHighFreq ) = 0;
 
 	virtual bool IsPreTiled() const = 0;
-
-#if defined( _GAMECONSOLE )
-	virtual int UpdateOrCreate( const char *pFilename, const char *pPathID = NULL, bool bForce = false ) = 0;
-	virtual bool UnserializeFromBuffer( CUtlBuffer &buf, bool bBufferIsVolatile, bool bHeaderOnly, bool bPreloadOnly, int nMipSkipCount ) = 0;
-	virtual int FileSize( bool bPreloadOnly, int nMipSkipCount ) const = 0;
-	virtual int MappingWidth() const = 0;
-	virtual int MappingHeight() const = 0;
-	virtual int MappingDepth() const = 0;
-	virtual int MipSkipCount() const = 0;
-	virtual uint8 *LowResImageSample() = 0;
-	virtual void ReleaseImageMemory() = 0;
-#endif
-#if defined ( _PS3 )
-	virtual int GetImageOffset() const = 0;
-#endif
 
 	// Sets post-processing flags (settings are copied, pointer passed to distinguish between structure versions)
 	virtual void SetPostProcessingSettings( VtfProcessingOptions const *pOptions ) = 0;
@@ -325,7 +308,7 @@ struct VTFFileHeaderV7_1_t : public VTFFileBaseHeader_t
 	uint32	flags;
 	uint16	numFrames;
 	uint16	startFrame;
-#if !defined( POSIX ) && !defined( _X360 )
+#if !defined( POSIX )
 	VectorAligned	reflectivity;
 #else
 	// must manually align in order to maintain pack(1) expected layout with existing binaries
@@ -349,13 +332,8 @@ struct VTFFileHeaderV7_2_t : public VTFFileHeaderV7_1_t
 };
 
 #define BYTE_POS( byteVal, shft )	uint32( uint32(uint8(byteVal)) << uint8(shft * 8) )
-#if !defined( _X360 ) && !defined ( _PS3 )
 #define MK_VTF_RSRC_ID(a, b, c)		uint32( BYTE_POS(a, 0) | BYTE_POS(b, 1) | BYTE_POS(c, 2) )
 #define MK_VTF_RSRCF(d)				BYTE_POS(d, 3)
-#else
-#define MK_VTF_RSRC_ID(a, b, c)		uint32( BYTE_POS(a, 3) | BYTE_POS(b, 2) | BYTE_POS(c, 1) )
-#define MK_VTF_RSRCF(d)				BYTE_POS(d, 0)
-#endif
 
 // Special section for stock resources types
 enum ResourceEntryType
@@ -399,7 +377,7 @@ struct VTFFileHeaderV7_3_t : public VTFFileHeaderV7_2_t
 	char			pad4[3];
 	uint32	numResources;
 
-#if defined( _X360 ) || defined( POSIX )
+#if defined( POSIX )
 	// must manually align in order to maintain pack(1) expected layout with existing binaries
 	char			pad5[8];
 #endif

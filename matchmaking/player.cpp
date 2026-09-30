@@ -6,9 +6,7 @@
 
 #include "mm_framework.h"
 
-#ifndef _X360
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "smartptr.h"
 #include "utlvector.h"
@@ -61,10 +59,6 @@ static int GetTitleSpecificDataIndex( DWORD TSDataId )
 }
 
 static MM_XWriteOpportunity s_arrXWO[ XUSER_MAX_COUNT ]; // rely on static memory being zero'd
-
-#ifdef _X360
-CUtlVector< PlayerLocal::XPendingAsyncAward_t * > PlayerLocal::s_arrPendingAsyncAwards;
-#endif
 
 void SignalXWriteOpportunity( MM_XWriteOpportunity eXWO )
 {
@@ -154,15 +148,6 @@ PlayerFriend::PlayerFriend( XUID xuid, FriendInfo_t const *pFriendInfo /* = NULL
 	m_uiTitleID = 0;
 	m_uiGameServerIP = 0;
 
-#ifdef _X360
-	memset( &m_xsiSearchState, 0, sizeof( m_xsiSearchState ) );
-	m_pQOS_xnaddr = NULL;
-	m_pQOS_xnkid = NULL;
-	m_pQOS_xnkey = NULL;
-	m_XNQOS = NULL;
-	memset( &m_SessionSearchOverlapped, 0, sizeof( m_SessionSearchOverlapped ) );
-#endif
-
 	m_xuid = xuid;
 	m_eOnlineState = STATE_ONLINE;
 	UpdateFriendInfo( pFriendInfo );
@@ -231,12 +216,6 @@ void PlayerFriend::Join()
 	pSettings->SetUint64( "options/sessionid", ( const uint64 & ) m_xSessionID );
 	pSettings->SetUint64( "options/friendxuid", m_xuid );
 
-#ifdef _X360
-	char chSessionInfoBuffer[ XSESSION_INFO_STRING_LENGTH ] = {0};
-	MMX360_SessionInfoToString( m_GameSessionInfo, chSessionInfoBuffer );
-	pSettings->SetString( "options/sessioninfo", chSessionInfoBuffer );
-#endif
-	
 	KeyValues::AutoDelete autodelete( pSettings );
 
 	g_pMatchFramework->MatchSession( pSettings );
@@ -246,18 +225,6 @@ void PlayerFriend::Update()
 {
 	if ( !m_xuid )
 		return;
-
-#ifdef _X360
-	if( m_eSearchState == SEARCH_XNKID )
-	{
-		Live_Update_SearchXNKID();
-	}
-
-	if ( m_eSearchState == SEARCH_QOS )
-	{
-		Live_Update_Search_QOS();
-	}
-#endif
 
 	if ( m_eSearchState == SEARCH_COMPLETED )
 	{
@@ -279,155 +246,7 @@ void PlayerFriend::Update()
 	}
 }
 
-#ifdef _X360
-
-#ifdef _DEBUG
-static ConVar mm_player_delay_xnkid( "mm_player_delay_xnkid", "0", FCVAR_DEVELOPMENTONLY );
-static ConVar mm_player_delay_qos( "mm_player_delay_qos", "0", FCVAR_DEVELOPMENTONLY );
-
-static bool ShouldDelayBasedOnTimeThrottling( float &flStaticTimekeeper, float flDelay )
-{
-	if ( flDelay <= 0.0f )
-	{
-		flStaticTimekeeper = 0.0f;
-		return false;
-	}
-	else if ( flStaticTimekeeper <= 0.0f )
-	{
-		flStaticTimekeeper = Plat_FloatTime();
-		return true;
-	}
-	else if ( flStaticTimekeeper + flDelay < Plat_FloatTime() )
-	{
-		flStaticTimekeeper = 0.0f;
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-}
-
-static bool ShouldDelayPlayerXnkid()
-{
-	static float s_flTime = 0.0f;
-	return ShouldDelayBasedOnTimeThrottling( s_flTime, mm_player_delay_xnkid.GetFloat() );
-}
-
-static bool ShouldDelayPlayerQos()
-{
-	static float s_flTime = 0.0f;
-	return ShouldDelayBasedOnTimeThrottling( s_flTime, mm_player_delay_qos.GetFloat() );
-}
-#else
-
-inline static bool ShouldDelayPlayerXnkid() { return false; }
-inline static bool ShouldDelayPlayerQos() { return false; }
-
-#endif
-
-void PlayerFriend::Live_Update_SearchXNKID()
-{
-	if( !XHasOverlappedIoCompleted( & m_SessionSearchOverlapped ) )
-		return;
-
-	if ( ShouldDelayPlayerXnkid() )
-		return;
-
-	DWORD result = 0;
-	if( XGetOverlappedResult( &m_SessionSearchOverlapped, &result, false ) == ERROR_SUCCESS )
-	{
-		//result should be 1
-		if( GetXSearchResults()->dwSearchResults >= 1)
-		{
-			V_memcpy( &m_GameSessionInfo, &( GetXSearchResults()->pResults[0].info ), sizeof( m_GameSessionInfo ) );
-		}
-		else
-		{
-			memset( &m_xSessionID, 0, sizeof( m_xSessionID ) );
-			memset( &m_GameSessionInfo, 0, sizeof( m_GameSessionInfo ) );
-			if ( m_pDetails )
-				m_pDetails->deleteThis();
-			m_pDetails = NULL;
-		}
-	}
-	else
-	{
-		memset( &m_xSessionID, 0, sizeof( m_xSessionID ) );
-		memset( &m_GameSessionInfo, 0, sizeof( m_GameSessionInfo ) );
-		if ( m_pDetails )
-			m_pDetails->deleteThis();
-		m_pDetails = NULL;
-	}
-
-	m_eSearchState = SEARCH_COMPLETED;
-
-	if ( ( const uint64 & ) m_GameSessionInfo.sessionID )
-	{
-		// Issue the QOS query
-		m_xsiSearchState = m_GameSessionInfo;
-		m_pQOS_xnaddr = &m_xsiSearchState.hostAddress;
-		m_pQOS_xnkid = &m_xsiSearchState.sessionID;
-		m_pQOS_xnkey = &m_xsiSearchState.keyExchangeKey;
-		int err = g_pMatchExtensions->GetIXOnline()->XNetQosLookup( 1,
-			&m_pQOS_xnaddr, &m_pQOS_xnkid, &m_pQOS_xnkey,
-			0, NULL, NULL, 2, 0, 0, NULL, &m_XNQOS );
-
-		if ( err == ERROR_SUCCESS )
-			m_eSearchState = SEARCH_QOS;
-	}
-}
-
-void PlayerFriend::Live_Update_Search_QOS()
-{
-	if( m_XNQOS->cxnqosPending != 0 )
-		return;
-
-	if ( ShouldDelayPlayerQos() )
-		return;
-
-	if ( m_pDetails )
-		m_pDetails->deleteThis();
-	m_pDetails = NULL;
-
-	XNQOSINFO *pQOS = &m_XNQOS->axnqosinfo[0];
-	if( pQOS->bFlags & XNET_XNQOSINFO_COMPLETE &&
-		pQOS->bFlags & XNET_XNQOSINFO_DATA_RECEIVED &&
-		pQOS->cbData && pQOS->pbData )
-	{
-		MM_GameDetails_QOS_t gd = { pQOS->pbData, pQOS->cbData, pQOS->wRttMedInMsecs };
-		m_pDetails = g_pMatchFramework->GetMatchNetworkMsgController()->UnpackGameDetailsFromQOS( &gd );
-	}
-
-	g_pMatchExtensions->GetIXOnline()->XNetQosRelease( m_XNQOS );
-	m_XNQOS = NULL;
-
-	if ( m_pDetails )
-	{
-		// Set AUX fields like sessioninfo
-		if ( KeyValues *kvOptions = m_pDetails->FindKey( "options", true ) )
-		{
-			kvOptions->SetUint64( "sessionid", ( const uint64 & ) m_xSessionID );
-
-			char chSessionInfoBuffer[ XSESSION_INFO_STRING_LENGTH ] = {0};
-			MMX360_SessionInfoToString( m_GameSessionInfo, chSessionInfoBuffer );
-			kvOptions->SetString( "sessioninfo", chSessionInfoBuffer );
-		}
-
-		// Set the "player" key
-		if ( KeyValues *kvPlayer = m_pDetails->FindKey( "player", true ) )
-		{
-			kvPlayer->SetUint64( "xuid", GetXUID() );
-			kvPlayer->SetUint64( "xuidOnline", GetXUID() );
-			kvPlayer->SetString( "name", GetName() );
-			kvPlayer->SetWString( "richpresence", GetRichPresence() );
-		}
-	}
-
-	m_eSearchState = SEARCH_COMPLETED;
-}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void PlayerFriend::Steam_OnLobbyDataUpdate( LobbyDataUpdate_t *pParam )
 {
@@ -489,8 +308,7 @@ void PlayerFriend::Destroy()
 
 void PlayerFriend::AbortSearch()
 {
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_CallbackOnLobbyDataUpdate.Unregister();
 #endif
 
@@ -502,19 +320,7 @@ void PlayerFriend::AbortSearch()
 
 	switch ( m_eSearchState )
 	{
-#ifdef _X360
-	case SEARCH_XNKID:
-		MMX360_CancelOverlapped( &m_SessionSearchOverlapped );
-		bAbortedSearch = true;
-		break;
-
-	case SEARCH_QOS:
-		// We should gracefully abort the QOS operation outstanding
-		g_pMatchExtensions->GetIXOnline()->XNetQosRelease( m_XNQOS );
-		m_XNQOS = NULL;
-		bAbortedSearch = true;
-		break;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	case SEARCH_WAIT_LOBBY_DATA:
 		bAbortedSearch = true;
 		break;
@@ -587,11 +393,7 @@ void PlayerFriend::UpdateFriendInfo( FriendInfo_t const *pFriendInfo )
 			m_pDetails->deleteThis();
 		m_pDetails = pFriendInfo->m_pGameDetails->MakeCopy();
 		
-#ifdef _X360
-		char const *szSessionInfo = m_pDetails->GetString( "options/sessioninfo" );
-		MMX360_SessionInfoFromString( m_GameSessionInfo, szSessionInfo );
-		m_xSessionID = m_GameSessionInfo.sessionID;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		uint64 uiSessionId = m_pDetails->GetUint64( "options/sessionid" );
 		m_xSessionID = ( XNKID & ) uiSessionId;
 #endif
@@ -682,63 +484,11 @@ void PlayerFriend::StartSearchForSessionInfo()
 
 void PlayerFriend::StartSearchForSessionInfoImpl()
 {
-#ifdef _X360
-	if ( !XBX_GetNumGameUsers() || XBX_GetPrimaryUserIsGuest() )
-	{
-		memset( &m_xSessionID, 0, sizeof( m_xSessionID ) );
-		memset( &m_GameSessionInfo, 0, sizeof( m_GameSessionInfo ) );
-		if ( m_pDetails )
-			m_pDetails->deleteThis();
-		m_pDetails = NULL;
-
-		m_eSearchState = SEARCH_NONE;
-
-		return;
-	}
-#endif
 
 	if( m_eSearchState == SEARCH_NONE ||
 		m_eSearchState == SEARCH_QUEUED )
 	{
-#ifdef _X360
-
-		if( ( const uint64 & ) m_xSessionID )
-		{
-			int iCtrlr = XBX_GetPrimaryUserId();
-
-			DWORD numBytesResult = 0;
-			DWORD dwError = g_pMatchExtensions->GetIXOnline()->XSessionSearchByID( m_xSessionID, iCtrlr, &numBytesResult, NULL, NULL );
-			if( dwError != ERROR_INSUFFICIENT_BUFFER )
-			{
-				memset( &m_xSessionID, 0, sizeof( m_xSessionID ) );
-				memset( &m_GameSessionInfo, 0, sizeof( m_GameSessionInfo ) );
-				if ( m_pDetails )
-					m_pDetails->deleteThis();
-				m_pDetails = NULL;
-
-				m_eSearchState = SEARCH_NONE;
-				return;
-			}
-
-			m_bufSessionSearchResults.EnsureCapacity( numBytesResult );
-			ZeroMemory( GetXSearchResults(), numBytesResult );
-
-			dwError = g_pMatchExtensions->GetIXOnline()->XSessionSearchByID( m_xSessionID, iCtrlr, &numBytesResult, GetXSearchResults(), &m_SessionSearchOverlapped );
-			if( dwError != ERROR_IO_PENDING )
-			{
-				memset( &m_xSessionID, 0, sizeof( m_xSessionID ) );
-				memset( &m_GameSessionInfo, 0, sizeof( m_GameSessionInfo ) );
-				if ( m_pDetails )
-					m_pDetails->deleteThis();
-				m_pDetails = NULL;
-
-				m_eSearchState = SEARCH_NONE;
-				return;
-			}
-
-			m_eSearchState = SEARCH_XNKID;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 		if ( steamapicontext->SteamMatchmaking() &&
 			( const uint64 & ) m_xSessionID &&
@@ -793,20 +543,7 @@ PlayerLocal::PlayerLocal( int iController ) :
 	m_iController = iController;
 	GetXWriteOpportunity( iController ); // reset
 
-#ifdef _X360
-	m_bIsTitleDataValid = false;
-	for ( int i=0; i<TITLE_DATA_COUNT; ++i )
-	{
-		m_bIsTitleDataBlockValid[ i ] = false;
-	}
-	m_bIsFreshPlayerProfile = false;
-	if ( !XBX_GetPrimaryUserIsGuest() )
-	{
-		XUserGetXUID( iController, &m_xuid );
-	}
-
-	DetectOnlineState();
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	CSteamID steamIDPlayer;
 	if ( steamapicontext->SteamUser() )
 	{
@@ -823,25 +560,7 @@ PlayerLocal::PlayerLocal( int iController ) :
 	m_eOnlineState = IPlayer::STATE_OFFLINE;
 #endif
 
-#ifdef _X360
-	if( m_xuid )
-	{
-		XUserGetName( m_iController, m_szName, ARRAYSIZE( m_szName ) );
-		LoadPlayerProfileData();
-	}
-	else if ( char const *szGuestName = g_pMatchFramework->GetMatchTitle()->GetGuestPlayerName( m_iController ) )
-	{
-		Q_strncpy( m_szName, szGuestName, ARRAYSIZE( m_szName ) );
-	}
-	else
-	{
-		m_szName[0] = 0;
-	}
-#elif defined ( _PS3 )
-	ConVarRef cl_name( "name" );
-	const char* pPlayerName = cl_name.GetString();
-	Q_strncpy( m_szName, pPlayerName, ARRAYSIZE( m_szName ) );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	// Get user name from Steam
 	if ( steamIDPlayer.IsValid() && steamapicontext->SteamUser() && steamapicontext->SteamFriends() )
 	{
@@ -874,14 +593,6 @@ PlayerLocal::PlayerLocal( int iController ) :
 
 PlayerLocal::~PlayerLocal()
 {
-#ifdef _X360
-	for ( int k = 0; k < s_arrPendingAsyncAwards.Count(); ++ k )
-	{
-		// Detach pending achievement awards from currently destructed player
-		if ( s_arrPendingAsyncAwards[k]->m_pLocalPlayer == this )
-			s_arrPendingAsyncAwards[k]->m_pLocalPlayer = NULL;
-	}
-#endif
 }
 
 void PlayerLocal::LoadTitleData()
@@ -894,164 +605,7 @@ void PlayerLocal::LoadTitleData()
 		// already processed
 		return;
 
-#ifdef _X360
-	m_bIsTitleDataValid = false;
-	for ( int i=0; i<TITLE_DATA_COUNT; ++i )
-	{
-		m_bIsTitleDataBlockValid[ i ] = false;
-	}
-
-	float flTimeStart;
-	flTimeStart = Plat_FloatTime();
-	Msg( "Player %d : LoadTitleData...\n", m_iController );
-
-	//
-	// Enumerate the state of all achievements
-	//
-	{
-		DWORD numAchievements = 0;
-		HANDLE hEnumerator = NULL;
-		DWORD dwBytes;
-		DWORD ret = XUserCreateAchievementEnumerator( 0, m_iController, INVALID_XUID, XACHIEVEMENT_DETAILS_TFC, 0, 80, &dwBytes, &hEnumerator );
-		if ( ret == ERROR_SUCCESS )
-		{
-			CUtlVector< char > vBuffer;
-			vBuffer.SetCount( dwBytes );
-			ret = XEnumerate( hEnumerator, vBuffer.Base(), dwBytes, &numAchievements, NULL );
-			CloseHandle( hEnumerator );
-			hEnumerator = NULL;
-			if ( ret == ERROR_SUCCESS )
-			{
-				XACHIEVEMENT_DETAILS const *pXboxAchievements = ( XACHIEVEMENT_DETAILS const * ) vBuffer.Base();
-				for ( DWORD i = 0; i < numAchievements; ++i )
-				{
-					if ( AchievementEarned( pXboxAchievements[i].dwFlags ) )
-					{
-						m_arrAchievementsEarned.FindAndFastRemove( pXboxAchievements[i].dwId );
-						m_arrAchievementsEarned.AddToTail( pXboxAchievements[i].dwId );
-					}
-				}
-			}
-		}
-	}
-
-	//
-	// Load actual title data blocks
-	//
-
-	DWORD dwNumDataIds = TITLE_DATA_COUNT_X360;
-	CArrayAutoPtr< DWORD > pdwTitleDataIds( new DWORD[ dwNumDataIds ] );
-	for ( DWORD k = 0; k < dwNumDataIds; ++ k )
-		pdwTitleDataIds[k] = GetTitleSpecificDataId( k );
-
-	m_eLoadedTitleData = GetAssumedSigninState();
-
-	DWORD resultsSize = 0;
-	DWORD ret = ERROR_FILE_NOT_FOUND;
-
-	if ( m_eLoadedTitleData == eXUserSigninState_SignedInLocally )
-	{
-		ret = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettings(
-			g_pMatchFramework->GetMatchTitle()->GetTitleID(), m_iController,
-			dwNumDataIds, pdwTitleDataIds.Get(),
-			&resultsSize, NULL,
-			NULL );
-	}
-	else if ( m_eLoadedTitleData == eXUserSigninState_SignedInToLive )
-	{
-		ret = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettingsByXuid(
-			g_pMatchFramework->GetMatchTitle()->GetTitleID(), m_iController,
-			1, &m_xuid,
-			dwNumDataIds, pdwTitleDataIds.Get(),
-			&resultsSize, NULL,
-			NULL );
-	}
-
-	if ( ret != ERROR_INSUFFICIENT_BUFFER )
-	{
-		Warning( "Player %d : LoadTitleData failed to get size (err=0x%08X)!\n", m_iController, ret );
-		// Failed
-		OnProfileTitleDataLoaded( ret );
-		return;
-	}
-
-	CArrayAutoPtr< char > spResultBuffer( new char[ resultsSize ] );
-	XUSER_READ_PROFILE_SETTING_RESULT *pResult = (XUSER_READ_PROFILE_SETTING_RESULT *) spResultBuffer.Get();
-
-	if ( m_eLoadedTitleData == eXUserSigninState_SignedInLocally )
-	{
-		ret = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettings(
-			g_pMatchFramework->GetMatchTitle()->GetTitleID(), m_iController,
-			dwNumDataIds, pdwTitleDataIds.Get(),
-			&resultsSize, pResult,
-			NULL );
-	}
-	else if ( m_eLoadedTitleData == eXUserSigninState_SignedInToLive )
-	{
-		ret = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettingsByXuid(
-			g_pMatchFramework->GetMatchTitle()->GetTitleID(), m_iController,
-			1, &m_xuid,
-			dwNumDataIds, pdwTitleDataIds.Get(),
-			&resultsSize, pResult,
-			NULL );
-	}
-
-	if ( ret != ERROR_SUCCESS )
-	{
-		Warning( "Player %d : LoadTitleData failed to read data (err=0x%08X)!\n", m_iController, ret );
-		// Failed
-		OnProfileTitleDataLoaded( ret );
-		return;
-	}
-
-	m_bIsTitleDataValid = true;
-	m_bIsFreshPlayerProfile = true;
-	for ( DWORD iSetting = 0; iSetting < pResult->dwSettingsLen; ++ iSetting )
-	{
-		XUSER_PROFILE_SETTING const &xps = pResult->pSettings[ iSetting ];
-
-		if ( xps.data.type != XUSER_DATA_TYPE_BINARY )
-		{
-			m_bIsTitleDataValid = false;
-			m_bIsFreshPlayerProfile = false;
-			continue;
-		}
-		if ( xps.data.binary.cbData != XPROFILE_SETTING_MAX_SIZE )
-		{
-			if ( xps.data.binary.cbData != 0 )
-			{
-				m_bIsTitleDataValid = false;
-			}
-			continue;
-		}
-
-		m_bIsFreshPlayerProfile = false;
-		m_bIsTitleDataBlockValid[ iSetting ] = true;
-
-		int iDataIndex = GetTitleSpecificDataIndex( xps.dwSettingId );
-		if ( iDataIndex >= 0 )
-		{
-			Msg( "Player %d : LoadTitleData succeeded with Data%d\n",
-				m_iController, iDataIndex );
-			V_memcpy( m_bufTitleData[ iDataIndex ], xps.data.binary.pbData, XPROFILE_SETTING_MAX_SIZE );
-		}
-	}
-
-	// Clear the dirty flag after dirty
-	V_memset( m_bSaveTitleData, 0, sizeof( m_bSaveTitleData[0] ) * TITLE_DATA_COUNT_X360 );
-
-	// After we loaded some title data, see if we need to retrospectively award achievements
-	EvaluateAwardsStateBasedOnStats();
-
-	Msg( "Player %d : LoadTitleData finished (%.3f sec).\n",
-		m_iController, Plat_FloatTime() - flTimeStart );
-		 
-	if ( m_bIsTitleDataValid )
-		OnProfileTitleDataLoaded( 0 );
-	else
-		OnProfileTitleDataLoaded( 1 );
-
-#elif !defined ( NO_STEAM )
+#if !defined ( NO_STEAM )
 
 	// Always request user stats from Steam
 	if ( steamapicontext->SteamUserStats() )
@@ -1083,7 +637,7 @@ void PlayerLocal::LoadTitleData()
 #endif
 }
 
-#if !defined( _X360 ) && !defined ( NO_STEAM )
+#if !defined ( NO_STEAM )
 
 ConVar mm_cfgoverride_file( "mm_cfgoverride_file", "", FCVAR_DEVELOPMENTONLY );
 ConVar mm_cfgoverride_commit( "mm_cfgoverride_commit", "", FCVAR_DEVELOPMENTONLY );
@@ -1285,37 +839,7 @@ void PlayerLocal::Steam_OnUserStatsReceived( UserStatsReceived_t *pParam )
 		}
 	}
 
-#if defined ( _PS3 )
 
-	// We just loaded all our stats and settings from Steam.
-	TitleDataFieldsDescription_t const *fields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-	Assert( fields );
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( fields, TITLE_DATA_PREFIX "CFG.sys.version" );
-	Assert( versionField );
-	int versionNumber = TitleDataFieldsDescriptionGetValue<int32>( versionField, this );
-
-	ConVarRef cl_configversion("cl_configversion");
-	// Check the version number to see if this is a new save profile.
-	// In that case, we need to reset everything to the defaults.
-	if ( versionNumber != cl_configversion.GetInt() )
-	{
-		// This will wipe out all achievement and stats.  This is called in Host_ResetConfiguration for xbox, but we don't
-		// want to call it for anything that uses steam unless we're okay with clearning all stats.
-		IGameEvent *event = g_pMatchExtensions->GetIGameEventManager2()->CreateEvent( "reset_game_titledata" );
-		if ( event )
-		{
-			event->SetInt( "controllerId", m_iController );
-			g_pMatchExtensions->GetIGameEventManager2()->FireEventClientSide( event );
-		}
-
-		// ResetConfiguration will set all the settings to the defaults.
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "ResetConfiguration", "iController", m_iController ) );
-	}
-
-#endif
-
-
-#if !defined ( _X360 )
 	// send an event to anyone else who needs Steam user stat data
 	IGameEvent *event =  g_pMatchExtensions->GetIGameEventManager2()->CreateEvent( "user_data_downloaded" );
 	if ( event )
@@ -1327,7 +851,6 @@ void PlayerLocal::Steam_OnUserStatsReceived( UserStatsReceived_t *pParam )
 		g_pMatchExtensions->GetIGameEventManager2()->FireEventClientSide( event );
 #endif
 	}
-#endif
 
 	// After we loaded some title data, see if we need to retrospectively award achievements
 	EvaluateAwardsStateBasedOnStats();
@@ -1426,104 +949,17 @@ void PlayerLocal::SetTitleDataWriteTime( float flTime )
 	m_flLastSave = flTime;
 }
 
-#if defined ( _X360 )
-bool PlayerLocal::IsTitleDataBlockValid( int blockId )
-{
-	if ( blockId < 0 || blockId >= TITLE_DATA_COUNT )
-		return false;
-
-	return m_bIsTitleDataBlockValid[ blockId ];
-}
-
-void PlayerLocal::ClearBufTitleData( void )
-{
-	memset( m_bufTitleData, 0, sizeof( m_bufTitleData ) );
-}
-
-#endif
-
 // Test if we can still read from profile; used when storage device is removed and we
 // want to verify the profile still has a storage connection
 bool PlayerLocal::IsTitleDataStorageConnected( void )
 {
 
-#if defined( _X360 )
-
-	// try to write out storage block 3 to see if there is a storage unit associated with this profile
-
-	CUtlVector< XUSER_PROFILE_SETTING > pXPS;
-
-	DWORD dwNumDataBufferBytes = XPROFILE_SETTING_MAX_SIZE;
-	CArrayAutoPtr< char > spDataBuffer( new char[ dwNumDataBufferBytes ] );
-	V_memset( spDataBuffer.Get(), 0, dwNumDataBufferBytes );
-	int titleStorageBlock3Index = 2;
-
-	XUSER_PROFILE_SETTING xps;
-	V_memset( &xps, 0, sizeof( xps ) );
-	xps.dwSettingId = GetTitleSpecificDataId( titleStorageBlock3Index );
-	xps.data.type = XUSER_DATA_TYPE_BINARY;
-	xps.data.binary.cbData = XPROFILE_SETTING_MAX_SIZE;
-	xps.data.binary.pbData = (PBYTE) spDataBuffer.Get();
-
-	V_memcpy( xps.data.binary.pbData, m_bufTitleData[ titleStorageBlock3Index ], XPROFILE_SETTING_MAX_SIZE );
-
-	pXPS.AddToTail( xps );
-
-
-	//
-	// Issue the XWrite operation
-	//
-	DWORD ret;
-	ret = g_pMatchExtensions->GetIXOnline()->XUserWriteProfileSettings( m_iController, pXPS.Count(), pXPS.Base(), NULL );
-
-	if ( ret != ERROR_SUCCESS )
-	{
-		return false;
-	}
-#endif
 	return true;
 
 }
 
 void PlayerLocal::WriteTitleData()
 {
-#if defined( _DEMO ) && defined( _X360 )
-	// Demo versions are not allowed to write profile data
-	return;
-#endif
-
-#ifdef _X360
-	if ( !m_xuid )
-		return;
-
-	if ( GetAssumedSigninState() == eXUserSigninState_NotSignedIn )
-		return;
-
-#if defined( CSTRIKE15 )
-	// Code to handle TCR 047 
-	// Calling GetXWriteOpportunity clears the MM_XWriteOppurtinty to MMXWO_NONE
-	// but we don't want that if we are trying to write within 3 seconds of the last
-	// write.  Rather we want the write to succeed after the 3 seconds expire; so
-	// we just bail until the 3 seconds is up and then allow the write to happen
-	// We do not have to queue up writes since the data we store on 360 is 
-	// live data and is always the most current version of the data
-	const float cMinWriteDelay = 3.0f;
-	if ( Plat_FloatTime() - m_flLastSave < cMinWriteDelay )
-	{
-		return;
-	}
-#endif
-
-	// NOTE: Need to call this here, because this has side effects.
-	// Getting the opportunity will clear the opportunity. This is used
-	// to only allow writes to happen at times out of game where we
-	// can be sure we don't hitch. If we don't do it here, then we can get into
-	// a state where some previous opportunity to write was set (say,
-	// leaving a cooperative game) with no stats to be saved. If that happens
-	// and we don't reset the state, then the next time we enter a new level
-	// it'll save at a bad time.
-	MM_XWriteOpportunity eXWO = GetXWriteOpportunity( m_iController );
-#endif
 
 	//
 	// Determine if XWrite is required first
@@ -1543,115 +979,7 @@ void PlayerLocal::WriteTitleData()
 		// early out if nothing to do here
 		return;
 
-#ifdef _X360
-	if ( m_eLoadedTitleData < GetAssumedSigninState() )
-	{
-		// haven't loaded data for the state
-		return;
-	}
-
-	if ( !IsTitleDataValid() )
-		return;
-
-	bool bCanXWrite = true;
-#if !defined (CSTRIKE15 )
-	//
-	// Check if we can actually XWrite (TCR 136)
-	//
-	static const float s_flXWritesFreq = 5 * 60 + 1; // 5 minutes
-	if ( Plat_FloatTime() - m_flLastSave < s_flXWritesFreq )
-		 bCanXWrite = false;
-
-	switch ( eXWO )
-	{
-	default:
-	case MMXWO_NONE:
-		bCanXWrite = false;
-		break;
-	case MMXWO_CHECKPOINT:
-		break;
-	case MMXWO_SETTINGS:
-	case MMXWO_SESSION_FINISHED:
-		bCanXWrite = true;
-		break;
-	}
-
-#else
-	// Cstrike only writes to user profile; writes are <500ms; earlier code ensures we only 
-	// write to profile at most every 3 seconds so we are TCR compliant
-	// Cstrike needs a waiver for every 5 minute writes since we save stats at end of round
-	// so we can ignore 5 minute timer check;  
-	// If we get to this code for any WriteOpportunity we are ok to write 
-	if ( eXWO == MMXWO_NONE )
-	{
-		bCanXWrite = false;
-	}
-#endif
-
-	if ( !bCanXWrite )
-	{
-		// have to wait longer
-		return;
-	}
-
-	//
-	// Prepare the XWrite batch
-	//
-
-	float flTimeStart;
-	flTimeStart = Plat_FloatTime();
-	Msg( "Player %d : WriteTitleData initiated...\n", m_iController );
-
-	CUtlVector< XUSER_PROFILE_SETTING > pXPS;
-
-	DWORD dwNumDataBufferBytes = TITLE_DATA_COUNT_X360 * XPROFILE_SETTING_MAX_SIZE;
-	CArrayAutoPtr< char > spDataBuffer( new char[ dwNumDataBufferBytes ] );
-	V_memset( spDataBuffer.Get(), 0, dwNumDataBufferBytes );
-
-	for ( int iData = 0; iData < TITLE_DATA_COUNT_X360; ++ iData )
-	{
-		if ( !m_bSaveTitleData[iData] )
-			continue;
-
-		Msg( "Player %d : WriteTitleData preparing TitleData%d...\n", m_iController, iData + 1 );
-
-		XUSER_PROFILE_SETTING xps;
-		V_memset( &xps, 0, sizeof( xps ) );
-		xps.dwSettingId = GetTitleSpecificDataId( iData );
-		xps.data.type = XUSER_DATA_TYPE_BINARY;
-		xps.data.binary.cbData = XPROFILE_SETTING_MAX_SIZE;
-		xps.data.binary.pbData = (PBYTE) spDataBuffer.Get() + iData * XPROFILE_SETTING_MAX_SIZE;
-
-		V_memcpy( xps.data.binary.pbData, m_bufTitleData[ iData ], XPROFILE_SETTING_MAX_SIZE );
-
-		pXPS.AddToTail( xps );
-	}
-
-	// Clear dirty state
-	V_memset( m_bSaveTitleData, 0, sizeof( m_bSaveTitleData[0] ) * TITLE_DATA_COUNT_X360 );
-
-	//
-	// Issue the XWrite operation
-	//
-	DWORD ret;
-	m_flLastSave = Plat_FloatTime();
-	ret = g_pMatchExtensions->GetIXOnline()->XUserWriteProfileSettings( m_iController, pXPS.Count(), pXPS.Base(), NULL );
-
-	if ( ret != ERROR_SUCCESS )
-	{
-		Warning( "Player %d : WriteTitleData failed (%.3f sec), err=0x%08X\n",
-			m_iController, Plat_FloatTime() - flTimeStart, ret );
-
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnProfileDataWriteFailed", "iController", m_iController ) );
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnProfileUnavailable", "iController", m_iController ) );
-	}
-	else
-	{
-		Msg( "Player %d : WriteTitleData finished (%.3f sec).\n",
-			m_iController, Plat_FloatTime() - flTimeStart );
-	}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	//
 	//	Steam stats have been written earlier
@@ -1670,13 +998,6 @@ void PlayerLocal::WriteTitleData()
 
 void PlayerLocal::Update()
 {
-#ifdef _X360
-	// When we are playing as guest, no updates
-	if ( !m_xuid )
-		return;
-
-	UpdatePendingAwardsState();
-#endif
 
 	// Load title data if not loaded yet
 	LoadTitleData();
@@ -1701,8 +1022,7 @@ void PlayerLocal::Destroy()
 	m_xuid = 0;
 	m_eOnlineState = STATE_OFFLINE;
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_CallbackOnUserStatsReceived.Unregister();
 	m_CallbackOnPersonaStateChange.Unregister();
 #endif
@@ -1715,47 +1035,10 @@ void PlayerLocal::RecomputeXUID( char const *szNetwork )
 	if ( !m_xuid )
 		return;
 
-#ifdef _X360
-	DWORD dwFlagSignin = XUSER_GET_SIGNIN_INFO_OFFLINE_XUID_ONLY;
-	if ( !Q_stricmp( "LIVE", szNetwork ) )
-		dwFlagSignin = XUSER_GET_SIGNIN_INFO_ONLINE_XUID_ONLY;
-
-	XUSER_SIGNIN_INFO xsi;
-	if ( ERROR_SUCCESS != XUserGetSigninInfo( m_iController, dwFlagSignin, &xsi ) ||
-		!xsi.xuid )
-	{
-		if ( ERROR_SUCCESS != XUserGetXUID( m_iController, &xsi.xuid ) )
-		{
-			DevWarning( "Player::RecomputeXUID failed! Leaving ctrlr%d as %llx.\n", m_iController, m_xuid );
-		}
-		else
-		{
-			m_xuid = xsi.xuid;
-		}
-	}
-	else
-	{
-		m_xuid = xsi.xuid;
-	}
-#endif
 }
 
 void PlayerLocal::DetectOnlineState()
 {
-#ifdef _X360
-	OnlineState_t eOnlineState = IPlayer::STATE_OFFLINE;
-	if ( !XBX_GetPrimaryUserIsGuest() )
-	{
-		if ( XUserGetSigninState( m_iController ) == eXUserSigninState_SignedInToLive )
-		{
-			eOnlineState = IPlayer::STATE_NO_MULTIPLAYER;
-			BOOL bValue = false;
-			if ( ERROR_SUCCESS == XUserCheckPrivilege( m_iController, XPRIVILEGE_MULTIPLAYER_SESSIONS, &bValue ) && bValue )
-				eOnlineState = IPlayer::STATE_ONLINE;
-		}
-	}
-	m_eOnlineState = eOnlineState;
-#endif
 }
 
 const UserProfileData & PlayerLocal::GetPlayerProfileData()
@@ -1765,149 +1048,6 @@ const UserProfileData & PlayerLocal::GetPlayerProfileData()
 
 void PlayerLocal::LoadPlayerProfileData()
 {
-#ifdef _X360
-
-	// These are the values we're interested in having returned (must match the indices above)
-	const DWORD dwSettingIds[] =
-	{
-		XPROFILE_GAMERCARD_REP,
-		XPROFILE_GAMER_DIFFICULTY,
-		XPROFILE_GAMER_CONTROL_SENSITIVITY,
-		XPROFILE_GAMER_YAXIS_INVERSION,
-		XPROFILE_OPTION_CONTROLLER_VIBRATION,
-		XPROFILE_GAMER_PREFERRED_COLOR_FIRST,
-		XPROFILE_GAMER_PREFERRED_COLOR_SECOND,
-		XPROFILE_GAMER_ACTION_AUTO_AIM,
-		XPROFILE_GAMER_ACTION_AUTO_CENTER,
-		XPROFILE_GAMER_ACTION_MOVEMENT_CONTROL,
-		XPROFILE_GAMERCARD_REGION,
-		XPROFILE_GAMERCARD_ACHIEVEMENTS_EARNED ,
-		XPROFILE_GAMERCARD_CRED,
-		XPROFILE_GAMERCARD_ZONE,
-		XPROFILE_GAMERCARD_TITLES_PLAYED,
-		XPROFILE_GAMERCARD_TITLE_ACHIEVEMENTS_EARNED,
-		XPROFILE_GAMERCARD_TITLE_CRED_EARNED,
-
-		// [jason] For debugging voice settings only
-		XPROFILE_OPTION_VOICE_MUTED,
-		XPROFILE_OPTION_VOICE_THRU_SPEAKERS,
-		XPROFILE_OPTION_VOICE_VOLUME
-	};
-
-	enum { NUM_PROFILE_SETTINGS = ARRAYSIZE( dwSettingIds ) };
-
-	// First, we call with a NULL pointer and zero size to retrieve the buffer size we'll get back
-	DWORD dwResultSize = 0;	// Must be zero to get the correct size back
-	XUSER_READ_PROFILE_SETTING_RESULT *pResults = NULL;
-	DWORD dwError = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettings(	0,			// Family ID (current title)
-		m_iController,
-		NUM_PROFILE_SETTINGS,
-		dwSettingIds,
-		&dwResultSize,
-		pResults,
-		NULL );
-
-	// We need this to inform us that it's given us a size back for the buffer
-	if ( dwError != ERROR_INSUFFICIENT_BUFFER )
-	{
-		Warning( "Player %d : LoadPlayerProfileData failed to get size (err=0x%08X)!\n", m_iController, dwError );
-		return;
-	}
-
-	// Now we allocate that buffer and supply it to the call
-	BYTE *pData = (BYTE *) stackalloc( dwResultSize );
-	ZeroMemory( pData, dwResultSize );
-
-	pResults = (XUSER_READ_PROFILE_SETTING_RESULT *) pData;
-
-	dwError = g_pMatchExtensions->GetIXOnline()->XUserReadProfileSettings(	0,			// Family ID (current title)
-		m_iController,
-		NUM_PROFILE_SETTINGS,
-		dwSettingIds,
-		&dwResultSize,
-		pResults,
-		NULL );	// Not overlapped, must be synchronous
-
-	// We now have a raw buffer of results
-	if ( dwError != ERROR_SUCCESS )
-	{
-		Warning( "Player %d : LoadTitleData failed to get data (err=0x%08X)!\n", m_iController, dwError );
-		return;
-	}
-
-	for ( DWORD k = 0; k < pResults->dwSettingsLen; ++ k )
-	{
-		XUSER_PROFILE_SETTING const &xps = pResults->pSettings[k];
-		switch ( xps.dwSettingId )
-		{
-		case XPROFILE_GAMERCARD_REP:
-			m_ProfileData.reputation = xps.data.fData;
-			break;
-		case XPROFILE_GAMER_DIFFICULTY:
-			m_ProfileData.difficulty = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_CONTROL_SENSITIVITY:
-			m_ProfileData.sensitivity = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_YAXIS_INVERSION:
-			m_ProfileData.yaxis = xps.data.nData;
-			break;
-		case XPROFILE_OPTION_CONTROLLER_VIBRATION:
-			m_ProfileData.vibration = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_PREFERRED_COLOR_FIRST:
-			m_ProfileData.color1 = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_PREFERRED_COLOR_SECOND:
-			m_ProfileData.color2 = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_ACTION_AUTO_AIM:
-			m_ProfileData.action_autoaim = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_ACTION_AUTO_CENTER:
-			m_ProfileData.action_autocenter = xps.data.nData;
-			break;
-		case XPROFILE_GAMER_ACTION_MOVEMENT_CONTROL:
-			m_ProfileData.action_movementcontrol = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_REGION:
-			m_ProfileData.region = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_ACHIEVEMENTS_EARNED:
-			m_ProfileData.achearned = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_CRED:
-			m_ProfileData.cred = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_ZONE:
-			m_ProfileData.zone = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_TITLES_PLAYED:
-			m_ProfileData.titlesplayed = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_TITLE_ACHIEVEMENTS_EARNED:
-			m_ProfileData.titleachearned = xps.data.nData;
-			break;
-		case XPROFILE_GAMERCARD_TITLE_CRED_EARNED:
-			m_ProfileData.titlecred = xps.data.nData;
-			break;
-
-			// [jason] For debugging voice settings only:
-		case XPROFILE_OPTION_VOICE_MUTED:
-			DevMsg( "Player %d : XPROFILE_OPTION_VOICE_MUTED setting: %d\n", m_iController, xps.data.nData );
-			break;
-		case XPROFILE_OPTION_VOICE_THRU_SPEAKERS:
-			DevMsg( "Player %d : XPROFILE_OPTION_VOICE_THRU_SPEAKERS setting: %d\n", m_iController, xps.data.nData );
-			break;
-		case XPROFILE_OPTION_VOICE_VOLUME:
-			DevMsg( "Player %d : XPROFILE_OPTION_VOICE_VOLUME setting: %d\n", m_iController, xps.data.nData );
-			break;
-		}
-	}
-#endif
-#ifdef _PS3
-	m_ProfileData.vibration = 3; // vibration enabled on PS3
-#endif
 
 	DevMsg( "Player %d : LoadPlayerProfileData finished\n", m_iController );
 }
@@ -1919,76 +1059,10 @@ MatchmakingData* PlayerLocal::GetPlayerMatchmakingData( void )
 
 void PlayerLocal::UpdatePlayerMatchmakingData( int mmDataType )
 {
-#if defined ( _X360 )
-	if ( mmDataType < 0 || mmDataType >= MMDATA_TYPE_COUNT )
-	{
-		DevMsg( "Invalid matchmaking data type passed to UpdatePlayerMatchmakingData ( %d )", mmDataType );
-		return;
-	}
-
-	DevMsg( "Player::UpdatePlayerMatchmakingData( ctrlr%d; mmDataType%d )\n", GetPlayerIndex(), mmDataType );
-
-	// Now obtain the avg calculator for the difficulty
-	// Calculator operates on "avgValue" and "newValue"
-	CExpressionCalculator calc( g_pMMF->GetMatchTitleGameSettingsMgr()->GetFormulaAverage( mmDataType ) );
-	char const *szAvg = "avgValue";
-	char const *szNew = "newValue";
-	float flResult;
-
-	//
-	// Average up our data
-	//
-
-#define CALC_AVG( field ) \
-	calc.SetVariable( szAvg, m_MatchmakingData.field[mmDataType][MMDATA_SCOPE_LIFETIME] ); \
-	calc.SetVariable( szNew, m_MatchmakingData.field[mmDataType][MMDATA_SCOPE_ROUND] * MM_AVG_CONST ); \
-	if ( calc.Evaluate( flResult ) ) \
-		m_MatchmakingData.field[mmDataType][MMDATA_SCOPE_LIFETIME] = flResult;
-
-	CALC_AVG( mContribution );
-	CALC_AVG( mMVPs );
-	CALC_AVG( mKills );
-	CALC_AVG( mDeaths );
-	CALC_AVG( mHeadShots );
-	CALC_AVG( mDamage );
-	CALC_AVG( mShotsFired );
-	CALC_AVG( mShotsHit );
-	CALC_AVG( mDominations );
-	// Average rounds played makes no sense since the average is a per round average; increment both the average and running totals
-	m_MatchmakingData.mRoundsPlayed[mmDataType][MMDATA_SCOPE_LIFETIME] += 1;
-	m_MatchmakingData.mRoundsPlayed[mmDataType][MMDATA_SCOPE_ROUND] += 1;
-
-#undef CALC_AVG
-#endif // #if defined ( _X360 )
 }
 
 void PlayerLocal::ResetPlayerMatchmakingData( int mmDataScope )
 {
-#if defined ( _X360 )
-	if ( mmDataScope < 0 || mmDataScope >= MMDATA_SCOPE_COUNT )
-	{
-		DevMsg( "Invalid matchmaking data scope passed to ResetPlayerMatchmakingData ( %d )", mmDataScope );
-		return;
-	}
-
-	DevMsg( "Player::ResetPlayerMatchmakingData( ctrlr%d; mmDataScope%d )\n", GetPlayerIndex(), mmDataScope );
-
-	ConVarRef score_default( "score_default" );
-
-	for ( int i=0; i<MMDATA_TYPE_COUNT; ++i )
-	{
-		m_MatchmakingData.mContribution[i][mmDataScope] = score_default.GetInt();
-		m_MatchmakingData.mMVPs[i][mmDataScope] = 0;
-		m_MatchmakingData.mKills[i][mmDataScope] = 0;
-		m_MatchmakingData.mDeaths[i][mmDataScope] = 0;
-		m_MatchmakingData.mHeadShots[i][mmDataScope] = 0;
-		m_MatchmakingData.mDamage[i][mmDataScope] = 0;
-		m_MatchmakingData.mShotsFired[i][mmDataScope] = 0;
-		m_MatchmakingData.mShotsHit[i][mmDataScope] = 0;
-		m_MatchmakingData.mDominations[i][mmDataScope] = 0;
-		m_MatchmakingData.mRoundsPlayed[i][mmDataScope] = 0;
-	}
-#endif // #if defined ( _X360 )
 }
 
 const void * PlayerLocal::GetPlayerTitleData( int iTitleDataIndex )
@@ -2015,25 +1089,6 @@ void PlayerLocal::UpdatePlayerTitleData( TitleDataFieldsDescription_t const *fdK
 	if ( steamapicontext->SteamUtils() && steamapicontext->SteamUtils()->GetConnectedUniverse() == k_EUniverseBeta )
 #endif
 	{
-#if ( defined( _GAMECONSOLE ) && !defined( _CERT ) )
-		// Validate that the caller is not forging the field description
-		bool bKeyForged = true;
-		for ( TitleDataFieldsDescription_t const *fdCheck = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-			fdCheck && fdCheck->m_szFieldName; ++ fdCheck )
-		{
-			if ( fdCheck == fdKey )
-			{
-				bKeyForged = false;
-				break;
-			}
-		}
-		if ( bKeyForged )
-		{
-			DevWarning( "PlayerLocal::UpdatePlayerTitleData( %s ) with invalid key!\n", fdKey->m_szFieldName );
-			Assert( 0 );
-			return;
-		}
-#endif
 	}
 
 	// Validate data size
@@ -2102,28 +1157,6 @@ void PlayerLocal::UpdatePlayerTitleData( TitleDataFieldsDescription_t const *fdK
 	}
 
 	// Check our "guest" status
-#ifdef _GAMECONSOLE
-	bool bRegisteredPlayer = false;
-	for ( int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		if ( XBX_GetUserId( k ) == m_iController )
-		{
-			if ( XBX_GetUserIsGuest( k ) )
-			{
-				DevMsg( "pPlayerLocal(%s)->UpdatePlayerTitleData not saving for guests.\n", GetName() );
-				return;
-			}
-			bRegisteredPlayer = true;
-			break;
-		}
-	}
-	if ( !bRegisteredPlayer )
-	{
-		DevMsg( "pPlayerLocal(%s)->UpdatePlayerTitleData not saving for not participating gamers.\n", GetName() );
-		Assert( 0 ); // title code shouldn't be calling UpdateAwardsData for players not in active gameplay, title bug?
-		return;
-	}
-#endif
 
 	// Mark stats to be stored at next available opportunity
 	m_bSaveTitleData[ fdKey->m_iTitleDataBlock ] = true;
@@ -2235,10 +1268,6 @@ void PlayerLocal::UpdateLeaderboardData( KeyValues *pLeaderboardInfo )
 {
 	DevMsg( "PlayerLocal::UpdateLeaderboardData for %s ...\n", GetName() );
 
-#ifdef _X360
-	IX360LeaderboardBatchWriter *pLbWriter = MMX360_CreateLeaderboardBatchWriter( m_xuid );
-#endif
-
 	// Iterate over all views specified
 	for ( KeyValues *pView = pLeaderboardInfo->GetFirstTrueSubKey(); pView; pView = pView->GetNextTrueSubKey() )
 	{
@@ -2270,7 +1299,7 @@ void PlayerLocal::UpdateLeaderboardData( KeyValues *pLeaderboardInfo )
 		{
 			if ( pDescription )
 			{
-#if !defined( _X360 ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 				Steam_WriteLeaderboardData( pDescription, pView );
 #endif
 			}
@@ -2346,17 +1375,6 @@ void PlayerLocal::UpdateLeaderboardData( KeyValues *pLeaderboardInfo )
 						szViewName, szValue, szRule, uiCurrent, uiValue );
 					pCurrentData->SetUint64( szValue, uiValue );
 					
-#ifdef _X360
-					if ( pLbWriter )
-					{
-						XUSER_PROPERTY xProp = {0};
-						xProp.dwPropertyId = pValDesc->GetInt( "prop" );
-						xProp.value.type = XUSER_DATA_TYPE_INT64;
-						xProp.value.i64Data = uiValue;
-
-						pLbWriter->AddProperty( pDescription->GetInt( ":id" ), xProp );
-					}
-#endif
 				}
 				else if ( !Q_stricmp( "float", szType ) )
 				{
@@ -2375,17 +1393,6 @@ void PlayerLocal::UpdateLeaderboardData( KeyValues *pLeaderboardInfo )
 						szViewName, szValue, szRule, flCurrent, flValue );
 					pCurrentData->SetFloat( szValue, flValue );
 					
-#ifdef _X360
-					if ( pLbWriter )
-					{
-						XUSER_PROPERTY xProp = {0};
-						xProp.dwPropertyId = pValDesc->GetInt( "prop" );
-						xProp.value.type = XUSER_DATA_TYPE_FLOAT;
-						xProp.value.i64Data = flValue;
-
-						pLbWriter->AddProperty( pDescription->GetInt( ":id" ), xProp );
-					}
-#endif
 				}
 				else
 				{
@@ -2402,18 +1409,6 @@ void PlayerLocal::UpdateLeaderboardData( KeyValues *pLeaderboardInfo )
 	//
 	// Now submit all accumulated leaderboard writes
 	//
-#ifdef _X360
-	if ( pLbWriter )
-	{
-		pLbWriter->WriteBatchAndDestroy();
-		pLbWriter = NULL;
-	}
-	else
-	{
-		Warning( "PlayerLocal::UpdateLeaderboardData failed to save leaderboard data to writer!\n" );
-		Assert( 0 );
-	}
-#endif
 
 	DevMsg( "PlayerLocal::UpdateLeaderboardData for %s finished.\n", GetName() );
 }
@@ -2495,37 +1490,7 @@ void PlayerLocal::UpdateAwardsData( KeyValues *pAwardsData )
 	if ( !pAwardsData ) 
 		return;
 
-#ifdef _X360
-	if ( !m_xuid )
-		return;
-
-	if ( GetAssumedSigninState() == eXUserSigninState_NotSignedIn )
-		return;
-#endif
-
 	// Check our "guest" status
-#ifdef _GAMECONSOLE
-	bool bRegisteredPlayer = false;
-	for ( int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		if ( XBX_GetUserId( k ) == m_iController )
-		{
-			if ( XBX_GetUserIsGuest( k ) )
-			{
-				DevMsg( "pPlayerLocal(%s)->UpdateAwardsData is unavailable for guests.\n", GetName() );
-				return;
-			}
-			bRegisteredPlayer = true;
-			break;
-		}
-	}
-	if ( !bRegisteredPlayer )
-	{
-		DevMsg( "pPlayerLocal(%s)->UpdateAwardsData is unavailable for not participating gamers.\n", GetName() );
-		Assert( 0 ); // title code shouldn't be calling UpdateAwardsData for players not in active gameplay, title bug?
-		return;
-	}
-#endif
 
 	for ( KeyValues *kvValue = pAwardsData->GetFirstValue(); kvValue; kvValue = kvValue->GetNextValue() )
 	{
@@ -2549,36 +1514,7 @@ void PlayerLocal::UpdateAwardsData( KeyValues *pAwardsData )
 				// Found the achievement to award
 				if ( m_arrAchievementsEarned.Find( pAchievement->m_idAchievement ) == m_arrAchievementsEarned.InvalidIndex() )
 				{
-#ifdef _X360
-					XPendingAsyncAward_t *pAsync = new XPendingAsyncAward_t;
-					Q_memset( pAsync, 0, sizeof( XPendingAsyncAward_t ) );
-					pAsync->m_flStartTimestamp = Plat_FloatTime();
-					pAsync->m_pLocalPlayer = this;
-					pAsync->m_eType = XPendingAsyncAward_t::TYPE_ACHIEVEMENT;
-					pAsync->m_pAchievementDesc = pAchievement;
-					pAsync->m_xAchievement.dwUserIndex = m_iController;
-					pAsync->m_xAchievement.dwAchievementId = pAchievement->m_idAchievement;
-					DWORD dwErrCode = XUserWriteAchievements( 1, &pAsync->m_xAchievement, &pAsync->m_xOverlapped );
-					if ( dwErrCode == ERROR_IO_PENDING )
-					{
-						DevMsg( "pPlayerLocal(%s)->UpdateAwardsData(%s) initiated async award.\n", GetName(), pAchievement->m_szAchievementName );
-						s_arrPendingAsyncAwards.AddToTail( pAsync );
-						m_arrAchievementsEarned.AddToTail( pAchievement->m_idAchievement );
-					}
-					else if ( ( dwErrCode == 1 ) || ( dwErrCode == 0 ) )
-					{
-						delete pAsync;
-						DevMsg( "pPlayerLocal(%s)->UpdateAwardsData(%s) already awarded by system.\n", GetName(), pAchievement->m_szAchievementName );
-						m_arrAchievementsEarned.AddToTail( pAchievement->m_idAchievement );
-					}
-					else
-					{
-						delete pAsync;
-						DevWarning( "pPlayerLocal(%s)->UpdateAwardsData(%s) failed to initiate async award.\n", GetName(), pAchievement->m_szAchievementName );
-						g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-							"OnProfileUnavailable", "iController", m_iController ) );
-					}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 					bool bSteamResult = steamapicontext->SteamUserStats()->SetAchievement( pAchievement->m_szAchievementName );
 					if ( bSteamResult )
 					{
@@ -2619,42 +1555,7 @@ void PlayerLocal::UpdateAwardsData( KeyValues *pAwardsData )
 				// Found the avaward to award
 				if ( m_arrAvatarAwardsEarned.Find( pAvAward->m_idAvatarAward ) == m_arrAvatarAwardsEarned.InvalidIndex() )
 				{
-#ifdef _X360
-					XPendingAsyncAward_t *pAsync = new XPendingAsyncAward_t;
-					Q_memset( pAsync, 0, sizeof( XPendingAsyncAward_t ) );
-					pAsync->m_flStartTimestamp = Plat_FloatTime();
-					pAsync->m_pLocalPlayer = this;
-					pAsync->m_eType = XPendingAsyncAward_t::TYPE_AVATAR_AWARD;
-					pAsync->m_pAvatarAwardDesc = pAvAward;
-					pAsync->m_xAvatarAsset.dwUserIndex = m_iController;
-					pAsync->m_xAvatarAsset.dwAwardId = pAvAward->m_idAvatarAward;
-					DWORD dwErrCode = XUserAwardAvatarAssets( 1, &pAsync->m_xAvatarAsset, &pAsync->m_xOverlapped );
-					if ( dwErrCode == ERROR_IO_PENDING )
-					{
-						DevMsg( "pPlayerLocal(%s)->UpdateAwardsData(%s) initiated async award.\n", GetName(), pAvAward->m_szAvatarAwardName );
-						s_arrPendingAsyncAwards.AddToTail( pAsync );
-						m_arrAvatarAwardsEarned.AddToTail( pAvAward->m_idAvatarAward );
-					}
-					else if ( ( dwErrCode == 1 ) || ( dwErrCode == 0 ) )
-					{
-						delete pAsync;
-						DevMsg( "pPlayerLocal(%s)->UpdateAwardsData(%s) already awarded by system.\n", GetName(), pAvAward->m_szAvatarAwardName );
-						m_arrAvatarAwardsEarned.AddToTail( pAvAward->m_idAvatarAward );
-						if ( TitleDataFieldsDescription_t const *fdBitfield = TitleDataFieldsDescriptionFindByString( g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage(), pAvAward->m_szTitleDataBitfieldStatName ) )
-						{
-							TitleDataFieldsDescriptionSetBit( fdBitfield, this, true );
-						}
-					}
-					else
-					{
-						delete pAsync;
-						DevWarning( "pPlayerLocal(%s)->UpdateAwardsData(%s) failed to initiate async award.\n", GetName(), pAvAward->m_szAvatarAwardName );
-						g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-							"OnProfileUnavailable", "iController", m_iController ) );
-					}
-#else
 					DevMsg( "pPlayerLocal(%s)->UpdateAwardsData(%s) skipped.\n", GetName(), pAvAward->m_szAvatarAwardName );
-#endif
 				}
 				else
 				{
@@ -2670,69 +1571,6 @@ void PlayerLocal::UpdateAwardsData( KeyValues *pAwardsData )
 		DevWarning( "pPlayerLocal(%s)->write_awards(%s) UNKNOWN NAME!\n", GetName(), szName );
 	}
 }
-
-#ifdef _X360
-void PlayerLocal::UpdatePendingAwardsState()
-{
-	bool bWarningFired = false;
-	for ( int k = 0; k < s_arrPendingAsyncAwards.Count(); ++ k )
-	{
-		XPendingAsyncAward_t *pPendingAsyncAward = s_arrPendingAsyncAwards[k];
-		if ( pPendingAsyncAward->m_pLocalPlayer && ( pPendingAsyncAward->m_pLocalPlayer != this ) )
-			continue;
-		if ( !XHasOverlappedIoCompleted( &pPendingAsyncAward->m_xOverlapped ) )
-			continue;
-		
-		DWORD result = 0;
-		DWORD dwXresult = XGetOverlappedResult( &pPendingAsyncAward->m_xOverlapped, &result, false );
-		bool bSuccessfullyEarned = ( dwXresult == ERROR_SUCCESS );
-		if ( this == pPendingAsyncAward->m_pLocalPlayer )
-		{
-			if ( !bSuccessfullyEarned )
-			{
-				switch ( pPendingAsyncAward->m_eType )
-				{
-				case XPendingAsyncAward_t::TYPE_ACHIEVEMENT:
-					m_arrAchievementsEarned.FindAndFastRemove( pPendingAsyncAward->m_pAchievementDesc->m_idAchievement );
-					break;
-				case XPendingAsyncAward_t::TYPE_AVATAR_AWARD:
-					m_arrAchievementsEarned.FindAndFastRemove( pPendingAsyncAward->m_pAvatarAwardDesc->m_idAvatarAward );
-					break;
-				}
-				if ( !bWarningFired )
-				{
-					g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-						"OnProfileUnavailable", "iController", m_iController ) );
-					bWarningFired = true;
-				}
-			}
-			else
-			{
-				if ( pPendingAsyncAward->m_eType == XPendingAsyncAward_t::TYPE_AVATAR_AWARD )
-				{
-					if ( TitleDataFieldsDescription_t const *fdBitfield = TitleDataFieldsDescriptionFindByString( g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage(),
-						pPendingAsyncAward->m_pAvatarAwardDesc->m_szTitleDataBitfieldStatName ) )
-					{
-						TitleDataFieldsDescriptionSetBit( fdBitfield, this, true );
-					}
-				}
-
-				KeyValues *kvAwardedEvent = new KeyValues( "OnPlayerAward" );
-				kvAwardedEvent->SetInt( "iController", m_iController );
-				if ( pPendingAsyncAward->m_eType == XPendingAsyncAward_t::TYPE_AVATAR_AWARD )
-					kvAwardedEvent->SetString( "award", pPendingAsyncAward->m_pAvatarAwardDesc->m_szAvatarAwardName );
-				if ( pPendingAsyncAward->m_eType == XPendingAsyncAward_t::TYPE_ACHIEVEMENT )
-					kvAwardedEvent->SetString( "award", pPendingAsyncAward->m_pAchievementDesc->m_szAchievementName );
-				g_pMatchEventsSubscription->BroadcastEvent( kvAwardedEvent );
-			}
-		}
-
-		// Remove the pending structure
-		s_arrPendingAsyncAwards.Remove( k -- );
-		delete pPendingAsyncAward;
-	}
-}
-#endif
 
 void PlayerLocal::EvaluateAwardsStateBasedOnStats()
 {
@@ -2808,20 +1646,6 @@ void PlayerLocal::EvaluateAwardsStateBasedOnStats()
 
 void PlayerLocal::LoadGuestsTitleData()
 {
-#ifdef _GAMECONSOLE
-	for ( int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		int iCtrlr = XBX_GetUserId( k );
-		if ( iCtrlr == m_iController )
-			continue;
-		if ( !XBX_GetUserIsGuest( k ) )
-			continue;
-
-		DevMsg( "User%d stats inheriting from user%d.\n", iCtrlr, m_iController );
-		PlayerLocal *pGuest = ( PlayerLocal * ) g_pPlayerManager->GetLocalPlayer( iCtrlr );
-		Q_memcpy( pGuest->m_bufTitleData, m_bufTitleData, sizeof( m_bufTitleData ) );
-	}
-#endif
 }
 
 
@@ -2849,9 +1673,7 @@ void PlayerLocal::OnProfileTitleDataLoaded( int iErrorCode )
 
 XUSER_SIGNIN_STATE PlayerLocal::GetAssumedSigninState()
 {
-#ifdef _X360
-	return ( GetOnlineState() != STATE_OFFLINE ) ? ( eXUserSigninState_SignedInToLive ) : ( eXUserSigninState_SignedInLocally );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( steamapicontext->SteamUser() && steamapicontext->SteamUser()->BLoggedOn() )
 		return eXUserSigninState_SignedInToLive;
 	else
@@ -2859,15 +1681,7 @@ XUSER_SIGNIN_STATE PlayerLocal::GetAssumedSigninState()
 #else // No steam.
 
 
-#if defined( _PS3 )
-
-	return eXUserSigninState_SignedInLocally;
-
-#else
-
 	return eXUserSigninState_NotSignedIn;
-
-#endif
 
 
 #endif
@@ -2889,10 +1703,6 @@ CON_COMMAND_F( ms_player_dump_properties, "Prints a dump the current players pro
 	{
 		int iCtrlr = iUserSlot;
 		bool bGuest = false;
-#ifdef _GAMECONSOLE
-		iCtrlr = XBX_GetUserId( iUserSlot );
-		bGuest = !!XBX_GetUserIsGuest( iUserSlot );
-#endif
 		Msg( "Slot%d ctrlr%d: %s\n", iUserSlot, iCtrlr, bGuest ? "guest" : "profile" );
 		IPlayerLocal *pPlayerLocal = g_pPlayerManager->GetLocalPlayer( iCtrlr );
 		if ( !pPlayerLocal )

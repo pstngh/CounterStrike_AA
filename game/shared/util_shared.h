@@ -99,13 +99,8 @@ inline CBaseEntity *EntityFromEntityHandle( IHandleEntity *pHandleEntity )
 	IClientUnknown *pUnk = (IClientUnknown*)pHandleEntity;
 	return pUnk->GetBaseEntity();
 #else
-#ifndef _GAMECONSOLE
 	if ( staticpropmgr->IsStaticProp( pHandleEntity ) )
 		return NULL;
-#else
-	if ( !pHandleEntity || pHandleEntity->m_bIsStaticProp )
-		return NULL;
-#endif
 
 	IServerUnknown *pUnk = (IServerUnknown*)pHandleEntity;
 	Assert( !pUnk || pUnk->GetBaseEntity() );

@@ -17,12 +17,10 @@
 #include "eyes_flashlight_ps20.inc"
 #include "eyes_flashlight_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "eyes_vs30.inc"
 #include "eyes_ps30.inc"
 #include "eyes_flashlight_vs30.inc"
 #include "eyes_flashlight_ps30.inc"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -123,9 +121,7 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 		Assert( bDX9 );
 
 		ShadowFilterMode_t nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode( false /* bForceLowQuality */, g_pHardwareConfig->HasFastVertexTextures() && !IsPlatformX360() && !IsPlatformPS3() );	// Based upon vendor and device dependent formats
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			DECLARE_STATIC_VERTEX_SHADER( eyes_flashlight_vs20 );
 			SET_STATIC_VERTEX_SHADER( eyes_flashlight_vs20 );
@@ -142,7 +138,6 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 				SET_STATIC_PIXEL_SHADER( eyes_flashlight_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			// The vertex shader uses the vertex id stream
@@ -155,7 +150,6 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 			SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 			SET_STATIC_PIXEL_SHADER( eyes_flashlight_ps30 );
 		}
-#endif
 
 		// On DX9, get the gamma read and write correct
 		pShaderShadow->EnableSRGBRead( SHADER_SAMPLER0, true );			// Spot
@@ -187,16 +181,13 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 #ifdef STDSHADER_DX9_DLL_EXPORT
 		Assert( bDX9 );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( eyes_flashlight_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, pShaderAPI->GetCurrentNumBones() > 0 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
 			SET_DYNAMIC_VERTEX_SHADER( eyes_flashlight_vs20 );
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_10, VERTEX_SHADER_SHADER_SPECIFIC_CONST_11, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -206,7 +197,6 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
 			SET_DYNAMIC_VERTEX_SHADER( eyes_flashlight_vs30 );
 		}
-#endif
 
 //			float vPSConst[4] = {params[info.m_nDilation]->GetFloatValue(), 0.0f, 0.0f, 0.0f};
 //			pShaderAPI->SetPixelShaderConstant( 0, vPSConst, 1 );
@@ -226,9 +216,7 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 		vEyePos_SpecExponent[3] = 0.0f;
 		pShaderAPI->SetPixelShaderConstant( PSREG_EYEPOS_SPEC_EXPONENT, vEyePos_SpecExponent, 1 );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 			{
@@ -244,7 +232,6 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 				SET_DYNAMIC_PIXEL_SHADER( eyes_flashlight_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( eyes_flashlight_ps30 );
@@ -256,7 +243,6 @@ static void DrawFlashlight( bool bDX9, CBaseVSShader *pShader, IMaterialVar** pa
 
 			SetupUberlightFromState( pShaderAPI, flashlightState );
 		}
-#endif
 #endif
 
 		// This uses from VERTEX_SHADER_SHADER_SPECIFIC_CONST_0 to VERTEX_SHADER_SHADER_SPECIFIC_CONST_5
@@ -294,9 +280,7 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 		Assert( bDX9 );
 		bSRGBRead01 = true;
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			bool bFlattenStaticControlFlow = !g_pHardwareConfig->SupportsStaticControlFlow();
 
@@ -316,7 +300,6 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 				SET_STATIC_PIXEL_SHADER( eyes_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			// The vertex shader uses the vertex id stream
@@ -329,7 +312,6 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 			DECLARE_STATIC_PIXEL_SHADER( eyes_ps30 );
 			SET_STATIC_PIXEL_SHADER( eyes_ps30 );
 		}
-#endif
 		// On DX9, get the gamma read and write correct
 		pShaderShadow->EnableSRGBRead( SHADER_SAMPLER0, true );			// Base
 		pShaderShadow->EnableSRGBRead( SHADER_SAMPLER1, true );			// White
@@ -366,9 +348,7 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 		LightState_t lightState = {0, false, false};
 		pShaderAPI->GetDX9LightState( &lightState );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			bool bUseStaticControlFlow = g_pHardwareConfig->SupportsStaticControlFlow();
 			DECLARE_DYNAMIC_VERTEX_SHADER( eyes_vs20 );
@@ -379,7 +359,6 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( NUM_LIGHTS, bUseStaticControlFlow ? 0 : lightState.m_nNumLights );
 			SET_DYNAMIC_VERTEX_SHADER( eyes_vs20 );
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, VERTEX_SHADER_SHADER_SPECIFIC_CONST_8, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -391,7 +370,6 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
 			SET_DYNAMIC_VERTEX_SHADER( eyes_vs30 );
 		}
-#endif
 
 		// Special constant for DX9 eyes: { Dilation, x, x, x };
 		float vPSConst[4] = {params[info.m_nDilation]->GetFloatValue(), 0.0f, 0.0f, 0.0f};
@@ -404,9 +382,7 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 		vEyePos_SpecExponent[3] = 0.0f;
 		pShaderAPI->SetPixelShaderConstant( PSREG_EYEPOS_SPEC_EXPONENT, vEyePos_SpecExponent, 1 );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 			{
@@ -420,14 +396,12 @@ static void DrawUsingVertexShader( bool bDX9, CBaseVSShader *pShader, IMaterialV
 				SET_DYNAMIC_PIXEL_SHADER( eyes_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( eyes_ps30 );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, pShaderAPI->ShouldWriteDepthToDestAlpha() );
 			SET_DYNAMIC_PIXEL_SHADER( eyes_ps30 );
 		}
-#endif
 #endif
 	}
 	pShader->Draw();

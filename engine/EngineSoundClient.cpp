@@ -14,9 +14,6 @@
 #include "icliententitylist.h"
 #include "enginesingleuserfilter.h"
 #include "snd_audio_source.h"
-#if defined(_X360)
-#include "xmp.h"
-#endif
 #include "tier0/vprof.h"
 #include "audio/private/snd_sfx.h"
 #include "cl_splitscreen.h"
@@ -92,9 +89,6 @@ public:
 
 	virtual void SetReplaySoundFade( float flReplayVolume ) { g_flReplaySoundFade = flReplayVolume; }
 	virtual float GetReplaySoundFade()const { return g_flReplaySoundFade; }
-#if defined( _GAMECONSOLE )
-	virtual void	UnloadSound( const char *pSample );
-#endif
 
 private:
 	int EmitSoundInternal( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSoundEntry, HSOUNDSCRIPTHASH nSoundEntryHash, const char *pSample, 
@@ -564,18 +558,12 @@ void CEngineSoundClient::PrecacheSentenceGroup( const char *pGroupName )
 void CEngineSoundClient::NotifyBeginMoviePlayback()
 {
 	StopAllSounds(true);
-#if defined( _X360 )
-	XMPOverrideBackgroundMusic();
-#endif
 
 	m_bMoviePlaying = true;
 }
 
 void CEngineSoundClient::NotifyEndMoviePlayback()
 {
-#if defined( _X360 )
-	XMPRestoreBackgroundMusic();
-#endif
 
 	m_bMoviePlaying = false;
 }
@@ -590,12 +578,3 @@ bool CEngineSoundClient::GetSoundChannelVolume( const char* sound, float &flVolu
 	return S_GetSoundChannelVolume( sound, flVolumeLeft, flVolumeRight );
 }
 
-#if defined( _GAMECONSOLE )
-void CEngineSoundClient::UnloadSound( const char *pSample )
-{
-	S_UnloadSound( pSample );
-}
-
-
-
-#endif

@@ -111,10 +111,6 @@ void CMatchExtensions::OnExtensionInterfaceUpdated( char const *szInterfaceStrin
 		{ INTERFACEVERSION_SERVERGAMEDLL,	(Ext_t) &Exts_t::m_pIServerGameDLL },
 		{ INTERFACEVERSION_GAMEEVENTSMANAGER2, (Ext_t) &Exts_t::m_pIGameEventManager2 },
 		{ CLIENT_DLL_INTERFACE_VERSION,		( Ext_t ) &Exts_t::m_pIBaseClientDLL },
-#ifdef _X360
-		{ XBOXSYSTEM_INTERFACE_VERSION,		(Ext_t) &Exts_t::m_pIXboxSystem },
-		{ XONLINE_INTERFACE_VERSION,		(Ext_t) &Exts_t::m_pIXOnline },
-#endif
 		{ NULL, NULL }
 	};
 

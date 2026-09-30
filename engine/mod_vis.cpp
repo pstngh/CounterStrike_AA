@@ -108,23 +108,8 @@ static void VisMark_Cached( const VisCacheEntry &cache, const worldbrushdata_t &
 	count = cache.leaflist.Count();
 	const unsigned short * RESTRICT pSrc = cache.leaflist.Base();
 
-#if defined( _X360 ) || defined( _PS3 )
-	const int offsetLeaf = offsetof(mleaf_t, visframe);
-	const int offsetNode = offsetof(mnode_t, visframe);
-#endif
-
 	while ( count >= 8 )
 	{
-#if defined( _X360 ) || defined( _PS3 )
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[0]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[1]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[2]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[3]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[4]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[5]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[6]), offsetLeaf );
-		PREFETCH_128( (void *)(worldbrush.leafs + pSrc[7]), offsetLeaf );
-#endif
 		worldbrush.leafs[pSrc[0]].visframe = visframe;
 		worldbrush.leafs[pSrc[1]].visframe = visframe;
 		worldbrush.leafs[pSrc[2]].visframe = visframe;
@@ -148,16 +133,6 @@ static void VisMark_Cached( const VisCacheEntry &cache, const worldbrushdata_t &
 
 	while ( count >= 8 )
 	{
-#if defined( _X360 ) || defined( _PS3 )
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[0]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[1]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[2]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[3]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[4]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[5]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[6]), offsetNode );
-		PREFETCH_128( (void *)(worldbrush.nodes + pSrc[7]), offsetNode );
-#endif
 		worldbrush.nodes[pSrc[0]].visframe = visframe;
 		worldbrush.nodes[pSrc[1]].visframe = visframe;
 		worldbrush.nodes[pSrc[2]].visframe = visframe;

@@ -88,7 +88,7 @@ public:
 public:
 	virtual void OnEvent( KeyValues *pEvent );
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 protected:
 	HServerListRequest m_hRequest;
 public:
@@ -136,7 +136,7 @@ protected:
 		STATE_IDLE,
 		STATE_LAN_SEARCH,
 		STATE_GROUP_SEARCH,
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 		STATE_FETCHING_SERVERS,
 #endif
 		STATE_GROUP_FETCHED,

@@ -6,7 +6,7 @@
 //=============================================================================//
 #include "pch_tier0.h"
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #include "cputopology.h"
@@ -14,9 +14,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#ifndef _PS3
 #include "tier0_strtools.h"
-#endif
 
 //#include "tier1/strtools.h" // this is included for the definition of V_isspace()
 #ifdef PLATFORM_WINDOWS_PC
@@ -45,7 +43,7 @@ struct CpuIdResult_t
 
 static bool cpuid( unsigned long function, CpuIdResult_t &out )
 {
-#if defined( _X360 ) || defined( _PS3 ) || defined( __e2k__ ) || defined( __aarch64__ )
+#if defined( __e2k__ ) || defined( __aarch64__ )
 	out.Reset();
 	return false;
 #elif defined(GNUC)
@@ -125,7 +123,7 @@ static bool cpuid( unsigned long function, CpuIdResult_t &out )
 
 static bool cpuidex( unsigned long function, unsigned long subfunction, CpuIdResult_t &out )
 {
-#if defined( _X360 ) || defined( _PS3 ) || defined( __e2k__ ) || defined( __aarch64__ )
+#if defined( __e2k__ ) || defined( __aarch64__ )
 	out.Reset();
 	return false;
 #elif defined(GNUC)
@@ -220,7 +218,7 @@ static CpuIdResult_t cpuidex( unsigned long function, unsigned long subfunction 
 //-----------------------------------------------------------------------------
 static bool IsWin98OrOlder()
 {
-#if defined( _X360 ) || defined( _PS3 ) || defined( __e2k__ ) || defined( POSIX )
+#if defined( __e2k__ ) || defined( POSIX )
 	return false;
 #else
 	bool retval = false;
@@ -264,9 +262,7 @@ static bool IsWin98OrOlder()
 
 static bool CheckMMXTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __MMX__ )
 		return true;
 	#else
@@ -279,9 +275,7 @@ static bool CheckMMXTechnology(void)
 
 static bool CheckSSETechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return true;
-#elif defined( __aarch64__ )
+#if defined( __aarch64__ )
 	// Apple Silicon always has NEON; x86 SIMD intrinsics are translated by
 	// sse2neon in this build.
 	return true;
@@ -303,9 +297,7 @@ static bool CheckSSETechnology(void)
 
 static bool CheckSSE2Technology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __aarch64__ )
+#if defined( __aarch64__ )
 	return true;
 #elif defined( __e2k__ )
 	#if defined( __SSE2__ )
@@ -320,9 +312,7 @@ static bool CheckSSE2Technology(void)
 
 bool CheckSSE3Technology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined(__e2k__ )
+#if defined(__e2k__ )
 	#if defined( __SSE3__ )
 		return true;
 	#else
@@ -335,9 +325,7 @@ bool CheckSSE3Technology(void)
 
 bool CheckSSSE3Technology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __SSSE3__ )
 		return true;
 	#else
@@ -352,9 +340,7 @@ bool CheckSSSE3Technology(void)
 
 bool CheckSSE41Technology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __SSE4_1__ )
 		return true;
 	#else
@@ -370,9 +356,7 @@ bool CheckSSE41Technology(void)
 
 bool CheckSSE42Technology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __SSE4_2__ )
 		return true;
 	#else
@@ -391,9 +375,7 @@ bool CheckSSE42Technology(void)
 
 bool CheckAVXTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __AVX__ )
 		return true;
 	#else
@@ -406,9 +388,7 @@ bool CheckAVXTechnology(void)
 
 bool CheckSSE4aTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __SSE4A__ )
 		return true;
 	#else
@@ -427,9 +407,7 @@ bool CheckSSE4aTechnology(void)
 
 static bool Check3DNowTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	#if defined( __3dNOW__ )
 		return true;
 	#else
@@ -446,7 +424,7 @@ static bool Check3DNowTechnology(void)
 
 static bool CheckCMOVTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 ) || defined( __e2k__ )
+#if defined( __e2k__ )
 	return false;
 #else
 	return ( cpuid( 1 ).edx & ( 1 << 15 ) ) != 0;
@@ -455,7 +433,7 @@ static bool CheckCMOVTechnology(void)
 
 static bool CheckFCMOVTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 ) || defined( __e2k__ )
+#if defined( __e2k__ )
 	return false;
 #else
 	return ( cpuid( 1 ).edx & ( 1 << 16 ) ) != 0;
@@ -464,9 +442,7 @@ static bool CheckFCMOVTechnology(void)
 
 static bool CheckRDTSCTechnology(void)
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return false;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	return true;
 #else
 	return ( cpuid( 1 ).edx & 0x10 ) != 0;
@@ -490,9 +466,7 @@ bool s_bCpuBrandInitialized = false;
 // Return the Processor's vendor identification string, or "Generic_x86" if it doesn't exist on this CPU
 const tchar* GetProcessorVendorId()
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return "PPC";
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	return "MCST";
 #else
 	if ( s_bCpuVendorIdInitialized )
@@ -531,11 +505,7 @@ const tchar* GetProcessorVendorId()
 
 const tchar* GetProcessorBrand()
 {
-#if defined( _X360 )
-	return "Xenon";
-#elif defined( _PS3 )
-	return "Cell Broadband Engine";
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	return __builtin_cpu_name();
 	// e.g. "elbrus-8c"
 #else
@@ -569,11 +539,7 @@ const tchar* GetProcessorBrand()
 // http://www.intel.com/Assets/PDF/appnote/241618.pdf
 static bool HTSupported(void)
 {
-#if ( defined( _X360 ) || defined( _PS3 ) )
-	// not entirtely sure about the semantic of HT support, it being an intel name
-	// are we asking about HW threads or HT?
-	return true;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	return false;
 #else
 	enum {
@@ -605,9 +571,7 @@ static bool HTSupported(void)
 // Returns the number of logical processors per physical processors.
 static uint8 LogicalProcessorsPerPackage(void)
 {
-#if defined( _X360 )
-	return 2;
-#elif defined( __e2k__ )
+#if defined( __e2k__ )
 	if( __builtin_cpu_is("elbrus-16c") )
 	{
 		return 16;
@@ -650,10 +614,6 @@ uint64 CalculateCPUFreq(); // from cpu_linux.cpp
 // for some fraction of a second, then measuring the elapsed number of cycles.
 static int64 CalculateClockSpeed()
 {
-#if defined( _X360 ) || defined(_PS3)
-	// Xbox360 and PS3 have the same clock speed and share a lot of characteristics on PPU
-	return 3200000000LL;
-#else
 #if defined( _WIN32 )
 	LARGE_INTEGER waitTime, startCount, curCount;
 	CCycleCount start, end;
@@ -682,7 +642,6 @@ static int64 CalculateClockSpeed()
 	return freq;
 #else
 	#error "Please implement Clock Speed function for this platform"
-#endif
 #endif
 }
 
@@ -820,13 +779,7 @@ const CPUInformation& GetCPUInformation()
 	bool bAuthenticAMD = ( 0 == V_tier0_stricmp( GetProcessorVendorId(), "AuthenticAMD" ) );
 	bool bGenuineIntel = !bAuthenticAMD && ( 0 == V_tier0_stricmp( GetProcessorVendorId(), "GenuineIntel" ) );
 
-#if defined( _X360 )
-	pi.m_nPhysicalProcessors = 3;
-	pi.m_nLogicalProcessors  = 6;
-#elif defined( _PS3 )
-	pi.m_nPhysicalProcessors = 1;
-	pi.m_nLogicalProcessors  = 2;
-#elif defined(_WIN32) && !defined( _X360 )
+#if defined(_WIN32)
 	SYSTEM_INFO si;
 	ZeroMemory( &si, sizeof(si) );
 

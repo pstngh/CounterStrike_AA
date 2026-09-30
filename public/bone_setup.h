@@ -279,10 +279,6 @@ public:
 	void Init( const CStudioHdr *pStudioHdr, const QAngle &angles, const Vector &pos, float flTime, int iFramecounter, int boneMask );
 	void AddDependencies(  mstudioseqdesc_t &seqdesc, int iSequence, float flCycle, const float poseParameters[], float flWeight = 1.0f );
 
-#if defined( _PS3 )
-	void AddAllDependencies_PS3( ikcontextikrule_t *ikRules, int numRules );
-#endif
-
 	void ClearTargets( void );
 	void UpdateTargets( BoneVector pos[], BoneQuaternion q[], matrix3x4a_t boneToWorld[], CBoneBitList &boneComputed );
 	void AutoIKRelease( void );

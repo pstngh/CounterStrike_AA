@@ -12,15 +12,6 @@
 #include "c_playerresource.h"
 #include "cs_hud_chat.h"
 
-#ifdef _PS3
-#include "fmtstr.h"
-#endif
-
-#if defined ( _GAMECONSOLE )
-#include "usermessages.h"
-#include "inputsystem/iinputsystem.h"
-#endif
-
 
 ConVar cl_player_rank_debug( "cl_player_rank_debug", "0", FCVAR_DEVELOPMENTONLY );
 ConVar cl_force_progress_notice_every_change( "cl_force_progress_notice_every_change", "0", FCVAR_DEVELOPMENTONLY );
@@ -841,113 +832,5 @@ bool CPlayerRankManager::HasBuiltMedalCategories( void ) const
 {
 	return m_bMedalCategoriesBuilt;
 }
-
-
-#if defined ( _GAMECONSOLE )
-
-// Official servers request elo bracket info when a player connects. 
-bool MsgFunc_RequestEloBracketInfo( const CCSUsrMsg_RequestEloBracketInfo &msg )
-{
-	ELOGameType_t game_mode = (ELOGameType_t) msg.bracket();
-	g_PlayerRankManager.ServerRequestBracketInfo( game_mode );
-	return true;
-}
-
-// We want all the bracket calculation logic to happen on the server (because we expect to change it post ship)
-// but all the storage for console must happen on the client. Thus this horribleness. 
-void CPlayerRankManager::ServerRequestBracketInfo( ELOGameType_t game_mode )
-{
-	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-	if ( !pLocalPlayer || !engine->IsConnected() )
-		return;
-
-	// Restrict bracket changes to gamempads for console 
-	InputDevice_t device = g_pInputSystem->GetCurrentInputDevice();	
-	if ( device != INPUT_DEVICE_GAMEPAD )
-		return;
-
-	unsigned short idx =	m_PlayerBracketInfos.Find( game_mode );
-	if ( idx == m_PlayerBracketInfos.InvalidIndex() )
-		return;
-
-	PlayerELOBracketInfo_t& eloBracketInfo = m_PlayerBracketInfos[idx];
-
-	KeyValues *kv = new KeyValues("player_elo_bracket_info");
-	kv->SetInt( "game_mode", game_mode );
-	kv->SetInt( "display_bracket",  eloBracketInfo.m_DisplayBracket );
-	kv->SetInt( "previous_bracket", eloBracketInfo.m_PreviousBracket );
-	kv->SetInt( "games_in_bracket", eloBracketInfo.m_NumGamesInBracket );
-
-	// Base_CmdKeyValues handles the kv deletion.
-	engine->ServerCmdKeyValues( kv );
-}
-
-// official servers send this after rounds end so clients can handle storage.
-bool MsgFunc_SetEloBracketInfo( const CCSUsrMsg_SetEloBracketInfo &msg )
-{
-	ELOGameType_t game_mode = (ELOGameType_t) msg.game_mode();
-	int8 display_bracket = msg.display_bracket();
-	int8 prev_bracket = msg.prev_bracket();
-	int8 games_in_bracket = msg.num_games_in_bracket();
-
-	//Msg( "SetEloBracket %d %d %d %d\n", game_mode, display_bracket, prev_bracket, games_in_bracket );
-
-	g_PlayerRankManager.Console_SetEloBracket( game_mode, display_bracket, prev_bracket, games_in_bracket );
-
-	return true;
-}
-
-bool CPlayerRankManager::Console_SetEloBracket( ELOGameType_t game_mode, uint8 display_bracket, uint8 prev_bracket, uint8 num_games_in_bracket )
-{
-	// make sure they'll fit in four bits.
-	Assert( (display_bracket & 0xF0) == 0 );
-	Assert( (prev_bracket & 0xF0) == 0 );
-
-	//Msg( " %d %d %d %d \n", game_mode, display_bracket, prev_bracket, num_games_in_bracket );
-
-	unsigned short idx = m_PlayerBracketInfos.Find( game_mode );
-	if ( idx == m_PlayerBracketInfos.InvalidIndex() )
-	{
-		if ( game_mode > ELOGameType::INVALID && game_mode < ELOGameType::COUNT )
-		{
-			idx = m_PlayerBracketInfos.Insert( game_mode );
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	PlayerELOBracketInfo_t& eloBracketInfo = m_PlayerBracketInfos[idx];
-
-	eloBracketInfo.m_DisplayBracket = display_bracket;
-	eloBracketInfo.m_PreviousBracket = prev_bracket;
-	eloBracketInfo.m_NumGamesInBracket = num_games_in_bracket;
-
-	return true;
-}
-
-bool CPlayerRankManager::Console_SetEloBracket( ELOGameType_t game_mode, const PlayerELOBracketInfo_t& bracket )
-{
-	return Console_SetEloBracket( game_mode, bracket.m_DisplayBracket, bracket.m_PreviousBracket, bracket.m_NumGamesInBracket );
-}
-
-// Returns the display bracket, -1 on failure (no recorded bracket info for specified game mode).
-// Optional pointer to elo bracket struct can be filled out.
-int CPlayerRankManager::Console_GetEloBracket( ELOGameType_t game_mode, PlayerELOBracketInfo_t *pOutBracketInfo /*=NULL*/ )
-{
-	unsigned short idx =	m_PlayerBracketInfos.Find( game_mode );
-	if ( idx != m_PlayerBracketInfos.InvalidIndex() )
-	{
-		PlayerELOBracketInfo_t &info = m_PlayerBracketInfos[idx];
-		if ( pOutBracketInfo )
-			*pOutBracketInfo = info;
-
-		return info.m_DisplayBracket;
-	}
-	return -1;
-}
-
-#endif // _GAMECONSOLE
 
 

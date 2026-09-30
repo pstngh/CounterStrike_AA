@@ -24,60 +24,9 @@ ConVar mm_session_sys_kick_ban_duration( "mm_session_sys_kick_ban_duration", "18
 
 #define STEAM_LOBBY_CHAT_MSG_BUFFER_SIZE 65536
 
-#ifdef _X360
-static CUtlVector< CSysSessionBase * > g_arrSysSessionsPending;
-static CUtlVector< CSysSessionBase * > g_arrSysSessionsDelete;
-
-void SysSession360_UpdatePending()
-{
-	// Delete scheduled sessions
-	for ( int k = 0; k < g_arrSysSessionsDelete.Count(); ++ k )
-	{
-		CSysSessionBase *pSession = g_arrSysSessionsDelete[k];
-		DevMsg( "SysSession360_UpdatePending: destroying session %p\n", pSession );
-
-		pSession->Destroy();
-		g_arrSysSessionsPending.FindAndFastRemove( pSession );
-	}
-	g_arrSysSessionsDelete.Purge();
-
-	// Update pending sessions
-	for ( int k = 0; k < g_arrSysSessionsPending.Count(); ++ k )
-	{
-		CSysSessionBase *pSysSession = g_arrSysSessionsPending[k];
-		pSysSession->Update();
-		
-		if ( k >= g_arrSysSessionsPending.Count() || pSysSession != g_arrSysSessionsPending[k] )
-			// If a pending session has removed itself, then proceed updating next frame
-			return;
-	}
-}
-
-void SysSession360_RegisterPending( CSysSessionBase *pSession )
-{
-	if ( g_arrSysSessionsPending.Find( pSession ) == g_arrSysSessionsPending.InvalidIndex() )
-	{
-		DevMsg( "SysSession360_RegisterPending: registered pending session %p\n", pSession );
-		g_arrSysSessionsPending.AddToTail( pSession );
-	}
-	else if ( g_arrSysSessionsDelete.Find( pSession ) == g_arrSysSessionsDelete.InvalidIndex() )
-	{
-		DevMsg( "SysSession360_RegisterPending: registered session %p for delete\n", pSession );
-		g_arrSysSessionsDelete.AddToTail( pSession );
-	}
-	else
-		Error( "SysSession360_RegisterPending for deleted session!" );
-}
-#endif
-
 
 static bool SysSession_AllowCreate()
 {
-#ifdef _X360
-	// Cannot create new sessions while another session is pending
-	if ( g_arrSysSessionsPending.Count() )
-		return false;
-#endif
 
 	static float s_fAllowCreateTime = 0.0f;
 	float flDelay = mm_session_sys_delay_create.GetFloat();
@@ -106,11 +55,7 @@ static bool SysSession_AllowCreate()
 
 
 CSysSessionBase::CSysSessionBase( KeyValues *pSettings ) :
-#ifdef _X360
-	m_pAsyncOperation( NULL ),
-	m_pNetworkMgr( NULL ),
-	m_hLobbyMigrateCall( NULL ),
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_CallbackOnServersConnected( this, &CSysSessionBase::Steam_OnServersConnected ),
 	m_CallbackOnServersDisconnected( this, &CSysSessionBase::Steam_OnServersDisconnected ),
 	m_CallbackOnP2PSessionRequest( this, &CSysSessionBase::Steam_OnP2PSessionRequest ),
@@ -131,13 +76,7 @@ CSysSessionBase::~CSysSessionBase()
 
 bool CSysSessionBase::Update()
 {
-#ifdef _X360
-	if ( m_pNetworkMgr )
-	{
-		if ( m_pNetworkMgr->Update() != CX360NetworkMgr::UPDATE_SUCCESS )
-			return false;	// the network manager destroyed or changed listener
-	}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( !IsServiceSession() )
 	{
 		// Process P2P network
@@ -156,21 +95,6 @@ bool CSysSessionBase::Update()
 	Voice_UpdateLocalHeadsetsStatus();
 	Voice_CaptureAndTransmitLocalVoiceData();
 
-#ifdef _X360
-	if ( m_pAsyncOperation )
-	{
-		m_pAsyncOperation->Update();
-
-		if ( m_pAsyncOperation->IsFinished() )
-		{
-			OnAsyncOperationFinished();
-		}
-	}
-
-	if ( UpdateMigrationCall() )
-		return false;
-#endif
-	
 	return true;
 }
 
@@ -198,225 +122,9 @@ void CSysSessionBase::SendEventsNotification( KeyValues *notify )
 	OnSessionEvent( notify );
 }
 
-#ifdef _X360
-
-void CSysSessionBase::ReleaseAsyncOperation()
-{
-	if ( m_pAsyncOperation )
-	{
-		m_pAsyncOperation->Release();
-		m_pAsyncOperation = NULL;
-	}
-}
-
-INetSupport::NetworkSocket_t CSysSessionBase::GetX360NetSocket()
-{
-	if ( char const *szNetFlag = m_pSettings->GetString( "system/netflag", NULL ) )
-	{
-		if ( !Q_stricmp( "teamlink", szNetFlag ) )
-			return INetSupport::NS_SOCK_TEAMLINK;
-	}
-
-	return INetSupport::NS_SOCK_LOBBY;
-}
-
-bool CSysSessionBase::ShouldAllowX360HostMigration()
-{
-	if ( !m_lobby.m_hHandle )
-		return false;
-
-	// Check the session details
-	if ( dynamic_cast< CSysSessionHost * >( this ) )
-	{
-		return
-			m_pSettings->GetInt( "members/numMachines", 0 ) > 1 &&				// more than 1 machine in the session
-			!Q_stricmp( m_pSettings->GetString( "system/network" ), "LIVE" );	// migrate only on LIVE
-	}
-
-	return false;
-}
-
-bool CSysSessionBase::UpdateMigrationCall()
-{
-	if ( !m_hLobbyMigrateCall )
-		return false;
-
-	if ( !m_MigrateCallState.m_bFinished )
-		return false;
-
-	// The call was outstanding and is now finished
-	m_hLobbyMigrateCall = NULL;
-
-	if ( m_MigrateCallState.m_ret != ERROR_SUCCESS )
-	{
-		Assert( 0 );
-
-		KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-		kv->SetPtr( "syssession", this );
-		kv->SetString( "error", "migrate" );
-
-		// Inside this event broadcast our session will be deleted
-		SendEventsNotification( kv );
-		return true;
-	}
-
-	// Prepare the notification
-	KeyValues *kvEvent = new KeyValues( "OnPlayerLeaderChanged" );
-	kvEvent->SetString( "migrate", "finished" );
-
-	if ( dynamic_cast< CSysSessionHost * >( this ) )
-	{
-		// We need to notify all our peers that we are now the new host and we have the new
-		// session details.
-		KeyValues *msg = new KeyValues( "SysSession::HostMigrated" );
-		KeyValues::AutoDelete autodelete( msg );
-		msg->SetUint64( "id", m_xuidMachineId );
-
-		char chSessionInfo[ XSESSION_INFO_STRING_LENGTH ];
-		MMX360_SessionInfoToString( m_lobby.m_xiInfo, chSessionInfo );
-		msg->SetString( "sessioninfo", chSessionInfo );
-
-		// When the host migrated, we need to let the clients know which
-		// machines are still staying in the session
-#ifdef _X360
-		if ( IsX360() && m_pNetworkMgr )
-		{
-			int numMachines = m_pSettings->GetInt( "members/numMachines" );
-			for ( int k = 0; k < numMachines; ++ k )
-			{
-				KeyValues *pMachine = m_pSettings->FindKey( CFmtStr( "members/machine%d", k ) );
-				if ( !pMachine )
-					continue;
-				
-				XUID idMachine = pMachine->GetUint64( "id" );
-				if ( idMachine &&
-					 ( idMachine == m_xuidMachineId ||
-					   m_pNetworkMgr->ConnectionPeerGetAddress( idMachine ) ) )
-				{
-					msg->SetString( CFmtStr( "machines/%llx", idMachine ), "" );
-				}
-			}
-		}
-#endif
-
-		DevMsg( "CSysSessionHost - host migrated - %s\n", chSessionInfo );
-		SendMessage( msg );
-
-#ifdef _X360
-		// Drop all machines that no longer have a network connection with us
-		// in case P2P interconnect failed earlier
-		if ( IsX360() && m_pNetworkMgr )
-		{
-			CUtlVector< XUID > arrXuidsNoP2P;
-			int numMachines = m_pSettings->GetInt( "members/numMachines" );
-			for ( int k = 0; k < numMachines; ++ k )
-			{
-				KeyValues *pMachine = m_pSettings->FindKey( CFmtStr( "members/machine%d", k ) );
-				if ( !pMachine )
-					continue;
-				
-				XUID idMachine = pMachine->GetUint64( "id" );
-				if ( idMachine &&
-					 idMachine != m_xuidMachineId &&
-					 !m_pNetworkMgr->ConnectionPeerGetAddress( idMachine ) )
-					 arrXuidsNoP2P.AddToTail( idMachine );
-			}
-			for ( int k = 0; k < arrXuidsNoP2P.Count(); ++ k )
-			{
-				DevWarning( "UpdateMigrationCall - dropping machine %llx due to no P2P network connection!\n", arrXuidsNoP2P[k] );
-				OnPlayerLeave( arrXuidsNoP2P[k] );
-			}
-
-			//
-			// Update QOS reply data of the session
-			//
-			CUtlBuffer bufQosData;
-			bufQosData.ActivateByteSwapping( !CByteswap::IsMachineBigEndian() );
-			g_pMatchFramework->GetMatchNetworkMsgController()->PackageGameDetailsForQOS( m_pSettings, bufQosData );
-			g_pMatchExtensions->GetIXOnline()->XNetQosListen( &m_lobby.m_xiInfo.sessionID,
-				( const BYTE * ) bufQosData.Base(), bufQosData.TellMaxPut(),
-				0, XNET_QOS_LISTEN_SET_DATA | XNET_QOS_LISTEN_ENABLE );
-		}
-#endif
-
-		// Send a notification
-		kvEvent->SetString( "state", "host" );
-		kvEvent->SetUint64( "xuid", m_xuidMachineId );
-	}
-	else
-	{
-		// Send a notification
-		DevMsg( "CSysSessionClient - client migration finished\n" );
-
-		kvEvent->SetString( "state", "client" );
-		kvEvent->SetUint64( "xuid", m_pSettings->GetUint64( "members/machine0/id", 0ull ) );
-	}
-	
-	SendEventsNotification( kvEvent );
-	return false;
-}
-
-#endif
-
 void CSysSessionBase::Destroy()
 {
-#ifdef _X360
-	// If the session is in an active gameplay state, first statistic reporting
-	// should be initiated on the session before it can be destroyed
-	if ( m_lobby.m_bXSessionStarted )
-	{
-		DevWarning( "CSysSessionBase::Destroy called on an active gameplay session, forcing XSessionEnd!\n" );
-		MMX360_LobbySetActiveGameplayState( m_lobby, false, NULL );
-	}
-
-	// If a migrate call was outstanding on the session, then disassociate the listener
-	if ( m_hLobbyMigrateCall )
-	{
-		MMX360_LobbyMigrateSetListener( m_hLobbyMigrateCall, NULL );
-		m_hLobbyMigrateCall = NULL;
-	}
-
-	bool bShouldAllowHostMigration = ShouldAllowX360HostMigration();
-
-	if ( KeyValues *msg = new KeyValues( "SysSession::Quit" ) )
-	{
-		KeyValues::AutoDelete autodelete( msg );
-
-		msg->SetUint64( "id", m_xuidMachineId );
-		SendMessage( msg );
-	}
-
-	if ( m_pNetworkMgr && !bShouldAllowHostMigration )
-	{
-		m_pNetworkMgr->Destroy();
-		m_pNetworkMgr = NULL;
-	}
-
-	ReleaseAsyncOperation();
-
-	Voice_ProcessTalkers( NULL, false );
-
-	if ( !bShouldAllowHostMigration )
-	{
-		if ( m_lobby.m_hHandle )
-			MMX360_LobbyDelete( m_lobby, &m_pAsyncOperation );
-		else
-			SysSession360_RegisterPending( this );	// registers first as if lobby delete has completed
-
-		m_pSettings = NULL;
-		SysSession360_RegisterPending( this );
-		return;
-	}
-	else
-	{
-		// Waiting for migration to finish
-		DevMsg( "CSysSessionBase::Destroy is waiting for migration to finish...\n" );
-		m_pSettings = NULL;
-		SysSession360_RegisterPending( this );
-		return;
-	}
-	
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	Voice_ProcessTalkers( NULL, false );
 
 	if ( m_lobby.m_uiLobbyID )
@@ -442,43 +150,7 @@ void CSysSessionBase::DebugPrint()
 {
 	DevMsg( "CSysSessionBase\n" );
 	DevMsg( "    machineid: %llx\n", m_xuidMachineId );
-#ifdef _X360
-	DevMsg( "    nonce:     %llx\n", m_lobby.m_uiNonce );
-	DevMsg( "    xhandle:   %x\n", m_lobby.m_hHandle );
-	DevMsg( "    xnkid:     %llx\n", ( const uint64 & ) m_lobby.m_xiInfo.sessionID );
-	DevMsg( "    xstarted:  %d\n", m_lobby.m_bXSessionStarted );
-
-	XSESSION_LOCAL_DETAILS xld = {0};
-	DWORD dwSize = sizeof( xld );
-	DWORD ret = g_pMatchExtensions->GetIXOnline()->XSessionGetDetails( m_lobby.m_hHandle, &dwSize, &xld, NULL );
-	if ( ERROR_SUCCESS == ret )
-	{
-		DevMsg( "    idx host:  %d\n", xld.dwUserIndexHost );
-		DevMsg( "    game type: %d\n", xld.dwGameType );
-		DevMsg( "    game mode: %d\n", xld.dwGameMode );
-		DevMsg( "    flags:     0x%X\n", xld.dwFlags );
-		DevMsg( "    pub slots: %d/%d\n", xld.dwMaxPublicSlots - xld.dwAvailablePublicSlots, xld.dwMaxPublicSlots );
-		DevMsg( "    pri slots: %d/%d\n", xld.dwMaxPrivateSlots - xld.dwMaxPrivateSlots, xld.dwMaxPrivateSlots );
-		DevMsg( "    members:   %d (%d)\n", xld.dwActualMemberCount, xld.dwReturnedMemberCount );
-		DevMsg( "    xsesstate: %d\n", xld.eState );
-		DevMsg( "    xnonce:    %llx\n", xld.qwNonce );
-		DevMsg( "    xnkid:     %llx\n", ( const uint64 & ) xld.sessionInfo.sessionID );
-		DevMsg( "    xnkid arb: %llx\n", ( const uint64 & ) xld.xnkidArbitration );
-	}
-	else
-	{
-		DevMsg( "    session sys details unavailable: code %d\n", ret );
-	}
-
-	if ( m_pNetworkMgr )
-	{
-		m_pNetworkMgr->DebugPrint();
-	}
-	else
-	{
-		DevMsg( "    no network mgr\n" );
-	}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	DevMsg( "    lobby id:  %llx\n", m_lobby.m_uiLobbyID );
 	DevMsg( "    lbystate:  %d\n", m_lobby.m_eLobbyState );
 
@@ -527,9 +199,7 @@ uint64 CSysSessionBase::GetReservationCookie()
 
 uint64 CSysSessionBase::GetNonceCookie()
 {
-#ifdef _X360
-	return m_lobby.m_uiNonce;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	return m_lobby.GetSessionId();
 #else
 	Assert( false ); // Not implemented for this platform
@@ -549,11 +219,7 @@ void CSysSessionBase::ReplyLanSearch( KeyValues *msg )
 	KeyValues::AutoDelete autodelete( reply );
 
 	// Put information about our session
-#ifdef _X360
-	char chSessionInfo[ XSESSION_INFO_STRING_LENGTH ] = {0};
-	MMX360_SessionInfoToString( m_lobby.m_xiInfo, chSessionInfo );
-	reply->SetString( "options/sessioninfo", chSessionInfo );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	reply->SetUint64( "options/sessionid", m_lobby.m_uiLobbyID );
 #endif
 
@@ -563,14 +229,6 @@ void CSysSessionBase::ReplyLanSearch( KeyValues *msg )
 		reply->SetString( "player/name", pPlayer->GetName() );
 		reply->SetUint64( "player/xuid", pPlayer->GetXUID() );
 
-#ifdef _X360
-		XUSER_SIGNIN_INFO xsi;
-		if ( ERROR_SUCCESS == XUserGetSigninInfo( XBX_GetPrimaryUserId(), XUSER_GET_SIGNIN_INFO_ONLINE_XUID_ONLY, &xsi )
-			&& xsi.xuid )
-		{
-			reply->SetUint64( "player/xuidOnline", xsi.xuid );
-		}
-#endif
 	}
 
 	// Compose the binary encoding of game details
@@ -588,16 +246,7 @@ void CSysSessionBase::ReplyLanSearch( KeyValues *msg )
 
 void CSysSessionBase::SendMessage( KeyValues *msg )
 {
-#ifdef _X360
-	if ( m_pNetworkMgr )
-		m_pNetworkMgr->ConnectionPeerSendMessage( msg );
-
-	// Do not receive my own quit message
-	bool bCanReceive = !!Q_stricmp( "SysSession::Quit", msg->GetName() );
-	
-	if ( bCanReceive )
-		ReceiveMessage( msg, true );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	CUtlBuffer buf;
 	buf.ActivateByteSwapping( !CByteswap::IsMachineBigEndian() );
@@ -720,41 +369,7 @@ void CSysSessionBase::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMember
 	}
 }
 
-#ifdef _X360
-
-void CSysSessionBase::OnX360NetPacket( KeyValues *msg )
-{
-	ReceiveMessage( msg, true );
-}
-
-void CSysSessionBase::OnX360NetDisconnected( XUID xuidRemote )
-{
-	OnPlayerLeave( xuidRemote );
-}
-
-void CSysSessionBase::OnX360AllSessionMembersJoinLeave( KeyValues *kv )
-{
-	char const *szLock = kv->GetString( "system/lock", NULL );
-	char const *szAccess = kv->GetString( "system/access", NULL );
-	if ( szAccess || ( szLock && Q_stricmp( szLock, "endgame" ) && !IsX360() ) )
-	{
-		if ( m_lobby.m_bXSessionStarted )
-		{
-			DevWarning( "CSysSessionBase::OnX360AllSessionMembersJoinLeave cannot be called on an active gameplay session!\n" );
-			Assert( !m_lobby.m_bXSessionStarted );
-		}
-
-		MMX360_LobbyLeaveMembers( m_pSettings, m_lobby );
-		{
-			CX360LobbyFlags_t fl = MMX360_DescribeLobbyFlags( m_pSettings, !!dynamic_cast< CSysSessionHost * >( this ) );
-
-			g_pMatchExtensions->GetIXOnline()->XSessionModify( m_lobby.m_hHandle, fl.m_dwFlags, fl.m_numPublicSlots, fl.m_numPrivateSlots, MMX360_NewOverlappedDormant() );
-		}
-		MMX360_LobbyJoinMembers( m_pSettings, m_lobby );
-	}
-}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void CSysSessionBase::UnpackAndReceiveMessage( const void *pvBuffer, int numBytes, bool bValidatedLobbyMember, XUID xuidSrc )
 {
@@ -1112,10 +727,7 @@ void CSysSessionBase::Voice_CaptureAndTransmitLocalVoiceData()
 
 	if ( g_pMatchFramework->GetMatchTitle()->GetTitleSettingsFlags() & MATCHTITLE_VOICE_INGAME )
 	{
-#ifdef _X360
-		if ( m_lobby.m_bXSessionStarted )
-			return;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		if ( m_lobby.m_eLobbyState != m_lobby.STATE_DEFAULT )
 		{
 			if ( IsPS3() && m_bVoiceUsingSessionP2P )
@@ -1142,11 +754,7 @@ void CSysSessionBase::Voice_CaptureAndTransmitLocalVoiceData()
 
 	for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
 	{
-#ifdef _GAMECONSOLE
-		int iCtrlr = XBX_GetUserId( k );
-#else
 		int iCtrlr = XBX_GetPrimaryUserId();
-#endif
 
 		if ( v->VoiceUpdateData( iCtrlr ) )
 		{
@@ -1243,12 +851,7 @@ void CSysSessionBase::Voice_UpdateLocalHeadsetsStatus()
 	{
 		bool bHeadset = false;
 
-#ifdef _GAMECONSOLE
-		int iCtrlr = XBX_GetUserId( k );
-		
-		if ( !XBX_GetUserIsGuest( k ) )
-			bHeadset = g_pMatchExtensions->GetIEngineVoice()->IsHeadsetPresent( iCtrlr );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		bHeadset = g_pMatchExtensions->GetIEngineVoice()->IsHeadsetPresent( XBX_GetPrimaryUserId() );
 #endif
 		
@@ -1346,10 +949,6 @@ bool CSysSessionBase::FindAndRemovePlayerFromMembers( XUID xuid )
 			XUID xuidOtherPlayer = pMachine->GetUint64( CFmtStr( "player%d/xuid", j ), 0ull );
 			if ( xuidOtherPlayer == xuid )
 			{
-#ifdef _X360
-				// On X360 we need to update lobby members server-side count
-				MMX360_LobbyLeaveMembers( m_pSettings, m_lobby, k, k );
-#endif
 
 				// We also need to remove talkers
 				Voice_ProcessTalkers( pMachine, false );
@@ -1397,8 +996,7 @@ bool CSysSessionBase::FindAndRemovePlayerFromMembers( XUID xuid )
 					OnSessionEvent( kv );
 				}
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 				if ( dynamic_cast< CSysSessionHost * >( this ) )
 				{
 					// Update members information
@@ -1428,8 +1026,7 @@ void CSysSessionBase::UpdateSessionProperties( KeyValues *kv, bool bHost )
 	if ( IsX360() )
 		return;
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( !m_lobby.m_uiLobbyID )
 		return;
 
@@ -1444,9 +1041,7 @@ void CSysSessionBase::UpdateSessionProperties( KeyValues *kv, bool bHost )
 
 void CSysSessionBase::SetSessionActiveGameplayState( bool bActive, char const *szSecureServerAddress )
 {
-#ifdef _X360
-	MMX360_LobbySetActiveGameplayState( m_lobby, bActive, szSecureServerAddress );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	switch ( m_lobby.m_eLobbyState )
 	{
 	case CSteamLobbyObject::STATE_DEFAULT:
@@ -1479,8 +1074,7 @@ void CSysSessionBase::SetSessionActiveGameplayState( bool bActive, char const *s
 
 void CSysSessionBase::UpdateTeamProperties( KeyValues *pTeamProperties )
 {
-#if defined (_X360)
-#elif !defined(NO_STEAM)
+#if !defined(NO_STEAM)
 
 	if ( !m_lobby.m_uiLobbyID )
 		return;
@@ -1492,8 +1086,7 @@ void CSysSessionBase::UpdateTeamProperties( KeyValues *pTeamProperties )
 
 void CSysSessionBase::UpdateServerInfo( KeyValues *pServerKey )
 {
-#if defined (_X360)
-#elif !defined(NO_STEAM)
+#if !defined(NO_STEAM)
 
 	LobbySetDataFromKeyValues( "server", pServerKey->FindKey( "server" ) );
 
@@ -1530,8 +1123,7 @@ void CSysSessionBase::PrintValue( KeyValues *val, char *chBuffer, int numBytesBu
 
 CSysSessionHost::CSysSessionHost( KeyValues *pSettings ) :
 	CSysSessionBase( pSettings ),
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_dblDormantMembersCheckTime( Plat_FloatTime() ),
 	m_numDormantMembersDetected( 0 ),
 #endif
@@ -1547,8 +1139,7 @@ CSysSessionHost::CSysSessionHost( KeyValues *pSettings ) :
 
 CSysSessionHost::CSysSessionHost( CSysSessionClient *pClient, KeyValues *pSettings ) :
 	CSysSessionBase( pSettings ),
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_dblDormantMembersCheckTime( Plat_FloatTime() ),
 	m_numDormantMembersDetected( 0 ),
 #endif
@@ -1564,41 +1155,7 @@ CSysSessionHost::CSysSessionHost( CSysSessionClient *pClient, KeyValues *pSettin
 	
 	m_Voice_flLastHeadsetStatusCheck = pClient->m_Voice_flLastHeadsetStatusCheck;
 
-#ifdef _X360
-
-	m_pNetworkMgr = pClient->m_pNetworkMgr;
-	if ( m_pNetworkMgr )
-		m_pNetworkMgr->SetListener( this );
-
-	m_pAsyncOperation = pClient->m_pAsyncOperation;
-	Assert( !m_pAsyncOperation );
-
-	// If client was in migrate state, then disassociate the migrate call listener
-	if ( pClient->m_hLobbyMigrateCall )
-	{
-		MMX360_LobbyMigrateSetListener( pClient->m_hLobbyMigrateCall, NULL );
-		pClient->m_hLobbyMigrateCall = NULL;
-	}
-
-	// Schedule the host migration call
-	m_hLobbyMigrateCall = MMX360_LobbyMigrateHost( m_lobby, &m_MigrateCallState );
-
-	if ( !m_hLobbyMigrateCall )
-	{
-		// This is a dangerous notification because we are in the tree of constructors as
-		// follows: CMatchSessionOnlineHost -> CSysSessionHost
-		// The guideline to avoid troubles is to make sure that no code runs in the
-		// constructors of CMatchSessionOnlineHost and CSysSessionHost when the notification
-		// is fired.
-		KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-		kv->SetPtr( "syssession", this );
-		kv->SetString( "error", "migrate" );
-
-		// Inside this event broadcast our session will be deleted
-		SendEventsNotification( kv );
-		return;
-	}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	// Install callback for messages
 	m_CallbackOnLobbyChatMsg.Register( this, &CSysSessionBase::Steam_OnLobbyChatMsg );
 	m_CallbackOnLobbyChatUpdate.Register( this, &CSysSessionBase::Steam_OnLobbyChatUpdate );
@@ -1611,9 +1168,6 @@ CSysSessionHost::CSysSessionHost( CSysSessionClient *pClient, KeyValues *pSettin
 	KeyValues *kvEvent = new KeyValues( "OnPlayerLeaderChanged" );
 	kvEvent->SetString( "state", "host" );
 	kvEvent->SetUint64( "xuid", m_xuidMachineId );
-#ifdef _X360
-	kvEvent->SetString( "migrate", "started" );
-#endif
 	SendEventsNotification( kvEvent );
 }
 
@@ -1686,15 +1240,6 @@ bool CSysSessionHost::Update()
 		break;
 #endif
 
-#ifdef _X360
-	case STATE_ALLOWING_MIGRATE:
-		if ( mm_session_sys_timeout.GetFloat() + m_flTimeOperationStarted < Plat_FloatTime() )
-		{
-			// Assume that migration failed or we lost connection to Xbox LIVE
-			DestroyAfterMigrationFinished();
-		}
-		break;
-#endif
 	}
 
 	// Update reservation status
@@ -1721,23 +1266,6 @@ void CSysSessionHost::Destroy()
 		return;
 	}
 
-#ifdef _X360
-	if ( m_eState == STATE_DELETE )
-	{
-		delete this;
-		return;
-	}
-	else if ( ShouldAllowX360HostMigration() )
-	{
-		m_eState = STATE_ALLOWING_MIGRATE;
-		m_flTimeOperationStarted = Plat_FloatTime();
-	}
-	else
-	{
-		m_eState = STATE_DELETE;
-	}
-#endif
-
 	// Chain to base which will "delete this"
 	CSysSessionBase::Destroy();
 }
@@ -1750,27 +1278,12 @@ void CSysSessionHost::DebugPrint()
 
 XUID CSysSessionHost::GetHostXuid( XUID xuidValidResult )
 {
-#ifdef _X360
-	return m_xuidMachineId;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	return m_lobby.m_uiLobbyID ? steamapicontext->SteamMatchmaking()
 		->GetLobbyOwner( m_lobby.m_uiLobbyID ).ConvertToUint64() : m_xuidMachineId;
 #endif
 	return 0ull;
 }
-
-#ifdef _X360
-void CSysSessionHost::GetHostSessionInfo( char chBuffer[ XSESSION_INFO_STRING_LENGTH ] )
-{
-	MMX360_SessionInfoToString( m_lobby.m_xiInfo, chBuffer );
-}
-
-uint64 CSysSessionHost::GetHostSessionId()
-{
-	return (const uint64&)(m_lobby.m_xiInfo.sessionID);
-}
-
-#endif
 
 void CSysSessionHost::KickPlayer( KeyValues *pCommand )
 {
@@ -1804,7 +1317,7 @@ void CSysSessionHost::KickPlayer( KeyValues *pCommand )
 	// Remember the player in our kicked players map
 	m_mapKickedPlayers.InsertOrReplace( xuid, Plat_FloatTime() );
 
-#if !defined( _X360 ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	// Forcefully kick the player from the lobby
 	// steamapicontext->SteamMatchmaking()->???
 	// On X360 we just forcefully shutdown that client's
@@ -1860,9 +1373,7 @@ void CSysSessionHost::OnMachineUpdated( KeyValues *pMachine )
 
 void CSysSessionHost::UpdateStateInit()
 {
-#ifdef _X360
-	MMX360_LobbyCreate( m_pSettings, &m_pAsyncOperation );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	ELobbyType eType = k_ELobbyTypeFriendsOnly;
 	int numSlots = m_pSettings->GetInt( "members/numSlots", 1 );
 
@@ -1872,132 +1383,6 @@ void CSysSessionHost::UpdateStateInit()
 
 	m_eState = STATE_CREATING;
 }
-
-#ifdef _X360
-
-void CSysSessionHost::OnAsyncOperationFinished()
-{
-	if ( m_eState == STATE_CREATING )
-	{
-		if ( m_pAsyncOperation->GetState() != AOS_SUCCEEDED )
-		{
-			Warning( "CSysSessionHost: CreateSession failed. Error %d\n", m_pAsyncOperation->GetResult() );
-			ReleaseAsyncOperation();
-
-			m_eState = STATE_FAIL;
-
-			KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-			kv->SetPtr( "syssession", this );
-			kv->SetString( "error", "create" );
-			OnSessionEvent( kv );
-			return;
-		}
-		
-		//
-		// We have successfully created the lobby,
-		// retrieve all information from the async creation.
-		//
-		m_lobby = m_pAsyncOperation->GetLobby();
-		ReleaseAsyncOperation();
-
-		// Expose the NONCE for all future clients of the session
-		m_pSettings->SetUint64( "system/nonce", m_lobby.m_uiNonce );
-
-		// Setup our xnaddr
-		char chXnaddr[ XNADDR_STRING_LENGTH ] = {0};
-		MMX360_XnaddrToString( m_lobby.m_xiInfo.hostAddress, chXnaddr );
-		m_pSettings->SetString( "members/machine0/xnaddr", chXnaddr );
-
-		InitSessionProperties();
-
-		// Create the network mgr
-		m_pNetworkMgr = new CX360NetworkMgr( this, GetX360NetSocket() );
-
-		// Setup local Xbox 360 voice
-		Voice_ProcessTalkers( NULL, true );
-
-		m_eState = STATE_IDLE;
-
-		KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-		kv->SetPtr( "syssession", this );
-		OnSessionEvent( kv );
-		return;
-	}
-	else if ( m_eState == STATE_DELETE )
-	{
-		ReleaseAsyncOperation();
-		SysSession360_RegisterPending( this );
-	}
-	else
-	{
-		ReleaseAsyncOperation();
-	}
-}
-
-void CSysSessionHost::OnX360NetDisconnected( XUID xuidRemote )
-{
-	if ( m_eState == STATE_DELETE || m_eState == STATE_ALLOWING_MIGRATE )
-		return;
-
-	CSysSessionBase::OnX360NetDisconnected( xuidRemote );
-}
-
-bool CSysSessionHost::OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg )
-{
-	if ( !Q_stricmp( msg->GetName(), "SysSession::TeamReservation" ) )
-	{
-		XUID key = msg->GetUint64( "teamResKey" );
-		int teamSize = msg->GetInt( "numPlayers" );
-
-		DevMsg( "Received reservation msg: res key = %llx, numPlayers = %d\n", key, teamSize );
-
-		Process_TeamReservation( key, teamSize );			
-	
-		return true;		
-	}
-
-	if ( m_eState == STATE_IDLE && !Q_stricmp( msg->GetName(), "SysSession::RequestJoinData" ) )
-	{
-		// Check sessionid the client is trying to connect to
-		uint64 uiSessionIdRequest = msg->GetUint64( "sessionid" );
-		if ( uiSessionIdRequest != ( const uint64 & ) m_lobby.m_xiInfo.sessionID )
-			return false;
-
-		// This is a legit connectionless packet requesting to join the session
-		XUID machineid = msg->GetUint64( "id" );
-		XNKID xnkidSession = m_lobby.m_xiInfo.sessionID;
-
-		if ( !m_pNetworkMgr->ConnectionPeerOpenPassive( machineid, pkt, &xnkidSession ) )
-		{
-			DevWarning( "CSysSessionHost discarding SysSession::RequestJoinData due to passive connection failure!\n" );
-			return false;
-		}
-
-		if ( !Process_RequestJoinData( machineid, msg->FindKey( "settings" ) ) )
-			m_pNetworkMgr->ConnectionPeerClose( machineid );
-
-		return true;
-	}
-
-	// Unknown packet, permanently block sender
-	return false;
-}
-
-void CSysSessionHost::DestroyAfterMigrationFinished()
-{
-	// Picking up slack from CSysSessionBase::Destroy scenario
-
-	if ( m_pNetworkMgr )
-	{
-		m_pNetworkMgr->Destroy();
-		m_pNetworkMgr = NULL;
-	}
-
-	m_eState = STATE_DELETE;
-	MMX360_LobbyDelete( m_lobby, &m_pAsyncOperation );
-}
-
-#endif
 
 void CSysSessionHost::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMember, XUID xuidSrc )
 {
@@ -2025,34 +1410,12 @@ void CSysSessionHost::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMember
 		{
 			Process_VoiceStatus( msg, xuidSrc );
 		}
-#ifdef _X360 // (CS:GO 2017) -- these are old X360 flows that we no longer care to support
-		else if ( !Q_stricmp( "SysSession::VoiceMutelist", szMsg ) )
-		{
-			Process_VoiceMutelist( msg );
-		}
-		else if ( !Q_stricmp( "SysSession::TeamReservation", szMsg ) )
-		{
-			XUID key = msg->GetUint64( "teamResKey" );
-			int teamSize = msg->GetInt( "numPlayers" );
-
-			Process_TeamReservation( key, teamSize );			
-		}
-#endif
 		else
 		{
 			CSysSessionBase::ReceiveMessage( msg, bValidatedLobbyMember, xuidSrc );
 		}
 		return;
 	
-#ifdef _X360
-	case STATE_ALLOWING_MIGRATE:
-		if ( !Q_stricmp( szMsg, "SysSession::HostMigrated" ) )
-		{
-			// another peer picked up the session, bail out
-			DestroyAfterMigrationFinished();
-		}
-		return;
-#endif
 	}
 }
 
@@ -2106,23 +1469,12 @@ void CSysSessionHost::OnPlayerLeave( XUID xuid )
 			OnSessionEvent( kvEvent );
 		}
 
-#ifdef _X360
-		// Send this down to the engine as well
-		if ( m_lobby.m_bXSessionStarted )
-		{
-			// Send a message to the server that we need to remove this player
-			KeyValues *pDisconnectRequest = new KeyValues( "OnPlayerRemovedFromSession" );
-			pDisconnectRequest->SetUint64( "xuid", xuid );
-			g_pMatchExtensions->GetIVEngineClient()->ServerCmdKeyValues( pDisconnectRequest );
-		}
-#endif // _X360
 	}
 }
 
 
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void CSysSessionHost::Steam_OnLobbyCreated( LobbyCreated_t *pLobbyCreate, bool bError )
 {
@@ -2221,8 +1573,7 @@ bool CSysSessionHost::GetLobbyType( KeyValues *kv, ELobbyType *peType, bool *pbJ
 
 void CSysSessionHost::UpdateMembersInfo()
 {
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( m_lobby.m_uiLobbyID )
 	{
 		steamapicontext->SteamMatchmaking()->SetLobbyMemberLimit( m_lobby.m_uiLobbyID,
@@ -2251,9 +1602,7 @@ void CSysSessionHost::UpdateSessionProperties( KeyValues *kv )
 	// Set joinability and public/private slots distribution
 	//
 
-#ifdef _X360
-	OnX360AllSessionMembersJoinLeave( kv );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	ELobbyType eType = k_ELobbyTypePublic;
 	bool bJoinable = true;
 	if ( GetLobbyType( kv, &eType, &bJoinable ) && m_lobby.m_uiLobbyID )
@@ -2266,17 +1615,6 @@ void CSysSessionHost::UpdateSessionProperties( KeyValues *kv )
 	//
 	// Update QOS reply data of the session
 	//
-#ifdef _X360
-	if ( IsX360() && !m_hLobbyMigrateCall )
-	{
-		CUtlBuffer bufQosData;
-		bufQosData.ActivateByteSwapping( !CByteswap::IsMachineBigEndian() );
-		g_pMatchFramework->GetMatchNetworkMsgController()->PackageGameDetailsForQOS( m_pSettings, bufQosData );
-		g_pMatchExtensions->GetIXOnline()->XNetQosListen( &m_lobby.m_xiInfo.sessionID,
-			( const BYTE * ) bufQosData.Base(), bufQosData.TellMaxPut(),
-			0, XNET_QOS_LISTEN_SET_DATA );
-	}
-#endif
 }
 
 bool CSysSessionHost::Process_RequestJoinData( XUID xuidClient, KeyValues *pSettings )
@@ -2490,11 +1828,6 @@ bool CSysSessionHost::Process_RequestJoinData( XUID xuidClient, KeyValues *pSett
 	// Join flags
 	pMembers->SetUint64( "joinflags", pMembersConnecting->GetUint64( "joinflags" ) );
 
-#ifdef _X360
-	// On X360 we need to update lobby members server-side count
-	MMX360_LobbyJoinMembers( pSettings, m_lobby );
-#endif
-
 	// Fire the notifications about a bunch of machines connected to the session
 	if ( KeyValues *kvEvent = new KeyValues( "OnPlayerMachinesConnected" ) )
 	{
@@ -2538,8 +1871,7 @@ bool CSysSessionHost::Process_RequestJoinData( XUID xuidClient, KeyValues *pSett
 
 	Voice_UpdateMutelist();
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	// Update members information
 	LobbySetDataFromKeyValues( "members", m_pSettings->FindKey( "members" ), false );
 #endif
@@ -2671,15 +2003,11 @@ CSysSessionClient::CSysSessionClient( KeyValues *pSettings ) :
 	m_eState( STATE_INIT ),
 	m_flInitializeTimestamp( 0.0f )
 {
-#ifdef _X360
-	memset( &m_xnaddrLocal, 0, sizeof( m_xnaddrLocal ) );
-#endif
 }
 
 CSysSessionClient::CSysSessionClient( CSysSessionHost *pHost, KeyValues *pSettings ) :
 	CSysSessionBase( pSettings ),
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 #endif
 	m_eState( STATE_IDLE ),
 	m_flInitializeTimestamp( 0.0f )
@@ -2688,23 +2016,7 @@ CSysSessionClient::CSysSessionClient( CSysSessionHost *pHost, KeyValues *pSettin
 
 	m_Voice_flLastHeadsetStatusCheck = pHost->m_Voice_flLastHeadsetStatusCheck;
 
-#ifdef _X360
-
-	m_pNetworkMgr = pHost->m_pNetworkMgr;
-	if ( m_pNetworkMgr )
-		m_pNetworkMgr->SetListener( this );
-
-	m_pAsyncOperation = pHost->m_pAsyncOperation;
-	Assert( !m_pAsyncOperation );
-
-	// If client was in migrate state, then disassociate the migrate call listener
-	if ( pHost->m_hLobbyMigrateCall )
-	{
-		MMX360_LobbyMigrateSetListener( pHost->m_hLobbyMigrateCall, NULL );
-		pHost->m_hLobbyMigrateCall = NULL;
-	}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	// Install callback for messages
 	m_CallbackOnLobbyChatMsg.Register( this, &CSysSessionBase::Steam_OnLobbyChatMsg );
 	m_CallbackOnLobbyChatUpdate.Register( this, &CSysSessionBase::Steam_OnLobbyChatUpdate );
@@ -2751,13 +2063,6 @@ bool CSysSessionClient::Update()
 		{
 				m_eState = STATE_FAIL;
 
-	#ifdef _X360
-				if ( m_pNetworkMgr )
-				{
-					m_pNetworkMgr->Destroy();
-					m_pNetworkMgr = NULL;
-				}
-	#endif
 				Warning( "CSysSessionClient: Unable to get session information from host\n" );
 				KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
 				kv->SetPtr( "syssession", this );
@@ -2792,18 +2097,6 @@ void CSysSessionClient::Destroy()
 		return;
 	}
 
-#ifdef _X360
-	if ( m_eState == STATE_DELETE )
-	{
-		delete this;
-		return;
-	}
-	else
-	{
-		m_eState = STATE_DELETE;
-	}
-#endif
-
 	// Chain to base which will "delete this"
 	CSysSessionBase::Destroy();
 }
@@ -2823,66 +2116,16 @@ void CSysSessionClient::DebugPrint()
 
 XUID CSysSessionClient::GetHostXuid( XUID xuidValidResult )
 {
-#ifdef _X360
-	// Host is considered to be the first machine in our settings
-	// to which we have a network connection
-	int numMachines = m_pSettings->GetInt( "members/numMachines" );
-	for ( int k = 0; k < numMachines; ++ k )
-	{
-		KeyValues *pMachine = m_pSettings->FindKey( CFmtStr( "members/machine%d", k ) );
-		if ( !pMachine )
-			continue;
-
-		XUID idMachine = pMachine->GetUint64( "id" );
-		if ( idMachine == m_xuidMachineId )
-			return m_xuidMachineId;	// Reached our own machine, we are the top machine!
-
-		if ( xuidValidResult && idMachine == xuidValidResult )
-			return idMachine; // Maybe we don't have connection to the remote machine, but the caller thinks it could be a valid host
-
-		if ( m_pNetworkMgr->ConnectionPeerGetAddress( idMachine ) )
-			return idMachine;
-	}
-	// There's nobody in the session, maybe we are our own host?
-	return m_xuidMachineId;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	return m_lobby.m_uiLobbyID ? steamapicontext->SteamMatchmaking()
 		->GetLobbyOwner( m_lobby.m_uiLobbyID ).ConvertToUint64() : m_xuidMachineId;
 #endif
 	return 0ull;
 }
 
-#ifdef _X360
-char const * CSysSessionClient::GetHostNetworkAddress( XSESSION_INFO &xsi )
-{
-	xsi = m_lobby.m_xiInfo;
-	char const *szNetworkAddress = m_pNetworkMgr->ConnectionPeerGetAddress( 0ull );
-	if ( !szNetworkAddress )
-	{
-		// Maybe migration hasn't finished yet...
-		XUID xuidHost = GetHostXuid();
-		
-		DevWarning( "CSysSessionClient::GetHostNetworkAddress has no default host network address, retrying for %llx!\n", xuidHost );
-		szNetworkAddress = m_pNetworkMgr->ConnectionPeerGetAddress( xuidHost );
-
-		if ( !szNetworkAddress )
-		{
-			DevWarning( "CSysSessionClient::GetHostNetworkAddress has no host network address for %llx!\n", xuidHost );
-			Assert( 0 );	// this is fatal for our session and abnormal, but the UI should just pop a message that we failed to connect
-		}
-	}
-	return szNetworkAddress;
-}
-#endif
-
 void CSysSessionClient::UpdateStateInit()
 {
-#ifdef _X360
-
-	MMX360_LobbyConnect( m_pSettings, &m_pAsyncOperation );
-	m_eState = STATE_CREATING;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	m_lobby.m_uiLobbyID = m_pSettings->GetUint64( "options/sessionid", 0ull );
 	m_eState = STATE_JOIN_LOBBY;
@@ -2892,14 +2135,6 @@ void CSysSessionClient::UpdateStateInit()
 
 void CSysSessionClient::InitSessionProperties( KeyValues *pSettings )
 {
-#ifdef _X360
-	// Configure our session slots and permissions to match the host
-	CX360LobbyFlags_t fl = MMX360_DescribeLobbyFlags( pSettings, false );
-	g_pMatchExtensions->GetIXOnline()->XSessionModify( m_lobby.m_hHandle, fl.m_dwFlags, fl.m_numPublicSlots, fl.m_numPrivateSlots, MMX360_NewOverlappedDormant() );
-
-	// Join all the members
-	MMX360_LobbyJoinMembers( pSettings, m_lobby );
-#endif
 
 	UpdateSessionProperties( pSettings );
 }
@@ -2915,158 +2150,7 @@ void CSysSessionClient::UpdateSessionProperties( KeyValues *kv )
 	// Set joinability and public/private slots distribution
 	//
 
-#ifdef _X360
-	if ( !kv->FindKey( "members", false ) )
-	{
-		// If this is not our initial update
-		OnX360AllSessionMembersJoinLeave( kv );
-	}
-#endif
 }
-
-#ifdef _X360
-
-void CSysSessionClient::OnAsyncOperationFinished()
-{
-	if ( m_eState == STATE_CREATING )
-	{
-		if ( m_pAsyncOperation->GetState() != AOS_SUCCEEDED )
-		{
-			Warning( "CSysSessionClient: CreateSession failed. Error %d\n", m_pAsyncOperation->GetResult() );
-			ReleaseAsyncOperation();
-
-			m_eState = STATE_FAIL;
-
-			KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-			kv->SetPtr( "syssession", this );
-			kv->SetString( "error", "createclient" );
-			OnSessionEvent( kv );
-			return;
-		}
-
-		//
-		// We have successfully created the client-side session,
-		// retrieve all information from the async creation.
-		//
-		m_lobby = m_pAsyncOperation->GetLobby();
-		ReleaseAsyncOperation();
-
-		// Initialize network manager
-		m_pNetworkMgr = new CX360NetworkMgr( this, GetX360NetSocket() );
-		if ( !m_pNetworkMgr->ConnectionPeerOpenActive( 0ull, m_lobby.m_xiInfo ) )
-		{
-			m_eState = STATE_FAIL;
-
-			m_pNetworkMgr->Destroy();
-			m_pNetworkMgr = NULL;
-
-			KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-			kv->SetPtr( "syssession", this );
-			kv->SetString( "error", "n/a" );
-			OnSessionEvent( kv );
-			return;
-		}
-
-		// Request permission to join
-		m_eState = STATE_REQUESTING_JOIN_DATA;
-		m_RequestJoinDataInfo.m_fTimeSent = Plat_FloatTime();
-		m_RequestJoinDataInfo.m_xuidLeader = 0ull;
-
-		Send_RequestJoinData();
-		return;
-	}
-	else if ( m_eState == STATE_DELETE )
-	{
-		ReleaseAsyncOperation();
-		SysSession360_RegisterPending( this );
-	}
-	else
-	{
-		ReleaseAsyncOperation();
-	}
-}
-
-void CSysSessionClient::OnX360NetDisconnected( XUID xuidRemote )
-{
-	if ( m_eState == STATE_DELETE )
-		return;
-
-	// Do not react to disconnections among our peer clients,
-	// host is authoritative as far as which clients are in the session
-	// As soon as another client will migrate to be host that client
-	// will drop session members who haven't established the required
-	// P2P interconnect channels
-	if ( xuidRemote != GetHostXuid( xuidRemote ) )	// Indicate that the disconnected XUID could have been the host
-	{
-		DevMsg( "CSysSessionClient::OnX360NetDisconnected( %llx ) waiting for host update.\n", xuidRemote );
-		return;
-	}
-
-	CSysSessionBase::OnX360NetDisconnected( xuidRemote );
-}
-
-bool CSysSessionClient::OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg )
-{
-	if ( m_eState == STATE_IDLE && !Q_stricmp( msg->GetName(), "SysSession::P2PConnect" ) )
-	{
-		// Check nonce the client is trying to connect to
-		uint64 uiNonce = msg->GetUint64( "nonce" );
-		if ( uiNonce != ( const uint64 & ) m_lobby.m_uiNonce )
-			return false;
-
-		// This is a legit connectionless packet requesting a p2p connection
-		XUID machineid = msg->GetUint64( "id" );
-		XNKID xnkidSession = m_lobby.m_xiInfo.sessionID;
-
-		// Pick up the peer and add it to our spider web of connections
-		if ( !m_pNetworkMgr->ConnectionPeerOpenPassive( machineid, pkt, &xnkidSession ) )
-		{
-			DevWarning( "CSysSessionClient::P2PConnect failed to open passive connection with %llx!\n", machineid );
-		}
-		return true;
-	}
-
-	// Unknown packet, permanently block sender
-	return false;
-}
-
-void CSysSessionClient::XP2P_Interconnect()
-{
-	// Peer-to-peer connection establish packet
-	KeyValues *p2pMsg = new KeyValues( "SysSession::P2PConnect" );
-	KeyValues::AutoDelete autodelete_p2pMsg( p2pMsg );
-	p2pMsg->SetUint64( "nonce", m_lobby.m_uiNonce );
-	p2pMsg->SetUint64( "id", m_xuidMachineId );
-
-	// Open an active connection to all current peers
-	if ( KeyValues *kvMembers = m_pSettings->FindKey( "members" ) )
-	{
-		int numMachines = kvMembers->GetInt( "numMachines" );
-		for ( int k = 1; k < numMachines; ++ k ) // skip "0" because it's the host
-		{
-			KeyValues *kvMachine = kvMembers->FindKey( CFmtStr( "machine%d", k ) );
-			if ( !kvMachine )
-				continue;
-
-			XSESSION_INFO xsi = m_lobby.m_xiInfo;
-			MMX360_XnaddrFromString( xsi.hostAddress, kvMachine->GetString( "xnaddr" ) );
-			if ( !memcmp( &xsi.hostAddress, &m_xnaddrLocal, sizeof( m_xnaddrLocal ) ) )
-				continue;
-
-			XUID idMachine = kvMachine->GetUint64( "id" );
-			if ( m_pNetworkMgr->ConnectionPeerOpenActive( idMachine, xsi ) )
-			{
-				m_pNetworkMgr->ConnectionPeerSendConnectionless( idMachine, p2pMsg );
-			}
-			else
-			{
-				DevWarning( "CSysSessionClient::XP2P_Interconnect failed to interconnect with %llx!\n", idMachine );
-			}
-		}
-	}
-}
-
-#endif
 
 void CSysSessionClient::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMember, XUID xuidSrc )
 {
@@ -3122,70 +2206,6 @@ void CSysSessionClient::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMemb
 			if ( GetHostXuid() == xuidSrc )
 				Process_OnMachineUpdated( msg );
 		}
-#ifdef _X360
-		else if ( !Q_stricmp( szMsg, "SysSession::HostMigrated" ) )
-		{
-			XSESSION_INFO xsi;
-			char const *chSessionInfo = msg->GetString( "sessioninfo", "" );
-			MMX360_SessionInfoFromString( xsi, chSessionInfo );
-
-			// If there is an outstanding migrate call, then disable our listener on it
-			if ( m_hLobbyMigrateCall && !m_MigrateCallState.m_bFinished )
-				MMX360_LobbyMigrateSetListener( m_hLobbyMigrateCall, NULL );
-			m_hLobbyMigrateCall = NULL;
-
-			// Schedule a client migrate call
-			m_hLobbyMigrateCall = MMX360_LobbyMigrateClient( m_lobby, xsi, &m_MigrateCallState );
-
-			if ( !m_hLobbyMigrateCall )
-			{
-				KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
-				kv->SetPtr( "syssession", this );
-				kv->SetString( "error", "migrate" );
-
-				// Inside this event broadcast our session will be deleted
-				SendEventsNotification( kv );
-				return;
-			}
-			else
-			{
-				// Update our network mgr to reflect the new host
-				XUID id = msg->GetUint64( "id" );
-				m_pNetworkMgr->ConnectionPeerUpdateXuid( id, 0ull );
-
-				DevMsg( "CSysSessionClient - client migration scheduled - %s\n", chSessionInfo );
-			}
-
-			// Now purge all network connections that the host is no longer supporting
-			if ( int numMachines = m_pSettings->GetInt( "members/numMachines" ) )
-			{
-				CUtlVector< XUID > arrCloseConnections;
-				for ( int k = 0; k < numMachines; ++ k )
-				{
-					KeyValues *pMachine = m_pSettings->FindKey( CFmtStr( "members/machine%d", k ) );
-					if ( !pMachine )
-						continue;
-
-					XUID idMachine = pMachine->GetUint64( "id" );
-					if ( !msg->GetString( CFmtStr( "machines/%llx", idMachine ), NULL ) )
-						arrCloseConnections.AddToTail( idMachine );
-				}
-				for ( int k = 0; k < arrCloseConnections.Count(); ++ k )
-				{
-					XUID idMachine = arrCloseConnections[k];
-					m_pNetworkMgr->ConnectionPeerClose( idMachine );
-					OnPlayerLeave( idMachine );
-				}
-			}
-
-			// Send a notification
-			KeyValues *kvEvent = new KeyValues( "OnPlayerLeaderChanged" );
-			kvEvent->SetString( "state", "client" );
-			kvEvent->SetUint64( "xuid", msg->GetUint64( "id" ) );
-			kvEvent->SetString( "migration", "started" );
-			SendEventsNotification( kvEvent );
-		}
-#endif
 		else if ( !Q_stricmp( szMsg, "SysSession::OnUpdate" ) )
 		{
 			if ( GetHostXuid() == xuidSrc )
@@ -3210,8 +2230,7 @@ void CSysSessionClient::ReceiveMessage( KeyValues *msg, bool bValidatedLobbyMemb
 
 
 
-#ifdef _X360
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 void CSysSessionClient::Steam_OnLobbyEntered( LobbyEnter_t *pLobbyEnter )
 {
 	// Filter out notifications not from our lobby
@@ -3355,17 +2374,6 @@ void CSysSessionClient::Process_ReplyJoinData_Our( KeyValues *msg )
 	{		
 		m_eState = STATE_IDLE;
 
-#ifdef _X360
-		uint64 uiNonce = pSettings->GetUint64( "system/nonce" );
-		m_lobby.m_uiNonce = uiNonce;
-
-		// Update host connection XUID
-		if ( XUID xuidHost = pSettings->GetUint64( "members/machine0/id", 0ull ) )
-		{
-			m_pNetworkMgr->ConnectionPeerUpdateXuid( 0ull, xuidHost );
-		}
-#endif
-
 		// We have received an entirely new "settings" data, copy that to our "settings" data
 		// after saving settings we need to restore
 		int conteam = m_pSettings->GetInt( "conteam", -1 );
@@ -3384,11 +2392,6 @@ void CSysSessionClient::Process_ReplyJoinData_Our( KeyValues *msg )
 		// Setup voice engine
 		Voice_ProcessTalkers( NULL, true );
 		Voice_UpdateMutelist();
-
-#ifdef _X360
-		// Peer-to-peer interconnect
-		XP2P_Interconnect();
-#endif
 
 		KeyValues *kv = new KeyValues( "mmF->SysSessionUpdate" );
 		kv->SetPtr( "syssession", this );
@@ -3425,11 +2428,6 @@ void CSysSessionClient::Process_ReplyJoinData_Other( KeyValues *msg )
 	{
 		m_pSettings->SetInt("conteam", conteam );
 	}
-
-#ifdef _X360
-	// On X360 we need to update lobby members server-side count
-	MMX360_LobbyJoinMembers( pSettings, m_lobby, numMachinesOld );
-#endif
 
 	// Run over all new machines
 	int numMachinesNew = m_pSettings->GetInt( "members/numMachines", 0 );
@@ -3537,25 +2535,7 @@ void CSysSessionClient::Send_RequestJoinData()
 	DevMsg( "Sending join session request...\n" );
 	KeyValuesDumpAsDevMsg( msg, 1 );
 
-#ifdef _X360
-
-	// Set the session id that we are connecting to
-	msg->SetUint64( "sessionid", ( const uint64 & ) m_lobby.m_xiInfo.sessionID );
-
-	// Resolve this machine's XNADDR
-	memset( &m_xnaddrLocal, 0, sizeof( m_xnaddrLocal ) );
-	while( XNET_GET_XNADDR_PENDING == g_pMatchExtensions->GetIXOnline()->XNetGetTitleXnAddr( &m_xnaddrLocal ) )
-		continue;
-
-	char chXnaddr[ XNADDR_STRING_LENGTH ] = {0};
-	MMX360_XnaddrToString( m_xnaddrLocal, chXnaddr );
-
-	msg->SetString( "settings/members/machine0/xnaddr", chXnaddr );
-
-	// Now contact the remote host
-	m_pNetworkMgr->ConnectionPeerSendConnectionless( 0ull, msg );
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	// Install callback for messages
 	m_CallbackOnLobbyChatMsg.Register( this, &CSysSessionBase::Steam_OnLobbyChatMsg );
@@ -3608,39 +2588,7 @@ void CSysSessionClient::OnPlayerLeave( XUID xuid )
 	// We only care to handle this event further if we are becoming the new host
 	char const *szForcedError = NULL;
 
-#ifdef _X360
-
-	XUID xuidNewHost = GetHostXuid();
-
-	if ( m_eState == STATE_REQUESTING_JOIN_DATA )
-	{
-		szForcedError = "n/a";
-	}
-	else if ( xuidCurrentHost != xuid )
-	{
-		// Current host is not leaving, so we are fine
-		return;
-	}
-	else if ( xuidNewHost != m_xuidMachineId )
-	{
-		// The host is leaving, but we don't plan to host
-		DevMsg( "CSysSessionClient::OnPlayerLeave - host left, waiting for new host (%llx)...\n", xuidNewHost );
-
-		// Send a notification
-		KeyValues *kvEvent = new KeyValues( "OnPlayerLeaderChanged" );
-		kvEvent->SetString( "state", "client" );
-		kvEvent->SetUint64( "xuid", xuidNewHost );
-		kvEvent->SetString( "migration", "waiting" );
-		SendEventsNotification( kvEvent );
-		
-		return;
-	}
-	else
-	{
-		DevMsg( "CSysSessionClient::OnPlayerLeave - becoming new host!\n" );
-	}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	XUID xuidNewHost = steamapicontext->SteamMatchmaking()->GetLobbyOwner( m_lobby.m_uiLobbyID ).ConvertToUint64();
 	if ( xuidNewHost != m_xuidMachineId )
@@ -3748,14 +2696,7 @@ bool CSysSessionConTeamHost::Update()
 	{
 	case STATE_INIT:
 
-#if defined (_X360)
-
-		Succeeded();
-		break;
-
-		// MMX360_LobbyConnect( m_pSettings, &m_pAsyncOperation );
-
-#elif !defined (NO_STEAM)
+#if !defined (NO_STEAM)
 
 		// Join lobby
 		m_lobby.m_uiLobbyID = m_pSettings->GetUint64( "options/sessionid", 0ull );		
@@ -3787,17 +2728,6 @@ bool CSysSessionConTeamHost::Update()
 
 void CSysSessionConTeamHost::Destroy()
 {
-#ifdef _X360
-	if ( m_eState == STATE_DELETE )
-	{
-		delete this;
-		return;
-	}
-	else
-	{
-		m_eState = STATE_DELETE;
-	}
-#endif
 
 	// Chain to base which will "delete this"
 	CSysSessionBase::Destroy();
@@ -3922,12 +2852,7 @@ void CSysSessionConTeamHost::SendReservationRequest()
 
 	DevMsg( "Sending res request with teamResKey == %llx\n ", teamResKey );
 
-#if defined (_X360)
-
-	// Now contact the remote host
-	m_pNetworkMgr->ConnectionPeerSendConnectionless( 0ull, reservation );
-
-#elif !defined (NO_STEAM)
+#if !defined (NO_STEAM)
 
 
 	CUtlBuffer buf;
@@ -3955,49 +2880,7 @@ void CSysSessionConTeamHost::Failed()
 	m_result = RESULT_FAIL;
 }
 
-#ifdef _X360
-
-void CSysSessionConTeamHost::OnAsyncOperationFinished()
-{
-	if (m_eState == STATE_WAITING_LOBBY_JOIN )
-	{
-		if ( m_pAsyncOperation->GetState() != AOS_SUCCEEDED )
-		{
-			Warning( "CSysSessionConTeamHost: Could not join lobby\n" );
-			ReleaseAsyncOperation();
-			Failed();
-			return;
-		}
-
-		//
-		// We have successfully created the client-side session,
-		// retrieve all information from the async creation.
-		//
-		m_lobby = m_pAsyncOperation->GetLobby();
-		ReleaseAsyncOperation();
-
-		// Initialize network manager
-		m_pNetworkMgr = new CX360NetworkMgr( this, GetX360NetSocket() );
-		if ( !m_pNetworkMgr->ConnectionPeerOpenActive( 0ull, m_lobby.m_xiInfo ) )
-		{
-			m_pNetworkMgr->Destroy();
-			m_pNetworkMgr = NULL;
-
-			Warning( "CSysSessionConTeamHost: ConnectionPeerOpenActive failed\n" );
-			Failed();
-			return;
-		}
-
-		m_eState = STATE_SEND_RESERVATION_REQUEST;
-		return;
-	}
-	else
-	{
-		ReleaseAsyncOperation();
-	}
-}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void CSysSessionConTeamHost::Steam_OnLobbyEntered( LobbyEnter_t *pLobbyEnter )
 {
@@ -4023,12 +2906,3 @@ XUID CSysSessionConTeamHost::GetHostXuid( XUID xuidValidResult )
 {
 	return 0ull;
 }
-
-#ifdef _X360
-
-bool CSysSessionConTeamHost::OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg )
-{
-	return true;
-}
-
-#endif

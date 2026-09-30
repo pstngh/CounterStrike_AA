@@ -421,26 +421,7 @@ void CMatchSessionOnlineSearch::OnSearchCompletedSuccess( CSysSessionClient *pSy
 				"OnMatchSessionUpdate",
 				"state", "joinconteamsession"		
 				);
-#if defined (_X360)
-			
-			uint64 sessionId = pSettings->GetUint64( "options/sessionid", 0 ); 
-			const char *sessionInfo = pSettings->GetString( "options/sessioninfo", "" );
-			
-			joinSession->SetUint64( "sessionid", sessionId );
-			joinSession->SetString( "sessioninfo", sessionInfo );
-
-			// Unpack sessionHostData
-			KeyValues *pSessionHostData = (KeyValues*)pSettings->GetPtr( "options/sessionHostData" );
-			if ( pSessionHostData )
-			{
-				KeyValues *pSessionHostDataUnpacked = joinSession->CreateNewKey();
-				pSessionHostDataUnpacked->SetName("sessionHostDataUnpacked");	
-				pSessionHostData->CopySubkeys( pSessionHostDataUnpacked );
-			}
-
-#else
 			joinSession->SetUint64( "sessionid", m_pSysSessionConTeam->GetSessionID() );
-#endif			
 			KeyValues *pTeamMembers = joinSession->CreateNewKey();
 			pTeamMembers->SetName( "teamMembers" );
 			pTeamMembers->SetInt( "numPlayers", numPlayers );
@@ -688,19 +669,7 @@ void CMatchSessionOnlineSearch::ConnectJoinLobbyNextFoundSession()
 	// Set the settings to connect with
 	if ( KeyValues *kvOptions = m_pSettings->FindKey( "options", true ) )
 	{
-#ifdef _X360
-		kvOptions->SetUint64( "sessionid", ( const uint64 & ) sr.m_info.sessionID );
-
-		char chSessionInfo[ XSESSION_INFO_STRING_LENGTH ] = {0};
-		MMX360_SessionInfoToString( sr.m_info, chSessionInfo );
-		kvOptions->SetString( "sessioninfo", chSessionInfo );
-
-		kvOptions->SetPtr( "sessionHostData", sr.GetGameDetails() );
-
-		KeyValuesDumpAsDevMsg( sr.GetGameDetails(), 1, 2 );
-#else
 		kvOptions->SetUint64( "sessionid", sr.m_uiLobbyId );
-#endif
 	}
 
 	// Trigger client session creation

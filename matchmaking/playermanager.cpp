@@ -4,9 +4,7 @@
 //
 //=====================================================================================//
 
-#ifndef _X360
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "mm_framework.h"
 
@@ -25,9 +23,6 @@ static ConVar mm_player_search_lan_ping_interval( "mm_player_search_lan_ping_int
 static ConVar mm_player_search_lan_ping_duration( "mm_player_search_lan_ping_duration", "0.6", FCVAR_DEVELOPMENTONLY, "Duration of LAN discovery ping phase." );
 
 PlayerManager::PlayerManager() :
-#if defined( _PS3 ) && !defined( NO_STEAM )
-	m_CallbackOnPS3PSNStatusChange( this, &PlayerManager::Steam_OnPS3PSNStatusChange ),
-#endif
 	m_bUpdateEnabled( true ),
 	m_flNextUpdateTime( 0.0f ),
 	m_searchesPending( 0 ),
@@ -40,12 +35,6 @@ PlayerManager::PlayerManager() :
 
 PlayerManager::~PlayerManager()
 {
-#ifdef _X360
-	for ( int i = 0; i < ARRAYSIZE( m_searchData ); ++i )
-	{
-		delete m_searchData[i].mFriendBuffer;
-	}
-#endif
 
 	memset( mLocalPlayer, 0, sizeof( mLocalPlayer ) );
 	memset( m_searchData, 0, sizeof( m_searchData ) );
@@ -203,48 +192,7 @@ void PlayerManager::Update()
 	
 			if( data.mSearchInProgress )
 			{
-#ifdef _X360
-				if( XHasOverlappedIoCompleted( & data.mFriendsOverlapped ) )
-				{
-					// Local users
-					CUtlVectorFixed< XUID, XUSER_MAX_COUNT > arrLocalXuids;
-					for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-					{
-						XUSER_SIGNIN_INFO xsi;
-						if ( ERROR_SUCCESS != XUserGetSigninInfo( k, XUSER_GET_SIGNIN_INFO_ONLINE_XUID_ONLY, &xsi ) ||
-							 !xsi.xuid )
-						{
-							if ( ERROR_SUCCESS != XUserGetXUID( k, &xsi.xuid ) )
-								xsi.xuid = NULL;
-						}
-						if ( xsi.xuid )
-							arrLocalXuids.AddToTail( xsi.xuid );
-					}
-
-					// Check if the user is the same
-					int iCtrlr = i;
-					XUID xuidNow = 0ull;
-					XUserGetXUID( iCtrlr, &xuidNow );
-					if ( !IsEqualXUID( xuidNow, data.mXuid ) )
-						xuidNow = 0ull;
-					if ( XBX_GetSlotByUserId( iCtrlr ) < 0 )
-						xuidNow = 0ull;
-
-					DWORD result = 0;
-					if( XGetOverlappedResult( & data.mFriendsOverlapped, & result, false ) == ERROR_SUCCESS &&
-						xuidNow &&
-						XUserGetSigninState( iCtrlr ) == eXUserSigninState_SignedInToLive ) // Search for friends succeeded and the user is still signed in
-					{
-						XONLINE_FRIEND * friendBuffer = ( XONLINE_FRIEND * )data.mFriendBuffer;
-						for( DWORD index = 0; index < result ; ++index )
-						{
-							XUID xuidFriend = friendBuffer[ index ].xuid;
-							static const DWORD dwTitlesSupported[2] = { g_pMatchFramework->GetMatchTitle()->GetTitleID(),
-								g_pMatchFramework->GetMatchTitle()->GetTitleID() }; // 0x45410830 };	// TODO: add another supported titles
-							if ( ( friendBuffer[ index ].dwTitleID == dwTitlesSupported[0] ||
-									friendBuffer[ index ].dwTitleID == dwTitlesSupported[1] )
-								 && arrLocalXuids.Find( xuidFriend ) == arrLocalXuids.InvalidIndex() )
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 				if ( 1 ) // XHasOverlappedIoCompleted
 				{
 					if ( 1 ) // XUserGetSigninState
@@ -297,12 +245,7 @@ void PlayerManager::Update()
 								player->SetIsStale( false );
 
 								PlayerFriend::FriendInfo_t fi = {0};
-#ifdef _X360
-								fi.m_szName = friendBuffer[ index ].szGamertag;
-								fi.m_wszRichPresence = friendBuffer[ index ].wszRichPresence;
-								fi.m_uiTitleID = friendBuffer[ index ].dwTitleID;
-								fi.m_xSessionID = friendBuffer[ index ].sessionID;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 								uint64 uiLobbyIdFriend = fgi.m_steamIDLobby.ConvertToUint64();
 
 								fi.m_uiTitleID = bInGame ? fgi.m_gameID.AppID() : 0;
@@ -358,10 +301,6 @@ void PlayerManager::Update()
 					--m_searchesPending;
 					data.mSearchInProgress = false;
 
-#ifdef _X360
-					CloseHandle( data.mFriendEnumHandle );
-					data.mFriendEnumHandle = NULL;
-#endif
 				}
 			}
 		}
@@ -393,14 +332,7 @@ void PlayerManager::Update()
 	{
 		MarkOldFriends();
 
-#ifdef _GAMECONSOLE
-		for ( DWORD i = 0; i < XBX_GetNumGameUsers(); ++i )
-        {
-			CreateFriendEnumeration( XBX_GetUserId( i ) );
-		}
-#else
 		CreateFriendEnumeration( 0 );
-#endif
 		CreateLanSearch();
 
 		// Signal that we are starting a search
@@ -612,16 +544,6 @@ void PlayerManager::OnEvent( KeyValues *pEvent )
 	}
 	else if ( !Q_stricmp( szName, "OnUnlockArcadeTitle" ) )
 	{
-#if defined ( _X360 )
-		for ( int k = 0; k < ARRAYSIZE( mLocalPlayer ); ++ k )
-		{
-			if ( mLocalPlayer[k] )
-			{
-				SignalXWriteOpportunity( MMXWO_SETTINGS );
-				mLocalPlayer[k]->WriteTitleData();
-			}
-		}
-#endif
 	}
 	else if ( !Q_stricmp( szName, "OnSysProfileSettingsChanged" ) )
 	{
@@ -634,20 +556,6 @@ void PlayerManager::OnEvent( KeyValues *pEvent )
 			}
 		}
 	}
-#ifdef _X360
-	else if ( !Q_stricmp( szName, "OnSysStorageDlcInstalled" ) )
-	{
-		// New content requires users to sign in again,
-		// the sender of the notification guarantees that there
-		// is new content available for this game and requires
-		// a search path update.
-		g_pMatchFramework->CloseSession();
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnMatchPlayerMgrReset", "reason", "OnSysStorageDlcInstalled" ) );
-
-		XBX_SetNumGameUsers( 0 );
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnProfilesChanged", "numProfiles", int(0) ) );
-	}
-#endif
 	else if ( !Q_stricmp( szName, "OnProfilesWriteOpportunity" ) )
 	{
 		char const *szReason = pEvent->GetString( "reason" );
@@ -818,12 +726,7 @@ void PlayerManager::OnEvent( KeyValues *pEvent )
 		if ( !g_pMatchExtensions->GetIVEngineClient()->IsConnected() )
 			return;
 
-#ifdef _GAMECONSOLE
-		int iController = pEvent->GetInt( "iController" );
-		int iPlayerSlot = XBX_GetSlotByUserId( iController );
-#else
 		int iPlayerSlot = 0;
-#endif
 
 		// Send the leaderboard data to server
 		int nActiveSlot = g_pMatchExtensions->GetIVEngineClient()->GetActiveSplitScreenPlayerSlot();
@@ -837,185 +740,11 @@ void PlayerManager::OnEvent( KeyValues *pEvent )
 
 bool IsUserSignedInProperly( int iCtrlr )
 {
-#ifdef _X360
-	XUSER_SIGNIN_INFO xsi;
-	if ( iCtrlr >= 0 && iCtrlr < XUSER_MAX_COUNT &&
-		XUserGetSigninState( iCtrlr ) != eXUserSigninState_NotSignedIn &&
-		ERROR_SUCCESS == XUserGetSigninInfo( iCtrlr, XUSER_GET_SIGNIN_INFO_ONLINE_XUID_ONLY, &xsi ) &&
-		!(xsi.dwInfoFlags & XUSER_INFO_FLAG_GUEST) )
-		return true;
-	else
-		return false;
-#else
 	return true;
-#endif
 }
 
 void PlayerManager::OnSigninChange( KeyValues *pEvent )
 {
-#ifdef _X360
-	char const *szAction = pEvent->GetString( "action" );
-	int numUsers = pEvent->GetInt( "numUsers" );
-
-	bool bCommittedSignOutExplicitNotification = false;
-	if ( !Q_stricmp( "signout", szAction ) )
-	{
-		for ( int iSignedOut = 0; iSignedOut < numUsers; ++ iSignedOut )
-		{
-			int iCtrlrSignedOut = pEvent->GetInt( CFmtStr( "user%d", iSignedOut ) );
-			XBX_SetStorageDeviceId( iCtrlrSignedOut, XBX_INVALID_STORAGE_ID );
-
-			for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-			{
-				int iController = XBX_GetUserId( k );
-				if ( iCtrlrSignedOut == iController &&
-					!XBX_GetPrimaryUserIsGuest() )
-				{
-					bCommittedSignOutExplicitNotification = true;
-				}
-			}
-		}
-	}
-
-	// To maintain a list of selected storage devices, walk the list of
-	// currently signed in users and drop ones that are no longer signed in
-	for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-	{
-		XUSER_SIGNIN_INFO xsi;
-		if ( ERROR_SUCCESS != XUserGetSigninInfo( k, XUSER_GET_SIGNIN_INFO_OFFLINE_XUID_ONLY, &xsi ) ||
-			!xsi.xuid )
-		{
-			XBX_SetStorageDeviceId( k, XBX_INVALID_STORAGE_ID );
-		}
-	}
-
-	//
-	// Check if either of the committed ctrlrs signed out
-	//
-	bool bCommittedCtrlrSignedOut = false;
-	bool bLiveChangeDetected = false;
-
-	//
-	// Now handle users signing in and out
-	//
-	if ( XBX_GetNumGameUsers() > 0 &&
-		!XBX_GetPrimaryUserIsGuest() &&
-		!bCommittedSignOutExplicitNotification )
-	{
-		for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-		{
-			int iController = XBX_GetUserId( k );
-			uint state = XUserGetSigninState( iController );
-			if( state == eXUserSigninState_NotSignedIn )
-			{
-				bCommittedCtrlrSignedOut = true;
-				break;
-			}
-			else if ( PlayerLocal *player = ( PlayerLocal * ) GetLocalPlayer( iController ) )
-			{
-				IPlayer::OnlineState_t eOnlineState = player->GetOnlineState();
-				player->DetectOnlineState();
-				if ( eOnlineState == IPlayer::STATE_ONLINE &&
-					 player->GetOnlineState() != IPlayer::STATE_ONLINE )
-				{
-					bLiveChangeDetected = true;
-					OnLocalPlayerDisconnectedFromLive( iController );
-				}
-			}
-		}
-	}
-
-	//
-	// Check the invited user
-	//
-	bool bInviteAbandon = false;
-	if ( XBX_INVALID_USER_ID != XBX_GetInvitedUserId() )
-	{
-		int iController = XBX_GetInvitedUserId();
-		uint state = XUserGetSigninState( iController );
-		if( state == eXUserSigninState_NotSignedIn )
-		{
-			bInviteAbandon = true;
-		}
-		else
-		{
-			bool bLiveEnabled = false;
-			if ( state == eXUserSigninState_SignedInToLive )
-			{
-				BOOL bValue = false;
-				if ( ERROR_SUCCESS == XUserCheckPrivilege( iController, XPRIVILEGE_MULTIPLAYER_SESSIONS, &bValue ) )
-					bLiveEnabled = bValue ? true : false;
-			}
-			if ( !bLiveEnabled )
-			{
-				bInviteAbandon = true;
-			}
-		}
-	}
-
-// 	if ( bInviteAbandon )
-// 	{
-// 		if ( s_pbInviteApproved )
-// 		{
-// 			// Was still waiting for approval
-// 			s_nInviteApprovalConf = -2; // will decline invite acceptance next frame
-// 		}
-// 		else
-// 		{
-// 			// On the way into the invite game
-// 			bCommittedCtrlrSignedOut = true;
-// 		}
-// 		DevMsg( "[L4DMM] InviteCancel due to abandoned user.\n" );
-// 		matchmaking->InviteCancel();
-// 	}
-
-	// A guest just signed in mid-game, so kick them!
-	if ( XBX_GetNumGameUsers() > 0 && !Q_stricmp( "signin", szAction ) && XBX_GetPrimaryUserIsGuest()  )
-	{
-		for ( int iSignedIn = 0; iSignedIn < numUsers; ++ iSignedIn )
-		{
-			int iCtrlrSignedIn = pEvent->GetInt( CFmtStr( "user%d", iSignedIn ) );
-
-			if ( (unsigned int) iCtrlrSignedIn == XBX_GetPrimaryUserId() )
-			{
-				if ( IsUserSignedInProperly( XBX_GetPrimaryUserId() ) )
-				{
-					MEM_ALLOC_CREDIT();
-					IMatchSession *pIMatchSession = g_pMatchFramework->GetMatchSession();
-					KeyValues *pSessionSettings = pIMatchSession ? pIMatchSession->GetSessionSettings() : NULL;
-					KeyValues *kvGuestSignedInEvent = new KeyValues( "OnMatchPlayerMgrReset", "reason", "GuestSignedIn" );
-					if ( pSessionSettings )
-						kvGuestSignedInEvent->AddSubKey( pSessionSettings->MakeCopy() );
-
-					g_pMatchFramework->CloseSession();
-
-					g_pMatchEventsSubscription->BroadcastEvent( kvGuestSignedInEvent );
-					
-					XBX_SetNumGameUsers( 0 );
-					g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnProfilesChanged", "numProfiles", int(0) ) );
-					return;
-				}
-			}
-		}
-	}
-
-	if( ( XBX_GetNumGameUsers() > 0 && bCommittedSignOutExplicitNotification ) ||
-		bCommittedCtrlrSignedOut )
-	{
-		MEM_ALLOC_CREDIT();
-		g_pMatchFramework->CloseSession();
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnMatchPlayerMgrReset", "reason", "GameUserSignedOut" ) );
-		
-		XBX_SetNumGameUsers( 0 );
-		g_pMatchEventsSubscription->BroadcastEvent( new KeyValues( "OnProfilesChanged", "numProfiles", int(0) ) );
-		return;
-	}
-
-	if ( bLiveChangeDetected )
-	{
-		OnLostConnectionToConsoleNetwork();
-	}
-#endif
 }
 
 void PlayerManager::OnLostConnectionToConsoleNetwork()
@@ -1033,16 +762,6 @@ void PlayerManager::OnLostConnectionToConsoleNetwork()
 		}
 	}
 }
-
-#if defined( _PS3 ) && !defined( NO_STEAM )
-void PlayerManager::Steam_OnPS3PSNStatusChange( PS3PSNStatusChange_t *pParam )
-{
-	if ( !pParam->m_bPSNOnline )
-	{
-		OnLostConnectionToConsoleNetwork();
-	}
-}
-#endif
 
 void PlayerManager::OnGameUsersChanged()
 {
@@ -1067,25 +786,6 @@ void PlayerManager::OnGameUsersChanged()
 		player = NULL;
 	}
 
-#ifdef _GAMECONSOLE
-	DWORD dwPresenceValue[ XUSER_MAX_COUNT ] = {0};
-	for ( int idx = 0; idx < (int) XBX_GetNumGameUsers(); ++ idx )
-	{
-		int iController = XBX_GetUserId( idx );
-		PlayerLocal *player = new PlayerLocal( iController );
-		mLocalPlayer[ iController ] = player;
-		
-		dwPresenceValue[ iController ] = !XBX_GetUserIsGuest( idx );
-	}
-
-	// Set all players rich presence to idle (0) or main menu (1)
-	for ( int iCtrlr = 0; iCtrlr < XUSER_MAX_COUNT; ++ iCtrlr )
-	{
-		#ifdef _X360
-		XUserSetContextEx( iCtrlr, X_CONTEXT_PRESENCE, dwPresenceValue[iCtrlr], MMX360_NewOverlappedDormant() );
-		#endif
-	}
-#else
 	#if !defined( NO_STEAM )
 	if ( !steamapicontext->SteamUser() )
 		return;
@@ -1093,7 +793,6 @@ void PlayerManager::OnGameUsersChanged()
 
 	PlayerLocal * player = new PlayerLocal( 0 );
 	mLocalPlayer[0] = player;
-#endif
 
 	// Start a search when the sign-on changes
 	EnableFriendsUpdate( true );
@@ -1178,52 +877,6 @@ void PlayerManager::CreateFriendEnumeration( int iCtrlr )
 	if ( g_pMatchFramework->GetMatchTitle()->GetTitleSettingsFlags() & MATCHTITLE_PLAYERMGR_DISABLED )
 		return;
 
-#ifdef _X360
-
-	// Check if we are still doing the previous search - it this
-	// case we will just search again later
-	if ( data.mFriendEnumHandle )
-		return;
-
-	DWORD bufferSize = 0;
-	data.mFriendsStartIndex = 0;
-	XUserGetXUID( iCtrlr, &data.mXuid );
-
-	const uint numFriendsRequest = 100;
-	DWORD ret = g_pMatchExtensions->GetIXOnline()->XFriendsCreateEnumerator(
-		iCtrlr, data.mFriendsStartIndex, numFriendsRequest,
-		&bufferSize, &data.mFriendEnumHandle );
-	if ( ret == ERROR_SUCCESS )
-	{
-		//we are good to start the enumeration
-		if ( bufferSize > (DWORD)data.mFriendBufferSize )
-		{
-			delete data.mFriendBuffer;
-			data.mFriendBuffer = new char[bufferSize];
-			data.mFriendBufferSize = bufferSize;
-		}
-
-		ret = XEnumerate( data.mFriendEnumHandle,
-			data.mFriendBuffer, data.mFriendBufferSize, NULL, &data.mFriendsOverlapped );
-		if ( ret == ERROR_IO_PENDING )
-		{
-			data.mSearchInProgress = true;
-			++m_searchesPending;
-		}
-		else
-		{
-			CloseHandle( data.mFriendEnumHandle );
-			data.mFriendEnumHandle = NULL;
-		}
-	}
-	else
-	{
-		ExecuteNTimes( 5, DevWarning( "XFriendsCreateEnumerator failed (code = 0x%08X)!\n", ret ) );
-		data.mFriendEnumHandle = NULL;
-	}
-
-#else
-
 	if ( data.mSearchInProgress )
 		return;
 
@@ -1236,7 +889,6 @@ void PlayerManager::CreateFriendEnumeration( int iCtrlr )
 	data.mSearchInProgress = true;
 	++ m_searchesPending;
 
-#endif
 }
 
 #else // SWDS

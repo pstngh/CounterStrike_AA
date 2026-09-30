@@ -19,9 +19,6 @@
 //
 
 class CMatchSearcher
-#ifdef _X360
-	: public IDormantOperation
-#endif
 #if !defined (NO_STEAM)
 	: public IMatchAsyncOperationCallback
 #endif
@@ -49,38 +46,7 @@ public:
 
 protected:
 
-#ifdef _X360
-
-public:
-	struct SearchResult_t
-	{
-		inline XNKID GetXNKID() const { return m_info.sessionID; }
-		KeyValues * GetGameDetails() const { return m_pGameDetails; }
-
-		XSESSION_INFO m_info;
-		KeyValues *m_pGameDetails;
-	};
-
-protected:
-	CUtlVector< XUSER_CONTEXT > m_arrContexts;
-	CUtlVector< XUSER_PROPERTY > m_arrProperties;
-
-	float m_flQosTimeout;
-	XNQOS *m_pQosResults;
-
-	CUtlBuffer m_bufSearchResultHeader;
-	XSESSION_SEARCHRESULT_HEADER * GetXSearchResult() { return ( XSESSION_SEARCHRESULT_HEADER * ) m_bufSearchResultHeader.Base(); }
-	XOVERLAPPED m_xOverlapped;
-	CJob *m_pCancelOverlappedJob;
-
-	void Live_OnSessionSearchCompleted();
-
-	void Live_CheckSearchResultsQos();
-	void Live_OnQosCheckCompleted();
-
-	virtual bool UpdateDormantOperation();
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 public:
 	struct SearchResult_t
@@ -140,9 +106,6 @@ protected:
 	{
 		STATE_INIT,
 		STATE_SEARCHING,
-#ifdef _X360
-		STATE_CHECK_QOS,
-#endif
 
 #if !defined( NO_STEAM )
 		STATE_WAITING_LOBBY_DATA_AND_PING,

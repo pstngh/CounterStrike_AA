@@ -7,7 +7,7 @@
 //=============================================================================//
 
 
-#if defined(_WIN32) && !defined(_GAMECONSOLE)
+#if defined(_WIN32)
 #include <windows.h>
 #endif
 

@@ -33,11 +33,6 @@ public:
 	{
 		NS_SOCK_CLIENT = 0,	// client socket
 		NS_SOCK_SERVER,		// server socket
-#ifdef _X360
-		NS_SOCK_SYSTEMLINK,		// X360 system link
-		NS_SOCK_LOBBY,			// X360 matchmaking lobby
-		NS_SOCK_TEAMLINK,		// X360 matchmaking inter-team link
-#endif
 	};
 
 	enum SteamP2PChannelId_t

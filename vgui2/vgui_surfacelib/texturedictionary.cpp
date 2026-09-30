@@ -42,12 +42,6 @@ static CRC32_t Texture_CRCName( const char *string )
 }
 
 // [smessick] Less than function for Xuids.
-#if defined( _X360 )
-static bool XuidLessFunc( const XUID &lhs, const XUID &rhs )
-{
-	return lhs < rhs;
-}
-#endif // _X360
 
 class CFontTextureRegen;
 
@@ -98,16 +92,6 @@ public:
 	
 	void UpdateSubTextureRGBA( int drawX, int drawY, unsigned const char *rgba, int subTextureWide, int subTextureTall, ImageFormat imageFormat );
 
-#if defined( _X360 )
-
-	// Update the local gamerpic texture.
-	virtual bool SetLocalGamerpicTexture( DWORD userIndex );
-
-	// Update the given texture with a remote player's gamerpic.
-	virtual bool SetRemoteGamerpicTexture( XUID xuid );
-
-#endif // _X360
-
 	float	m_s0, m_t0, m_s1, m_t1;
 
 private:
@@ -116,11 +100,6 @@ private:
 	void CleanUpMaterial();
 
 	ITexture *GetTextureValue( void );
-
-#if defined( _X360 )
-	// Create the gamerpic material and texture.
-	void CreateGamerpicTexture( void );
-#endif // _X360
 
 private:
 	enum
@@ -186,66 +165,14 @@ public:
 	virtual void BindTextureToMaterial2( int id, IMaterial2 *pMaterial ) { Assert(0); }
 	virtual IMaterial2 *GetTextureMaterial2( int id ) { Assert(0); return NULL; }
 
-#if defined( _X360 )
-
-	//
-	// Local gamerpic
-	//
-
-	// Get the texture id for the local gamerpic.
-	virtual int GetLocalGamerpicTextureID( void ) const { return m_LocalGamerpicTextureID; }
-
-	// Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName );
-
-	//
-	// Remote gamerpic
-	//
-
-	// Get the texture id for a remote gamerpic with the given xuid.
-	virtual int GetRemoteGamerpicTextureID( XUID xuid );
-
-	// Update the remote gamerpic texture for the given xuid. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName );
-
-#endif // _X360
-
 public:
 	CMatSystemTexture	*GetTexture( int id );
 
 private:
 
-#if defined( _X360 )
-
-	// Create a new remote gamerpic texture entry in the map.
-	bool CreateRemoteGamerpicTexture( XUID xuid );
-
-	// Create a default remote gamerpic texture entry in the map.
-	bool CreateDefaultRemoteGamerpicTexture( XUID xuid, const char *pDefaultGamerpicFileName );
-
-#endif // _X360
-
 	CUtlLinkedList< CMatSystemTexture, unsigned short >	m_Textures;	// Source1 textures
 	CUtlDict< int, int> m_TextureIDs;
 
-#if defined( _X360 )
-
-	int m_LocalGamerpicTextureID; // texture index for the local gamerpic
-
-	struct RemoteGamerpicData
-	{
-		int m_TextureID; // index of the remote gamerpic texture
-		double m_TimeStamp; // last access time
-	};
-
-	enum
-	{
-		MAX_REMOTE_GAMERPIC_TEXTURES = 32
-	};
-
-	CUtlMap< XUID, RemoteGamerpicData > m_RemoteGamerpicTextureIDMap; // map of xuids to texture ids
-
-#endif // _X360
 };
 
 static CTextureDictionary s_TextureDictionary;
@@ -591,102 +518,6 @@ void CMatSystemTexture::SetTextureRGBA( IRenderDevice *pRenderDevice, const char
 	SetSubTextureRGBA( pRenderDevice, 0, 0, (const unsigned char *)rgba, width, height );
 }
 
-#if defined( _X360 )
-
-//-----------------------------------------------------------------------------
-// Create the gamerpic material and texture.
-//-----------------------------------------------------------------------------
-void CMatSystemTexture::CreateGamerpicTexture( void )
-{
-	Assert( m_pMaterial == NULL );
-
-	// create a procedural material to fit this texture into
-	char pTextureName[64];
-	Q_snprintf( pTextureName, sizeof( pTextureName ), "__vgui_texture_%d", s_nTextureId );
-	++s_nTextureId;
-
-	ITexture *pTexture = g_pMaterialSystem->CreateGamerpicTexture( 
-		pTextureName, 
-		TEXTURE_GROUP_VGUI, 
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT | 
-		TEXTUREFLAGS_NOMIP | TEXTUREFLAGS_NOLOD | 
-		TEXTUREFLAGS_PROCEDURAL | TEXTUREFLAGS_SINGLECOPY | TEXTUREFLAGS_POINTSAMPLE );
-	Assert( pTexture != NULL );
-
-	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
-	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
-	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
-	pVMTKeyValues->SetInt( "$ignorez", 1 );
-	pVMTKeyValues->SetInt( "$no_fullbright", 1 );
-	pVMTKeyValues->SetInt( "$translucent", 1 );
-	pVMTKeyValues->SetString( "$basetexture", pTextureName );
-
-	IMaterial *pMaterial = g_pMaterialSystem->CreateMaterial( pTextureName, pVMTKeyValues );
-	pMaterial->Refresh();
-
-	// Has to happen after the refresh
-	pTexture->DecrementReferenceCount();
-
-	SetMaterial( pMaterial );
-
-	// undo the extra +1 refCount
-	pMaterial->DecrementReferenceCount();
-}
-
-//-----------------------------------------------------------------------------
-// Update the given texture with the player gamerpic for the local player at the given index.
-//-----------------------------------------------------------------------------
-bool CMatSystemTexture::SetLocalGamerpicTexture( DWORD userIndex )
-{
-	Assert( IsProcedural() );
-	if ( !IsProcedural() )
-	{
-		return false;
-	}
-
-	// Create the material and texture.
-	if ( !m_pMaterial )
-	{
-		CreateGamerpicTexture();
-	}
-
-	// Update the gamerpic texture.
-	if ( m_pMaterial != NULL )
-	{
-		return g_pMaterialSystem->UpdateLocalGamerpicTexture( m_pTexture, userIndex );
-	}
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Update the given texture with a remote player's gamerpic.
-//-----------------------------------------------------------------------------
-bool CMatSystemTexture::SetRemoteGamerpicTexture( XUID xuid )
-{
-	Assert( IsProcedural() );
-	if ( !IsProcedural() )
-	{
-		return false;
-	}
-
-	// Create the material and texture.
-	if ( !m_pMaterial )
-	{
-		CreateGamerpicTexture();
-	}
-
-	// Update the gamerpic texture.
-	if ( m_pMaterial != NULL )
-	{
-		return g_pMaterialSystem->UpdateRemoteGamerpicTexture( m_pTexture, xuid );
-	}
-
-	return false;
-}
-
-#endif // _X360
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -989,15 +820,6 @@ CTextureDictionary::CTextureDictionary( void )
 	// First entry is bogus texture
 	m_Textures.AddToTail();
 
-#if defined( _X360 )
-
-	// Set the local gamerpic index to be invalid.
-	m_LocalGamerpicTextureID = INVALID_TEXTURE_ID;
-
-	// Set the less than function for the remote gamerpic map.
-	m_RemoteGamerpicTextureIDMap.SetLessFunc( XuidLessFunc );
-
-#endif // _X360
 }
 
 
@@ -1029,16 +851,6 @@ void CTextureDictionary::DestroyTexture( int id )
 void CTextureDictionary::DestroyAllTextures()
 {
 	m_Textures.RemoveAll();
-
-#if defined( _X360 )
-
-	// Clean the map as well. All ids were destroyed in m_Textures.RemoveAll().
-	m_RemoteGamerpicTextureIDMap.RemoveAll();
-
-	// This texture id was destroyed in m_Textures.RemoveAll().
-	m_LocalGamerpicTextureID = INVALID_TEXTURE_ID;
-
-#endif // _X360
 
 	// First entry is bogus texture
 	m_Textures.AddToTail();	
@@ -1118,187 +930,6 @@ void CTextureDictionary::UpdateSubTextureRGBA( int id, int drawX, int drawY, uns
 	CMatSystemTexture &texture = m_Textures[id];
 	texture.UpdateSubTextureRGBA( drawX, drawY, rgba, subTextureWide, subTextureTall, imageFormat  );
 }
-
-#if defined( _X360 )
-
-//-----------------------------------------------------------------------------
-// Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-//-----------------------------------------------------------------------------
-bool CTextureDictionary::SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName )
-{
-	Assert( pDefaultGamerpicFileName != NULL );
-
-	if ( !IsValidId( m_LocalGamerpicTextureID ) )
-	{
-		// Create the local gamerpic texture id.
-		m_LocalGamerpicTextureID = CreateTexture( true );
-	}
-	else if ( !m_Textures[m_LocalGamerpicTextureID].IsProcedural() )
-	{
-		// The existing texture must be procedural to use a gamerpic. If the existing one
-		// isn't, then destroy it. This can happen if the texture is using the default image.
-		DestroyTexture( m_LocalGamerpicTextureID );
-		m_LocalGamerpicTextureID = CreateTexture( true );
-	}
-
-	// Fill the texture with the local gamerpic.
-	CMatSystemTexture &texture = m_Textures[m_LocalGamerpicTextureID];
-	if ( !texture.SetLocalGamerpicTexture( userIndex ) )
-	{
-		// Remove the bad texture.
-		DestroyTexture( m_LocalGamerpicTextureID );
-
-		// Try to use the default texture instead.
-		m_LocalGamerpicTextureID = CreateTexture( false ); // not procedural
-		BindTextureToFile( m_LocalGamerpicTextureID, pDefaultGamerpicFileName );
-	}
-
-	return IsValidId( m_LocalGamerpicTextureID );
-}
-
-//-----------------------------------------------------------------------------
-// Get the texture id for a remote gamerpic with the given xuid.
-//-----------------------------------------------------------------------------
-int CTextureDictionary::GetRemoteGamerpicTextureID( XUID xuid )
-{
-	int index = m_RemoteGamerpicTextureIDMap.Find( xuid );
-	if ( index != m_RemoteGamerpicTextureIDMap.InvalidIndex() )
-	{
-		RemoteGamerpicData &gamerpicData = m_RemoteGamerpicTextureIDMap.Element( index );
-		gamerpicData.m_TimeStamp = g_pVGuiSystem->GetCurrentTime(); // save the time stamp
-		return gamerpicData.m_TextureID;
-	}
-
-	return INVALID_TEXTURE_ID;
-}
-
-//-----------------------------------------------------------------------------
-// Create a new remote gamerpic texture entry in the map
-//-----------------------------------------------------------------------------
-bool CTextureDictionary::CreateRemoteGamerpicTexture( XUID xuid )
-{
-	// Check for a bad xuid.
-	if ( xuid == INVALID_XUID )
-	{
-		Msg( "[CTextureDictionary] invalid xuid %d!\n", xuid );
-		return false;
-	}
-
-	// Create the new texture.
-	int id = CreateTexture( true );
-	if ( !IsValidId( id ) )
-	{
-		return false;
-	}
-
-	// Update the gamerpic texture.
-	CMatSystemTexture &texture = m_Textures[id];
-	if ( !texture.SetRemoteGamerpicTexture( xuid ) )
-	{
-		DestroyTexture( id );
-		return false;
-	}
-
-	// Add a new entry in the map.
-	RemoteGamerpicData gamerpicData;
-	gamerpicData.m_TextureID = id;
-	gamerpicData.m_TimeStamp = g_pVGuiSystem->GetCurrentTime(); // set the time stamp
-	m_RemoteGamerpicTextureIDMap.Insert( xuid, gamerpicData );
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Create a remote gamerpic texture using the given default image
-//-----------------------------------------------------------------------------
-bool CTextureDictionary::CreateDefaultRemoteGamerpicTexture( XUID xuid, const char *pDefaultGamerpicFileName )
-{
-	// Check for a bad xuid.
-	if ( xuid == INVALID_XUID )
-	{
-		Msg( "[CTextureDictionary] invalid xuid %d!\n", xuid );
-		return false;
-	}
-
-	// Create the new texture.
-	int id = CreateTexture( false ); // not procedural
-	if ( !IsValidId( id ) )
-	{
-		return false;
-	}
-
-	// Load the texture from file.
-	BindTextureToFile( id, pDefaultGamerpicFileName );
-
-	// Add a new entry in the map.
-	RemoteGamerpicData gamerpicData;
-	gamerpicData.m_TextureID = id;
-	gamerpicData.m_TimeStamp = g_pVGuiSystem->GetCurrentTime(); // set the time stamp
-	m_RemoteGamerpicTextureIDMap.Insert( xuid, gamerpicData );
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Update the remote gamerpic texture for the given xuid. Use the given texture if a gamerpic cannot be loaded.
-//-----------------------------------------------------------------------------
-bool CTextureDictionary::SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName )
-{
-	int id = GetRemoteGamerpicTextureID( xuid );
-	if ( IsValidId( id ) )
-	{
-		// Update the existing gamerpic texture for this xuid.
-		CMatSystemTexture &texture = m_Textures[id];
-		if ( !texture.SetRemoteGamerpicTexture( xuid ) )
-		{
-			// Remove from the map and the texture array.
-			m_RemoteGamerpicTextureIDMap.Remove( xuid );
-			DestroyTexture( id );
-
-			// Use the default texture.
-			return CreateDefaultRemoteGamerpicTexture( xuid, pDefaultGamerpicFileName );
-		}
-	}
-	else
-	{
-		if ( m_RemoteGamerpicTextureIDMap.Count() >= MAX_REMOTE_GAMERPIC_TEXTURES )
-		{
-			//
-			// Find the oldest entry in the map.
-			//
-
-			int gamerpicCount = m_RemoteGamerpicTextureIDMap.Count();
-			COMPILE_TIME_ASSERT( MAX_REMOTE_GAMERPIC_TEXTURES > 1 );
-
-			RemoteGamerpicData &gamerpicData = m_RemoteGamerpicTextureIDMap.Element( 0 );
-			int gamerpicIndex = 0;
-			for ( int i = 1; i < gamerpicCount; ++i )
-			{
-				RemoteGamerpicData &nextGamerpicData = m_RemoteGamerpicTextureIDMap.Element( i );
-				if ( nextGamerpicData.m_TimeStamp < gamerpicData.m_TimeStamp )
-				{
-					gamerpicData = nextGamerpicData;
-					gamerpicIndex = i;
-				}
-			}
-
-			// Remove the oldest entry.
-			id = gamerpicData.m_TextureID;
-			m_RemoteGamerpicTextureIDMap.RemoveAt( gamerpicIndex );
-			DestroyTexture( id );
-		}
-
-		// Create a new entry.
-		if ( !CreateRemoteGamerpicTexture( xuid ) )
-		{
-			return CreateDefaultRemoteGamerpicTexture( xuid, pDefaultGamerpicFileName );
-		}
-	}
-
-	return true;
-}
-
-#endif // _X360
 
 //-----------------------------------------------------------------------------
 // Returns true if the id is valid

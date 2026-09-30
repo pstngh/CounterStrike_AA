@@ -86,11 +86,4 @@ char const * MatchSession_DecryptAddressString( char const *szAddress, uint64 ul
 
 #endif // SWDS
 
-#ifdef _X360
-
-// Keeps adjusting client side rate setting based on QOS with server
-void MatchSession_RateAdjustmentUpdate();
-
-#endif
-
 #endif // MM_SESSION_H

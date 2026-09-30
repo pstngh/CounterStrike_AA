@@ -17,7 +17,7 @@
 #include "weapon_csbase.h"
 #include "ammodef.h"
 
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 #define HUDRET_WEPICON_SELECTED_IMG_STRING		L"<img src='icon-%ls.png' height='22'/>"
 #define HUDRET_WEPICON_IMG_STRING					L"<img src='icon-%ls_grey.png' height='22'/>"
 #else

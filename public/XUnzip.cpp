@@ -127,17 +127,13 @@
 #endif
 #define INVALID_HANDLE_VALUE (void*)-1
 #define CloseHandle( arg ) close( size_cast< int >( (intp) arg ) )
-#if !defined(_PS3) && !defined(POSIX)
+#if !defined(POSIX)
 #define ZeroMemory( ptr, size ) memset( ptr, 0, size )
 #endif
-#ifdef _PS3
-#define CreateDirectory( dir, ign ) (-1)
-#else
 #define CreateDirectory( dir, ign ) mkdir( dir, S_IRWXU | S_IRWXG | S_IRWXO )
 #define FILE_CURRENT SEEK_CUR
 #define FILE_BEGIN SEEK_SET
 #define FILE_END SEEK_END
-#endif
 #define SetFilePointer( handle, pos, ign, dir ) lseek( size_cast<int> ( (intp) handle ), pos, dir )
 bool ReadFile( void *handle, void *outbuf, unsigned int toread, DWORD *nread, void *ignored )
 {
@@ -157,17 +153,6 @@ bool WriteFile( void *handle, void *buf, unsigned int towrite, DWORD *written, v
 #define FILE_ATTRIBUTE_READONLY	 0
 #define FILE_ATTRIBUTE_SYSTEM    0
 typedef unsigned char BYTE;
-#endif
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "basetypes.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#include "tls_ps3.h"
 #endif
 
 #include "tier1/strtools.h"
@@ -2804,9 +2789,6 @@ LUFILE *lufopen(void *z,unsigned int len,DWORD flags,ZRESULT *err)
 			bool res = false;
 #ifdef _WIN32		
 			res = DuplicateHandle(GetCurrentProcess(),hf,GetCurrentProcess(),&h,0,FALSE,DUPLICATE_SAME_ACCESS) == TRUE;
-#elif defined( _PS3 )
-			*err=ZR_NODUPH;
-			return NULL;
 #else
 			h = (HANDLE) (intp) dup( size_cast<int>( (intp) hf ) );
 			res = (intp) h >= 0;
@@ -4030,8 +4012,6 @@ ZRESULT TUnzip::Get(int index,ZIPENTRY *ze)
   FILETIME ft;
   DosDateTimeToFileTime(dosdate,dostime,&ft);
   ze->atime=ft; ze->ctime=ft; ze->mtime=ft;
-#elif defined( _PS3 )
-  // PS3 TODO: ze->atime=ufi.dosDate; ze->ctime=ufi.dosDate; ze->mtime=ufi.dosDate;
 #else
   ze->atime=ufi.dosDate; ze->ctime=ufi.dosDate; ze->mtime=ufi.dosDate;
 #endif
@@ -4051,8 +4031,6 @@ ZRESULT TUnzip::Get(int index,ZIPENTRY *ze)
     { time_t mtime = *(time_t*)(extra+epos); epos+=4;
 #ifdef _WIN32
       ze->mtime = timet2filetime(mtime);
-#elif defined( _PS3 )
-	// PS3 TODO: ze->mtime = mtime;
 #else
 	  ze->mtime = mtime;
 #endif
@@ -4061,8 +4039,6 @@ ZRESULT TUnzip::Get(int index,ZIPENTRY *ze)
     { time_t atime = *(time_t*)(extra+epos); epos+=4;
 #ifdef _WIN32
       ze->atime = timet2filetime(atime);
-#elif defined( _PS3 )
-	// PS3 TODO: ze->atime = atime;
 #else
 	  ze->atime = atime;
 #endif
@@ -4071,8 +4047,6 @@ ZRESULT TUnzip::Get(int index,ZIPENTRY *ze)
     { time_t ctime = *(time_t*)(extra+epos); 
 #ifdef _WIN32
       ze->ctime = timet2filetime(ctime);
-#elif defined( _PS3 )
-	// PS3 TODO: ze->ctime = ctime;
 #else
 	  ze->ctime = ctime;
 #endif
@@ -4266,8 +4240,6 @@ ZRESULT TUnzip::Unzip(int index,void *dst,unsigned int len,DWORD flags)
 	{
 #ifdef _WIN32
 		SetFileTime(h,&ze.ctime,&ze.atime,&ze.mtime);
-#elif defined( _PS3 )
-		// PS3 TODO: SetFileTime
 #else
 		struct timeval tv[2];
 		tv[0].tv_sec = ze.atime;
@@ -4500,9 +4472,6 @@ bool SafeUnzipMemory( const void *pvZipped, int cubZipped, void *pvDest, int cub
 	int iRes = ZR_CORRUPT;
 	if ( hZip )
 	{
-#ifdef _PS3
-		iRes = UnzipItem( hZip, 0, pvDest, cubDest, ZIP_MEMORY );
-#else
 		try
 		{
 			iRes = UnzipItem( hZip, 0, pvDest, cubDest, ZIP_MEMORY );
@@ -4512,7 +4481,6 @@ bool SafeUnzipMemory( const void *pvZipped, int cubZipped, void *pvDest, int cub
 			// failed to unzip, try to continue
 			iRes = ZR_CORRUPT;
 		}
-#endif
 		CloseZip( hZip );
 	}
 

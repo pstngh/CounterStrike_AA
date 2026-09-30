@@ -1743,9 +1743,7 @@ void CBasePlayer::Event_Killed( const CTakeDamageInfo &info )
 
 	g_pGameRules->PlayerKilled( this, info );
 
-	#if !defined( _GAMECONSOLE ) || defined ( CSTRIKE15 )
 	gamestats->Event_PlayerKilled( this, info );
-	#endif
 
 	RumbleEffect( RUMBLE_STOP_ALL, 0, RUMBLE_FLAGS_NONE );
 
@@ -4973,9 +4971,7 @@ void CBasePlayer::InitialSpawn( void )
 {
 	m_iConnected = PlayerConnected;
 	m_flInitialSpawnTime = gpGlobals->curtime;
-	#if !defined( _GAMECONSOLE ) || defined ( CSTRIKE15 )
 	gamestats->Event_PlayerConnected( this );
-	#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5600,9 +5596,7 @@ bool CBasePlayer::GetInVehicle( IServerVehicle *pVehicle, int nRole )
 	SetMoveType( MOVETYPE_NOCLIP );
 
 	// This is a hack to fixup the player's stats since they really didn't "cheat" and enter noclip from the console
-	#if !defined( _GAMECONSOLE ) || defined ( CSTRIKE15 )
 	gamestats->Event_DecrementPlayerEnteredNoClip( this );
-	#endif
 
 	// Get the seat position we'll be at in this vehicle
 	Vector vSeatOrigin;
@@ -9216,9 +9210,7 @@ void CBasePlayer::Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo
 	BaseClass::Event_KilledOther( pVictim, info );
 	if ( pVictim != this )
 	{
-		#if !defined( _GAMECONSOLE ) || defined ( CSTRIKE15 )
 		gamestats->Event_PlayerKilledOther( this, pVictim, info );
-		#endif
 	}
 }
 

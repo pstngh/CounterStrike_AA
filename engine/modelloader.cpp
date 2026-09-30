@@ -59,11 +59,6 @@
 #include "server.h"
 #include "ifilelist.h"
 #include "LoadScreenUpdate.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#endif
 #include "materialsystem/imesh.h"
 #include "networkstringtable.h"
 #include "fmtstr.h"
@@ -2237,11 +2232,7 @@ void Mod_LoadFaces( void )
 			MSurf_Flags( surfID ) |= SURFDRAW_PLANEBACK;
 		}
 
-#ifndef _PS3
 		out2->plane = lh.GetMap()->planes + planenum;
-#else
-		out2->m_plane = *(lh.GetMap()->planes + planenum);
-#endif
 
 		ti = in->texinfo;
 		if (ti < 0 || ti >= lh.GetMap()->numtexinfo)
@@ -3764,12 +3755,6 @@ class CResourcePreloadModel : public CResourcePreload
 		Assert( CMapLoadHelper::GetRefCount() == 0 );
 	}
 
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock()
-	{
-		return true;
-	}
-#endif // _PS3
 };
 static CResourcePreloadModel s_ResourcePreloadModel;
 
@@ -4092,10 +4077,6 @@ static void QueuedLoaderBeginMapLoadingCallback( int nStage )
 		g_pMaterialSystem->CleanupLightmaps();
 	}
 
-#ifdef _PS3
-	// Reclaim the space from unloaded lightmaps and (if the queued loader ran) pre-purged assets not used by the next map
-	g_pMaterialSystem->CompactRsxLocalMemory( "BEGIN MAP LOADING" );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5516,9 +5497,7 @@ static void GetSpriteInfo( const char *pName, bool bIsAVI, bool bIsBIK, int &nWi
 	// is that this code gets run on dedicated servers also.
 	IMaterial *pMaterial = NULL;
 	AVIMaterial_t hAVIMaterial = AVIMATERIAL_INVALID; 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	BIKMaterial_t hBIKMaterial = BIKMATERIAL_INVALID; 
-#endif
 	if ( bIsAVI )
 	{
 		hAVIMaterial = avi->CreateAVIMaterial( pName, pName, "GAME" );
@@ -5529,7 +5508,6 @@ static void GetSpriteInfo( const char *pName, bool bIsAVI, bool bIsBIK, int &nWi
 			pMaterial = avi->GetMaterial( hAVIMaterial );
 		}
 	}
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	else if ( bIsBIK )
 	{
 		hBIKMaterial = bik->CreateMaterial( pName, pName, "GAME" );
@@ -5540,7 +5518,6 @@ static void GetSpriteInfo( const char *pName, bool bIsAVI, bool bIsBIK, int &nWi
 			pMaterial = bik->GetMaterial( hBIKMaterial );
 		}
 	}
-#endif
 	else
 	{
 		pMaterial = GL_LoadMaterial( pName, TEXTURE_GROUP_OTHER );
@@ -5563,12 +5540,10 @@ static void GetSpriteInfo( const char *pName, bool bIsAVI, bool bIsBIK, int &nWi
 		avi->DestroyAVIMaterial( hAVIMaterial );
 	}
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	if ( hBIKMaterial != BIKMATERIAL_INVALID )
 	{
 		bik->DestroyMaterial( hBIKMaterial );
 	}
-#endif
 }
 
 
@@ -6082,11 +6057,7 @@ void CModelLoader::Print( void )
 //-----------------------------------------------------------------------------
 int CModelLoader::UpdateOrCreate( const char *pSourceName, char *pTargetName, int targetLen, bool bForce )
 {
-#if defined( _GAMECONSOLE )
-	return ::UpdateOrCreate( pSourceName, pTargetName, targetLen, NULL, NULL, bForce );
-#else
 	return UOC_NOT_CREATED;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -7328,7 +7299,7 @@ void Mod_LeafAmbientColorAtPos( Vector *pOut, const Vector &pos, int leafIndex )
 	}
 }
 
-#if defined( _X360 ) || defined( _PS3 ) || defined( PLATFORM_WINDOWS_PC )
+#if defined( PLATFORM_WINDOWS_PC )
 
 #if defined( PLATFORM_WINDOWS_PC )
 
@@ -7445,11 +7416,7 @@ CON_COMMAND( vx_model_list, "Dump models to VXConsole" )
 		modelInfo.numMeshes = numMeshes;
 	}
 
-#if defined( _X360 )
-	XBX_rModelList( numActualModels, modelList.Base() );
-#elif defined( _PS3 )
-	g_pValvePS3Console->ModelList( numActualModels, modelList.Base() ); // super stupid, it just gets copied into yet another cutlvec on the other side, but that's the way the 360 ver does it.
-#elif defined( PLATFORM_WINDOWS_PC )
+#if defined( PLATFORM_WINDOWS_PC )
 	
 	extern IVEngineClient *engineClient;
 	char csvFileName[ MAX_PATH ];

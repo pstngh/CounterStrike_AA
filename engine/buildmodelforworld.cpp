@@ -1,6 +1,6 @@
 #include "render_pch.h"
 
-#if !defined( DEDICATED ) && !defined( _GAMECONSOLE )
+#if !defined( DEDICATED )
 
 #include "icliententitylist.h"
 #include "icliententity.h"

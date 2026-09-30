@@ -7,9 +7,7 @@
 #include "tier0/fasttimer.h"
 
 #ifdef _WIN32
-#if !defined(_X360)
 #include "winlite.h"
-#endif
 #include "tier0/memdbgon.h" // needed because in release builds crtdbg.h is handled specially if USE_MEM_DEBUG is defined
 #include "tier0/memdbgoff.h"
 #include <crtdbg.h>   // For getting at current heap size
@@ -132,25 +130,10 @@
 #include "steam/isteamremotestorage.h"
 #include "ConfigManager.h"
 #include "materialsystem/idebugtextureinfo.h"
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 #include "engine/ips3frontpanelled.h"
 #include "audio_pch.h"
 #include "platforminputdevice.h"
 #include "status.h"
-
-#ifdef _X360
-#include "xbox/xbox_console.h"
-#define _XBOX
-#include <xtl.h>
-#undef _XBOX
-#endif
-
-#if defined ( _GAMECONSOLE )
-#include "GameUI/IGameUI.h"
-#include "vgui_baseui_interface.h"
-#endif
 
 #include "matchmaking/mm_helpers.h"
 #include "ixboxsystem.h"
@@ -167,10 +150,6 @@ extern ConVar cl_cloud_settings;
 extern IVAudio *vaudio;
 void *g_pMilesAudioEngineRef;
 #endif
-
-#ifdef _PS3
-#include "ps3/ps3_helpers.h"
-#endif 
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -581,41 +560,6 @@ static bool host_checkheap = false;
 CCommonHostState host_state;
 
 //-----------------------------------------------------------------------------
-#if defined(_X360)
-static bool g_bGimped = false;
-static int64 *g_pRange1 = NULL;
-static int64 *g_pRange2 = NULL;
-
-CON_COMMAND(cache_gimp, "Gimp the cache")
-{
-	if ( g_bGimped )
-	{
-		XUnlockL2( XLOCKL2_INDEX_XPS );
-		XUnlockL2( XLOCKL2_INDEX_TITLE );
-		XPhysicalFree( g_pRange1 );
-		XPhysicalFree( g_pRange2 );
-
-		g_pRange1 = g_pRange2 = NULL;
-
-		g_bGimped = false;
-	}
-	else
-	{
-		g_pRange1 = ( int64* )XPhysicalAlloc( XLOCKL2_LOCK_SIZE_2_WAYS, MAXULONG_PTR, XLOCKL2_LOCK_SIZE_2_WAYS,	PAGE_READWRITE | MEM_LARGE_PAGES );
-		g_pRange2 = ( int64* )XPhysicalAlloc( XLOCKL2_LOCK_SIZE_2_WAYS, MAXULONG_PTR, XLOCKL2_LOCK_SIZE_2_WAYS,	PAGE_READWRITE | MEM_LARGE_PAGES );
-
-		g_bGimped = true;
-		XLockL2( XLOCKL2_INDEX_XPS, g_pRange1, XLOCKL2_LOCK_SIZE_2_WAYS, XLOCKL2_LOCK_SIZE_2_WAYS, 0 );
-		XLockL2( XLOCKL2_INDEX_TITLE, g_pRange2, XLOCKL2_LOCK_SIZE_2_WAYS, XLOCKL2_LOCK_SIZE_2_WAYS, 0 );
-
-		for ( int i = 0; i < XLOCKL2_LOCK_SIZE_2_WAYS/8; i++ )
-		{
-			g_pRange1[i] = 0;
-			g_pRange2[i] = 0;
-		}
-	}
-}
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -1061,148 +1005,11 @@ void CHostSubscribeForProfileEvents::OnEvent( KeyValues *pEvent )
 	}
 	if ( !Q_stricmp( szEvent, "OnProfileDataLoadFailed" ) )
 	{
-#if defined ( _X360 )
-		int iController = pEvent->GetInt( "iController" );
-		int iSlot = XBX_GetSlotByUserId( iController );
-		
-		ECommandMsgBoxSlot slot = CMB_SLOT_FULL_SCREEN;
-		char cmdLine[80];
-
-		if ( iSlot == 0 )
-		{
-			sprintf( cmdLine, "boot_to_start_and_reset_config 0" );
-			slot = CMB_SLOT_PLAYER_0;
-		}
-		else
-		{
-			sprintf( cmdLine, "boot_to_start_and_reset_config 1" );
-			slot = CMB_SLOT_PLAYER_1;
-		}
-		if ( !GetGameUI()->IsInLevel() )
-		{
-			slot = CMB_SLOT_FULL_SCREEN;
-		}
-
-		if ( !g_pXboxSystem->IsArcadeTitleUnlocked() )
-		{
-			GetGameUI()->CreateCommandMsgBoxInSlot( 
-				slot, 
-				"#SFUI_GameUI_ProfileDataLoadFailedTitle", 
-				"#SFUI_GameUI_ProfileDataLoadFailedTrialMsg", 
-				true, 
-				false,  
-				"boot_to_start", 
-				NULL,
-				NULL, 
-				NULL );
-
-			return;
-		}
-
-		GetGameUI()->CreateCommandMsgBoxInSlot( 
-			slot, 
-			"#SFUI_GameUI_ProfileDataLoadFailedTitle", 
-			"#SFUI_GameUI_ProfileDataLoadFailedMsg", 
-			true, 
-			true, 
-			cmdLine, 
-			"boot_to_start", 
-			NULL, 
-			NULL );
-#endif
 	}
 	if ( !Q_stricmp( szEvent, "OnProfileDataWriteFailed" ) )
 	{
-#if defined ( _X360 )
-		int iController = pEvent->GetInt( "iController" );
-		int iSlot = XBX_GetSlotByUserId( iController );
-
-		ECommandMsgBoxSlot slot = CMB_SLOT_FULL_SCREEN;
-		if ( GetGameUI()->IsInLevel() )
-		{
-			if ( iSlot == 0 )
-			{
-				slot = CMB_SLOT_PLAYER_0;
-			}
-			else
-			{
-				slot = CMB_SLOT_PLAYER_1;
-			}
-		}
-
-		// are we in trial mode?
-		if ( !g_pXboxSystem->IsArcadeTitleUnlocked() )
-		{
-			GetGameUI()->CreateCommandMsgBoxInSlot( 
-				slot, 
-				"#SFUI_TrialMUPullTitle", 
-				"#SFUI_TrialMUPullMsg", 
-				true, 
-				false, 
-				"boot_to_start", 
-				NULL, 
-				NULL, 
-				NULL );
-
-			return;
-		}
-
-		GetGameUI()->CreateCommandMsgBoxInSlot( 
-			slot, 
-			"#SFUI_GameUI_ProfileDataWriteFailedTitle", 
-			"#SFUI_GameUI_ProfileDataWriteFailedMsg", 
-			true, 
-			false, 
-			NULL, 
-			NULL, 
-			NULL, 
-			NULL );
-#endif
 	}
 
-#if defined ( _X360 )
-
-	else if ( !Q_stricmp( szEvent, "OnProfilesChanged" ) )
-	{
-
-		// $TODO(hpe) this needs reworked for split screen; currently, will reset configs for all players when one active player signs out
-		Host_ResetGlobalConfiguration();
-		for ( DWORD iSplitscreenSlot = 0; iSplitscreenSlot < XBX_GetNumGameUsers(); ++ iSplitscreenSlot )
-		{
-			Host_ResetConfiguration( XBX_GetUserId( iSplitscreenSlot ) );
-		}
-
-	}
-
-#endif
-
-#if defined ( _PS3 )
-
-	else if ( !Q_stricmp( szEvent, "ResetConfiguration" ) )
-	{
-		int iController = pEvent->GetInt( "iController" );
-		// $TODO(hpe) this needs reworked for split screen; currently, will reset configs for all players when one active player signs out
-		Host_ResetGlobalConfiguration();
-		Host_ResetConfiguration( iController );
-		Host_WriteConfiguration( iController, "" );
-	}
-
-#endif
-
-}
-#endif
-
-#ifdef _GAMECONSOLE
-void Console_UpdateNotificationPosition()
-{
-	static ConVarRef closecaption( "closecaption" );
-	static ConVarRef cc_subtitles( "cc_subtitles" );
-	bool bSubtitled = ( ( closecaption.IsValid() && closecaption.GetBool() ) ||
-		( cc_subtitles.IsValid() && cc_subtitles.GetBool() ) );
-#ifdef _X360
-	XNotifyPositionUI( bSubtitled ? XNOTIFYUI_POS_TOPRIGHT : XNOTIFYUI_POS_BOTTOMCENTER );
-	Msg( "XNotifyPositionUI: %s\n", bSubtitled ? "TOPRIGHT" : "BOTTOMCENTER" );
-#endif
 }
 #endif
 
@@ -1312,117 +1119,6 @@ static void SyncCvarValueWithPlayerTitleData( IPlayerLocal *pPlayer, ConVar *cv,
 void Host_WriteConfiguration_Console( const int iController, bool bVideoConfig )
 {
 	// sb: FIXME(hpe) only write if we had a valid read so we don't accidentally wipe out valid data
-#ifdef _GAMECONSOLE
-	DevMsg( "Host_WriteConfiguration_Console for ctrlr%d (%s)\n", iController, bVideoConfig ? "video" : "controls" );
-
-	if ( iController < 0 )
-		return;
-
-	if ( !g_pMatchFramework || !g_pMatchFramework->GetMatchTitle() )
-		return;
-
-	IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( !pPlayer )
-		return;
-
-#if defined ( _X360 )
-	if ( !pPlayer->IsTitleDataValid() )
-		return;
-#endif
-
-#ifndef GAME_DLL
-	if ( g_pXboxSystem->IsArcadeTitleUnlocked() )
-	{
-		IGameEvent *event = g_GameEventManager.CreateEvent( "write_game_titledata" );
-		if ( event )
-		{
-			event->SetInt( "controllerId", iController );
-			g_GameEventManager.FireEventClientSide( event );
-		}
-	}
-#endif
-
-	int iSlot = XBX_GetSlotByUserId( iController );
-
-	// check version number for title data block 3
-	TitleDataFieldsDescription_t const *fields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-	if ( !fields )
-		return;
-
-#if defined ( _X360 )
-
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( fields, "TITLEDATA.BLOCK3.VERSION" );
-	if ( !versionField || versionField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16)
-	{
-		Warning( "Host_WriteConfiguration_Console missing or incorrect type TITLEDATA.BLOCK3.VERSION\n" );
-		return;
-	}
-
-	ConVarRef cl_titledataversionblock3 ( "cl_titledataversionblock3" );
-	TitleDataFieldsDescriptionSetValue<uint16>( versionField, pPlayer, cl_titledataversionblock3.GetInt() );
-
-#endif
-
-	// On consoles - store guest user's convars in primary user's profile data
-	char const *szUsrField = "";
-	if ( XBX_GetUserIsGuest( iSlot ) && !bVideoConfig )
-	{
-		IPlayerLocal *pPlayerPrimary = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetPrimaryUserId() );
-		if ( pPlayerPrimary )
-		{
-			if ( TitleDataFieldsDescription_t const *pOffset = TitleDataFieldsDescriptionFindByString( fields, TITLE_DATA_PREFIX "CFG.usrSS.version" ) )
-			{
-				pPlayer = pPlayerPrimary;
-				szUsrField = "SS";
-			}
-		}
-	}
-
-	int numLoops = 1;
-#if defined (CSTRIKE15)
-	// Console CStrike15 we want to always save both usr and sys Convars
-	numLoops = 2;
-#endif
-
-	for ( int loopCount=0; loopCount<numLoops; ++loopCount )
-	{
-		// second pass toggle bVideoConfig to go from sys to usr or vice versa
-		if ( loopCount == 1 )
-			bVideoConfig = !bVideoConfig;
-
-		CUtlVector< ConVar * > arrCVars;
-		cv->WriteVariables( NULL, iSlot, !bVideoConfig, &arrCVars );
-		for ( int k = 0; k < arrCVars.Count(); ++ k )
-		{
-			ConVar *cvSave = arrCVars[k];
-			char const *cvSaveName = cvSave->GetBaseName();
-			CFmtStr sFieldLookup( TITLE_DATA_PREFIX "CFG.%s%s.%s", bVideoConfig ? "sys" : "usr", szUsrField, cvSaveName );
-			TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( fields, sFieldLookup );
-			if ( !pField )
-			{
-				Warning( "Host_WriteConfiguration_Console (%s#%d) - cannot save cvar %s\n", bVideoConfig ? "video" : "ctrlr", iController, cvSaveName );
-				continue;
-			}
-			SyncCvarValueWithPlayerTitleData( pPlayer, cvSave, pField, CVARWRITETD );
-		}
-
-		// reset the input parameter
-		if ( loopCount == 1 )
-			bVideoConfig = !bVideoConfig;
-	}
-
-	// Update the version number for the settings.  This is the main version number for PS3.
-	if ( TitleDataFieldsDescription_t const *pVersion = TitleDataFieldsDescriptionFindByString( fields, TITLE_DATA_PREFIX "CFG.sys.version" ) )
-	{
-		TitleDataFieldsDescriptionSetValue<int32>( pVersion, pPlayer, cl_configversion.GetInt() );
-	}
-
-	// Let the player manager save the user data
-	g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnProfilesWriteOpportunity", "reason", "settings" ) );
-
-	// Update notifications position
-	Console_UpdateNotificationPosition();
-#endif // #ifdef _GAMECONSOLE
 }
 
 bool Host_WasConfigCfgExecuted( const int iController )
@@ -1447,86 +1143,15 @@ void Host_SetConfigCfgExecuted( const int iController, bool bExecuted = true )
 
 void Host_ResetGlobalConfiguration()
 {
-#ifdef _GAMECONSOLE
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( 0 );
-#endif
 
-#ifndef _GAMECONSOLE
 	// We exec our global default configuration for non-consoles
 	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "exec config.global" PLATFORM_EXT ".cfg game\n" );
 	Cbuf_Execute();
-#else
-	CUtlVector< ConVar * > arrCVars;
-	cv->WriteVariables( NULL, 0, false, &arrCVars );
-	for ( int k = 0; k < arrCVars.Count(); ++ k )
-	{
-		ConVar *cvSave = arrCVars[k];
-		cvSave->Revert();
-		DevMsg( "Console reset global configuration: %s = \"%s\"\n", cvSave->GetName(), cvSave->GetString() );
-	}
-#endif
 
-#ifdef _GAMECONSOLE
-	// Update notifications position
-	Console_UpdateNotificationPosition();
-#endif
 }
 
 void Host_ResetConfiguration( const int iController )
 {
-
-#if defined ( _GAMECONSOLE )
-
-#ifndef SPLIT_SCREEN_STUBS
-
-	int iSlot = XBX_GetSlotByUserId( iController );
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( iSlot );
-
-#endif
-
-	// First, we exec our default configuration
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "exec config" PLATFORM_EXT ".cfg game\n" );
-	Cbuf_Execute();
-
-#if defined ( _X360 )
-
-	// This will wipe out all achievement and stats but they'll be loaded from the xlast title data sync.
-	IGameEvent *event = g_GameEventManager.CreateEvent( "reset_game_titledata" );
-	if ( event )
-	{
-		event->SetInt( "controllerId", iController );
-		g_GameEventManager.FireEventClientSide( event );
-	}
-
-	// Get and set all our default setting we care about from the Xbox
-	XBX_SetProfileDefaultSettings( iController );
-
-	IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( pPlayer )
-	{
-		pPlayer->SetIsTitleDataValid( true );
-	}
-
-#else
-
-#if defined( _PS3 )
-
-	char szScratch[MAX_PATH];
-	int iAllDevices = -1;
-	Q_snprintf( szScratch, sizeof(szScratch), "cl_reset_ps3_bindings %d %d", iController, iAllDevices );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), szScratch );
-	Cbuf_Execute();
-
-#endif // _PS3
-
-
-	// Get and set all our default setting we care about.
-	XBX_SetProfileDefaultSettings( iController );
-
-#endif // _X360
-
-
-#endif // _GAMECONSOLE
 
 }
 
@@ -1631,12 +1256,8 @@ void Host_WriteConfiguration( const int iController, const char *filename )
 		AssertMsg( false, "SteamCloud not available on Xbox 360. Badger Martin to fix this." );
 #else
 		ISteamRemoteStorage *pRemoteStorage =
-#ifdef _PS3
-			::SteamRemoteStorage();
-#else
 			Steam3Client().SteamClient() ? (ISteamRemoteStorage *) Steam3Client().SteamClient()->GetISteamGenericInterface(
 			SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
-#endif
 
 		if ( pRemoteStorage )
 		{
@@ -1691,78 +1312,6 @@ void Host_WriteConfiguration( const int iController, const char *filename )
 bool XBX_SetProfileDefaultSettings( int iController )
 {
 	// These defined values can't play nicely with the PC, so we need to ignore them for that build target
-#ifdef _GAMECONSOLE
-	UserProfileData upd = {0};
-	if ( IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController ) )
-	{
-		upd = pPlayerLocal->GetPlayerProfileData();
-	}
-
-	//
-	// Skill
-	//
-
-	int nSkillSetting = upd.difficulty;
-	int nResultSkill = 2;
-#ifdef _X360
-	switch( nSkillSetting )
-	{
-	case XPROFILE_GAMER_DIFFICULTY_HARD:
-		nResultSkill = 3;
-		break;
-	
-	case XPROFILE_GAMER_DIFFICULTY_EASY:
-	default:
-		nResultSkill = 1;
-		break;
-	}
-#endif
-
-	// If the mod has no difficulty setting, only easy is allowed
-	KeyValues *modinfo = new KeyValues("ModInfo");
-	if ( modinfo->LoadFromFile( g_pFileSystem, "gameinfo.txt" ) )
-	{
-		if ( stricmp(modinfo->GetString("nodifficulty", "0"), "1") == 0 )
-			nResultSkill = 1;
-	}
-	modinfo->deleteThis();
-
-	char szScratch[MAX_PATH];
-	Q_snprintf( szScratch, sizeof(szScratch), "skill %d", nResultSkill );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), szScratch );
-
-	// 
-	// Movement control
-	//
-
-	int nMovementControl = !!upd.action_movementcontrol;
-
-	Q_snprintf( szScratch, sizeof(szScratch), "joy_movement_stick %d", nMovementControl );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), szScratch );
-
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "joyadvancedupdate" );
-
-	// 
-	// Y-Inversion
-	//
-
-	int nYinvert = !!upd.yaxis;
-	
-	Q_snprintf( szScratch, sizeof(szScratch), "joy_inverty %d", nYinvert );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), szScratch );
-	
-	//
-	// Vibration control
-	//
-
-	int nVibration = !!upd.vibration;
-
-	Q_snprintf( szScratch, sizeof(szScratch), "cl_rumblescale %d", nVibration );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), szScratch );
-
-	// Execute all commands we've queued up
-	Cbuf_Execute();
-#endif // _GAMECONSOLE
 
 	return true;
 }
@@ -1773,222 +1322,6 @@ bool XBX_SetProfileDefaultSettings( int iController )
 void Host_ReadConfiguration_Console( const int iController )
 {
 
-#ifdef _GAMECONSOLE
-
-	if ( iController < 0 )
-		return;
-
-	int iSlot = XBX_GetSlotByUserId( iController );
-
-	DevMsg( "Host_ReadConfiguration_Console maps ctrlr%d to slot%d\n", iController, iSlot );
-
-	if ( !g_pMatchFramework || !g_pMatchFramework->GetMatchTitle() )
-		return;
-
-	IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( !pPlayer )
-		return;
-
-	TitleDataFieldsDescription_t const *fields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-	if ( !fields )
-		return;
-	
-#if defined( _X360 )
-
-	Host_ResetConfiguration( iController );
-
-	// dont read any config info if the load was not valid
-	if ( !pPlayer->IsTitleDataValid() )
-		return;
-
-	// if the trial block is fresh, reset the trial timer to clear out any previous signed in players time
-	if ( !pPlayer->IsTitleDataBlockValid( 2 ) )
-	{
-		SplitScreenConVarRef xbox_arcade_remaining_trial_time("xbox_arcade_remaining_trial_time");
-		xbox_arcade_remaining_trial_time.SetValue( iSlot, xbox_arcade_remaining_trial_time.GetDefault() );
-	}
-
-	if ( pPlayer->IsFreshPlayerProfile() )
-		return;
-
-#ifndef GAME_DLL
-
-	if ( pPlayer->IsTitleDataBlockValid( 0 ) && pPlayer->IsTitleDataBlockValid( 1 ) )
-	{
-		IGameEvent *event = g_GameEventManager.CreateEvent( "read_game_titledata" );
-		if ( event )
-		{
-			event->SetInt( "controllerId", iController );
-			g_GameEventManager.FireEventClientSide( event );
-		}
-	}
-
-#endif //GAME_DLL
-
-
-	// check version numbers
-
-	ConVarRef cl_titledataversionblock3 ( "cl_titledataversionblock3" );
-	TitleDataFieldsDescription_t const *versionField3 = TitleDataFieldsDescriptionFindByString( fields, "TITLEDATA.BLOCK3.VERSION" );
-
-#if !defined( _CERT )
-
-	// check to see if profile versions match; reset if not
-	ConVarRef cl_titledataversionblock1 ( "cl_titledataversionblock1" );
-	ConVarRef cl_titledataversionblock2 ( "cl_titledataversionblock2" );
-	TitleDataFieldsDescription_t const *versionField1 = TitleDataFieldsDescriptionFindByString( fields, "TITLEDATA.BLOCK1.VERSION" );
-	if ( !versionField1 || versionField1->m_eDataType != TitleDataFieldsDescription_t::DT_uint16)
-	{
-		Warning( "Host_ReadConfiguration_Console missing or incorrect type TITLEDATA.BLOCK1.VERSION\n" );
-		return;
-	}
-
-	TitleDataFieldsDescription_t const *versionField2 = TitleDataFieldsDescriptionFindByString( fields, "TITLEDATA.BLOCK2.VERSION" );
-	if ( !versionField2 || versionField2->m_eDataType != TitleDataFieldsDescription_t::DT_uint16)
-	{
-		Warning( "Host_ReadConfiguration_Console missing or incorrect type TITLEDATA.BLOCK2.VERSION\n" );
-		return;
-	}
-	
-	bool versionValid = true;
-
-	if ( g_pXboxSystem->IsArcadeTitleUnlocked() )
-	{
-		if ( ( pPlayer->IsTitleDataBlockValid( 0 ) && cl_titledataversionblock1.GetInt() != TitleDataFieldsDescriptionGetValue<uint16>( versionField1, pPlayer ) ) ||
-			 ( pPlayer->IsTitleDataBlockValid( 1 ) && cl_titledataversionblock2.GetInt() != TitleDataFieldsDescriptionGetValue<uint16>( versionField2, pPlayer ) ) ||
-			 ( pPlayer->IsTitleDataBlockValid( 2 ) && cl_titledataversionblock3.GetInt() != TitleDataFieldsDescriptionGetValue<uint16>( versionField3, pPlayer ) ) )
-		{
-			versionValid = false;
-		}
-	}
-	else
-	{
-		if ( pPlayer->IsTitleDataBlockValid( 2 ) && cl_titledataversionblock3.GetInt() != TitleDataFieldsDescriptionGetValue<uint16>( versionField3, pPlayer ) )
-		{
-			versionValid = false;
-		}
-	}
-
-	if ( !versionValid )
-	{
-		Warning( "ProfileVersion is out of date; your profile has been reset\n" );
-
-		// zero out title data buffer to remove any stale data since we are basically nuking this profile data
-		IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-		if ( pPlayer )
-		{
-			pPlayer->ClearBufTitleData();
-		}
-
-		Host_ResetConfiguration( iController );
-		Host_WriteConfiguration( iController, "" );
-		GetGameUI()->ShowMessageDialog( "Your profile version was out of date; the profile has been reset.", "Profile Version Mismatch" );
-		return;
-	}
-
-#endif // !_CERT
-
-	if ( !versionField3 || versionField3->m_eDataType != TitleDataFieldsDescription_t::DT_uint16)
-	{
-		Warning( "Host_ReadConfiguration_Console missing or incorrect type TITLEDATA.BLOCK3.VERSION\n" );
-		return;
-	}
-	
-	if ( cl_titledataversionblock3.GetInt() != TitleDataFieldsDescriptionGetValue<uint16>( versionField3, pPlayer ) )
-	{
-		Warning( "Host_ReadConfiguration_Console wrong version number for TITLEDATA.BLOCK3.VERSION; expected %d, got %d\n", 
-				cl_titledataversionblock3.GetInt(), TitleDataFieldsDescriptionGetValue<uint16>( versionField3, pPlayer ) );
-		return;
-	}
-
-#else
-
-	// If not on 360, we read the game title data reguardless.
-	IGameEvent *event = g_GameEventManager.CreateEvent( "read_game_titledata" );
-	if ( event )
-	{
-		event->SetInt( "controllerId", iController );
-		g_GameEventManager.FireEventClientSide( event );
-	}
-
-#endif // _X360
-
-	// usr data
-	{
-		bool bVideoConfig = false;
-
-		char const *szUsrField = "";
-		if ( XBX_GetUserIsGuest( iSlot ) && !bVideoConfig )
-		{
-			IPlayerLocal *pPlayerPrimary = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetPrimaryUserId() );
-			if ( pPlayerPrimary )
-			{
-				if ( TitleDataFieldsDescription_t const *pOffset = TitleDataFieldsDescriptionFindByString( fields, TITLE_DATA_PREFIX "CFG.usrSS.version" ) )
-				{
-					pPlayer = pPlayerPrimary;
-					szUsrField = "SS";
-				}
-			}
-		}
-
-		bool bConfigVersionValid = true;
-
-		CUtlVector< ConVar * > arrCVars;
-		cv->WriteVariables( NULL, iSlot, !bVideoConfig, &arrCVars );
-		if ( bConfigVersionValid )
-		{
-			for ( int k = 0; k < arrCVars.Count(); ++ k )
-			{
-				ConVar *cvSave = arrCVars[k];
-				char const *cvSaveName = cvSave->GetBaseName();
-				CFmtStr sFieldLookup( TITLE_DATA_PREFIX "CFG.%s%s.%s", bVideoConfig ? "sys" : "usr", szUsrField, cvSaveName );
-				TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( fields, sFieldLookup );
-				if ( !pField )
-				{
-					Warning( "Host_ReadConfiguration_Console (%s#%d) - cannot read cvar %s\n", bVideoConfig ? "video" : "ctrlr", iController, cvSaveName );
-					continue;
-				}
-				SyncCvarValueWithPlayerTitleData( pPlayer, cvSave, pField, CVARREADTD );
-
-				if ( !Q_stricmp( cvSaveName, "joy_cfg_preset" ) ) // special code to handle joystick config presets
-				{
-					Cbuf_AddText( Cbuf_GetCurrentPlayer(), CFmtStr( "cmd%d exec joy_preset_%d" PLATFORM_EXT ".cfg\n", iSlot + 1, cvSave->GetInt() ) );
-				}
-			}
-		}
-	}
-
-	// sys data
-	if ( !XBX_GetUserIsGuest( iSlot ) && ( XBX_GetPrimaryUserId() == iController ) )
-	{
-		bool bVideoConfig = true;
-		char const *szUsrField = "";
-
-		bool bConfigVersionValid = true;
-
-		CUtlVector< ConVar * > arrCVars;
-		cv->WriteVariables( NULL, iSlot, !bVideoConfig, &arrCVars );
-		if ( bConfigVersionValid )
-		{
-			for ( int k = 0; k < arrCVars.Count(); ++ k )
-			{
-				ConVar *cvSave = arrCVars[k];
-				char const *cvSaveName = cvSave->GetBaseName();
-				CFmtStr sFieldLookup( TITLE_DATA_PREFIX "CFG.%s%s.%s", bVideoConfig ? "sys" : "usr", szUsrField, cvSaveName );
-				TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( fields, sFieldLookup );
-				if ( !pField )
-				{
-					Warning( "Host_ReadConfiguration_Console (%s#%d) - cannot read cvar %s\n", bVideoConfig ? "video" : "ctrlr", iController, cvSaveName );
-					continue;
-				}
-				SyncCvarValueWithPlayerTitleData( pPlayer, cvSave, pField, CVARREADTD );
-			}
-		}
-	}
-
-	// Update notifications position
-	Console_UpdateNotificationPosition();
-#endif // _GAMECONSOLE
 }
 
 //-----------------------------------------------------------------------------
@@ -2007,12 +1340,6 @@ void Host_ReadConfiguration( const int iController, const bool readDefault )
 	}
 
 	// Handle the console case
-#ifdef _GAMECONSOLE
-	{
-		Host_ReadConfiguration_Console( iController );
-		return;
-	}
-#else
 	bool saveconfig = false;
 
 	ISteamRemoteStorage *pRemoteStorage = Steam3Client().SteamClient() ? (ISteamRemoteStorage *)Steam3Client().SteamClient()->GetISteamGenericInterface(
@@ -2111,7 +1438,6 @@ void Host_ReadConfiguration( const int iController, const bool readDefault )
 		Host_WriteConfiguration( iController, "config.cfg" );
 		host_initialized = saveinit;
 	}
-#endif
 }
 
 CON_COMMAND( host_writeconfig, "Store current settings to config.cfg (or specified .cfg file)." )
@@ -2191,20 +1517,6 @@ CON_COMMAND( host_reset_config, "reset config (for testing) with param as splits
 	}
 
 }
-
-#ifdef _GAMECONSOLE
-CON_COMMAND( host_writeconfig_video_ss, "Store current video settings to config.cfg (or specified .cfg file) with first param as controller index." )
-{
-	if ( args.ArgC() != 2 )
-	{
-		ConMsg( "Usage:  writeconfig <controller index>\n" );
-		return;
-	}
-
-	int controller = atoi( args[1] );
-	Host_WriteConfiguration_Console( controller, true );
-}
-#endif
 
 #endif
 
@@ -2472,11 +1784,7 @@ float g_fFramesPerSecond = 0.0f;
 // temporarily a constant until I bother to hook it to a cvar
 inline static bool cl_ps3ledframerate()  // should i make the front LEDs show the framerate (divided by two)
 {
-#ifdef _PS3
-	return (CPS3FrontPanelLED::GetSwitches() & CPS3FrontPanelLED::kPS3SWITCH3) == 0;
-#else
 	return false;
-#endif
 }
 
 /*
@@ -2682,7 +1990,7 @@ void Host_BuildUserInfoUpdateMessage( int nSplitScreenSlot, CMsg_CVars *rCvarLis
 	if ( count <= 0 )
 		return;
 
-#if !defined( _GAMECONSOLE ) && !defined( DEDICATED )
+#if !defined( DEDICATED )
 	// Add local user SteamID
 	if ( Steam3Client().SteamUser() && Steam3Client().SteamUser()->GetSteamID().GetAccountID() )
 	{
@@ -2811,39 +2119,6 @@ void CL_SendVoicePacket(bool bFinal)
 #endif
 }
 
-#if defined ( _GAMECONSOLE )
-void CL_ProcessGameConsoleVoiceData()
-{
-	if ( g_pMatchFramework && !(g_pMatchFramework->GetMatchTitle()->GetTitleSettingsFlags() & MATCHTITLE_VOICE_INGAME) )
-		return; // Title plays voice via lobby system
-
-#if defined( _PS3 ) && defined( CLIENT_DLL )
-	bool restrictedFromChat = engine->PS3_IsUserRestrictedFromChat( );
-	if ( restrictedFromChat )
-		return;
-#endif
-
-	if ( Audio_GetXVoice() == NULL )
-		return;
-
-	for ( int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-	{
-		int iCtrlr = XBX_GetUserId( k );
-		
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( k );
-
-		if ( Audio_GetXVoice()->VoiceUpdateData( iCtrlr ) )
-		{
-			if ( GetLocalClient( k ).IsActive() )
-			{
-				Audio_GetXVoice()->VoiceSendData( iCtrlr, GetLocalClient( k ).m_NetChannel );
-			}
-		}
-	}
-}
-
-#endif
-
 void CL_ProcessVoiceData()
 {
 	VPROF_BUDGET( "CL_ProcessVoiceData", VPROF_BUDGETGROUP_OTHER_NETWORKING );
@@ -2855,9 +2130,6 @@ void CL_ProcessVoiceData()
 	}
 #endif
 
-#if defined ( _GAMECONSOLE )
-	CL_ProcessGameConsoleVoiceData();
-#endif
 }
 #endif
 
@@ -3622,23 +2894,6 @@ void _Host_RunFrame_Sound()
 void Host_BeginThreadedSound()
 {
 #ifndef DEDICATED
-#ifdef _PS3
-
-	if (sv.IsActive())
-	{
-		Host_UpdateSounds();
-		g_pSoundJob = NULL;
-		return;
-	}
-	else if(host_threaded_sound_simplethread.GetBool())
-	{
-		SNPROF("Kick Sound");
-		g_pGcmSharedData->RunAudio(Host_UpdateSounds);
-		g_pSoundJob = (CJob*)1;
-		return;
-	}
-
-#endif
 
 	if ( !host_threaded_sound.GetBool() || !g_bAllowThreadedSound )
 	{
@@ -3648,11 +2903,7 @@ void Host_BeginThreadedSound()
 	g_pSoundJob = new CFunctorJob( CreateFunctor( Host_UpdateSounds ) );
 
 	IThreadPool *pSoundThreadPool;
-#ifdef _X360
-	pSoundThreadPool = g_pAlternateThreadPool;
-#else
 	pSoundThreadPool = g_pThreadPool;
-#endif
 	if ( IsX360() )
 	{
 		g_pSoundJob->SetServiceThread( g_nServerThread );
@@ -3667,18 +2918,6 @@ void Host_EndThreadedSound()
 	{
 		return;
 	}
-
-#ifdef _PS3
-
-	if(host_threaded_sound_simplethread.GetBool())
-	{
-		SNPROF("Wait for Sound");
-		g_pGcmSharedData->WaitForAudio();
-		g_pSoundJob = NULL;
-		return;
-	}
-
-#endif
 
 	VPROF_BUDGET( "_Host_RunFrame_Sound", VPROF_BUDGETGROUP_OTHER_SOUND );
 	g_pSoundJob->WaitForFinishAndRelease();
@@ -3754,11 +2993,7 @@ CON_COMMAND( host_runofftime, "Run off some time without rendering/updating soun
 	SCR_UpdateScreen ();
 }
 
-#if !defined( _GAMECONSOLE )
 S_API int SteamGameServer_GetIPCCallCount();
-#else
-S_API int SteamGameServer_GetIPCCallCount() { return 0; }
-#endif
 void Host_ShowIPCCallCount()
 {
 	// If set to 0 then get out.
@@ -4133,18 +3368,6 @@ void _Host_RunFrame (float time)
 		g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
 
 		// process console commands
-#if defined( _GAMECONSOLE ) && !defined( _CERT )
-		static volatile bool s_bMemDebug = !!CommandLine()->FindParm( "-mem_dump_frames" );
-		if ( s_bMemDebug )
-			Cbuf_AddText( CBUF_FIRST_PLAYER, "mem_dump;\n" );
-
-		static char s_chBufferConCommandHack[256] = {0};
-		if ( s_chBufferConCommandHack[0] )
-		{
-			Cbuf_AddText( CBUF_FIRST_PLAYER, s_chBufferConCommandHack );
-			s_chBufferConCommandHack[0] = 0;
-		}
-#endif
 		Cbuf_Execute ();
 
 		if ( NET_IsDedicatedForXbox() )
@@ -4489,19 +3712,12 @@ void _Host_RunFrame (float time)
 			// set net_time once before running the server
 			NET_SetTime( Plat_FloatTime() );
 
-#ifdef _PS3
-			SNPROF("Kick sv");
-			g_pGcmSharedData->RunServer(_Host_RunFrame_Server_Async, serverticks);
-			pGameJob = (CJob*)1;
-#else
-
 			pGameJob = new CFunctorJob( CreateFunctor( _Host_RunFrame_Server_Async, serverticks ) );
 			if ( IsX360() )
 			{
 				pGameJob->SetServiceThread( g_nServerThread );
 			}
 			g_pThreadPool->AddJob( pGameJob );
-#endif
 #if LOG_FRAME_OUTPUT
 			if ( !cl.IsPaused() || !sv.IsPaused() )
 			{
@@ -4582,7 +3798,6 @@ void _Host_RunFrame (float time)
 		{
 			{
 				VPROF_BUDGET( "WaitForAsyncServer", "AsyncServer" );
-#ifndef _PS3
 				if ( Host_IsSinglePlayerGame() )
 				{
 					// This should change to a YieldWait if the server starts wanting to parallel process. If
@@ -4595,10 +3810,6 @@ void _Host_RunFrame (float time)
 				{
 					pGameJob->WaitForFinishAndRelease();
 				}
-#else
-                SNPROF("WaitFor Sv");
-				g_pGcmSharedData->WaitForServer();
-#endif
 			}
 
 			SV_FrameExecuteThreadDeferred();
@@ -4662,9 +3873,6 @@ void Host_RunFrame( float time )
 		case HTM_DEFAULT:	g_bThreadedEngine = ( g_pThreadPool->NumThreads() > 0 );	break;
 		case HTM_FORCED:	g_bThreadedEngine = true;									break;
 		}
-#ifdef _PS3
-		g_bThreadedEngine = true; // Not reqd anuymore ?
-#endif 
 	}
 	else
 #endif
@@ -4730,13 +3938,11 @@ bool IsLowViolence_Secure()
 	return false;
 #endif
 
-#ifndef _GAMECONSOLE
 	if ( IsPC() && Steam3Client().SteamApps() )
 	{
 		// let Steam determine current violence settings 		
 		return Steam3Client().SteamApps()->BIsLowViolence();
 	}
-#endif
 
 	if ( IsGameConsole() )
 	{
@@ -4989,32 +4195,6 @@ void SpewInstallStatus( void )
 {
 	if ( IsGameConsole() && g_pFullFileSystem )
 	{
-#if defined( _X360 )
-		Msg( "\nXbox Launched From %s.\n", g_pFullFileSystem->IsLaunchedFromXboxHDD() ? "HDD" :  "DVD" );
-		if ( g_pXboxInstaller )
-		{
-			g_pXboxInstaller->SpewStatus();
-		}
-#elif defined( _PS3 )
-		// This is intended to match CXboxInstaller::SpewStatus as closely as possible:
-		Msg( "Install Status:\n" );
-		Msg( "Version: %u (%s) (ps3)\n", XBX_GetImageChangelist(), XBX_GetLanguageString() );
-		Msg( "DVD Hosted: Disabled\n" );
-		// This spew is XBox-specific (could be hooked up to the FIOS installer)
-		//if ( g_pFullFileSystem->IsInstalledToXboxHDDCache() )
-		//{
-		//	Msg( "Existing Image Found.\n" );
-		//}
-		//if ( !IsInstallEnabled() )
-		//{
-		//	Msg( "Install Enabled.\n" );
-		//}
-		//if ( IsFullyInstalled() )
-		//{
-		//	Msg( "Fully Installed.\n" );
-		//}
-		//Msg( "Progress: %d/%d MB\n", GetCopyStats()->m_BytesCopied/(1024*1024), GetTotalSize()/(1024*1024) );
-#endif
 	}
 }
 
@@ -5107,56 +4287,11 @@ CDebugInputThread * g_pDebugInputThread;
 // PS3 QMS/Server thread
 //--------------------------------------------------------------------------------------------------
 
-#ifdef _PS3
-
-
-static uint32 QMSServerThreadEntry(void* param)
-{
-
-	while(1)
-	{
-		// Wait on semaphore
-		// For each semaphore posted, we look to see if we should run either "job"
-		// It is also possible to decr the semaphore, only to have nothing to run...
-		// ie The semaphore is a wakeup rather than a count of jobs
-
-		sys_semaphore_wait(g_pGcmSharedData->m_semaphore, 0);
-
-		g_pGcmSharedData->CheckForAudioRequest();
-
-		g_pGcmSharedData->CheckForServerRequest();
-
-		if (g_pGcmSharedData->m_qmsRunFlag)
-		{
-			g_pGcmSharedData->m_qmsRunFlag = 0;
-			void* p1 = (void*)g_pGcmSharedData->m_cmat;
-			void* p2 = (void*)g_pGcmSharedData->m_ptr;
-
-			g_pGcmSharedData->m_func(p1, p2);
-			g_pGcmSharedData->m_qmsDoneFlag = 1;
-		}
-
-	}
-
-	return 0;
-
-}
-
-static void CreateQMSServerThread()
-{
-
-	CreateSimpleThread(QMSServerThreadEntry, 0, 0x40000);
-
-}
-
-
-#endif
-
 // Check with steam to see if the requested file (requires full path) is a valid, signed binary
 #define SignatureWarning( ... ) ((void)(0))
 static bool Host_IsValidSignature( const char *pFilename, bool bAllowUnknown )
 {
-#if defined( DEDICATED ) || defined( _GAMECONSOLE )
+#if defined( DEDICATED )
 	return true;
 #else
 	if ( Steam3Client().SteamUtils() )
@@ -5486,23 +4621,6 @@ void Host_Init( bool bDedicated )
 	ThreadPoolStartParams_t startParams;
 	s_bDedicatedForPurposesOfThreadPool = bDedicated;
 	GetThreadPoolStartParams( startParams );
-#ifdef _PS3	
-	{
-		// PS3 overrides defaults, 
-		if ( host_threaded_sound.GetBool() && ( !host_threaded_sound_simplethread.GetBool() ) )
-		{
-			startParams.nThreads = 1;
-		}
-		else
-		{
-			startParams.nThreads = 0;
-		}
-
-		// Second thread for CSGO, which is not a jobthread, so that we can more easily control "what runs where and whem"
-		g_pGcmSharedData->Init();
-		CreateQMSServerThread();
-	}
-#endif
 
 	//////// DISABLE FOR SHIP! //////////
 	//lwss- comment this out
@@ -5528,15 +4646,6 @@ void Host_Init( bool bDedicated )
 	if ( g_pThreadPool )
 	{
 		g_pThreadPool->Start( startParams );
-#ifdef _X360
-		if ( !Should360EmulatePS3() )
-		{
-			g_pAlternateThreadPool = CreateNewThreadPool();
-			startParams.iAffinityTable[0] = XBOX_PROCESSOR_3;
-			startParams.iAffinityTable[1] = XBOX_PROCESSOR_5;
-			g_pAlternateThreadPool->Start( startParams );
-		}
-#endif
 	}
 
 	// From const.h, the loaded game .dll will give us the correct value which is transmitted to the client
@@ -5704,9 +4813,7 @@ void Host_Init( bool bDedicated )
 	// Audio system initializes after matchmaking, so need to explicitly
 	// set the voice interface extension
 	IEngineVoice *pIEngineVoice = NULL;
-#ifdef _GAMECONSOLE
-	pIEngineVoice = Audio_GetXVoice();
-#elif ( defined( _WIN32 ) || defined( OSX ) || defined( LINUX ) ) && !defined( NO_STEAM )
+#if ( defined( _WIN32 ) || defined( OSX ) || defined( LINUX ) ) && !defined( NO_STEAM )
 	pIEngineVoice = Audio_GetEngineVoiceSteam();
 #else
 	pIEngineVoice = Audio_GetEngineVoiceStub();
@@ -5729,12 +4836,7 @@ void Host_Init( bool bDedicated )
 #endif
 
 	// Execute valve.rc
-#ifdef _GAMECONSOLE
-	// the 360 version loads a 3d background
 	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "exec valve.rc\n" );
-#else
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "exec valve.rc\n" );
-#endif
 
 	// Execute mod-specfic settings, without falling back based on search path.
 	// This lets us set overrides for games while letting mods of those games
@@ -5743,11 +4845,6 @@ void Host_Init( bool bDedicated )
 	{
 		Cbuf_AddText( Cbuf_GetCurrentPlayer(), "exec modsettings.cfg mod\n" );
 	}
-
-#ifdef _GAMECONSOLE
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "cmd2 exec config" PLATFORM_EXT ".cfg\n" );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "cmd1 exec config" PLATFORM_EXT ".cfg\n" );
-#endif
 
 	// Mark DLL as active
 	//	eng->SetNextState( InEditMode() ? IEngine::DLL_PAUSED : IEngine::DLL_ACTIVE );
@@ -6288,10 +5385,6 @@ bool Host_NewGame( char *mapName, char *mapGroupName, bool loadGame, bool bBackg
 
 		if( IsGameConsole() && !bBackgroundLevel )
 		{
-#ifdef _GAMECONSOLE
-			// on the 360 we need to ask matchmaking how many players to connect.
-			nNumPlayers = XBX_GetNumGameUsers();
-#endif
 		}
 		
 		if ( bSplitScreenConnect )
@@ -6540,9 +5633,7 @@ void Host_Shutdown(void)
 
 #ifndef DEDICATED
 	TRACESHUTDOWN( Key_Shutdown() );
-#if !defined( _X360 )
 	TRACESHUTDOWN( ShutdownMixerControls() );
-#endif
 #endif
 
 	TRACESHUTDOWN( Filter_Shutdown() );

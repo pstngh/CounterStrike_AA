@@ -10,20 +10,6 @@
 #include <windows.h>
 #define VA_COMMIT_FLAGS MEM_COMMIT
 #define VA_RESERVE_FLAGS MEM_RESERVE
-#elif defined( _X360 )
-#undef Verify
-#define _XBOX
-#include <xtl.h>
-#undef _XBOX
-#include "xbox/xbox_win32stubs.h"
-#define VA_COMMIT_FLAGS (MEM_COMMIT|MEM_NOZERO|MEM_LARGE_PAGES)
-#define VA_RESERVE_FLAGS (MEM_RESERVE|MEM_LARGE_PAGES)
-#elif defined( _PS3 )
-#include "sys/memory.h"
-#include "sys/mempool.h"
-#include "sys/process.h"
-#include <sys/vm.h>
-
 #endif
 
 //#include <malloc.h>
@@ -34,9 +20,7 @@
 #include "tier0/tslist.h"
 #include "mem_helpers.h"
 
-#ifndef _PS3
 #pragma pack(4)
-#endif
 
 #define MIN_SBH_BLOCK	8
 #define MIN_SBH_ALIGN	8
@@ -61,32 +45,14 @@
 #define NUM_POOLS		42
 #endif
 
-#if defined( _WIN32 ) || defined( _PS3 )
+#if defined( _WIN32 )
 // Small block heap on win64 is expecting SLIST_HEADER to look different than it does on win64. It was disabled for a long time because of this.
 #define MEM_SBH_ENABLED 1
 #endif
 
-#if !defined(_CERT) && ( defined(_X360) || defined(_PS3) || defined( PLATFORM_WINDOWS_PC64 ) || DEVELOPMENT_ONLY )
+#if !defined(_CERT) && ( defined( PLATFORM_WINDOWS_PC64 ) || DEVELOPMENT_ONLY )
 #define TRACK_SBH_COUNTS
 #endif
-
-#if defined(_X360)
-
-// 360 uses a 48MB primary (physical) SBH and 10MB secondary (virtual) SBH, with no fallback
-#define MBYTES_PRIMARY_SBH 32
-#define MEMALLOC_USE_SECONDARY_SBH
-#define MBYTES_SECONDARY_SBH 10
-#define MEMALLOC_NO_FALLBACK
-
-#elif defined(_PS3)
-
-// PS3 uses just a 32MB SBH - this was enough to avoid overflow when Portal 2 shipped.
-// NOTE: when Steam uses the game's tier0 allocator (see memalloc.h), we increase the size
-//       of the SBH and MBH (see memstd.cpp) to accommodate those extra allocations.
-#define MBYTES_PRIMARY_SBH ( 34 + MBYTES_STEAM_SBH_USAGE )
-#define MEMALLOC_NO_FALLBACK
-
-#else // _X360 | _PS3
 
 #ifdef PLATFORM_WINDOWS_PC64
 // in 64-bit server , with huge pages and many pools, we need a lot to start with, otherwise we'll start falling into fallback SBH right away
@@ -98,8 +64,6 @@
 // to CompactOnFail) with it set to 48 MB, so let's try higher.
 #define MBYTES_PRIMARY_SBH 64
 #endif
-
-#endif // _X360 | _PS3
 
 #define MEMSTD_COMPILE_TIME_ASSERT( pred )	switch(0){case 0:case pred:;}
 
@@ -363,9 +327,6 @@ public:
 		{
 #ifdef _WIN32
 			return (byte *)VirtualAlloc( NULL, TOTAL_BYTES, VA_RESERVE_FLAGS, PAGE_NOACCESS );
-#elif defined( _PS3 )
-			Error( "" );
-			return NULL;
 #else
 #error
 #endif
@@ -384,8 +345,6 @@ public:
 		{
 #ifdef _WIN32
 			return ( VirtualFree( pPage, BYTES_PAGE, MEM_DECOMMIT ) != 0 );
-#elif defined( _PS3 )
-			return false;
 #else
 #error
 #endif
@@ -395,8 +354,6 @@ public:
 		{
 #ifdef _WIN32
 			return ( VirtualAlloc( pPage, BYTES_PAGE, VA_COMMIT_FLAGS, PAGE_READWRITE ) != NULL );
-#elif defined( _PS3 )
-			return false;
 #else
 #error
 #endif
@@ -429,10 +386,6 @@ public:
 		byte *AllocatePoolMemory()
 		{
 #ifdef _WIN32
-#ifdef _X360
-			if ( bPhysical )
-				return (byte *)XPhysicalAlloc( TOTAL_BYTES, MAXULONG_PTR, 4096, PAGE_READWRITE | MEM_16MB_PAGES );
-#endif
 			size_t numBytesToAllocate = TOTAL_BYTES;
 			if ( bPhysical )
 			{
@@ -441,15 +394,6 @@ public:
 				numBytesToAllocate = g_nSBHOverride;
 			}
 			return (byte *)VirtualAlloc( NULL, numBytesToAllocate, VA_COMMIT_FLAGS, PAGE_READWRITE );
-#elif defined( _PS3 )
-			// TODO: release this section on shutdown (use GetMemorySectionForAddress)
-			extern IVirtualMemorySection * VirtualMemoryManager_AllocateVirtualMemorySection( size_t numMaxBytes );
-			IVirtualMemorySection *pSection = VirtualMemoryManager_AllocateVirtualMemorySection( TOTAL_BYTES );
-			if ( !pSection )
-				Error( "CFixedAllocator::AllocatePoolMemory() failed in VirtualMemoryManager_AllocateVirtualMemorySection\n" );
-			if ( !pSection->CommitPages( pSection->GetBaseAddress(), TOTAL_BYTES ) )
-				Error( "CFixedAllocator::AllocatePoolMemory() failed in IVirtualMemorySection::CommitPages\n" );
-			return reinterpret_cast<byte *>( pSection->GetBaseAddress() );
 #else
 #error
 #endif
@@ -513,6 +457,4 @@ public:
 	bool				m_bInCompact;
 };
 
-#ifndef _PS3
 #pragma pack()
-#endif

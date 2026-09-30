@@ -13,11 +13,7 @@
 #include "vgui_controls/Label.h"
 #include "vgui_controls/ControllerMap.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
 
 
 #undef MessageBox	// Windows helpfully #define's this to MessageBoxA, we're using vgui::MessageBox

@@ -71,10 +71,8 @@ inline DetailPropFlashlightMode_t DetailPropFlashlightMode( void )
 	{
 	case 1:
 		return DPFM_SINGLEPASS;
-#ifndef _GAMECONSOLE
 	case 2:
 		return DPFM_MULTIPASS;
-#endif
 	case 0:
 	default:
 		return DPFM_NONE;
@@ -448,15 +446,6 @@ public:
 	uint8 ComputeDistanceFade( float *pDistSqr, const DistanceFadeInfo_t &info, const Vector &vecViewOrigin, const Vector &vecRenderOrigin ) const;
 
 	void UpdateDetailFadeValues();
-
-#if defined(_PS3)
-	virtual bool ShouldDrawDetailObjects( void );
-	virtual void GetDetailFadeValues( float &flDetailFadeStart, float &flDetailFadeEnd );
-	int GetDetailObjectsCount( void ) { return m_DetailObjects.Count(); };
-	void *GetDetailObjectsBase( void ) { return (void *)m_DetailObjects.Base(); };
-	void *GetDetailObjectsOriginOffset( void ) { return (void *)&m_DetailObjects.Base()->GetRenderOrigin(); };
-	int GetCDetailModelStride( void ) { return sizeof(CDetailModel); };
-#endif
 
 private:
 	struct DetailModelDict_t
@@ -3047,23 +3036,3 @@ void CDetailObjectSystem::BuildRenderingData( DetailRenderableList_t &list, cons
 }
 
 
-#if defined(_PS3)
-
-//-----------------------------------------------------------------------------
-// Helper for SPU job header
-//-----------------------------------------------------------------------------
-bool CDetailObjectSystem::ShouldDrawDetailObjects( void )
-{
-	return( GetClientMode()->ShouldDrawDetailObjects() && ( r_DrawDetailProps.GetInt() != 0 ) );
-}
-
-//-----------------------------------------------------------------------------
-// Helper for SPU job header
-//-----------------------------------------------------------------------------
-void CDetailObjectSystem::GetDetailFadeValues( float &flDetailFadeStart, float &flDetailFadeEnd )
-{ 
-	flDetailFadeStart = m_flDetailFadeStart; 
-	flDetailFadeEnd   = m_flDetailFadeEnd;
-};
-
-#endif

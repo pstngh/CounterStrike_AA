@@ -75,10 +75,8 @@ static unsigned char g_ColorMap[TGA_MAX_COLORMAP_SIZE];
 static bool g_IsRunLengthPacket;
 static int g_PixelsLeftInPacket;
 
-#ifndef _PS3
 static unsigned char g_SrcGammaTable[256];
 static unsigned char g_DstGammaTable[256];
-#endif
 
 typedef CUtlMemory<unsigned char> CTempImage;
 
@@ -428,7 +426,6 @@ void OutputRowBGRX5551( CUtlBuffer& buf, TGAHeader_t const& header, unsigned cha
 	}
 }
 
-#ifndef _PS3
 static OutputRowFunc_t GetOutputRowFunc( ImageFormat imageFormat )
 {
 	switch( imageFormat )
@@ -463,12 +460,6 @@ static OutputRowFunc_t GetOutputRowFunc( ImageFormat imageFormat )
 		return &OutputRowBGR565;
 	case IMAGE_FORMAT_BGRX5551:
 		return &OutputRowBGRX5551;
-#ifdef _X360
-	case IMAGE_FORMAT_LINEAR_RGB888:
-		return &OutputRowRGB888;
-	case IMAGE_FORMAT_LINEAR_BGR888:
-		return &OutputRowBGR888;
-#endif
 	default:
 		return NULL;
 		break;
@@ -494,7 +485,6 @@ static void InitDestGammaConversionTable( float dstGamma )
 	lastDstGamma = dstGamma;
 	ImageLoader::ConstructGammaTable( g_DstGammaTable, 1.0f, dstGamma );
 }
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -867,7 +857,6 @@ static bool ReadSourceImage( CUtlBuffer& buf, TGAHeader_t& header, CTempImage& i
 }
 
 
-#ifndef _PS3
 //-----------------------------------------------------------------------------
 // Outputs the final image
 //-----------------------------------------------------------------------------
@@ -890,7 +879,6 @@ static bool OutputImage( CTempImage& image, TGAHeader_t& header,
 
 	return true;
 }
-#endif
 
 
 //-----------------------------------------------------------------------------

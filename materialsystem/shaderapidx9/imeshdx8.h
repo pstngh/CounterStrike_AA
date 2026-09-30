@@ -96,15 +96,6 @@ public:
 
 	virtual void DrawInstances( int nInstanceCount, const MeshInstanceData_t *pInstances ) = 0;
 
-#ifdef _GAMECONSOLE
-	virtual int GetDynamicIndexBufferAllocationCount() = 0;
-	virtual int GetDynamicIndexBufferIndicesLeft() = 0;
-
-	// Backdoor used by the queued context to directly use write-combined memory
-	virtual IMesh *GetExternalMesh( const ExternalMeshInfo_t& info ) = 0;
-	virtual void SetExternalMeshData( IMesh *pMesh, const ExternalMeshData_t &data ) = 0;
-	virtual IIndexBuffer *GetExternalIndexBuffer( int nIndexCount, uint16 *pIndexData ) = 0;
-#endif
 };
 
 #endif // IMESHDX8_H

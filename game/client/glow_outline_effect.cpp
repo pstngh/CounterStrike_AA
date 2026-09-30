@@ -291,10 +291,6 @@ void CGlowObjectManager::DownSampleAndBlurRT( const CViewSetup *pSetup, CMatRend
 	// Setup state for downsample/bloom
 	//===================================
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 16 ); // Max out pixel shader threads
-#endif
-
 	pRenderContext->PushRenderTargetAndViewport();
 
 	// Get viewport
@@ -821,9 +817,6 @@ void CGlowObjectManager::ApplyEntityGlowEffects( const CViewSetup *pSetup, int n
 		pRenderContext->SetStencilState( stencilStateDisable );
 	}
 
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 void CGlowObjectManager::GlowObjectDefinition_t::DrawModel()

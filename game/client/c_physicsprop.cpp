@@ -25,11 +25,7 @@ IMPLEMENT_CLIENTCLASS_DT(C_PhysicsProp, DT_PhysicsProp, CPhysicsProp)
 END_RECV_TABLE()
 
 // We discard VVD data on consoles to save memory, so we cannot compute static lighting for models at run-time:
-#if defined( _GAMECONSOLE )
-ConVar r_PhysPropStaticLighting( "r_PhysPropStaticLighting", "0" );
-#else
 ConVar r_PhysPropStaticLighting( "r_PhysPropStaticLighting", "0" ); // Disabled for CS:GO on the PC
-#endif // _GAMECONSOLE
 
 // @MULTICORE (toml 9/18/2006): this visualization will need to be implemented elsewhere
 ConVar r_visualizeproplightcaching( "r_visualizeproplightcaching", "0" );

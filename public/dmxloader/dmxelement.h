@@ -169,21 +169,12 @@ struct DmxElementUnpackStructure_t
 //	template <typename T> friend DmxElementUnpackStructure_t *DmxElementUnpackInit##_namespace(T *);
 
 // Adds serialization unpack structure and unpack func to your class.
-#if defined( _PS3 ) && defined( __GCC__ )
-#define DECLARE_DMXELEMENT_UNPACK_NAMESPACE( _namespace ) \
-	template <typename T> friend DmxElementUnpackStructure_t *_namespace::DmxElementUnpackInit##_namespace(T *); \
-	private: \
-		static DmxElementUnpackStructure_t *s_pUnpackParams; \
-	public:	 \
-		virtual const DmxElementUnpackStructure_t* GetUnpackStructure() const { return s_pUnpackParams; }
-#else
 #define DECLARE_DMXELEMENT_UNPACK_NAMESPACE( _namespace ) \
 	template <typename T> friend DmxElementUnpackStructure_t *DmxElementUnpackInit##_namespace(T *); \
 	private: \
 		static DmxElementUnpackStructure_t *s_pUnpackParams; \
 	public:	 \
 		virtual const DmxElementUnpackStructure_t* GetUnpackStructure() const { return s_pUnpackParams; }
-#endif
 
 // Use when your panel class is derived from another baseclass
 #define BEGIN_DMXELEMENT_UNPACK_NAMESPACE_SIMPLE( _namespace, _structName ) \

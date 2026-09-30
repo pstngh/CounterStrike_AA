@@ -12,15 +12,7 @@
 #include "../gameui/cstrike15/cstrike15basepanel.h"
 #include "../engine/filesystem_engine.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
-
-#if defined	( _PS3 )
-#include <sysutil/sysutil_userinfo.h>
-#endif
 
 #include "engineinterface.h"
 #include "modinfo.h"
@@ -44,23 +36,6 @@ using namespace vgui;
 SFUI_BEGIN_GAME_API_DEF
 SFUI_END_GAME_API_DEF( SplitScreenSignonWidget, SplitScreenSignon );
 
-#if defined ( _PS3 )
-static CellUserInfoTypeSet s_CellTypeSet;
-static bool s_bUserSelectFinished = true;
-static CellUserInfoUserStat s_CellUserSelected;
-static int s_iUserSelectResult;
-static void UserSelectFinishCallback(int result, CellUserInfoUserStat* pSelectUser, void* userdata)
-{
-	s_iUserSelectResult = result;
-	if(result == CELL_USERINFO_RET_OK)
-	{
-		memcpy(&s_CellUserSelected, pSelectUser, sizeof(s_CellUserSelected));
-	}
-	s_bUserSelectFinished = true;
-}
-
-#endif
-
 SplitScreenSignonWidget::SplitScreenSignonWidget() : 
 	m_bVisible( false ),
 	m_bConditionsAreValid( false ),
@@ -74,11 +49,6 @@ SplitScreenSignonWidget::SplitScreenSignonWidget() :
 	m_bDropSecondPlayer( false )
 {
 	ListenForGameEvent( "sfuievent" );
-#ifdef _PS3	
-	s_CellTypeSet.title = "Select Player 2 user";
-	s_CellTypeSet.focus = CELL_USERINFO_FOCUS_LISTHEAD;
-	s_CellTypeSet.type = CELL_USERINFO_LISTTYPE_NOCURRENT;
-#endif
 }
 
 void SplitScreenSignonWidget::FlashReady( void )
@@ -160,93 +130,6 @@ void SplitScreenSignonWidget::SplitScreenConditionsAreValid( bool value )
 
 void SplitScreenSignonWidget::Update( void )
 {
-#if defined( _GAMECONSOLE )
-	SplitScreenConditionsAreValid( g_pInputSystem->GetJoystickCount() > 1 );
-
-	if ( m_bVisible )
-	{
-
-#ifdef _PS3
-		g_pInputSystem->SetPS3StartButtonIdentificationMode();
-#endif
-
-		int iUserPressingStart = -1;
-		int iPrimary = XBX_GetUserId( 0 );
-
-		if ( XBX_GetNumGameUsers() == 1 )
-		{
-			if ( m_iControllerThatPressedStart == -1 )
-			{
-				for ( int i = 0; i < XUSER_MAX_COUNT && ( iUserPressingStart == -1 ) ; i++ )
-				{
-					if ( i != iPrimary )
-					{
-						if ( g_pInputSystem->IsButtonDown( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_INACTIVE_START, i ) ) )
-						{
-							iUserPressingStart = i;
-						}
-					}
-				}
-
-				if ( iUserPressingStart != -1 )
-				{
-					m_iControllerThatPressedStart = iUserPressingStart;
-					m_bWaitingForSignon = true;
-#if defined( _X360 )
-					xboxsystem->ShowSigninUI( 2, XSSUI_FLAGS_LOCALSIGNINONLY ); // Two user, no special flags
-#elif defined ( _PS3 )
-					if(s_bUserSelectFinished) // Prevent cellUserInfoSelectUser_ListType being called more than once
-					{
-						s_bUserSelectFinished = false;
-						cellUserInfoEnableOverlay(1); // Dim background while showing user selection dialog
-						cellUserInfoSelectUser_ListType(&s_CellTypeSet, UserSelectFinishCallback, SYS_MEMORY_CONTAINER_ID_INVALID, NULL);
-					}
-#endif
-				}
-			}
-#ifdef _PS3
-			if(m_bWaitingForSignon && s_bUserSelectFinished)
-			{
-				m_bWaitingForSignon = false;
-				if(s_iUserSelectResult == CELL_USERINFO_RET_OK)
-				{
-
-					int userID = s_CellUserSelected.id;
-
-					if ( userID != -1 )
-					{
-						SetPlayerSignedIn();
-						SetPlayer2Name( s_CellUserSelected.name );
-					}
-					else
-					{
-						m_iControllerThatPressedStart = -1;
-					}
-				}
-				else 
-				{
-					m_iControllerThatPressedStart = -1;
-				}
-			}
-#endif
-		}
-		else if ( ( XBX_GetNumGameUsers() == 2 ) )
-		{
-			if(g_pInputSystem->IsButtonDown( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_START, 1 ) ))
-			{
-				m_bDropSecondPlayer = true;
-			}
-			else if(m_bDropSecondPlayer)
-			{
-				// Wait for start button to be released before dropping
-				// otherwise release event gets converted to KEY_XBUTTON_INACTIVE_START on PS3
-				m_bDropSecondPlayer = false;
-				DropSecondPlayer();
-			}
-		}
-	}
-
-#endif
 
 }
 
@@ -257,12 +140,6 @@ void SplitScreenSignonWidget::SetPlayerSignedIn( void )
 		return;
 	}
 
-#if defined( _GAMECONSOLE )
-
-	XBX_SetUserId( 1, m_iControllerThatPressedStart );
-	XBX_SetUserIsGuest ( 1, 0 );
-	XBX_SetNumGameUsers ( 2 );
-#endif
 	m_iSecondPlayerId = m_iControllerThatPressedStart;
 	m_iControllerThatPressedStart = -1;
 
@@ -279,43 +156,10 @@ void SplitScreenSignonWidget::SetPlayerSignedIn( void )
 
 void SplitScreenSignonWidget::SetPlayer2Name( const char* name )
 {
-#if defined( _GAMECONSOLE )
-
-	if ( FlashAPIIsValid() )
-	{
-		WITH_SLOT_LOCKED
-		{
-			SafeReleaseSFVALUE( m_pPlayer2Name );
-
-			if ( name && *name )
-			{
-				m_pPlayer2Name = CreateFlashString( name );
-				m_pScaleformUI->Value_InvokeWithoutReturn( m_FlashAPI, "setPlayer2Name", m_pPlayer2Name, 1 );
-			}
-			else
-			{
-				m_pScaleformUI->Value_InvokeWithoutReturn( m_FlashAPI, "clearPlayer2Name", NULL, 0 );
-			}
-		}
-
-	}
-#endif
 }
 
 void SplitScreenSignonWidget::DropSecondPlayer( void )
 {
-#if defined( _GAMECONSOLE )
-	XBX_ClearSlot( 1 );
-	XBX_SetNumGameUsers ( 1 );
-
-	RevertUIToOnePlayerMode();
-
-	if ( !m_bCurrentlyProcessingSignin )
-	{
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnProfilesChanged", "numProfiles", ( int ) XBX_GetNumGameUsers() ) );
-		BasePanel()->UpdateRichPresenceInfo();
-	}
-#endif
 }
 
 
@@ -368,78 +212,6 @@ void SplitScreenSignonWidget::FireGameEvent( IGameEvent* pEvent )
 
 void SplitScreenSignonWidget::OnEvent( KeyValues *pEvent )
 {
-#if defined( _X360 )
-
-	if ( !m_bCurrentlyProcessingSignin )
-	{
-		m_bCurrentlyProcessingSignin = true;
-
-		char const *szName = pEvent->GetName();
-
-		// Notify that sign-in has completed
-	
-		if ( m_bWaitingForSignon )
-		{
-			if ( !V_stricmp( szName, "OnSysSigninChange" ) 	&&
-				 !V_stricmp( "signin", pEvent->GetString( "action", "" ) ) )
-			{
-				m_bWaitingForSignon = false;
-
-				int userID = pEvent->GetInt( "user1", -1 );
-
-				if ( userID != -1 )
-				{
-					SetPlayerSignedIn();
-				}
-				else
-				{
-					m_iControllerThatPressedStart = -1;
-				}
-			}
-			else 
-			if ( !V_stricmp( szName, "OnSysXUIEvent" ) 	&&
-				 !V_stricmp( "closed", pEvent->GetString( "action", "" ) ) )
-			{
-				m_bWaitingForSignon = false;
-				m_iControllerThatPressedStart = -1;
-			}
-			else if ( !V_stricmp( szName, "OnProfilesChanged" ) )
-			{
-				m_bWaitingForSignon = false;
-				m_iControllerThatPressedStart = -1;
-			}
-
-		}
-		else if ( !V_stricmp( szName, "OnProfilesChanged" ) )
-		{
-			if ( m_iSecondPlayerId != -1)
-			{
-				IPlayerLocal *pProfile = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( m_iSecondPlayerId );
-
-				uint state = XUserGetSigninState( m_iSecondPlayerId );
-				if ( state != eXUserSigninState_NotSignedIn )
-				{
-					if ( pProfile )
-					{
-						SetPlayer2Name( pProfile->GetName() );
-					}
-					else
-					{
-						SetPlayer2Name( "Player2" );
-					}
-				}
-				else
-				{
-					DropSecondPlayer();
-				}
-			}
-
-		}
-
-		m_bCurrentlyProcessingSignin = false;
-	}
-
-#endif
 
 }
 

@@ -7,9 +7,7 @@
 #include <math.h>
 #include <float.h>	// needed for flt_epsilon
 #include "basetypes.h"
-#ifndef _PS3
 #include <memory.h>
-#endif
 #include "tier0/dbg.h"
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"

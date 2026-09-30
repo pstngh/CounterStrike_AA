@@ -1050,26 +1050,6 @@ bool CMessageBoxLockInput::OnUpdate()
 		}
 		m_pMessageBoxInstance = NULL;
 
-#if defined( _PS3 )
-		InputDevice_t currentDevice = g_pInputSystem->GetCurrentInputDevice();
-		for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-		{
-			engine->ExecuteClientCmd( VarArgs( "cl_read_ps3_bindings %d %d", i, (int)currentDevice ) );
-		}
-		if ( currentDevice == INPUT_DEVICE_PLAYSTATION_MOVE || currentDevice == INPUT_DEVICE_SHARPSHOOTER )
-		{
-			new CMessageBoxCalibrateNotification();
-		}
-		else
-		{
-			IGameEvent * event = gameeventmanager->CreateEvent( "mb_input_lock_success" );
-			if ( event )
-			{
-				gameeventmanager->FireEventClientSide( event );
-			}
-		}
-#endif
-
 		
 		
 		

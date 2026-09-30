@@ -14,18 +14,8 @@
 #endif
 #include <ivp_time.hxx>
 
-#if defined(WIN32) && !defined(_XBOX)
+#if defined(WIN32)
 #	include "wtypes.h"
-#elif defined(_XBOX)
-#	ifndef WINVER
-#		define WINVER 0x0500
-#	endif
-#	ifndef _X86_
-#		define _X86_
-#	endif  /* _X86_ */
-#	include <excpt.h>
-#	include <stdarg.h>
-#	include <windef.h>
 #endif
 
 

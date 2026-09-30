@@ -205,11 +205,6 @@ void CUpsellScaleform::OnBackPressed( SCALEFORM_CALLBACK_ARGS_DECL )
 
 void CUpsellScaleform::OnUnlockPressed( SCALEFORM_CALLBACK_ARGS_DECL )
 {
-#if defined ( _X360 )
-	xboxsystem->ShowUnlockFullGameUI();
-#elif defined( _PS3 )
-	//$TODO: Implement PS3 version of xboxsystem->ShowUnlockFullGameUI()
-#endif // _X360
 }
 
 void CUpsellScaleform::OnBasePanelRunCommand( SCALEFORM_CALLBACK_ARGS_DECL )

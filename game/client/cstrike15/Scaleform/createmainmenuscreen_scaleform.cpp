@@ -20,11 +20,7 @@
 #include <vgui/ILocalize.h>
 #include "vgui/ISystem.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "engineinterface.h"
 #include "modinfo.h"
@@ -404,26 +400,10 @@ void CCreateMainMenuScreenScaleform::IsMultiplayerPrivilegeEnabled( SCALEFORM_CA
 	bool bDisplayWarningBox  = ( ( pui->Params_GetNumArgs( obj ) > 0 ) &&
 								 ( Q_stricmp( pui->Params_GetArgAsString( obj, 0 ), "bShowWarning" ) == 0 ) );
 
-#if defined( _X360 )
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-	int userID = XBX_GetActiveUserId();
-	BOOL EnabledFlag;
-	XUserCheckPrivilege( userID, XPRIVILEGE_MULTIPLAYER_SESSIONS, &EnabledFlag );
-
-	bEnabled = ( EnabledFlag == TRUE );
-#endif
-#if defined( _PS3 )
-	bEnabled = !engine->PS3_IsUserRestrictedFromOnline();
-#endif
-
 	if ( !bEnabled && bDisplayWarningBox )
 	{
 //		ShowPanel( false );
-#if defined( _PS3 )
-		( ( CCStrike15BasePanel* )BasePanel() )->OnOpenMessageBox( "#SFUI_GameUI_OnlineErrorMessageTitle_PS3", "#SFUI_GameUI_NotOnlineEnabled_PS3", "#SFUI_GameUI_ErrorDismiss",  MESSAGEBOX_FLAG_OK, this, &m_pConfirmDialog );
-#else
 		( ( CCStrike15BasePanel* )BasePanel() )->OnOpenMessageBox( "#SFUI_GameUI_OnlineErrorMessageTitle", "#SFUI_GameUI_NotOnlineEnabled", "#SFUI_GameUI_ErrorDismiss",  MESSAGEBOX_FLAG_OK, this, &m_pConfirmDialog );
-#endif
 	}
 
 	m_pScaleformUI->Params_SetResult( obj, bEnabled );

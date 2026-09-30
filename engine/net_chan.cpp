@@ -18,9 +18,6 @@
 #include "replay.h"
 #include "datacache/imdlcache.h"
 #include "tier0/vprof.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#endif
 #ifdef POSIX
 #include "net_ws_headers.h"									// need SOCKET
 #endif
@@ -96,9 +93,7 @@ void LogMultiline(bool input, char const *label, const char * data, size_t len) 
 }
 
 // Want this on PC and non-cert builds
-#if !defined( _GAMECONSOLE ) || !defined( _CERT )
 #define NET_PARANOID_DUMPS
-#endif
 
 #if defined( NET_PARANOID_DUMPS )
 class CNetchanParanoidMode
@@ -2432,12 +2427,8 @@ bool CNetChan::_ProcessMessages( bf_read &buf, bool wasReliable  )
 		if (level == 2 )
 		{
 			// Crash
-#if defined( _X360 )
-			XBX_CrashDump( false );
-#else
 			byte *p = 0;
 			*p = 0x1;
-#endif
 		}
 		else
 		{

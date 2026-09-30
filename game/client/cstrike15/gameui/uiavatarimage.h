@@ -9,12 +9,6 @@
 
 #include "vgui/IImage.h"
 
-#ifdef _GAMECONSOLE
-
-typedef vgui::IImage CGameUiAvatarImage;
-
-#else
-
 #include "steam/steam_api.h"
 
 //-----------------------------------------------------------------------------
@@ -92,8 +86,6 @@ private:
 	bool m_bValid;
 	float m_flFetchedTime;
 };
-
-#endif // !_GAMECONSOLE
 
 
 

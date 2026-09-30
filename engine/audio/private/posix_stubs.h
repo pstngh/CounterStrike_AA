@@ -3,7 +3,7 @@
 // Purpose: Posix win32 replacements - Mocks trivial windows flow
 //
 //=============================================================================
-#if !defined( POSIX_AUDIO_STUBS_H ) && !defined( _PS3 )
+#if !defined( POSIX_AUDIO_STUBS_H )
 #define POSIX_AUDIO_STUBS_H
 
 #define DSBCAPS_LOCSOFTWARE		0

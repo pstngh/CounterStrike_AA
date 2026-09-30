@@ -40,27 +40,11 @@ enum HDRType_t
 #include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "materialsystem/IColorCorrection.h"
 
-#if !defined( _GAMECONSOLE )
 // NOTE: Disable this for l4d2 in general!!!  It allocates 4mb of rendertargets and causes Release/Reallocation of rendertargets.
 // PORTAL2: Turning this off in the portal 2 branch because we don't use it and it appears to leak each mapload.
 // We don't currently expect to merge this code back to main so this may not matter, but if we do we'll have to resolve weeding this
 // out of portal2 builds.
 //#define FEATURE_SUBD_SUPPORT
-#endif
-
-#if defined(_PS3)
-typedef void * HPS3FONT ; // see also ps3font.h
-class CPS3FontMetrics;
-class CPS3CharMetrics;
-
-enum GpuDataTransferCache_t
-{
-	PS3GPU_DATA_TRANSFER_CREATECACHELINK = 0x80000000,
-	PS3GPU_DATA_TRANSFER_CACHE2REAL = 0x01000000,
-	PS3GPU_DATA_TRANSFER_REAL2CACHE = 0x02000000,
-	PS3GPU_DATA_TRANSFER_MASK = 0xFF000000,
-};
-#endif
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -1057,24 +1041,6 @@ public:
 		ImageFormat fmt, 
 		int nFlags ) = 0;
 
-#if defined( _X360 )
-
-	// Create a texture for displaying gamerpics.
-	// This function allocates the texture in the correct gamerpic format, but it does not fill in the gamerpic data.
-	virtual ITexture *			CreateGamerpicTexture( const char *pTextureName,
-		const char *pTextureGroupName,
-		int nFlags ) = 0;
-
-	// Update the given texture with the player gamerpic for the local player at the given index.
-	// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-	virtual bool				UpdateLocalGamerpicTexture( ITexture *pTexture, DWORD userIndex ) = 0;
-
-	// Update the given texture with a remote player's gamerpic.
-	// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-	virtual bool				UpdateRemoteGamerpicTexture( ITexture *pTexture, XUID xuid ) = 0;
-
-#endif // _X360
-
 	//
 	// Render targets
 	//
@@ -1174,41 +1140,6 @@ public:
 	// X360 specifics
 	// -----------------------------------------------------------
 
-#if defined( _X360 )
-	virtual void				ListUsedMaterials( void ) = 0;
-	virtual HXUIFONT			OpenTrueTypeFont( const char *pFontname, int tall, int style ) = 0;
-	virtual void				CloseTrueTypeFont( HXUIFONT hFont ) = 0;
-	virtual bool				GetTrueTypeFontMetrics( HXUIFONT hFont, wchar_t wchFirst, wchar_t wchLast, XUIFontMetrics *pFontMetrics, XUICharMetrics *pCharMetrics ) = 0;
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	virtual bool				GetTrueTypeGlyphs( HXUIFONT hFont, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset ) = 0;
-	virtual void				PersistDisplay() = 0;
-	virtual void				*GetD3DDevice() = 0;
-	virtual bool				OwnGPUResources( bool bEnable ) = 0;
-#elif defined(_PS3)
-	virtual void				ListUsedMaterials( void ) = 0;
-	virtual HPS3FONT			OpenTrueTypeFont( const char *pFontname, int tall, int style ) = 0;
-	virtual void				CloseTrueTypeFont( HPS3FONT hFont ) = 0;
-	virtual bool				GetTrueTypeFontMetrics( HPS3FONT hFont, int nFallbackTall, wchar_t wchFirst, wchar_t wchLast, CPS3FontMetrics *pFontMetrics, CPS3CharMetrics *pCharMetrics ) = 0;
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	virtual bool				GetTrueTypeGlyphs( HPS3FONT hFont, int nFallbackTall, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset ) = 0;
-
-	// these have a default empty implementation
-	virtual bool PS3InitFontLibrary( unsigned fontFileCacheSizeInBytes, unsigned maxNumFonts ){return false;};
-	virtual void PS3DumpFontLibrary(){return;}
-	virtual void *PS3GetFontLibPtr() { return NULL; }
-	// debug info for screenshots
-	enum VRAMScreenShotInfoColorFormat_t
-	{ kX8R8G8B8 = 0, kX8B8G8R8 = 1, kR16G16B16X16 = 2} ;
-	virtual void TransmitScreenshotToVX() = 0;
-
-	virtual void CompactRsxLocalMemory( char const *szReason ) = 0;
-	virtual void SetFlipPresentFrequency( int nNumVBlanks ) = 0;
-#endif // defined _PS3
-
 	virtual void SpinPresent( uint nFrames ) = 0;
 
 	// -----------------------------------------------------------
@@ -1296,7 +1227,7 @@ public:
 
 	virtual uint32 GetFrameTimestamps( ApplicationPerformanceCountersInfo_t &apci, ApplicationInstantCountersInfo_t & aici ) = 0;
 	
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	virtual void				DoStartupShaderPreloading( void ) = 0;
 #endif	
 
@@ -1719,24 +1650,6 @@ public:
 
 	virtual void				FogMaxDensity( float flMaxDensity ) = 0;
 
-#if defined( _X360 )
-	//Seems best to expose GPR allocation to scene rendering code. 128 total to split between vertex/pixel shaders (pixel will be set to 128 - vertex). Minimum value of 16. More GPR's = more threads.
-	virtual void				PushVertexShaderGPRAllocation( int iVertexShaderCount = 64 ) = 0;
-	virtual void				PopVertexShaderGPRAllocation( void ) = 0;
-
-	virtual void				FlushHiStencil() = 0;
-
-#endif
-
-#if defined( _GAMECONSOLE )
-	virtual void                BeginConsoleZPass( const WorldListIndicesInfo_t &indicesInfo ) = 0;
-	virtual void                BeginConsoleZPass2( int nSlack ) = 0;
-	virtual void				EndConsoleZPass() = 0;
-#endif
-
-#if defined( _PS3 )
-	virtual void				FlushTextureCache() = 0;
-#endif
 	virtual void                AntiAliasingHint( int nHint ) = 0;
 
 	virtual IMaterial *GetCurrentMaterial() = 0;
@@ -2074,11 +1987,7 @@ private:
 
 
 // [mhansen] Enable PIX only in debug and profile builds for Xbox 360
-#if ( defined( _X360 ) && ( defined( PROFILE ) || defined( _DEBUG ) ) )
-#define PIX_ENABLE 1		// set this to 1 and build engine/studiorender to enable pix events in the engine
-#else
 #define PIX_ENABLE 0
-#endif
 
 
 #if PIX_ENABLE
@@ -2102,10 +2011,6 @@ static void DoMatSysQueueMark( IMaterialSystem *pMaterialSystem, const char *psz
 #define MatSysQueueMark( pMaterialSystem, ...) DoMatSysQueueMark( pMaterialSystem, CFmtStr( __VA_ARGS__ ) )
 #else
 #define MatSysQueueMark( msg, ...) ((void)0)
-#endif
-
-#ifdef _GAMECONSOLE
-#define MS_NO_DYNAMIC_BUFFER_COPY 1
 #endif
 
 //-----------------------------------------------------------------------------

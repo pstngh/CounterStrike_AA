@@ -71,10 +71,6 @@
 #include "gameui/uigamedata.h"
 #include "Scaleform/messagebox_scaleform.h"
 #include "GameStats.h"
-#if defined ( _GAMECONSOLE )
-#include "GameUI/IGameUI.h"
-#include "GameUI/gameui_interface.h"
-#endif
 #include "platforminputdevice.h"
 #include "glow_outline_effect.h"
 #include "hltvcamera.h"
@@ -87,10 +83,6 @@
 #include "hltvreplaysystem.h"
 #include "netmessages.h"
 #include "playerdecals_signature.h"
-
-#if defined ( _X360 )
-#include "ixboxsystem.h"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -217,99 +209,6 @@ CON_COMMAND_F( cl_sos_test_get_opvar, "", FCVAR_CHEAT )
 	}
 }
 
-
-#if defined( _PS3 )
-
-CON_COMMAND( cl_write_ps3_bindings, "Used internally for scaleform to tell us to write out our bindings to the title data." )
-{
-	if ( args.ArgC() != 3 )
-	{
-		ConMsg( "Usage:  cl_write_ps3_bindings <controller index> <device ID>\n" );
-		return;
-	}
-
-	int iController = atoi( args[1] );
-	int iDeviceID = atoi( args[2] );
-	GetClientModeCSNormal()->SyncCurrentKeyBindingsToDeviceTitleData( iController, iDeviceID, KEYBINDING_WRITE_TO_TITLEDATA );
-}
-
-CON_COMMAND( cl_read_ps3_bindings, "Used internally for scaleform to tell us to read in our bindings from the title data." )
-{
-	if ( args.ArgC() != 3 )
-	{
-		ConMsg( "Usage:  cl_read_ps3_bindings <controller index> <device ID>\n" );
-		return;
-	}
-
-	int iController = atoi( args[1] );
-	int iDeviceID = atoi( args[2] );
-	GetClientModeCSNormal()->SyncCurrentKeyBindingsToDeviceTitleData( iController, iDeviceID, KEYBINDING_READ_FROM_TITLEDATA );
-}
-
-CON_COMMAND( cl_reset_ps3_bindings, "Used internally for scaleform to tell us to reset our bindings to their defaults and save them." )
-{
-	if ( args.ArgC() != 3 )
-	{
-		ConMsg( "Usage:  cl_reset_ps3_bindings <controller index> <device ID(s) ORed together or -1 for all devices>\n" );
-		return;
-	}
-
-	int iController = atoi( args[1] );
-	int iDevicesToReset = atoi( args[2] );
-
-	if ( -1 == iDevicesToReset )
-	{
-		iDevicesToReset = (int) PlatformInputDevice::GetValidInputDevicesForPlatform();
-	}
-
-	int numDevices = PlatformInputDevice::GetInputDeviceCountforPlatform();
-
-	for ( int ii=1; ii<=numDevices; ++ii )
-	{
-		InputDevice_t eDevice = PlatformInputDevice::GetInputDeviceTypefromPlatformOrdinal( ii );
-
-		// See if we're supposed to reset this particular device.
-		if ( ( iDevicesToReset & eDevice ) == 0 ) continue;
-
-		char *cmdBuffer = NULL;
-		switch ( eDevice )
-		{
-			case INPUT_DEVICE_GAMEPAD:
-				cmdBuffer = "exec controller_bindings" PLATFORM_EXT ".cfg game\n";
-				break;
-			case INPUT_DEVICE_PLAYSTATION_MOVE:
-				cmdBuffer = "exec controller_move_bindings" PLATFORM_EXT ".cfg game\n";
-				break;
-			case INPUT_DEVICE_SHARPSHOOTER:
-				cmdBuffer = "exec controller_sharp_shooter_bindings" PLATFORM_EXT ".cfg game\n";
-				break;
-		}
-
-		if ( NULL != cmdBuffer )
-		{
-			// Save out the settings for each device.
-			engine->ExecuteClientCmd( cmdBuffer );
-			// Need to use another command to write the settings because these commands are deferred.
-			engine->ExecuteClientCmd( VarArgs( "cl_write_ps3_bindings %d %d", iController, (int)eDevice ) );
-		}
-
-	}
-	
-#if defined( _PS3 )
-	
-	// We need to restore our settings based on our active device since we may have loaded other settings by entering this function.
-	InputDevice_t currentDevice = g_pInputSystem->GetCurrentInputDevice();
-	if( currentDevice != INPUT_DEVICE_NONE  )
-	{
-		// Load the bindings for the specific device.
-		engine->ExecuteClientCmd( VarArgs( "cl_read_ps3_bindings %d %d", GET_ACTIVE_SPLITSCREEN_SLOT(), (int)currentDevice ) );
-	}
-
-#endif // _PS3
-
-}
-
-#endif // _PS3
 
 CON_COMMAND_F( toggleRdrOpt, "", FCVAR_DEVELOPMENTONLY )
 {
@@ -781,14 +680,14 @@ void ClientModeCSNormal::Init()
 
 	m_hCurrentColorCorrection = NULL;
 
-#if !defined(NO_STEAM) && !defined (_PS3)
+#if !defined(NO_STEAM)
 	m_CallbackScreenshotRequested.Register( this, &ClientModeCSNormal::OnScreenshotRequested );
 #endif
 
 	EnableSteamScreenshots( true );
 }
 
-#if !defined(NO_STEAM) && !defined (_PS3)
+#if !defined(NO_STEAM)
 void ClientModeCSNormal::OnScreenshotRequested( ScreenshotRequested_t *pParam )
 {
 	// Steam has requested a screenshot, act as if the key currently bound to screenshots
@@ -1111,27 +1010,6 @@ void ClientModeCSNormal::Update()
 		flHalfTimeStart = gpGlobals->curtime;
 		bStartedHalfTimeMusic = false;
 	}
-#if defined ( _X360 )
-	if ( !xboxsystem->IsArcadeTitleUnlocked() )
-	{
-		const char *levelName = engine->GetLevelName();
-		if (levelName && levelName[0] && !engine->IsLevelMainMenuBackground())
-		{
-			// verify globals->frametime is not outrageous and subtract from arcade trial timer
-			SplitScreenConVarRef xbox_arcade_remaining_trial_time("xbox_arcade_remaining_trial_time");
-			if ( gpGlobals->frametime < 5.0f )
-			{
-				float trialTime = xbox_arcade_remaining_trial_time.GetFloat( GET_ACTIVE_SPLITSCREEN_SLOT() );
-				trialTime -= gpGlobals->frametime;
-				if ( trialTime < 0.0f )
-				{
-					trialTime = 0.0f;
-				}
-				xbox_arcade_remaining_trial_time.SetValue( GET_ACTIVE_SPLITSCREEN_SLOT(), trialTime );
-			}
-		}
-	}
-#endif
 
 	if ( HLTVCamera() )
 		HLTVCamera()->Update();
@@ -1992,270 +1870,6 @@ int ClientModeCSNormal::GetDeathMessageStartHeight( void )
 void ClientModeCSNormal::SyncCurrentKeyBindingsToDeviceTitleData( int iController, int eDevice, const SyncKeyBindingValueDirection_t eOp )
 {
 
-#if defined( _GAMECONSOLE )
-
-#define MAX_BINDING_NAME 64
-
-	//Key Names
-#define ACTION( name )
-#define BINDING( name, cppType ) { #name },
-	static char sJoystickNames[][MAX_BINDING_NAME] = {
-#include "xlast_csgo/inc_bindings_usr.inc"
-
-// Additional Keyboard Bindings for PS3
-#if defined( _PS3 )
-
-#include "xlast_csgo/inc_ps3_key_bindings_usr.inc"
-
-#endif
-
-		{ "" }
-	};
-#undef BINDING
-#undef ACTION
-
-	//Action Names
-#define BINDING( name, cppType )
-#define ACTION( name ) { #name },
-	static char sBindingActionNames[][MAX_BINDING_NAME] = {
-#include "xlast_csgo/inc_bindings_usr.inc"
-		{ "" }
-	};
-#undef BINDING
-#undef ACTION
-	// Get the number of keybindings.
-	static int sNumBindings = 0;
-	if ( sNumBindings == 0 )
-	{
-		while ( sBindingActionNames[sNumBindings][0] != '\0') sNumBindings++;
-	}
-
-	// Sync the device specific convars as well.
-#define CFG( name, scfgType, cppType ) { #name },
-	static const char sDeviceSpecificSettings[][MAX_BINDING_NAME] = {
-#include "xlast_csgo/inc_gameconsole_device_specific_settings_usr.inc"
-#undef CFG
-		{ "" }
-	};
-	static int sNumDeviceSpecificSettings = 0;
-	if ( sNumDeviceSpecificSettings == 0 )
-	{
-		while ( sDeviceSpecificSettings[sNumDeviceSpecificSettings][0] != '\0') sNumDeviceSpecificSettings++;
-	}
-
-	// Only process this if it is the controller associated with this clientmodenormal
-#ifndef SPLIT_SCREEN_STUBS
-	int iSlot = XBX_GetSlotByUserId( iController );
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( iSlot );
-#endif
-	if ( this != GetClientModeCSNormal() )
-		return;
-
-	// get the matchmaking local player
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( !pPlayerLocal )
-		return;
-
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-	if ( !pFields )
-		return;
-
-#if defined ( _X360 )
-
-	// Check version number
-	ConVarRef cl_titledataversionblock3 ( "cl_titledataversionblock3" );
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( pFields, "TITLEDATA.BLOCK3.VERSION" );
-	if ( !versionField || versionField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16 )
-	{
-		Warning( "ClientModeCSNormal::SyncCurrentKeyBindingsToDeviceTitleData TITLEDATA.BLOCK3.VERSION is expected to be defined as DT_uint16\n" );
-		return;
-	}
-
-	if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-	{
-		// If we're reading from title data, check the version to make sure it's good. If not, we bail and just use the defaults that were put into the controls earlier.
-		int versionNumber = TitleDataFieldsDescriptionGetValue<uint16>( versionField, pPlayerLocal );
-		if ( versionNumber != cl_titledataversionblock3.GetInt() )
-		{
-			Warning ( "ClientModeCSNormal::SyncCurrentKeyBindingsToDeviceTitleData wrong version # for TITLEDATA.BLOCK3.VERSION; expected %d, got %d\n", cl_titledataversionblock3.GetInt(), versionNumber );
-			return;
-		}
-	}
-	else if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-	{
-		// If we're saving, just write the version out.
-		TitleDataFieldsDescriptionSetValue<uint16>( versionField, pPlayerLocal, cl_titledataversionblock3.GetInt() );
-	}
-
-#endif // _X360
-
-	char* devicePrefix = "";
-
-#if defined( _PS3 )
-
-	// For PS3, we have 3 different sets of controller bindings.
-	// We want to work on the active controller when reading or writing them out.
-	// If we're using the primary controller, then we use an empty string as the text string option.
-	switch ( eDevice )
-	{
-		case INPUT_DEVICE_KEYBOARD_MOUSE:
-		case INPUT_DEVICE_GAMEPAD:
-			break;
-		case INPUT_DEVICE_PLAYSTATION_MOVE:
-			devicePrefix = TITLE_DATA_DEVICE_MOVE_PREFIX;
-			break;
-		case INPUT_DEVICE_SHARPSHOOTER:
-			devicePrefix = TITLE_DATA_DEVICE_SHARP_SHOOTER_PREFIX;
-			break;
-	}
-
-#endif // _PS3
-
-	char bindingKeyName[MAX_BINDING_NAME];
-	if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-	{
-		for (int i=0; sJoystickNames[i][0] != '\0'; ++i)
-		{
-			Q_snprintf( bindingKeyName, MAX_BINDING_NAME, TITLE_DATA_PREFIX "%sBINDING.%s", devicePrefix, &sJoystickNames[i][0] );
-			TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, bindingKeyName );
-			if ( NULL == pField )
-			{
-				Warning( "Could not find TitleDataField for %s\n", bindingKeyName );
-				continue;
-			}
-
-			if ( pField->m_eDataType != TitleDataFieldsDescription_t::DT_uint8  )
-			{
-				Warning( "%s is expected to be defined as DT_uint8\n", bindingKeyName );
-				continue;
-			}
-
-			const char *pBindingName = "";
-			uint8 bindingIndex = TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-			if ( bindingIndex > 0 && bindingIndex < sNumBindings && sBindingActionNames[bindingIndex][0] != '\0' )
-			{
-				pBindingName = sBindingActionNames[bindingIndex];
-			}
-
-			// If the name of the button code is prefixed with "KEY_" then this is a PS3 key binding.  Do the direct translation
-			// from key name to ButtonCode_t here.
-			ButtonCode_t buttonCode = g_pInputSystem->StringToButtonCode( &sJoystickNames[i][0] );
-			if ( buttonCode == BUTTON_CODE_INVALID )
-			{
-				Warning( "ClientModeCSNormal::SyncCurrentKeyBindingsToDeviceTitleData Unknown joystick name %s\n", &sJoystickNames[i][0] );
-			}
-			else
-			{
-				engine->Key_SetBinding( buttonCode, pBindingName );
-			}
-
-		}
-	}
-	else if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-	{
-		for (int i=0; sJoystickNames[i][0] != '\0'; ++i)
-		{
-			Q_snprintf( bindingKeyName, MAX_BINDING_NAME, TITLE_DATA_PREFIX "%sBINDING.%s", devicePrefix, &sJoystickNames[i][0] );
-
-			// find the current binding for the keyname
-			ButtonCode_t buttonCode = g_pInputSystem->StringToButtonCode( &sJoystickNames[i][0] );
-			
-			const char* keyBinding = engine->Key_BindingForKey( buttonCode );
-			if ( NULL == keyBinding )
-				continue;
-
-			size_t cmpSize = strlen( keyBinding );
-
-			// Find the keybinding index
-			uint8 bindingIndex = 0;
-			for ( ; keyBinding && bindingIndex < sNumBindings; ++bindingIndex )
-			{
-				if ( sBindingActionNames[bindingIndex][0] == '\0' )
-					continue;
-
-				if ( cmpSize != strlen( sBindingActionNames[bindingIndex] ) )
-					continue;
-
-				if ( !Q_strncmp( &sBindingActionNames[bindingIndex][0], keyBinding, cmpSize ) )
-					break;
-			}
-
-			if ( bindingIndex == sNumBindings )
-			{
-				bindingIndex = 0;
-			}
-
-			TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, bindingKeyName );
-			if ( NULL == pField )
-			{
-				Warning( "Could not find TitleDataField for %s\n", bindingKeyName );
-				continue;
-			}
-			if ( pField->m_eDataType != TitleDataFieldsDescription_t::DT_uint8  )
-			{
-				Warning( "%s is expected to be defined as DT_uint8\n", bindingKeyName );
-				continue;
-			}
-
-			// Finally write the value.
-			TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, bindingIndex );
-		}
-	}
-
-	// Now sync all the device specific convars.
-	for (int ii=0; ii<sNumDeviceSpecificSettings; ++ii)
-	{
-		CFmtStr sFieldLookup( TITLE_DATA_PREFIX "%sCFG.usr.%s", devicePrefix, sDeviceSpecificSettings[ii] );
-		TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, sFieldLookup );
-		ConVarRef conVarRef( sDeviceSpecificSettings[ii] );
-		if ( pField )
-		{
-			switch( pField->m_eDataType )
-			{
-				case TitleDataFieldsDescription_t::DT_float:
-					if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-						TitleDataFieldsDescriptionSetValue<float>( pField, pPlayerLocal, conVarRef.GetFloat() );
-					else if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-						conVarRef.SetValue( TitleDataFieldsDescriptionGetValue<float>( pField, pPlayerLocal ) );
-					break;
-
-				case TitleDataFieldsDescription_t::DT_uint32:
-					if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-						TitleDataFieldsDescriptionSetValue<int32>( pField, pPlayerLocal, conVarRef.GetInt() );
-					else if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-						conVarRef.SetValue( TitleDataFieldsDescriptionGetValue<int32>( pField, pPlayerLocal ) );
-					break;
-
-				case TitleDataFieldsDescription_t::DT_uint16:
-					if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-						TitleDataFieldsDescriptionSetValue<int16>( pField, pPlayerLocal, conVarRef.GetInt() );
-					else if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-						conVarRef.SetValue( TitleDataFieldsDescriptionGetValue<int16>( pField, pPlayerLocal ) );
-					break;
-
-				case TitleDataFieldsDescription_t::DT_uint8:
-					if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-						TitleDataFieldsDescriptionSetValue<int8>( pField, pPlayerLocal, conVarRef.GetInt() );
-					else if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-						conVarRef.SetValue( TitleDataFieldsDescriptionGetValue<int8>( pField, pPlayerLocal ) );
-					break;
-
-				case TitleDataFieldsDescription_t::DT_BITFIELD:
-					if ( eOp == KEYBINDING_WRITE_TO_TITLEDATA )
-						TitleDataFieldsDescriptionSetBit( pField, pPlayerLocal, conVarRef.GetBool() );
-					else if ( eOp == KEYBINDING_READ_FROM_TITLEDATA )
-						conVarRef.SetValue( !!TitleDataFieldsDescriptionGetBit( pField, pPlayerLocal ) );
-					break;
-
-				default:
-					AssertMsg(false, "Format type not handled in device specific bindings.  Have a programmer add the case in." );
-			}
-		}
-	}
-
-
-#endif // _GAMECONSOLE
-
 }
 
 void ClientModeCSNormal::FireGameEvent( IGameEvent *event )
@@ -2287,11 +1901,6 @@ void ClientModeCSNormal::FireGameEvent( IGameEvent *event )
 
 		engine->ExecuteClientCmd( "exec config" PLATFORM_EXT ".cfg game\n" );
 
-#if defined( _X360 )
-		engine->ExecuteClientCmd( "exec controller" PLATFORM_EXT ".cfg\n" );
-#elif defined( _PS3 )
-		engine->ExecuteClientCmd( VarArgs( "cl_reset_ps3_bindings %d %d", GET_ACTIVE_SPLITSCREEN_SLOT(), -1 ) );
-#endif
 	}
 	if ( Q_strcmp( "round_start", eventname ) == 0 )
 	{
@@ -2332,30 +1941,6 @@ void ClientModeCSNormal::FireGameEvent( IGameEvent *event )
 		// remove any stacked up temporary effect events
 		engine->ClearEvents();
 
-#if defined ( _X360 )
-		if ( !xboxsystem->IsArcadeTitleUnlocked() )
-		{
-			int playerInt = event->GetInt( "splitscreenplayer" );
-			SplitScreenConVarRef xbox_arcade_remaining_trial_time("xbox_arcade_remaining_trial_time");
-			if ( xbox_arcade_remaining_trial_time.GetFloat( playerInt ) < 0.5f )
-			{
-				// only process this if it is the associated player
-				ACTIVE_SPLITSCREEN_PLAYER_GUARD( playerInt );
-				if ( this == GetClientModeCSNormal() )
-				{
-					IGameEvent *event = gameeventmanager->CreateEvent( "trial_time_expired" );
-					if ( event )
-					{
-						event->SetInt( "slot", playerInt );
-						gameeventmanager->FireEventClientSide( event );
-					}
-					engine->ClientCmd_Unrestricted( "disconnect" );
-				}
-			}
-			// verify they have not pulled the MU in an attempt to get past the trial mode time restriction
-			CheckTitleDataStorageConnected();
-		}
-#endif
 	}
 	if ( V_strcmp( "round_time_warning", eventname ) == 0 )
 	{
@@ -3011,15 +2596,11 @@ void ClientModeCSNormal::FireGameEvent( IGameEvent *event )
 	}
 	else if ( Q_strcmp( "write_game_titledata", eventname ) == 0 )
 	{
-#if !defined( _PS3 )
 		SyncCurrentKeyBindingsToDeviceTitleData( event->GetInt( "controllerId" ), INPUT_DEVICE_NONE, KEYBINDING_WRITE_TO_TITLEDATA );
-#endif
 	}
 	else if ( Q_strcmp( "read_game_titledata", eventname ) == 0 )
 	{
-#if !defined( _PS3 )
 		SyncCurrentKeyBindingsToDeviceTitleData( event->GetInt( "controllerId" ), INPUT_DEVICE_NONE, KEYBINDING_READ_FROM_TITLEDATA );
-#endif
 	}
 	else if ( V_strcmp( "switch_team", eventname ) == 0 )
 	{
@@ -3110,87 +2691,8 @@ void ClientModeCSNormal::OnEvent( KeyValues *pEvent )
 }
 
 
-#if defined ( _X360 )
-CON_COMMAND_F( boot_to_start_and_reset_config, "Reset the profile for the indexed player and then go to the start screen", FCVAR_DEVELOPMENTONLY )
-{
-	if ( args.ArgC() <= 1 || args.ArgC() > 2)
-	{
-		ConMsg( "Usage:  boot_to_start_and_reset_config: <playerIndex>\n" );
-		return;
-	}
-
-	if ( args.ArgC() == 2 )
-	{
-		int slot = atoi( args[1] );
-
-		engine->ClientCmd_Unrestricted( VarArgs( "host_reset_config %d", slot ) );
-		engine->ClientCmd_Unrestricted( VarArgs( "host_writeconfig_ss %d", slot ) );
-
-		engine->ClientCmd_Unrestricted( "disconnect" );
-		BasePanel()->SetForceStartScreen();
-		BasePanel()->HandleOpenCreateStartScreen();
-	}
-}
-
-CON_COMMAND_F( boot_to_start, "Go to the start screen", FCVAR_DEVELOPMENTONLY )
-{
-	engine->ClientCmd_Unrestricted( "disconnect" );
-	BasePanel()->SetForceStartScreen();
-	BasePanel()->HandleOpenCreateStartScreen();
-}
-#endif
-
 void ClientModeCSNormal::CheckTitleDataStorageConnected( void )
 {
-#if defined ( _X360 )
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-	if ( this != GetClientModeCSNormal() )
-		return;
-	IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetActiveUserId() );
-	if ( pPlayer )
-	{
-		if ( !pPlayer->IsTitleDataStorageConnected() )
-		{
-			if ( !xboxsystem->IsArcadeTitleUnlocked() )
-			{
-				// Here we know that you have pulled the storage unit that we need to save your progress; since you are in trial mode, we boot you back to the start screen
-				// Need to inform player that they must have a storage device connected to their profile in order to play in trial mode and hence they got kicked
-
-				int iSlot = XBX_GetSlotByUserId( XBX_GetActiveUserId() );
-
-				ECommandMsgBoxSlot slot = CMB_SLOT_FULL_SCREEN;
-				if ( GameUI().IsInLevel() )
-				{
-					if ( iSlot == 0 )
-					{
-						slot = CMB_SLOT_PLAYER_0;
-					}
-					else
-					{
-						slot = CMB_SLOT_PLAYER_1;
-					}
-				}
-
-				GameUI().CreateCommandMsgBoxInSlot( 
-					slot, 
-					"#SFUI_TrialMUPullTitle", 
-					"#SFUI_TrialMUPullMsg", 
-					true, 
-					false, 
-					"boot_to_start", 
-					NULL, 
-					NULL, 
-					NULL );
-
-			}
-			else
-			{
-				// Here we know that you have pulled the storage unit that we need to save your progress; we need to inform user they wont be able to save stats/etc
-				// until they reattach the storage unit
-			}
-		}
-	}
-#endif
 }
 
 
@@ -3885,9 +3387,6 @@ CEG_NOINLINE void ClientModeCSFullscreen::OnEvent( KeyValues *pEvent )
 			{ "You must use matchmaking to connect to this CS:GO server", "#SFUI_DisconnectReason_MustUseMatchmaking", RemapText_t::MATCH_SUBSTR },
 			{ "You cannot connect to this CS:GO server because it is restricted to LAN connections only", "#SFUI_DisconnectReason_ServerLanRestricted", RemapText_t::MATCH_SUBSTR },
 			{ "Kicked by", "#SFUI_SessionError_Kicked", RemapText_t::MATCH_SUBSTR },	// Since many strings include "kicked by", insert messages above this one
-#ifdef _GAMECONSOLE
-			{ "", "#SFUI_DisconnectReason_Unknown", RemapText_t::MATCH_START },	// Catch all cases for X360
-#endif
 			{ NULL, NULL, RemapText_t::MATCH_FULL }
 		};
 

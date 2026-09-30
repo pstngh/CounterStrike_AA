@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //===========================================================================//
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 #include <windows.h>
 #include <imm.h>
 #define DO_IME
@@ -32,9 +32,7 @@
 #include "utllinkedlist.h"
 #include "tier0/icommandline.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#elif defined( OSX )
+#if defined( OSX )
 #include <Carbon/Carbon.h>
 #endif
 
@@ -1411,7 +1409,6 @@ void CInputWin32::GetKeyCodeText(KeyCode code, char *buf, int buflen)
 //-----------------------------------------------------------------------------
 void CInputWin32::SurfaceSetCursorPos(int x, int y)
 {
-#ifndef _PS3
 	if ( g_pSurface->HasCursorPosFunctions() ) // does the surface export cursor functions for us to use?
 	{
 		g_pSurface->SurfaceSetCursorPos(x,y);
@@ -1428,12 +1425,10 @@ void CInputWin32::SurfaceSetCursorPos(int x, int y)
 		::SetCursorPos(x, y);
 #endif
 	}
-#endif
 }
 
 void CInputWin32::SurfaceGetCursorPos( int &x, int &y )
 {
-#if !defined( _GAMECONSOLE )
 	if ( g_pSurface->HasCursorPosFunctions() ) // does the surface export cursor functions for us to use?
 	{
 		g_pSurface->SurfaceGetCursorPos( x,y );
@@ -1461,10 +1456,6 @@ void CInputWin32::SurfaceGetCursorPos( int &x, int &y )
 		y = 0;
 #endif
 	}
-#else
-	x = 0;
-	y = 0;
-#endif
 }
 
 void CInputWin32::SetCursorOveride(HCursor cursor)
@@ -1791,9 +1782,6 @@ void CInputWin32::SetMouseCodeState( MouseCode code, MouseCodeState_t state )
 void CInputWin32::SetKeyCodeState( KeyCode code, bool bPressed )
 {
 	if ( !IsKeyCode( code ) 
-#ifdef _GAMECONSOLE
-		 && !IsJoystickCode( code )
-#endif
 		 )
 		return;
 
@@ -1911,12 +1899,8 @@ bool CInputWin32::PostKeyMessage(KeyValues *message)
 	InputContext_t *pContext = GetInputContext( m_hContext );
 	if( (pContext->_keyFocus!= NULL) && IsChildOfModalPanel((VPANEL)pContext->_keyFocus))
 	{
-#ifdef _GAMECONSOLE
-		g_pIVgui->PostMessage((VPANEL) MESSAGE_CURRENT_KEYFOCUS, message, NULL );
-#else
 		//tell the current focused panel that a key was released
 		g_pIVgui->PostMessage((VPANEL)pContext->_keyFocus, message, NULL );
-#endif
 		return true;
 	}
 
@@ -2148,7 +2132,6 @@ LanguageIds g_LanguageIds[] =
 	{ 0x0452, UNKNOWN, L"",		L"Welsh (United Kingdom)" }, 
 };
 
-#ifndef _PS3
 static LanguageIds *GetLanguageInfo( unsigned short id )
 {
 	for ( int j = 0; j < sizeof( g_LanguageIds ) / sizeof( g_LanguageIds[ 0 ] ); ++j )
@@ -2189,7 +2172,6 @@ static const wchar_t *GetLanguageName( unsigned short id )
 	}
 	return name;
 }
-#endif // !_PS3
 
 
 #endif // DO_IME
@@ -3128,25 +3110,21 @@ void CInputWin32::SetCandidateWindowPos( int x, int y )
 
 void CInputWin32::InternalSetCompositionString( const wchar_t *compstr )
 {
-#if !defined( _PS3 )
 	InputContext_t *pContext = GetInputContext( m_hContext );
 	if ( pContext )
 	{
 		// tell the current focused panel that a key was typed
 		PostKeyMessage( new KeyValues( "DoCompositionString", "string", compstr ) );
 	}
-#endif
 }
 
 void CInputWin32::InternalShowCandidateWindow()
 {
-#if !defined( _PS3 )
 	InputContext_t *pContext = GetInputContext( m_hContext );
 	if ( pContext )
 	{
 		PostKeyMessage( new KeyValues( "DoShowIMECandidates" ) );
 	}
-#endif
 }
 
 void CInputWin32::InternalHideCandidateWindow()

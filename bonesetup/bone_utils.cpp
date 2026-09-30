@@ -545,13 +545,8 @@ void WorldSpaceSlerp(
 #define PARANOID_SIMD_TIMING_TEST 0 // enable to allow running many iterations of SlerpBones per frame
 									// for timing purposes
 
-#ifdef _X360
-// SIMD bone setup is a perf win on 360
-static ConVar cl_simdbones( "cl_simdbones", "1", FCVAR_REPLICATED, "Use SIMD bone setup." );
-#else
 // SIMD bone setup is a perf loss on the PC
 static ConVar cl_simdbones( "cl_simdbones", "0", FCVAR_REPLICATED, "Use SIMD bone setup." );
-#endif
 void SlerpBonesSpeedy( 
 					  const CStudioHdr *pStudioHdr,
 					  BoneQuaternionAligned q1[MAXSTUDIOBONES], 
@@ -730,25 +725,11 @@ void SlerpBones(
 
 			if ( seqdesc.flags & STUDIO_POST )
 			{
-#ifndef _X360
 				QuaternionMA( q1[i], s2, q2[i], q1[i] );
-#else
-				fltx4 q1simd = LoadUnalignedSIMD( q1[i].Base() );
-				fltx4 q2simd = LoadAlignedSIMD( q2[i] );
-				fltx4 result = QuaternionMASIMD( q1simd, s2, q2simd );
-				StoreUnalignedSIMD( q1[i].Base(), result );
-#endif
 			}
 			else
 			{
-#ifndef _X360
 				QuaternionSM( s2, q2[i], q1[i], q1[i] );
-#else
-				fltx4 q1simd = LoadUnalignedSIMD( q1[i].Base() );
-				fltx4 q2simd = LoadAlignedSIMD( q2[i] );
-				fltx4 result = QuaternionSMSIMD( s2, q2simd, q1simd );
-				StoreUnalignedSIMD( q1[i].Base(), result );
-#endif
 
 			}
 			// do this explicitly to make the scheduling better
@@ -774,36 +755,19 @@ void SlerpBones(
 
 		s1 = 1.0 - s2;
 
-#ifdef _X360
-		fltx4  q1simd, q2simd, result;
-		q1simd = LoadUnalignedSIMD( q1[i].Base() );
-		q2simd = LoadAlignedSIMD( q2[i] );
-#endif
 		if ( pStudioHdr->boneFlags(i) & BONE_FIXED_ALIGNMENT )
 		{
-#ifndef _X360
 			QuaternionSlerpNoAlign( q2[i], q1[i], s1, q3 );
-#else
-			result = QuaternionSlerpNoAlignSIMD( q2simd, q1simd, s1 );
-#endif
 		}
 		else
 		{
-#ifndef _X360
 			QuaternionSlerp( q2[i], q1[i], s1, q3 );
-#else
-			result = QuaternionSlerpSIMD( q2simd, q1simd, s1 );
-#endif
 		}
 
-#ifndef _X360
 		q1[i][0] = q3[0];
 		q1[i][1] = q3[1];
 		q1[i][2] = q3[2];
 		q1[i][3] = q3[3];
-#else
-		StoreUnalignedSIMD( q1[i].Base(), result );
-#endif
 
 		pos1[i][0] = pos1[i][0] * s1 + pos2[i][0] * s2;
 		pos1[i][1] = pos1[i][1] * s1 + pos2[i][1] * s2;
@@ -1139,14 +1103,7 @@ void SlerpBonesSpeedy(
 
 			if ( seqdesc.flags & STUDIO_POST )
 			{
-#ifndef _X360
 				QuaternionMA( q1[i], weight, q2[i], q1[i] );
-#else
-				fltx4 q1simd = LoadUnalignedSIMD( q1[i].Base() );
-				fltx4 q2simd = LoadAlignedSIMD( q2[i] );
-				fltx4 result = QuaternionMASIMD( q1simd, weight, q2simd );
-				StoreUnalignedSIMD( q1[i].Base(), result );
-#endif
 				// FIXME: are these correct?
 				pos1[i][0] = pos1[i][0] + pos2[i][0] * weight;
 				pos1[i][1] = pos1[i][1] + pos2[i][1] * weight;
@@ -1154,14 +1111,7 @@ void SlerpBonesSpeedy(
 			}
 			else
 			{
-#ifndef _X360
 				QuaternionSM( weight, q2[i], q1[i], q1[i] );
-#else
-				fltx4 q1simd = LoadUnalignedSIMD( q1[i].Base() );
-				fltx4 q2simd = LoadAlignedSIMD( q2[i] );
-				fltx4 result = QuaternionSMSIMD( weight, q2simd, q1simd );
-				StoreUnalignedSIMD( q1[i].Base(), result );
-#endif
 
 				// FIXME: are these correct?
 				pos1[i][0] = pos1[i][0] + pos2[i][0] * weight;
@@ -1312,26 +1262,12 @@ void SlerpBonesSpeedy(
 
 		float s1 = 1.0 - weight;
 
-#ifdef _X360
-		fltx4  q1simd, q2simd, result;
-		q1simd = LoadAlignedSIMD( q1[k].Base() );
-		q2simd = LoadAlignedSIMD( q2[k] );
-#endif
-
-#ifndef _X360
 		QuaternionSlerp( q2[k], q1[k], s1, q3 );
-#else
-		result = QuaternionSlerpSIMD( q2simd, q1simd, s1 );
-#endif
 
-#ifndef _X360
 		q1[k][0] = q3[0];
 		q1[k][1] = q3[1];
 		q1[k][2] = q3[2];
 		q1[k][3] = q3[3];
-#else
-		StoreAlignedSIMD( q1[k].Base(), result );
-#endif
 
 		pos1[k][0] = pos1[k][0] * s1 + pos2[k][0] * weight;
 		pos1[k][1] = pos1[k][1] * s1 + pos2[k][1] * weight;
@@ -1404,27 +1340,13 @@ void SlerpBonesSpeedy(
 
 		float s1 = 1.0 - weight;
 
-#ifdef _X360
-		fltx4  q1simd, q2simd, result;
-		q1simd = LoadAlignedSIMD( q1[k].Base() );
-		q2simd = LoadAlignedSIMD( q2[k] );
-#endif
-
-#ifndef _X360
 		BoneQuaternionAligned q3;
 		QuaternionSlerpNoAlign( q2[k], q1[k], s1, q3 );
-#else
-		result = QuaternionSlerpNoAlignSIMD( q2simd, q1simd, s1 );
-#endif
 
-#ifndef _X360
 		q1[k][0] = q3[0];
 		q1[k][1] = q3[1];
 		q1[k][2] = q3[2];
 		q1[k][3] = q3[3];
-#else
-		StoreAlignedSIMD( q1[k].Base(), result );
-#endif
 
 		pos1[k][0] = pos1[k][0] * s1 + pos2[k][0] * weight;
 		pos1[k][1] = pos1[k][1] * s1 + pos2[k][1] * weight;
@@ -1660,31 +1582,6 @@ void BlendBones(
 			BONE_PROFILE_LOOP(BlendBoneLoop2a,numBones); // 20 ticks straight; 12-14 ticks 4 at a time; 14-19 ticks 8 at a time (compiler generated code)
 
 			i = 0;
-#ifdef _X360 // on PC, this is slower
-			for(; i+3 < numBones; i+=4)
-			{
-				int isBoneActiveA = pStudioHdr->boneFlags(i  ) & boneMask;
-				int isBoneActiveB = pStudioHdr->boneFlags(i+1) & boneMask;
-				int isBoneActiveC = pStudioHdr->boneFlags(i+2) & boneMask;
-				int isBoneActiveD = pStudioHdr->boneFlags(i+3) & boneMask;
-				isBoneActiveA = isBoneActiveA | -isBoneActiveA; // the high bit is now 1 iff the flags check 
-				isBoneActiveB = isBoneActiveB | -isBoneActiveB; // the high bit is now 1 iff the flags check 
-				isBoneActiveC = isBoneActiveC | -isBoneActiveC; // the high bit is now 1 iff the flags check 
-				isBoneActiveD = isBoneActiveD | -isBoneActiveD; // the high bit is now 1 iff the flags check 
-				isBoneActiveA = _rotl(isBoneActiveA,1) & 1;  // now it's either 0 or 1
-				isBoneActiveB = _rotl(isBoneActiveB,1) & 1;  // now it's either 0 or 1
-				isBoneActiveC = _rotl(isBoneActiveC,1) & 1;  // now it's either 0 or 1
-				isBoneActiveD = _rotl(isBoneActiveD,1) & 1;  // now it's either 0 or 1
-				*pActiveBonesEnd = i+0;
-				pActiveBonesEnd += isBoneActiveA;
-				*pActiveBonesEnd = i+1;
-				pActiveBonesEnd += isBoneActiveB;
-				*pActiveBonesEnd = i+2;
-				pActiveBonesEnd += isBoneActiveC;
-				*pActiveBonesEnd = i+3;
-				pActiveBonesEnd += isBoneActiveD;
-			}
-#endif
 			for(; i < numBones; ++i)
 			{
 				*pActiveBonesEnd = i;
@@ -1704,31 +1601,6 @@ void BlendBones(
 				BONE_PROFILE_LOOP(BlendBoneLoop2b,pActiveBonesEnd - pActiveBones);//21-25 straight; 16-18 4 at a time;
 
 				int *RESTRICT pActiveBone = pActiveBones;
-#ifdef _X360 // on PC, this is slower
-				for(; pActiveBone + 3 < pActiveBonesEnd; pActiveBone += 4)
-				{
-					int nActiveBoneA = pActiveBone[0];
-					int nActiveBoneB = pActiveBone[1];
-					int nActiveBoneC = pActiveBone[2];
-					int nActiveBoneD = pActiveBone[3];
-					int nMappedBoneA = pSeqGroup->boneMap[nActiveBoneA];
-					int nMappedBoneB = pSeqGroup->boneMap[nActiveBoneB];
-					int nMappedBoneC = pSeqGroup->boneMap[nActiveBoneC];
-					int nMappedBoneD = pSeqGroup->boneMap[nActiveBoneD];
-					pEnd[numBones] = nMappedBoneA;
-					*pEnd = nActiveBoneA;
-					pEnd += _rotl(~nMappedBoneA,1) & 1; // if nMappedBone < 0, don't advance the end
-					pEnd[numBones] = nMappedBoneB;
-					*pEnd = nActiveBoneB;
-					pEnd += _rotl(~nMappedBoneB,1) & 1; // if nMappedBone < 0, don't advance the end
-					pEnd[numBones] = nMappedBoneC;
-					*pEnd = nActiveBoneC;
-					pEnd += _rotl(~nMappedBoneC,1) & 1; // if nMappedBone < 0, don't advance the end
-					pEnd[numBones] = nMappedBoneD;
-					*pEnd = nActiveBoneD;
-					pEnd += _rotl(~nMappedBoneD,1) & 1; // if nMappedBone < 0, don't advance the end
-				}
-#endif
 				for(; pActiveBone < pActiveBonesEnd; ++pActiveBone)
 				{
 					int nActiveBone = *pActiveBone;
@@ -1746,33 +1618,6 @@ void BlendBones(
 				BONE_PROFILE_LOOP(BlendBoneLoop2c,pActiveBonesEnd - pActiveBones);//18-23 straight; 14-17 ticks 4 at a time
 
 				int *RESTRICT pActiveBone = pActiveBones;
-#ifdef _X360 // on PC, this is slower
-				int *RESTRICT pMappedBone = pActiveBones+numBones;
-				for(; pActiveBone+3 < pActiveBonesEnd; pActiveBone += 4, pMappedBone += 4)
-				{
-					int nActiveBoneA = pActiveBone[0];
-					int nActiveBoneB = pActiveBone[1];
-					int nActiveBoneC = pActiveBone[2];
-					int nActiveBoneD = pActiveBone[3];
-					int nMappedBoneA = pMappedBone[0];
-					int nMappedBoneB = pMappedBone[1];
-					int nMappedBoneC = pMappedBone[2];
-					int nMappedBoneD = pMappedBone[3];
-					int pseudoWeightA = pBonePseudoWeight[nMappedBoneA];
-					int pseudoWeightB = pBonePseudoWeight[nMappedBoneB];
-					int pseudoWeightC = pBonePseudoWeight[nMappedBoneC];
-					int pseudoWeightD = pBonePseudoWeight[nMappedBoneD];
-
-					*pEnd = nActiveBoneA;
-					pEnd += _rotl(-pseudoWeightA, 1) & 1; // pseudoWeight must be strictly positive to advance and let this bone stay
-					*pEnd = nActiveBoneB;
-					pEnd += _rotl(-pseudoWeightB, 1) & 1; // pseudoWeight must be strictly positive to advance and let this bone stay
-					*pEnd = nActiveBoneC;
-					pEnd += _rotl(-pseudoWeightC, 1) & 1; // pseudoWeight must be strictly positive to advance and let this bone stay
-					*pEnd = nActiveBoneD;
-					pEnd += _rotl(-pseudoWeightD, 1) & 1; // pseudoWeight must be strictly positive to advance and let this bone stay
-				}
-#endif
 				for(; pActiveBone < pActiveBonesEnd; ++pActiveBone)
 				{
 					int nActiveBone = *pActiveBone;

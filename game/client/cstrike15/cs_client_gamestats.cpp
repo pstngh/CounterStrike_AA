@@ -27,15 +27,6 @@
 #include "cs_player_rank_mgr.h"
 #include "hltvreplaysystem.h"
 
-#if defined (_X360)
-#include "ixboxsystem.h"
-#include "../common/xlast_csgo/csgo.spa.h"
-#endif
-
-#ifdef _PS3
-#include "ps3/ps3_helpers.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -56,11 +47,6 @@ bool MsgFunc_PlayerStatsUpdate( const CCSUsrMsg_PlayerStatsUpdate &msg )
 {
 	return g_CSClientGameStats.MsgFunc_PlayerStatsUpdate(msg);
 }
-
-
-#ifdef _X360
-static CAsyncLeaderboardWriteThread g_AsyncLeaderboardWriteThread;
-#endif
 
 
 struct MapName_LBStatID
@@ -157,21 +143,17 @@ void CCSClientGameStats::PostInit()
 		m_UMCMsgPlayerStatsUpdate.Bind< CS_UM_PlayerStatsUpdate, CCSUsrMsg_PlayerStatsUpdate>( UtlMakeDelegate( ::MsgFunc_PlayerStatsUpdate ));
 	}
 
-#if !defined( _GAMECONSOLE )
 	m_RoundEndReason = Invalid_Round_End_Reason;
 	m_bObjectiveAttempted = false;
-#endif
 }
 
 void CCSClientGameStats::LevelInitPostEntity()
 {
-#if !defined( _GAMECONSOLE )
 	// Need this for players who join mid-match to have a client session 
 	if ( CSGameRules()->HasMatchStarted() )
 	{
 		GetSteamWorksGameStatsClient().StartSession();
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -179,13 +161,8 @@ void CCSClientGameStats::LevelInitPostEntity()
 //-----------------------------------------------------------------------------
 void CCSClientGameStats::LevelShutdownPreEntity()
 {
-#if !defined( _GAMECONSOLE )
 	UploadRoundStats();
 	GetSteamWorksGameStatsClient().EndSession();
-#else
-	// round stats are reset when we upload stats on PC, but we still need to reset on consoles as well so do it here
-	m_roundStats[0].Reset();
-#endif
 
 	// This is a good opportunity to update our last match stats
 	UpdateLastMatchStats();
@@ -252,19 +229,11 @@ CEG_NOINLINE void CCSClientGameStats::FireGameEvent( IGameEvent *event )
 		// [jhail] Write leaderboard stats at pre-start, before our stats collection gets reset
 		WriteLeaderboardStats();
 
-#if !defined( _GAMECONSOLE )
 		UploadRoundStats();
-#else
-		// round stats are reset when we upload stats on PC, but we still need to reset on consoles as well so do it here
-		m_roundStats[0].Reset();
-#endif
 	}
 	else if ( Q_strcmp( pEventName, "round_end" ) == 0 )
 	{
 
-#ifdef _PS3
- 		g_pGcmSharedData->m_bDeFrag = 1;			// Flag for a defrag at round end
-#endif
 		m_RoundEndReason = event->GetInt( "reason", Invalid_Round_End_Reason );
 		int iCurrentPlayerCount = event->GetInt( "player_count", 0 );
 #ifdef DBGFLAG_ASSERT
@@ -279,12 +248,7 @@ CEG_NOINLINE void CCSClientGameStats::FireGameEvent( IGameEvent *event )
 	}
 	else if ( 0 == Q_strcmp( pEventName, "cs_game_disconnected" ) )
 	{
-#if !defined( _GAMECONSOLE )
 		UploadRoundStats();
-#else
-		// round stats are reset when we upload stats on PC, but we still need to reset on consoles as well so do it here
-		m_roundStats[0].Reset();
-#endif
 	}
 	else if ( 0 == Q_strcmp( pEventName, "begin_new_match" ) )
 	{
@@ -602,20 +566,6 @@ bool CCSClientGameStats::MsgFunc_PlayerStatsUpdate( const CCSUsrMsg_PlayerStatsU
 	// everything looks okay at this point; add these stats for the player's round, match, and lifetime stats
 	int userSlot = STEAM_PLAYER_SLOT;
 
-#if defined ( _X360 )
-	for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer(i);
-		if ( pLocalPlayer && !pLocalPlayer->IsNPC() )
-		{
-			if ( pLocalPlayer->GetUserID() == userID )
-			{
-				userSlot = i;
-			}
-		}
-	}
-#endif
-
 	UpdateStats(deltaStats, userSlot );
 
 	return true;
@@ -726,44 +676,7 @@ void CCSClientGameStats::CalculateMatchFavoriteWeapons()
 
 bool CCSClientGameStats::ValidateTitleBlockVersion( TitleDataFieldsDescription_t const *pFields, IPlayerLocal *pPlayerLocal, CSSyncStatValueDirection_t eOp, int titleBlockNo )
 {
-#if defined ( _X360 )
-
-	if ( titleBlockNo < 1 || titleBlockNo > 3 )
-		return false;
-	
-	char versionIdentifier[32];
-	char convarIdenifier[32];
-
-	V_snprintf( versionIdentifier, sizeof(versionIdentifier), "TITLEDATA.BLOCK%d.VERSION", titleBlockNo );
-	V_snprintf( convarIdenifier, sizeof(convarIdenifier), "cl_titledataversionblock%d", titleBlockNo );
-
-	// check version number of the specified title block
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( pFields, versionIdentifier );
-	if ( !versionField || versionField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16 )
-	{
-		Warning( "%s is expected to be defined as DT_uint16\n", versionIdentifier );
-		return false;
-	}
-
-	ConVarRef cl_titledataversionblock( convarIdenifier );
-	if ( eOp == CSSTAT_READ_STAT )
-	{
-		int versionNumber = TitleDataFieldsDescriptionGetValue<uint16>( versionField, pPlayerLocal );
-		if ( versionNumber != cl_titledataversionblock.GetInt() )
-		{
-			Warning( "ValidateTitleBlockVersion unexpected version number for %s;  got %d, expected %d\n", versionIdentifier, versionNumber, cl_titledataversionblock.GetInt() );
-			return false;
-		}
-	}
-	else	 // we always set the version field
-	{
-		TitleDataFieldsDescriptionSetValue<uint16>( versionField, pPlayerLocal, cl_titledataversionblock.GetInt() );
-	}
-
-	return true;
-#else
 	return false;		// no title data for non Xbox systems
-#endif
 
 }
 
@@ -774,68 +687,6 @@ bool CCSClientGameStats::ValidateTitleBlockVersion( TitleDataFieldsDescription_t
 bool CCSClientGameStats::SyncCSStatsToTitleData( int iController, CSSyncStatValueDirection_t eOp )
 {
 
-#if defined ( _X360 )
-	
-	// we need to hook up a console version of m_bSteamStatsDownload
-	//// we shouldn't be downloading stats more than once
-	//Assert(m_bSteamStatsDownload == false);
-	//if (m_bSteamStatsDownload)
-	//	return;
-
-	// get the local player
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( !pPlayerLocal )
-		return false;
-
-	int userSlot = XBX_GetSlotByUserId( iController );
-	if ( userSlot < 0 || userSlot >= MAX_SPLITSCREEN_PLAYERS )
-	{
-		userSlot = STEAM_PLAYER_SLOT;
-	}
-
-	// we are writing values directly here since we know they are int32 and int16; we add checks to verify data files don't change the data types
-	// otherwise, we would need to use keyvalue or convar or write extra code we don't need to handle all data types
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-	if ( !ValidateTitleBlockVersion( pFields, pPlayerLocal, eOp, 1 ) )
-		return false;
-
-	char statName[ 256 ];
-	for ( int i = 0, titleDataStat=0; i < CSSTAT_MAX; ++i )
-	{
-		if ( CSStatProperty_Table[i].szSteamName == NULL )
-			continue;
-
-		Q_snprintf( statName, 255, "STATS.usr.stat%.3d", titleDataStat++ );
- 		if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, statName ) )
-		{
-			if ( pField->m_eDataType != TitleDataFieldsDescription_t::DT_uint32  )
-			{
-				Warning( "%s is expected to be defined as DT_uint32\n", statName );
-				continue;
-			}
-
-			if ( eOp ==	CSSTAT_READ_STAT )
-				m_lifetimeStats[userSlot][i] = TitleDataFieldsDescriptionGetValue<uint32>( pField, pPlayerLocal );
-			else
-				TitleDataFieldsDescriptionSetValue<uint32>( pField, pPlayerLocal, m_lifetimeStats[userSlot][i] );
-
-		}
-		else
-		{
-			Warning( "Could not find TitleDataField for %s\n", statName );
-		}
-	}
-
-	IGameEvent * event = gameeventmanager->CreateEvent( "player_stats_updated" );
-	if ( event )
-	{
-		gameeventmanager->FireEventClientSide( event );
-	}
-
-	//m_bSteamStatsDownload = true;
-
-#endif
 	return true;
 
 }
@@ -848,151 +699,18 @@ bool CCSClientGameStats::SyncCSLoadoutsToTitleData( int iController, CSSyncStatV
 	if ( !pPlayerLocal )
 		return false;
 
-#if defined ( _X360 )
-	// verify inc file matches hardcoded values
-#define CFG( loadoutnum, equipmentnum ) \
-	int numLoadouts = loadoutnum; \
-	int numEquipmentSlots = equipmentnum;
-#include "xlast_csgo/inc_loadouts_usr.inc"
-#undef CFG
-	if ( numLoadouts != cMaxLoadouts || numEquipmentSlots != cMaxEquipment )
-	{
-		Warning( "CCSClientGameStats::SyncCSLoadoutsToTitleData mismatch between inc_loadouts_usr.inc and cMaxLoadouts/Equipment\n" );
-		return false;
-	}
-
-	// verify version number
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-	if ( !ValidateTitleBlockVersion( pFields, pPlayerLocal, eOp, 3 ) )
-		return false;
-
-	char loadoutName[30];
-	for (int teamcount = 0; teamcount<2; ++teamcount)
-	{
-		CCSLoadout *pLoadoutArray = NULL;
-		char teamName[10];
-		if (teamcount)
-		{
-			pLoadoutArray = GetBuyMenuLoadoutData(TEAM_TERRORIST);
-			Q_snprintf( teamName, 10, "T" );
-		}
-		else
-		{
-			pLoadoutArray = GetBuyMenuLoadoutData(TEAM_CT);
-			Q_snprintf( teamName, 10, "CT" );
-		}
-
-		for(int i=0; i<cMaxLoadouts; ++i)
-		{
-			CCSLoadout &pLoadout = pLoadoutArray[i];
-
-			// we can write bytes for the equipment info since we have less than 256 weapons
-			for (int j=0; j<cMaxEquipment; ++j)
-			{
-				Q_snprintf( loadoutName, 30, "%s.LOAD%.1d.EQUIP%.1d.ID", teamName, i, j );
-				if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, loadoutName ) )
-				{
-					if ( eOp ==	CSSTAT_READ_STAT )
-						pLoadout.m_EquipmentArray[j].m_EquipmentID = (CSWeaponID)TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-					else
-						TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, pLoadout.m_EquipmentArray[j].m_EquipmentID );
-
-				}
-				Q_snprintf( loadoutName, 30, "%s.LOAD%.1d.EQUIP%.1d.QUANTITY", teamName, i, j );
-				if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, loadoutName ) )
-				{
-					if ( eOp ==	CSSTAT_READ_STAT )
-						pLoadout.m_EquipmentArray[j].m_Quantity = TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-					else
-						TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, pLoadout.m_EquipmentArray[j].m_Quantity );
-
-				}
-			}
-
-			Q_snprintf( loadoutName, 30, "%s.LOAD%.1d.PRIMARY", teamName, i );
-			if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, loadoutName ) )
-			{
-				if ( eOp ==	CSSTAT_READ_STAT )
-					pLoadout.m_primaryWeaponID = (CSWeaponID)TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-				else
-					TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, pLoadout.m_primaryWeaponID );
-
-			}
-			Q_snprintf( loadoutName, 30, "%s.LOAD%.1d.SECONDARY", teamName, i );
-			if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, loadoutName ) )
-			{
-				if ( eOp ==	CSSTAT_READ_STAT )
-					pLoadout.m_secondaryWeaponID = (CSWeaponID)TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-				else
-					TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, pLoadout.m_secondaryWeaponID );
-
-			}
-
-			Q_snprintf( loadoutName, 30, "%s.LOAD%.1d.FLAGS", teamName, i );
-			if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, loadoutName ) )
-			{
-				if ( eOp ==	CSSTAT_READ_STAT )
-					pLoadout.m_flags = TitleDataFieldsDescriptionGetValue<uint8>( pField, pPlayerLocal );
-				else
-					TitleDataFieldsDescriptionSetValue<uint8>( pField, pPlayerLocal, pLoadout.m_flags );
-			}
-		}
-	}
-
-#endif
 	return true;
 }
-
-#if defined( _X360 )
-
-// Purpose: Helper function to write properties to the XUSER_PROPERTY stream for each leaderboard
-static void WriteProperty( XUSER_PROPERTY *props, int index, DWORD propId, BYTE type, void* data )
-{
-	XUSER_PROPERTY &property = props[index];
-	property.dwPropertyId = propId;
-	property.value.type = type;
-
-	switch ( type )
-	{
-	default:
-		Warning( "CS_CLIENT_GAMESTATS: WriteProperty error: unknown data type: %d!\n", type );
-		break;
-
-	case XUSER_DATA_TYPE_FLOAT:	
-		property.value.type = XUSER_DATA_TYPE_INT64; // Float isn't supported on Leaderboards: Convert to a 64-bit int and write it out scaled-up
-		property.value.i64Data = 10000000 * *((float*)data);
-		break;
-
-	case XUSER_DATA_TYPE_INT64:
-		property.value.i64Data = *((LONGLONG*)data);
-		break;
-
-	case XUSER_DATA_TYPE_INT32:
-		property.value.nData = *((LONG*)data);
-		break;
-	}
-}
-
-#endif // #if defined( _X360 )
 
 
 // Purpose: resets the server-side leaderboards for testing purposes
 void CCSClientGameStats::ResetLeaderboardStats( void )
 {
-#if defined ( _X360 )
-#if !defined ( _CERT )
-	for ( int id=STATS_VIEW_WINS_ONLINE_CASUAL; id<=STATS_VIEW_GP_ONLINE_GG_BOMB; ++id )
-		XUserResetStatsViewAllUsers( id, NULL );
-#endif // !_CERT
-#endif // _X360
 }
 
 CEG_NOINLINE void CCSClientGameStats::WriteLeaderboardStats( void )
 {
 	return;	// disabling client-writing leaderboards for now
-
-#if !defined( _X360 )
 
 	for ( int userSlot = 0; userSlot < MAX_SPLITSCREEN_PLAYERS; ++userSlot )
 	{
@@ -1268,251 +986,7 @@ CEG_NOINLINE void CCSClientGameStats::WriteLeaderboardStats( void )
 		pProfile->UpdateLeaderboardData( pLeaderboardInfo );
 	}
 
-#endif // !_X360
 }
-
-
-#ifdef _X360
-CAsyncLeaderboardWriteThread::CAsyncLeaderboardWriteThread()
-{
-	m_hThread = NULL;
-	m_hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
-}
-
-CAsyncLeaderboardWriteThread::~CAsyncLeaderboardWriteThread()
-{
-	if ( m_hThread )
-		ReleaseThreadHandle( m_hThread );
-
-	if ( m_hEvent )
-		CloseHandle( m_hEvent );
-}
-
-CAsyncLeaderboardWriteThread::LeaderboardWriteData_t* CAsyncLeaderboardWriteThread::CreateLeaderboardWriteData( void )
-{
-	LeaderboardWriteData_t* pData = new LeaderboardWriteData_t;
-	ZeroMemory( pData, sizeof(LeaderboardWriteData_t) );
-	return pData;
-}
-
-void CAsyncLeaderboardWriteThread::QueueData( LeaderboardWriteData_t *pData )
-{
-	if ( !pData )
-		return;
-
-	AUTO_LOCK( m_mutex );
-	m_queue.AddToTail( pData );
-
-	if ( !m_hThread )
-	{
-		m_hThread = CreateSimpleThread( CallbackThreadProc, this );
-	}
-
-	// Signal the event to let the thread know that some data is waiting
-	SetEvent( m_hEvent );
-}
-
-void CAsyncLeaderboardWriteThread::ThreadProc( void )
-{
-	for ( ; ; )
-	{
-		// Wait until our event is signaled that says we have data waiting
-		if ( WaitForSingleObject( m_hEvent, INFINITE ) == WAIT_OBJECT_0 )
-		{
-			// Reset our event
-			ResetEvent( m_hEvent );
-
-			while ( m_queue.Count() > 0 )
-			{
-				// Grab an item from the queue
-				LeaderboardWriteData_t *pData = NULL;
-				{
-					AUTO_LOCK( m_mutex );
-					if ( m_queue.Count() )
-					{
-						pData = m_queue[0];
-						m_queue.Remove( 0 );
-					}
-				}
-
-				// [smessick] Check to see if the player is signed into LIVE
-				int userID = pData->userID;
-				bool isSignedInToLIVE = ( XUserGetSigninState( userID ) == eXUserSigninState_SignedInToLive );
-
-				// [smessick] Don't attempt the write to the leaderboards if the player is not signed into Xbox LIVE.
-				//ReleaseAssert( pData != NULL );
-				if ( !isSignedInToLIVE )
-				{
-					Warning( "[CAsyncLeaderboardWriteThread] Not signed into LIVE. Removing queued data.\n" );
-					delete pData;
-					continue;
-				}
-
-				bool writeSuccess = false;
-
-				if ( xboxsystem )
-				{
-					int kills			= pData->propertiesContribScore[3].value.nData;	// PROPERTY_CSS_LB_CS_TOTAL_KILLS
-					int deaths			= pData->propertiesContribScore[4].value.nData;	// PROPERTY_CSS_LB_CS_TOTAL_DEATHS
-					int contribScore	= pData->propertiesContribScore[7].value.nData;	// PROPERTY_CSS_LB_CS_TOTAL_CONTRIB_SCORE
-					int roundsPlayed	= pData->propertiesContribScore[2].value.nData;	// PROPERTY_CSS_LB_CS_TOTAL_ROUNDS_PLAYED										
-					int gamesWon		= pData->propertiesWins[1].value.nData;			// PROPERTY_CSS_LB_WINS_WINS
-
-					// Before we can write some values to leaderboard (contrib score/round, average k/d, etc) we must
-					// read from them so we can retrieve the existing data to ensure that our formulas
-					// that determine rank are based on the appropriate values.
-					int result = 0;
-
-					// Construct the stat specs for the data we're interested in
-					const int kNumSpecReads = 2;
-					XUSER_STATS_SPEC statsSpec[kNumSpecReads];
-					ZeroMemory( statsSpec, kNumSpecReads * sizeof(statsSpec) );
-					
-					statsSpec[0].dwViewId = pData->viewProperties[0].dwViewId; // Contrib score board
-					statsSpec[0].dwNumColumnIds = 4;
-					statsSpec[0].rgwColumnIds[0] = STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_KILLS;
-					statsSpec[0].rgwColumnIds[1] = STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_DEATHS;
-					statsSpec[0].rgwColumnIds[2] = STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_CONTRIB_SCORE;
-					statsSpec[0].rgwColumnIds[3] = STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_ROUNDS_PLAYED;
-
-					statsSpec[1].dwViewId = pData->viewProperties[2].dwViewId; // Wins board
-					statsSpec[1].dwNumColumnIds = 1;
-					statsSpec[1].rgwColumnIds[0] = STATS_COLUMN_WINS_ONLINE_CASUAL_WINS_TOTAL;
-
-
-					XUSER_STATS_READ_RESULTS *pResultsBuffer = 0;
-					result = xboxsystem->EnumerateStatsByXuid( pData->xuid, 1, kNumSpecReads, statsSpec, (void**)(&pResultsBuffer), false );
-
-					if ( result == ERROR_SUCCESS )
-					{
-						// Make sure all queried views are included in our result:
-						if ( pResultsBuffer->dwNumViews == kNumSpecReads )
-						{
-							// Get the data we're interested in: This will fail gracefully if this is our first leaderboard-write for the current user
-
-							// from the Contrib score board:
-							if ( pResultsBuffer->pViews[0].dwNumRows == 1 && 
-								 pResultsBuffer->pViews[0].pRows[0].dwNumColumns == 4 )
-							{
-								if ( pResultsBuffer->pViews[0].pRows[0].pColumns[0].wColumnId == STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_KILLS )
-								{
-									kills			+= pResultsBuffer->pViews[0].pRows[0].pColumns[0].Value.nData;
-								}
-
-								if ( pResultsBuffer->pViews[0].pRows[0].pColumns[1].wColumnId == STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_DEATHS )
-								{
-									deaths			+= pResultsBuffer->pViews[0].pRows[0].pColumns[1].Value.nData;
-								}
-
-								if ( pResultsBuffer->pViews[0].pRows[0].pColumns[2].wColumnId == STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_CONTRIB_SCORE )
-								{
-									contribScore	+= pResultsBuffer->pViews[0].pRows[0].pColumns[2].Value.nData;
-								}
-
-								if ( pResultsBuffer->pViews[0].pRows[0].pColumns[3].wColumnId == STATS_COLUMN_CS_ONLINE_CASUAL_TOTAL_ROUNDS_PLAYED )
-								{
-									roundsPlayed	+= pResultsBuffer->pViews[0].pRows[0].pColumns[3].Value.nData;
-								}
-							}
-							
-							// from the Wins board:
-							if ( pResultsBuffer->pViews[1].dwNumRows == 1 && 
-								 pResultsBuffer->pViews[1].pRows[0].dwNumColumns == 1 )
-							{
-								if ( pResultsBuffer->pViews[1].pRows[0].pColumns[0].wColumnId == STATS_COLUMN_WINS_ONLINE_CASUAL_WINS_TOTAL )
-								{
-									gamesWon		+= pResultsBuffer->pViews[1].pRows[0].pColumns[0].Value.nData;
-								}
-							}
-						}
-					}
-
-					delete [] pResultsBuffer;
-
-					// Calculate the player's new rank
-					float fAverageContribScore	= 0.0f;
-					float fGamesPlayedRatio		= 0.0f;
-					float fKillDeathRatio		= 0.0f;
-					float fWinRatio				= 0.0f;
-
-					fGamesPlayedRatio = clamp( roundsPlayed, 0.0f, 20.0f ) / 20.0f;
-
-					if ( deaths > 0 )
-					{
-						fKillDeathRatio = ( (float)kills / (float)deaths ) * fGamesPlayedRatio;
-						// printf( "Calculating k/d ratio: kills=%d, deaths=%d, gameRatio=%f\n", kills, deaths, fGamesPlayedRatio );
-					}
-					else
-					{
-						fKillDeathRatio = (float)kills * fGamesPlayedRatio;
-						// printf( "Calculating k/d ratio with NO deaths: kills=%d, gameRatio=%f\n", kills, fGamesPlayedRatio );
-					}
-
-					if ( roundsPlayed > 0 )
-					{
-						fWinRatio = ( (float)gamesWon / (float)roundsPlayed ) * fGamesPlayedRatio;
-						fAverageContribScore = ( (float)contribScore / (float)roundsPlayed );
-
-						// printf( "Calculating avg contrib score: contribScore=%d, rounds=%d\n", contribScore, roundsPlayed );
-						// printf( "Calculating win ratio: wins=%d, rounds=%d, gameRatio=%f\n", gamesWon, roundsPlayed, fGamesPlayedRatio );
-					}
-
-					// Update our write data with the adjusted rank information
-					pData->propertiesContribScore[0].value.i64Data	= fAverageContribScore * 10000000;	// PROPERTY_CSS_LB_CS_AVERAGE_CONTRIB_SCORE (or PROPERTY_CSS_LB_CS_ELO_RATING, for an offline-mode board)
-					//printf( "**** Writing out average contrib score: %f as %lld\n", fAverageContribScore, pData->propertiesContribScore[0].value.i64Data );
-					
-					pData->propertiesKillDeath[0].value.i64Data		= fKillDeathRatio * 10000000; // PROPERTY_CSS_LB_KD_KD_FORMULA
-					// printf( "**** Writing out k/d ratio score: %f as %lld\n", fKillDeathRatio, pData->propertiesKillDeath[0].value.i64Data );
-					
-					pData->propertiesWins[0].value.i64Data			= fWinRatio * 10000000; // PROPERTY_CSS_LB_WINS_WIN_FORMULA
-					// printf( "**** Writing out win ratio score: %f as %lld\n", fWinRatio, pData->propertiesWins[0].value.i64Data );
-
-					// Create a fake session to write the data
-					DWORD userIndexes[XUSER_MAX_COUNT];
-					BOOL privateSlots[XUSER_MAX_COUNT] = { TRUE, TRUE, TRUE, TRUE };
-					XSESSION_INFO sessionInfo;
-					ULONGLONG sessionNonce;
-					HANDLE hSession = NULL;
-					const int numValidUserIndexes = 1;
-
-					userIndexes[0] = userID;
-
-					XUserSetContext( userIndexes[0], X_CONTEXT_GAME_TYPE, X_CONTEXT_GAME_TYPE_STANDARD);
-					DWORD dw = XSessionCreate(XSESSION_CREATE_USES_STATS, userIndexes[0], 0, numValidUserIndexes, &sessionNonce, &sessionInfo, NULL, &hSession);
-					if ( dw == ERROR_SUCCESS )
-					{
-						dw = XSessionJoinLocal(hSession, numValidUserIndexes, userIndexes, privateSlots, NULL);
-						if ( dw == ERROR_SUCCESS )
-						{
-							dw = XSessionStart(hSession, 0, NULL);
-							if ( dw == ERROR_SUCCESS )
-							{
-								// Perform the actual write to the XBox Live service
-								dw = xboxsystem->WriteStats( hSession, pData->xuid, NUM_VIEW_PROPERTIES, &pData->viewProperties, false );
-								if ( dw == ERROR_SUCCESS )
-								{
-									writeSuccess = true;
-								}
-								XSessionEnd(hSession, NULL);
-							}
-						}
-						XSessionDelete(hSession, NULL);
-					}
-				}
-
-				// [smessick] Log a warning if the write failed.
-				if ( !writeSuccess )
-				{
-					Warning( "[CAsyncLeaderboardWriteThread] Failed to write leaderboard data. Ignoring data.\n" );
-				}
-
-				// Delete our allocated object
-				delete pData;
-			}
-		}
-	}
-}
-#endif // _X360
 
 
 
@@ -1523,57 +997,6 @@ bool CCSClientGameStats::SyncCSMatchmakingDataToTitleData( int iController, CSSy
 	if ( !pPlayerLocal )
 		return false;
 
-#if defined ( _X360 )
-
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-	if ( !ValidateTitleBlockVersion( pFields, pPlayerLocal, eOp, 1 ) )
-		return false;
-
-	MatchmakingData *pMMData = pPlayerLocal->GetPlayerMatchmakingData();
-	if ( !pMMData )
-	{
-		return false;
-	}
-
-#define MATCHMAKINGDATA_FIELD( mmDataField ) \
-	Q_snprintf( fieldName, 255, "MMDATA.usr.%s%d", #mmDataField, mmDataType ); \
-	if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, fieldName ) ) \
-	{ \
-		if ( pField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16 ) \
-		{ \
-			Warning( "%s is expected to be defined as DT_uint16\n", fieldName ); \
-			continue; \
-		} \
-		\
-		if ( eOp == CSSTAT_READ_STAT ) \
-			pMMData->mmDataField[ mmDataType ][ MMDATA_SCOPE_LIFETIME ] = TitleDataFieldsDescriptionGetValue<uint16>( pField, pPlayerLocal ); \
-		else \
-			TitleDataFieldsDescriptionSetValue<uint16>( pField, pPlayerLocal, pMMData->mmDataField[ mmDataType ][ MMDATA_SCOPE_LIFETIME ] ); \
-	} \
-	else \
-	{ \
-		Warning( "Could not find TitleDataField for %s%d\n", #mmDataField, mmDataType ); \
-	}
-
-	char fieldName[ 256 ] = { 0 };
-	for ( int mmDataType = 0; mmDataType < MMDATA_TYPE_COUNT; ++mmDataType )
-	{
-		MATCHMAKINGDATA_FIELD( mContribution );
-		MATCHMAKINGDATA_FIELD( mMVPs );
-		MATCHMAKINGDATA_FIELD( mKills );
-		MATCHMAKINGDATA_FIELD( mDeaths );
-		MATCHMAKINGDATA_FIELD( mHeadShots );
-		MATCHMAKINGDATA_FIELD( mDamage );
-		MATCHMAKINGDATA_FIELD( mShotsFired );
-		MATCHMAKINGDATA_FIELD( mShotsHit );
-		MATCHMAKINGDATA_FIELD( mDominations );
-		MATCHMAKINGDATA_FIELD( mRoundsPlayed );
-	}
-
-#undef MATCHMAKINGDATA_FIELD
-
-#endif // _X360
 	return true;
 }
 
@@ -1586,100 +1009,6 @@ bool CCSClientGameStats::SyncCSRankingDataToTitleData( int iController, CSSyncSt
 	if ( !pPlayerLocal )
 		return false;
 
-#if defined( _GAMECONSOLE )
-
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-#if defined( _X360 )
-
-	if ( !ValidateTitleBlockVersion( pFields, pPlayerLocal, eOp, 3 ) )
-		return false;
-
-#endif
-
-	// Get Player's Local Ranking Data
-	IPlayerRankingDataStore *pRankingData = pPlayerLocal->GetPlayerRankingData();
-	Assert( pRankingData );
-
-	char fieldName[ 64 ] = { 0 };
-
-	// Iterate through the ELO data by history, game mode, controller, online mode
-	// Player Rankings by mode, controller, w/ optional history
-
-	for ( int m = 0; m < ELOTitleData::NUM_GAME_MODES_ELO_RANKED; m++ )
-	{
-		int numControllers = PlatformInputDevice::GetInputDeviceCountforPlatform();
-		for ( int c = 1; c <= numControllers; c++ )
-		{
-			V_snprintf( fieldName, sizeof(fieldName), TITLE_DATA_PREFIX "ELO.MODE%d.CTR%d", m, c );
-
-			if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, fieldName ) ) 
-			{ 
-				InputDevice_t controller = PlatformInputDevice::GetInputDeviceTypefromPlatformOrdinal( c );
-	
-				if ( pField->m_eDataType != TitleDataFieldsDescription_t::DT_ELO )
-				{
-					ELOWarning( "ELO: %s is expected to be defined as DT_ELO\n", fieldName );
-					continue;
-				}
-
-				if ( eOp == CSSTAT_READ_STAT ) 
-				{
-					PlayerELORank_t ELORank = TitleDataFieldsDescriptionGetValue<PlayerELORank_t>( pField, pPlayerLocal );
-					ELOMsg( "ELO: TitleData ELO Read (%d, %d)  = %d\n", m, (int) controller, ELORank );
-					pRankingData->InitELORank( m, controller, ELORank );
-				}
-				else
-				{
-					PlayerELORank_t ELORank = pRankingData->ReadELORank( m, controller );
-					ELOMsg( "ELO: TitleDataELO Write (%d, %d ) = %d\n", m, (int) controller, ELORank );
-					TitleDataFieldsDescriptionSetValue<PlayerELORank_t>( pField, pPlayerLocal, ELORank );
-				}
-			}
-			else
-			{
-				Warning( "Could not find TitleDataField for %s\n", fieldName );
-			}
-		}
-
-		// Load/save the elo bracket info for game modes.
-		CFmtStr bracketInfo( TITLE_DATA_PREFIX"ELO.MODE%d.BRACKETINFO", m );
-		if ( TitleDataFieldsDescription_t const *pField = TitleDataFieldsDescriptionFindByString( pFields, bracketInfo.Access() ) ) 
-		{ 
-			if ( eOp == CSSTAT_READ_STAT ) 
-			{
-				uint16 data = TitleDataFieldsDescriptionGetValue<uint16>( pField, pPlayerLocal );
-				PlayerELOBracketInfo_t tmp;
-				V_memcpy( &tmp, &data, sizeof( uint16 ) );
-				g_PlayerRankManager.Console_SetEloBracket( (ELOGameType_t) m, tmp ); 
-				ELOMsg( "ELO: TitleData ELO Bracket Read (%d) = display: %d prev: %d count %d\n", m, 
-					tmp.m_DisplayBracket, tmp.m_PreviousBracket, tmp.m_NumGamesInBracket );
-			}
-			else
-			{
-				uint16 data = 0;
-				PlayerELOBracketInfo_t bracketInfo; 
-				if ( g_PlayerRankManager.Console_GetEloBracket( (ELOGameType_t) m, &bracketInfo ) >= 0 )
-				{
-					V_memcpy( &data, &bracketInfo, sizeof( data ) ); 
-					ELOMsg( "ELO: TitleData ELO Bracket Write (%d) = display: %d prev: %d count %d\n", m, 
-						bracketInfo.m_DisplayBracket, bracketInfo.m_PreviousBracket, bracketInfo.m_NumGamesInBracket );
-				}
-				else
-				{
-					ELOMsg( "ELO: TitleData ELO Bracket Write (%d) = No bracket info for game mode. Writing 0.", m ); 
-				}
-				TitleDataFieldsDescriptionSetValue<uint16>( pField, pPlayerLocal, data );
-			}
-		}
-		else
-		{
-			Warning( "Could not find TitleDataField for %s\n", bracketInfo.Access() );
-		}
-	}
-
-#endif // _GAMECONSOLE
-
 	return true;
 }
 
@@ -1688,81 +1017,20 @@ bool CCSClientGameStats::SyncCSRankingDataToTitleData( int iController, CSSyncSt
 // differently.  Each call to the method is the delta from the previous call.
 void CCSClientGameStats::IncrementMatchmakingData( const StatsCollection_t &stats )
 {
-#if defined ( _X360 )
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-
-	// Get the active local player.
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetActiveUserId() );
-	if ( !pPlayerLocal )
-		return;
-
-	// Get the current mode of play
-	if ( CSGameRules() )
-	{
-		// Determine if we're playing gungame progress or not, because we use different matchmaking stats for that game type.
-		MatchmakingDataType mmDataType = CSGameRules()->IsPlayingGunGameProgressive() ? MMDATA_TYPE_GGPROGRESSIVE : MMDATA_TYPE_GENERAL;
-
-		// Get the matchmaking data for the player.
-		MatchmakingData *pMMData = pPlayerLocal->GetPlayerMatchmakingData();
-
-		// Increment each of the entries by the stats collection.
-		pMMData->mContribution[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_CONTRIBUTION_SCORE];
-		pMMData->mMVPs[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_MVPS];
-		pMMData->mKills[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_KILLS];
-		pMMData->mDeaths[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_DEATHS];
-		pMMData->mHeadShots[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_KILLS_HEADSHOT];
-		pMMData->mDamage[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_DAMAGE];
-		pMMData->mShotsFired[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_SHOTS_FIRED];
-		pMMData->mShotsHit[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_SHOTS_HIT];
-		pMMData->mDominations[mmDataType][MMDATA_SCOPE_ROUND] += stats[CSSTAT_DOMINATIONS];
-	}
-#endif
 }
 
 // Get the matchmaking data for current primary user and compute the new rolling average based
 // on the data accumulated so far.
 void CCSClientGameStats::UpdateMatchmakingData( void )
 {
-#if defined ( _X360 )
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-
-	// Get the active local player.
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetActiveUserId() );
-	if ( !pPlayerLocal )
-		return;
-
-	// Get the current mode of play
-	if ( CSGameRules() )
-	{
-		// Determine if we're playing gungame progress or not, because we use different matchmaking stats for that game type.
-		MatchmakingDataType mmDataType = CSGameRules()->IsPlayingGunGameProgressive() ? MMDATA_TYPE_GGPROGRESSIVE : MMDATA_TYPE_GENERAL;
-
-		// Update the player's rolling averages for their matchmaking data.
-		pPlayerLocal->UpdatePlayerMatchmakingData( mmDataType );
-
-		// Reset the per round matchmaking data.
-		pPlayerLocal->ResetPlayerMatchmakingData( MMDATA_SCOPE_ROUND );
-	}
-#endif // _X360
 }
 
 // Reset the matchmaking data for the current primary user for the given scope.
 void CCSClientGameStats::ResetMatchmakingData( MatchmakingDataScope mmDataScope )
 {
-#if defined ( _X360 )
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-
-	// Get the active local player.
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetActiveUserId() );
-	if ( !pPlayerLocal )
-		return;
-
-	pPlayerLocal->ResetPlayerMatchmakingData( mmDataScope );
-#endif // _X360
 }
 
 // OGS data and functions
-#if !defined( _GAMECONSOLE )
 
 // WARNING: must be in sync with the CSClientCsgoGameEventType_t in .h file
 char const *g_CSClientCsgoGameEventTypeNames[] = {
@@ -2039,4 +1307,3 @@ void CCSClientGameStats::UploadRoundStats()
 	m_roundStats[0].Reset();
 }
 
-#endif

@@ -50,9 +50,6 @@ extern IHammer *g_pHammer;
 extern IPhysics *g_pPhysics;
 extern IAvi *avi;
 extern IBik *bik;
-#ifdef _PS3
-extern class IPS3SaveRestoreToUI *ps3saveuiapi;
-#endif
 extern IDedicatedExports *dedicated;
 
 //-----------------------------------------------------------------------------

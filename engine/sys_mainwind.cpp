@@ -8,27 +8,19 @@
 #include "SDL.h"
 #endif
 
-#if defined( WIN32 ) && !defined( _X360 ) && !defined( DX_TO_GL_ABSTRACTION )
+#if defined( WIN32 ) && !defined( DX_TO_GL_ABSTRACTION )
 #include "winlite.h"
 #include "xbox/xboxstubs.h"
 #endif
 
 #if defined( IS_WINDOWS_PC ) && !defined( USE_SDL )
 #include <winsock.h>
-#elif defined(_X360)
-// nothing to include for 360
 #elif defined(OSX)
 #include <Carbon/Carbon.h>
 #elif defined(LINUX)
 	#include "tier0/dynfunction.h"
 #elif defined(_WIN32)
 	#include "tier0/dynfunction.h"
-#elif defined( _PS3 )
-#include "basetypes.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#include <cell/audio.h>
-#include <sysutil/sysutil_sysparam.h>
 #else
 #error
 #endif
@@ -76,15 +68,6 @@
 #include <vgui/ILocalize.h>
 #include <vgui/ISystem.h>
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#include "snd_dev_xaudio.h"
-#include "xmp.h"
-#include "xbox/xbox_launch.h"
-#include "ixboxsystem.h"
-extern IXboxSystem *g_pXboxSystem;
-#endif
-
 #if defined( LINUX )
 #include "snd_dev_sdl.h"
 #endif
@@ -94,9 +77,7 @@ extern IXboxSystem *g_pXboxSystem;
 
 #include "tier1/fmtstr.h"
 
-#if !defined( PLATFORM_X360 )
 #include "cl_steamauth.h"
-#endif
 
 #if defined( PLATFORM_WINDOWS )
 #include "vaudio/ivaudio.h"
@@ -165,7 +146,7 @@ public:
 public:
 	void			SetMainWindow( HWND window );
 	void			SetActiveApp( bool active );
-#if defined( WIN32 ) || defined( _GAMECONSOLE )
+#if defined( WIN32 )
 	int				WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 #endif
 	// plays a video file and waits until completed. Can be interrupted by user input.
@@ -193,11 +174,7 @@ private:
 	void AttachToWindow();
 	void DetachFromWindow();
 
-#ifndef _X360
 	static const wchar_t CLASSNAME[];
-#else
-	static const char CLASSNAME[];
-#endif
 
 	bool			m_bExternallySuppliedWindow;
 
@@ -235,50 +212,7 @@ private:
 static CGame g_Game;
 IGame *game = ( IGame * )&g_Game;
 
-#if defined( _PS3 )
-extern void AbortLoadingUpdatesDueToShutdown();
-extern bool SaveUtilV2_CanShutdown();
-void PS3_sysutil_callback_forwarder( uint64 uiStatus, uint64 uiParam )
-{
-	if ( Steam3Client().SteamUtils() )
-		Steam3Client().SteamUtils()->PostPS3SysutilCallback( uiStatus, uiParam, NULL );
-	
-	if ( uiStatus == CELL_SYSUTIL_REQUEST_EXITGAME )
-	{
-		SaveUtilV2_CanShutdown();
-		AbortLoadingUpdatesDueToShutdown();
-	}
-	
-}
-int PS3_WindowProc_Proxy( xevent_t const &ev )
-{
-	// HWND = NULL
-	// message = WM_*** (arg1)
-	// LPARAM = parameter (arg2)
-	// WPARAM = 0 (arg3)
-	// Note the order of parameters to WindowProc:
-	//		WindowProc( HWND, MSG, WPARAM=arg3=0, LPARAM )
-	if ( ev.arg3 )
-	{
-		// Event has sysutil payload
-		PS3_sysutil_callback_forwarder( ev.sysutil_status, ev.sysutil_param );
-		if ( 0 && g_pMatchFramework )
-		{
-			KeyValues *kv = new KeyValues( "Ps3SysutilCallback" );
-			kv->SetUint64( "status", ev.sysutil_status );
-			kv->SetUint64( "param", ev.sysutil_param );
-			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( kv );
-		}
-	}
-	return g_Game.WindowProc( NULL, ev.arg1, ev.arg3, ev.arg2 );
-}
-#endif
-
-#if !defined( _X360 )
 const wchar_t CGame::CLASSNAME[] = L"Valve001";
-#else
-const char CGame::CLASSNAME[] = "Valve001";
-#endif
 
 // In VCR playback mode, it sleeps this amount each frame.
 int g_iVCRPlaybackSleepInterval = 0;
@@ -462,17 +396,6 @@ void CGame::DispatchInputEvent( const InputEvent_t &event )
 		}
 		break;
 
-#ifdef _PS3
-	case IE_ControllerUnplugged:
-		WindowProc( 0, WM_SYS_INPUTDEVICESCHANGED, 0, ( 1 << event.m_nData ) );
-		break;
-	case IE_PS_CameraUnplugged:
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnPSEyeChangedStatus", "CamStatus", event.m_nData ) );
-		break;
-	case IE_PS_Move_OutOfView:
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnPSMoveOutOfViewChanged", "OutOfViewBool", event.m_nData ) );
-		break;
-#endif
 	default:
 		
 		// Let vgui have the first whack at events
@@ -612,11 +535,7 @@ void VCR_HandlePlaybackMessages(
 //-----------------------------------------------------------------------------
 static LONG WINAPI CallDefaultWindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-#if defined( _GAMECONSOLE )
-	return 0;
-#else
 	return DefWindowProcW( hWnd, uMsg, wParam, lParam );
-#endif
 }
 #endif
 
@@ -626,9 +545,6 @@ static LONG WINAPI CallDefaultWindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, L
 //-----------------------------------------------------------------------------
 void XBX_HandleInvite( DWORD nUserId )
 {
-#ifdef _X360
-	g_pMatchFramework->AcceptInvite( nUserId );
-#endif //_X360
 }
 
 #if defined( WIN32 ) && !defined( USE_SDL )
@@ -759,7 +675,6 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else
 		{
-#ifndef _GAMECONSOLE
 			// Fix the window rect to have same client area as it used to have
 			// before it got minimized
 			RECT rcWindow;
@@ -771,7 +686,6 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			::AdjustWindowRect( &rcWindow, ::GetWindowLong( hWnd, GWL_STYLE ), FALSE );
 			::MoveWindow( hWnd, rcWindow.left, rcWindow.top,
 				rcWindow.right - rcWindow.left, rcWindow.bottom - rcWindow.top, FALSE );
-#endif
 		}
 		break;
 #endif
@@ -832,309 +746,6 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
-#if defined( _GAMECONSOLE )
-	case WM_XREMOTECOMMAND:
-		Cbuf_AddText( Cbuf_GetCurrentPlayer(), (const char*)lParam );
-		break;
-
-	case WM_SYS_STORAGEDEVICESCHANGED:
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnSysStorageDevicesChanged" ) );
-		break;
-
-	case WM_LIVE_CONTENT_INSTALLED:
-		{
-#if defined ( _X360 )
-			bool isArcadeTitleUnlocked = g_pXboxSystem->IsArcadeTitleUnlocked();
-			g_pXboxSystem->UpdateArcadeTitleUnlockStatus();
-			if ( !isArcadeTitleUnlocked && g_pXboxSystem->IsArcadeTitleUnlocked() )
-			{
-				g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnUnlockArcadeTitle" ) );
-			}
-#endif
-			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnDowloadableContentInstalled" ) );
-			break;
-		}
-	case WM_LIVE_MEMBERSHIP_PURCHASED:
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnLiveMembershipPurchased" ) );
-		break;
-
-	case WM_LIVE_VOICECHAT_AWAY:
-#if defined( _X360 )
-		// If we're triggered with lParam = true, we are now using LIVE Party Chat or Private Chat, not the Game Chat Channel.
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnLiveVoicechatAway", "NotTitleChat", ( lParam == 1 ) ? "1" : "0" ) );
-#endif
-		break;
-
-	case WM_XMP_PLAYBACKCONTROLLERCHANGED:
-		S_EnableMusic( lParam != 0 );
-		break;
-
-	case WM_LIVE_INVITE_ACCEPTED:
-		XBX_HandleInvite( LOWORD( lParam ) );
-		break;
-
-	case WM_SYS_SIGNINCHANGED:
-		{
-
-		xevent_SYS_SIGNINCHANGED_t *pSysEvent = reinterpret_cast< xevent_SYS_SIGNINCHANGED_t * >( lParam );
-		Assert( pSysEvent );
-		if ( !pSysEvent )
-			break;
-#if defined( _X360 ) && !defined( _CERT_NODEFINE )
-		DevMsg( "WM_SYS_SIGNINCHANGED( ptr=0x%p, 0x%08X )\n", pSysEvent, pSysEvent->dwParam );
-		for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-		{
-			XUSER_SIGNIN_STATE eState = XUserGetSigninState( k );
-			XUID xid;
-			if ( ERROR_SUCCESS != XUserGetXUID( k, &xid ) )
-				xid = 0ull;
-			DevMsg( "                    User%d [ %llx %d ] XUID=%llx state = %d\n", k, pSysEvent->xuid[k], pSysEvent->state[k], xid, eState );
-		}
-#endif
-		if ( pSysEvent->dwParam )
-		{
-			//
-			//	This is a special handler for crazy Xbox LIVE notifications
-			//	when console lost connection to Secure Gateway and tries to
-			//	re-establish its security tickets and other secure crap.
-			//	See: https://bugbait.valvesoftware.com/show_bug.cgi?id=27583
-			//	TCR 001 BAS Game Stability
-			//	Repro Steps:
-			//		1) Launch [Game] with two controllers and an extra profile that is Gold, and has no Ethernet connected.
-			//		2) From the main menu select "Start Game"
-			//		3) During gameplay have the inactive controller sign into the gold profile.
-			//	It will generate the following sign-in notification:
-			//		[DBG]: [XNET:2] AuthWarn: SG connection failed!  Retrying with fresh ticket (update 0).
-			//		[DBG]: [XNET:2] AuthWarn: XNetDnsLookup timed out for XEAS.PART.XBOXLIVE.COM
-			//		[DBG]: [XNET:2] Warning: Unexpected TGT error 0x80151904!
-			//		WM_SYS_SIGNINCHANGED( 0x00000000, 0x00000001 )
-			//			User0 XUID=0 state = 0		<--- all the users state is reported as signed out with NULL XUID
-			//		WM_LIVE_CONNECTIONCHANGED( 0x00000000, 0x80151904 )
-			//			User0 XUID=0 state = 0
-			//		Followed by:
-			//		WM_SYS_SIGNINCHANGED( 0x00000000, 0x00000002 )
-			//			User0 XUID=e0000a2e5a849e42 state = 1
-			//			User1 XUID=e0000b49fab8416e state = 1
-			//	To handle this we will ignore notifications when controller mask doesn't specify signed-in controllers.
-			//
-			bool bSomeUsersStillSignedIn = false;
-			for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-			{
-				if ( (pSysEvent->dwParam & ( 1 << k )) == 0 )
-					continue;
-
-				if ( pSysEvent->state[k] != eXUserSigninState_NotSignedIn )
-				{
-					bSomeUsersStillSignedIn = true;
-					break;
-				}
-			}
-			if ( !bSomeUsersStillSignedIn )
-			{
-				// This is the crazy notification mentioned above, discard
-				DevMsg( "WM_SYS_SIGNINCHANGED is discarded due to invalid parameters!\n" );
-				break;
-			}
-		}
-		{
-			//
-			//	This is a handler for TCR exploit of X360 blade
-			//	TCR 015 BAS Sign-In Changes
-			//	Using inactive controller to initiate sign-in, but actually
-			//	pressing last "A" button on an active controller will not
-			//	generate a sign-out message, but will generate a new sign-in
-			//	message.
-			//	We need to keep XUIDs around and if a new sign-in message is
-			//	coming from a new XUID we fake a sign-out message first and
-			//	then the new sign-in message.
-			//
-
-			MEM_ALLOC_CREDIT();
-			static XUID s_arrSignedInXUIDs[ XUSER_MAX_COUNT ] = { 0 };
-			KeyValues *pEvent = NULL;
-			for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-			{
-				XUID xidOld = s_arrSignedInXUIDs[k];
-				XUID xidNew = pSysEvent->xuid[k];
-
-				if ( xidOld )
-				{
-					// We had a ctrl signed in this slot
-					bool bSignedOut = false;
-					
-					if ( pSysEvent->state[k] == eXUserSigninState_NotSignedIn )
-					{
-						bSignedOut = true;
-					}
-					else if ( !IsEqualXUID( xidNew, xidOld ) )
-					{
-						bSignedOut = true;
-					}
-
-					// If user signed out, add to notification
-					if ( bSignedOut )
-					{
-						if ( !pEvent )
-						{
-							pEvent = new KeyValues( "OnSysSigninChange" );
-							pEvent->SetString( "action", "signout" );
-						}
-						int idx = pEvent->GetInt( "numUsers", 0 );
-						pEvent->SetInt( "numUsers", idx + 1 );
-
-						int nMask = pEvent->GetInt( "mask", 0 );
-						pEvent->SetInt( "mask", nMask | ( 1 << k ) );
-
-						char bufUserIdx[32];
-						sprintf( bufUserIdx, "user%d", idx );
-						pEvent->SetInt( bufUserIdx, k );
-					}
-				}
-
-				s_arrSignedInXUIDs[k] = xidNew;
-			}
-			if ( pEvent )
-			{
-				g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( pEvent );
-			}
-		}
-		if ( pSysEvent->dwParam )
-		{
-			MEM_ALLOC_CREDIT();
-			KeyValues *pEvent = new KeyValues( "OnSysSigninChange" );
-			pEvent->SetString( "action", "signin" );
-			for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-			{
-				if ( (pSysEvent->dwParam & ( 1 << k )) == 0 )
-					continue;
-
-				int idx = pEvent->GetInt( "numUsers", 0 );
-				pEvent->SetInt( "numUsers", idx + 1 );
-
-				int nMask = pEvent->GetInt( "mask", 0 );
-				pEvent->SetInt( "mask", nMask | ( 1 << k ) );
-
-				char bufUserIdx[32];
-				sprintf( bufUserIdx, "user%d", idx );
-				pEvent->SetInt( bufUserIdx, k );
-			}
-			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( pEvent );
-		}
-
-		}
-		break;
-
-	case WM_LIVE_CONNECTIONCHANGED:
-#if defined( _X360 ) && !defined( _CERT )
-		DevMsg( "WM_LIVE_CONNECTIONCHANGED( 0x%08X, 0x%08X )\n", wParam, lParam );
-		for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-		{
-			XUSER_SIGNIN_STATE eState = XUserGetSigninState( k );
-			XUID xid;
-			if ( ERROR_SUCCESS != XUserGetXUID( k, &xid ) )
-				xid = 0ull;
-			DevMsg( "                    User%d XUID=%llx state = %d\n", k, xid, eState );
-		}
-#endif
-
-		// Vitaliy [8/5/2008]
-		// Triggering any callbacks from inside WM_LIVE_CONNECTIONCHANGED is
-		// unreliable because access to accounts sign-in information is blocked.
-		// Repro case: user1 is signed into Live, user2 signs in with local account
-		// then WM_LIVE_CONNECTIONCHANGED will be triggered and XUserGetSigninState
-		// will be returning 0 for all user ids.
-		break;   // end case WM_LIVE_CONNECTIONCHANGED
-
-	case WM_SYS_UI:
-		if ( lParam )
-		{
-			// When the blade opens, release all buttons
-			g_pInputSystem->ResetInputState();
-
-			// Don't activate it if it's already active (a sub window may be active)
-			// Multiplayer doesn't want the UI to appear, since it can't pause anyway
-			if ( !EngineVGui()->IsGameUIVisible() && sv.IsActive() && sv.IsSinglePlayerGame() )
-			{
-				Cbuf_AddText( Cbuf_GetCurrentPlayer(), "gameui_activate" );
-			}
-		}
-		{
-		MEM_ALLOC_CREDIT();
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-			"OnSysXUIEvent", "action", lParam ? "opening" : "closed" ) );
-
-		}
-		break;
-
-	case WM_FRIENDS_FRIEND_ADDED:		// Need to update mutelist for friends changes in case of Friends-Only privileges
-	case WM_FRIENDS_FRIEND_REMOVED:
-	case WM_SYS_MUTELISTCHANGED:
-		{
-			MEM_ALLOC_CREDIT();
-			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnSysMuteListChanged" ) );
-		}
-		break;
-
-	case WM_SYS_PROFILESETTINGCHANGED:
-		{
-			MEM_ALLOC_CREDIT();
-			if ( KeyValues *kvNotify = new KeyValues( "OnSysProfileSettingsChanged" ) )
-			{
-				kvNotify->SetInt( "mask", lParam );
-				for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-				{
-					if ( lParam & ( 1 << k ) )
-					{
-						kvNotify->SetInt( CFmtStr( "user%d", k ), 1 );
-					}
-				}
-				g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( kvNotify );
-			}
-		}
-		break;
-
-	case WM_SYS_INPUTDEVICESCHANGED:
-		{
-			MEM_ALLOC_CREDIT();
-			int nDisconnectedDeviceMask = 0;
-			for ( DWORD k = 0; k < XBX_GetNumGameUsers(); ++ k )
-			{
-#ifdef _X360
-				XINPUT_CAPABILITIES caps;
-				if ( XInputGetCapabilities( XBX_GetUserId(k), XINPUT_FLAG_GAMEPAD, &caps ) == ERROR_DEVICE_NOT_CONNECTED )
-#elif defined( _PS3 )
-				if ( lParam & ( 1 << XBX_GetUserId(k) ) )	// PS3 passes disconnected controllers mask in lParam
-#else
-				Assert(0);
-				if ( 0 )
-#endif
-				{
-					nDisconnectedDeviceMask |= ( 1 << k );
-				}				
-			}
-
-			if ( nDisconnectedDeviceMask )
-			{
-				// This message is only sent when one of our active users has lost their controller connection
-				// FIXME: Only do this when the guest is at fault?  A "toast" is already presented to the user by the API otherwise.
-				g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-					"OnSysInputDevicesChanged", "mask", nDisconnectedDeviceMask ) );
-			}
-		}
-		break;
-
-#if defined( _DEMO )
-	case WM_XCONTROLLER_KEY:
-		if ( lParam )
-		{
-			// any keydown activity resets the timeout or changes into interactivbe demo mode
-			Host_RestartDemoTimeout( true );
-		}
-		bCallDefault = true;
-		break;
-#endif
-#endif
-
 #if defined( WIN32 )
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
@@ -1144,7 +755,7 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 #endif
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	case WM_DISPLAYCHANGE:
 		if ( !m_iDesktopHeight || !m_iDesktopWidth )
 		{
@@ -1176,11 +787,7 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	if ( bCallDefault )
 	{
-#ifdef _PS3
-		lRet = 0;
-#else
 		lRet = CallWindowProc( m_ChainedWindowProc, hWnd, uMsg, wParam, lParam );
-#endif
 	}
 
     // return 0 if handled message, 1 if not
@@ -1307,20 +914,12 @@ bool CGame::CreateGameWindow( void )
 #elif defined( WIN32 ) && !defined( USE_SDL )
 #ifndef DEDICATED
 
-#if !defined( _X360 )
 	WNDCLASSW wc;
-#else
-	WNDCLASS wc;
-#endif
 	memset( &wc, 0, sizeof( wc ) );
 
     wc.style         = CS_OWNDC | CS_DBLCLKS;
 
-#if !defined( _GAMECONSOLE )
     wc.lpfnWndProc   = DefWindowProcW;
-#else
-	wc.lpfnWndProc   = CallDefaultWindowProc;
-#endif
     wc.hInstance     = m_hInstance;
     wc.lpszClassName = CLASSNAME;
 
@@ -1356,13 +955,9 @@ bool CGame::CreateGameWindow( void )
 	modinfo = NULL;
 	// Oops, we didn't clean up the class registration from last cycle which
 	// might mean that the wndproc pointer is bogus
-#ifndef _X360
 	UnregisterClassW( CLASSNAME, m_hInstance );
 	// Register it again
     RegisterClassW( &wc );
-#else
-	RegisterClass( &wc );
-#endif
 
 	// Note, it's hidden
 	DWORD style = WS_POPUP | WS_CLIPSIBLINGS;
@@ -1394,15 +989,10 @@ bool CGame::CreateGameWindow( void )
 		exFlags |= WS_EX_TOOLWINDOW; // So it doesn't show up in the taskbar.
 	}
 
-#if !defined( _X360 )
 	HWND hwnd = CreateWindowExW( exFlags, CLASSNAME, uc, style, 
 		0, 0, w, h, NULL, NULL, m_hInstance, NULL );
 	// NOTE: On some cards, CreateWindowExW slams the FPU control word
 	SetupFPUControlWord();
-#else
-	HWND hwnd = CreateWindowEx( exFlags, CLASSNAME, windowName, style, 
-			0, 0, w, h, NULL, NULL, m_hInstance, NULL );
-#endif
 
 	if ( !hwnd )
 	{
@@ -1464,11 +1054,7 @@ void CGame::DestroyGameWindow()
 			m_hWindow = (HWND)0;
 		}
 
-#if !defined( _X360 )
 		UnregisterClassW( CLASSNAME, m_hInstance );
-#else
-		UnregisterClass( CLASSNAME, m_hInstance );
-#endif
 	}
 	else
 	{
@@ -1479,7 +1065,6 @@ void CGame::DestroyGameWindow()
 #endif // !DEDICATED 
 #elif defined( OSX )
 	g_pLauncherMgr->DestroyGameWindow();
-#elif defined (_PS3)
 #else
 #error
 #endif
@@ -1595,7 +1180,6 @@ bool CGame::InputAttachToGameWindow()
 #elif defined(_WIN32)
 	Assert( !"Impl me" );
 	return false;
-#elif defined(_PS3)
 #else
 #error
 #endif
@@ -1620,7 +1204,6 @@ void CGame::InputDetachFromGameWindow()
 	Assert( !"Impl me" );
 #elif defined(_WIN32)
 	Assert( !"Impl me" );
-#elif defined(_PS3)
 #else
 #error
 #endif
@@ -1682,15 +1265,11 @@ void CGame::PlayStartupVideos( void )
 		if ( windows_speaker_config.IsValid() && windows_speaker_config.GetInt() >= 5 )
 		{
 			pMilesEngine = vaudio ? vaudio->CreateMilesAudioEngine() : NULL;
-#if !defined( _GAMECONSOLE )
 			g_pBIK->SetMilesSoundDevice( pMilesEngine );
-#endif	//!defined( _GAMECONSOLE )
 		}
 		else
 		{
-#if !defined( _GAMECONSOLE )
 			g_pBIK->SetMilesSoundDevice( NULL );
-#endif //!defined( _GAMECONSOLE )
 		}
 	}
 #endif // defined( PLATFORM_WINDOWS ) && defined( BINK_VIDEO )
@@ -1700,9 +1279,7 @@ void CGame::PlayStartupVideos( void )
 #if defined( PLATFORM_WINDOWS ) && defined( BINK_VIDEO )
 	if ( pMilesEngine )
 	{
-#if !defined( _GAMECONSOLE )
 		g_pBIK->SetMilesSoundDevice( NULL );
-#endif //!defined( _GAMECONSOLE )
 		vaudio->DestroyMilesAudioEngine( pMilesEngine );
 	}
 #endif
@@ -2030,52 +1607,6 @@ bool UserRequestingMovieSkip( void )
 			g_pInputSystem->IsButtonDown( KEY_ENTER ) );
 }
 
-#if defined( _X360 )
-static char const * GetConsoleLocaleRatingsBoard()
-{
-	switch ( XGetLocale() )
-	{
-	case XC_LOCALE_AUSTRALIA: return "OFLC";
-	case XC_LOCALE_AUSTRIA: return "PEGI";
-	case XC_LOCALE_BELGIUM: return "PEGI";
-	case XC_LOCALE_BRAZIL: return "";
-	case XC_LOCALE_CANADA: return "ESRB";
-	case XC_LOCALE_CHILE: return "";
-	case XC_LOCALE_CHINA: return "";
-	case XC_LOCALE_COLOMBIA: return "";
-	case XC_LOCALE_CZECH_REPUBLIC: return "PEGI";
-	case XC_LOCALE_DENMARK: return "PEGI";
-	case XC_LOCALE_FINLAND: return "PEGI";
-	case XC_LOCALE_FRANCE: return "PEGI";
-	case XC_LOCALE_GERMANY: return "USK";
-	case XC_LOCALE_GREECE: return "PEGI";
-	case XC_LOCALE_HONG_KONG: return "";
-	case XC_LOCALE_HUNGARY: return "";
-	case XC_LOCALE_INDIA: return "";
-	case XC_LOCALE_IRELAND: return "BBFCPEGI";
-	case XC_LOCALE_ITALY: return "PEGI";
-	case XC_LOCALE_JAPAN: return "CERO";
-	case XC_LOCALE_KOREA: return "GRB";
-	case XC_LOCALE_MEXICO: return "";
-	case XC_LOCALE_NETHERLANDS: return "PEGI";
-	case XC_LOCALE_NEW_ZEALAND: return "OFLC";
-	case XC_LOCALE_NORWAY: return "PEGI";
-	case XC_LOCALE_POLAND: return "PEGI";
-	case XC_LOCALE_PORTUGAL: return "PEGI";
-	case XC_LOCALE_SINGAPORE: return "";
-	case XC_LOCALE_SLOVAK_REPUBLIC: return "PEGI";
-	case XC_LOCALE_SOUTH_AFRICA: return "";
-	case XC_LOCALE_SPAIN: return "PEGI";
-	case XC_LOCALE_SWEDEN: return "PEGI";
-	case XC_LOCALE_SWITZERLAND: return "PEGI";
-	case XC_LOCALE_TAIWAN: return "";
-	case XC_LOCALE_GREAT_BRITAIN: return "BBFCPEGI";
-	case XC_LOCALE_UNITED_STATES: return "ESRB";
-	default: return NULL;
-	}
-}
-#endif
-
 void CGame::PlayVideoListAndWait( const char *szVideoFileList, bool bNeedHealthWarning /* = false */ )
 {
 #ifndef DEDICATED
@@ -2097,41 +1628,6 @@ void CGame::PlayVideoListAndWait( const char *szVideoFileList, bool bNeedHealthW
     CGDisplayHideCursor( kCGDirectMainDisplay );
 #endif
 	
-#ifdef _X360
-	// TCR024
-	XMPOverrideBackgroundMusic();
-#endif
-
-#ifdef _GAMECONSOLE
-	// Install movie player match framework
-	extern IMatchFramework *g_pMoviePlayer_MatchFramework;
-	bool bInstalledMoviePlayerMatchFramework = false;
-	if ( !g_pMatchFramework && IsGameConsole() )
-	{
-#ifdef _X360
-		XOnlineStartup();
-#endif
-		g_pMatchFramework = g_pMoviePlayer_MatchFramework;
-		bInstalledMoviePlayerMatchFramework = true;
-	}
-#ifdef _PS3
-	int iLibAudioInitCode = cellAudioInit();
-	CellAudioOutState caosDevice = {0};
-	if ( iLibAudioInitCode >= 0 )
-	{
-		int numDevices = cellAudioOutGetNumberOfDevice( CELL_AUDIO_OUT_PRIMARY );
-		if ( numDevices > 0 )
-		{
-			int iAudioState = cellAudioOutGetState( CELL_AUDIO_OUT_PRIMARY, 0, &caosDevice );
-			if ( g_pBIK && ( iAudioState >= 0 ) )
-			{
-				g_pBIK->SetPS3SoundDevice( caosDevice.soundMode.channel );
-			}
-		}
-	}
-#endif
-#endif
-
 	characterset_t breakSet;
 	CharacterSetBuild( &breakSet, "" );
 	char moviePath[MAX_PATH];
@@ -2146,27 +1642,6 @@ void CGame::PlayVideoListAndWait( const char *szVideoFileList, bool bNeedHealthW
 		// get the path to the file and play it.
 		PlayVideoAndWait( moviePath, bNeedHealthWarning );
 	}
-
-#ifdef _GAMECONSOLE
-#ifdef _PS3
-	if ( iLibAudioInitCode >= 0 )
-	{
-		cellAudioQuit();
-	}
-#endif
-	if ( ( g_pMatchFramework == g_pMoviePlayer_MatchFramework ) && bInstalledMoviePlayerMatchFramework )
-	{
-#ifdef _X360
-		XOnlineCleanup();
-#endif
-		g_pMatchFramework = NULL;
-	}
-#endif
-
-#ifdef _X360
-	// TCR024
-	XMPRestoreBackgroundMusic();
-#endif
 
 #if defined( USE_SDL )
 	SDL_ShowCursor( CursorStateBak );
@@ -2187,48 +1662,20 @@ void CGame::PlayVideoAndWait( const char *filename, bool bNeedHealthWarning )
 {
 #if defined( BINK_VIDEO )
 
-#if defined( IS_WINDOWS_PC ) || defined( OSX ) || defined( _GAMECONSOLE )
+#if defined( IS_WINDOWS_PC ) || defined( OSX )
 	if ( !filename || !filename[0] )
 		return;
 
 	if ( !g_pBIK )
 		return;
 
-#if defined( _X360 ) && defined( _DEMO )
-	// Xbox 360 is required to show ratings from the locale specific ratings board
-	if ( char const *pszRating = Q_stristr( filename, "RATINGBOARD" ) )
-	{
-		// Determine the rating of the current locale
-		char const *szRatingBoard = GetConsoleLocaleRatingsBoard();
-		if ( !szRatingBoard || !*szRatingBoard )
-			return;
-		
-		// Format it into the buffer
-		int nRatingPrefixLen = ( pszRating - filename );
-		int numBufferBytes = nRatingPrefixLen + Q_strlen( szRatingBoard ) + 32;
-		char *pchRatingBuffer = ( char * ) stackalloc( numBufferBytes );
-		Q_snprintf( pchRatingBuffer, numBufferBytes, "%.*s%s.bik", nRatingPrefixLen, filename, szRatingBoard );
-		filename = pchRatingBuffer;	// stackalloc ensures that the buffer is valid until the function returns
-	}
-#else
 	if ( Q_stristr( filename, "RATINGBOARD" ) )
 		return;
-#endif
 
 	// Supplying a NULL context will cause Bink to allocate its own
 	// FIXME: At this point we're playing at the full volume of the computer, NOT the user's set volume in the game!
-#if defined( _X360 ) 
-	if ( Audio_CreateXAudioDevice( false ) )
-	{
-    #if defined ( BINK_VIDEO )
-		if ( !g_pBIK->HookXAudio() )
-			return;
-	#endif
-	}
-#elif defined( LINUX )
+#if defined( LINUX )
 	Audio_CreateSDLAudioDevice();
-#elif defined( _PS3 )
-	// S_Init(); // fully initialize sound system here
 #elif defined( PLATFORM_WINDOWS )
 	//BinkSoundUseDirectSound( NULL );	// Bink sound is initialized by the caller now
 #endif
@@ -2361,19 +1808,9 @@ void CGame::PlayVideoAndWait( const char *filename, bool bNeedHealthWarning )
 	// movies inadvertently 
 	bool bKeyDebounced = ( UserRequestingMovieSkip() == false );
 	bool bExitingProcess = false;
-#if defined( _DEMO ) && defined( _X360 )
-	bExitingProcess = Host_IsDemoExiting();
-#endif
 
 	while ( 1 )
 	{
-#ifdef _GAMECONSOLE
-		if ( !bExitingProcess )
-		{
-			XBX_ProcessEvents();		// Force events to be processed that will deliver us ingame invites
-			XBX_DispatchEventsQueue();	// Dispatch the events too
-		}
-#endif
 
 		// Pump messages to avoid lockups on focus change
 		g_pInputSystem->PollInputState( GetBaseLocalClient().IsActive() );
@@ -2525,10 +1962,6 @@ bool CGame::Shutdown( void )
 
 #if defined( WIN32 ) && !defined( USE_SDL )
 	m_hInstance = 0;
-#endif
-
-#ifdef _PS3
-	AbortLoadingUpdatesDueToShutdown();
 #endif
 
 	return true;

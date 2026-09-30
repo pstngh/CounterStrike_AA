@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //==================================================================//
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #undef PROTECTED_THINGS_ENABLE
 #include <windows.h>
 #endif
@@ -174,7 +174,7 @@ bool LoadAddonListFile( const char *pDirectoryName, KeyValues *&pAddons )
 //---------------------------------------------------------------------------------------------------------------------
 void CopyStagedAddons( IFileSystem *pFileSystem, const char *pModPath )
 {
-#if (defined( PLATFORM_WINDOWS ) && !defined( _X360 )  ) || defined( PLATFORM_OSX )
+#if (defined( PLATFORM_WINDOWS )  ) || defined( PLATFORM_OSX )
 
 #ifdef IS_WINDOWS_PC
 	HKEY hKey;

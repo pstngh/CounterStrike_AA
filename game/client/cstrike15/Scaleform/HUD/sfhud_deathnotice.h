@@ -11,19 +11,13 @@
 #include "strtools.h"
 
 #define DEATH_NOTICE_TEXT_MAX					512 // max number of characters in a notice text
-#if defined( _GAMECONSOLE )
-#define DEATH_NOTICE_NAME_TRUNCATE_AT			16  // number of name character displayed before truncation
-#define DEATH_NOTICE_ASSIST_NAME_TRUNCATE_AT	11  // number of name character displayed before truncation
-#define DEATH_NOTICE_ASSIST_SHORT_NAME_TRUNCATE_AT	8  // number of name character displayed before truncation
-#else
 #define DEATH_NOTICE_NAME_TRUNCATE_AT			22  // number of name character displayed before truncation
 #define DEATH_NOTICE_ASSIST_NAME_TRUNCATE_AT	18  // number of name character displayed before truncation
 #define DEATH_NOTICE_ASSIST_SHORT_NAME_TRUNCATE_AT	12  // number of name character displayed before truncation
-#endif
 
 //c9c9c9
 
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 #define DEATH_NOTICE_IMG_STRING		L" <img src='icon-%ls.png' height='16'/>"
 #define DEATH_NOTICE_FONT_STRING	L"<font color=\"%ls\">%ls</font>"
 #define DEATH_NOTICE_ATTACKER_PLUS_ASSISTER	L"%ls <font color='#bababa'>+</font> %ls"

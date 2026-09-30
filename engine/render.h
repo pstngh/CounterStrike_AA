@@ -165,12 +165,7 @@ public:
 	virtual void	DrawSceneEnd( void ) = 0;
 
 	virtual IWorldRenderList * CreateWorldList() = 0;
-#if defined(_PS3)
-	virtual IWorldRenderList * CreateWorldList_PS3( int viewID ) = 0;
-	virtual void	BuildWorldLists_PS3_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth ) = 0;
-#else
 	virtual void	BuildWorldLists_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth ) = 0;
-#endif
 	virtual void	BuildWorldLists( IWorldRenderList *pList, WorldListInfo_t* pInfo, int iForceViewLeaf, const VisOverrideData_t* pVisData, bool bShadowDepth, float *pReflectionWaterHeight ) = 0;
 	virtual void	DrawWorldLists( IMatRenderContext *pRenderContext, IWorldRenderList *pList, unsigned long flags, float waterZAdjust ) = 0;
 

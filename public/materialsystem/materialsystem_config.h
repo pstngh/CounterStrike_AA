@@ -11,10 +11,6 @@
 #pragma once
 #endif
 
-#if (!defined(_CERT)) && defined (_X360)
-#define X360_ALLOW_TIMESTAMPS 1				// Comment in to enable showfps 12 etc...
-#endif
-
 #include "materialsystem/imaterialsystem.h"
 
 #define MATERIALSYSTEM_CONFIG_VERSION "VMaterialSystemConfig004"

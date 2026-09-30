@@ -5,9 +5,7 @@
 //===========================================================================//
 
 #include <stdlib.h>
-#ifndef _PS3
 #include <malloc.h>
-#endif
 #include "materialsystem_global.h"
 #include "string.h"
 #include "shaderapi/ishaderapi.h"
@@ -36,14 +34,10 @@
 #include "filesystem/IQueuedLoader.h"
 
 // Need lightmaps access here
-#ifndef _PS3
 #define MATSYS_INTERNAL
-#endif
 #include "cmatlightmaps.h"
 #include "cmaterialsystem.h"
-#ifndef _PS3
 #undef MATSYS_INTERNAL
-#endif
 
 #include "tier0/memdbgon.h"
 
@@ -290,7 +284,7 @@ public:
 					float u = x * flInvWidth - 1.0f;
 					float oow = 1.0f / sqrt( 1.0f + u*u + v*v );
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _PS3 )
+#if defined( DX_TO_GL_ABSTRACTION )
 					float flX = (255.0f * 0.5 * (u*oow + 1.0f) + 0.5f);
 					float flY = (255.0f * 0.5 * (v*oow + 1.0f) + 0.5f);
 					float flZ = (255.0f * 0.5 * (oow + 1.0f) + 0.5f);
@@ -1501,15 +1495,6 @@ ITextureInternal *CTextureManager::CreateRenderTargetTexture(
 			ITextureInternal::ChangeRenderTarget( pTexture, w, h, sizeMode, fmt, type, 
 					textureFlags, renderTargetFlags );
 
-#ifdef _PS3
-			if ( pRTName[0] == '^' )
-			{
-				// Alias raw buffer
-				pTexture->Ps3gcmRawBufferAlias( pRTName );
-				return pTexture;
-			}
-#endif
-
 
 			// download if ready
 			pTexture->Download();
@@ -1527,14 +1512,6 @@ ITextureInternal *CTextureManager::CreateRenderTargetTexture(
 	m_TextureList.Insert( pTexture->GetName(), pTexture );
 
 	// NOTE: This will download the texture only if the shader api is ready
-#ifdef _PS3
-	if ( pRTName && pRTName[0] == '^' )
-	{
-		// Alias raw buffer
-		pTexture->Ps3gcmRawBufferAlias( pRTName );
-	}
-	else
-#endif
 	{
 		pTexture->Download();
 	}

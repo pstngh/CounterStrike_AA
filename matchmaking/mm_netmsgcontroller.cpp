@@ -223,7 +223,7 @@ void CMatchNetworkMsgControllerBase::PackageGameDetailsForQOS( KeyValues *pSetti
 	buf.PutInt( 0 );
 }
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 static void UnpackGameDetailsFromSteamLobbyInKey( uint64 uiLobbyID, char const *szPath, KeyValues *pKey )
 {
 	// Iterate over all the values
@@ -257,7 +257,7 @@ static void UnpackGameDetailsFromSteamLobbyInKey( uint64 uiLobbyID, char const *
 
 KeyValues * CMatchNetworkMsgControllerBase::UnpackGameDetailsFromSteamLobby( uint64 uiLobbyID )
 {
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	// Make sure the basic metadata is set on the lobby
 	char const *arrRequiredMetadata[] = { "system:network", "system:access" };
 	for ( int k = 0; k < ARRAYSIZE( arrRequiredMetadata ); ++ k )

@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 // Steam uses C-runtime calls in headers, need to remap
 	#ifdef strncpy
 		#undef strncpy

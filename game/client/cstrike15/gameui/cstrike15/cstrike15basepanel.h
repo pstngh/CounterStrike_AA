@@ -12,10 +12,6 @@
 #pragma once
 #endif
 
-#ifdef _PS3
-#include "steam/steam_api.h"
-#endif
-
 #include "basepanel.h"
 #include "matchmaking/imatchevents.h"
 #if defined( INCLUDE_SCALEFORM )
@@ -23,11 +19,6 @@
 #endif
 #include "GameEventListener.h"
 #include "splitscreensignon.h"
-
-#ifdef _PS3
-void MarkRegisteredKnownConsoleUserSteamIDToUnregisterLater( CSteamID steamIdConsoleUser );
-void ConfigurePSNPresenceStatusBasedOnCurrentSessionState( bool bCanUseSession = true );
-#endif
 
 class SplitScreenSignonWidget;
 //-----------------------------------------------------------------------------
@@ -49,14 +40,6 @@ public:
 	virtual void OnEvent( KeyValues *pEvent );
 
 	virtual void FireGameEvent( IGameEvent *event );
-
-#if defined( _X360 )
-	// Prompts the user via the Xbox Guide to switch to Game Chat channel, as necessary
-	void	Xbox_PromptSwitchToGameVoiceChannel( void );
-
-	// Is the local user using Party Chat currently?
-	bool	Xbox_IsPartyChatEnabled( void );
-#endif // _X360
 
 #if defined(INCLUDE_SCALEFORM)
 	virtual void OnOpenCreateStartScreen( void ); // [jason] provides the "Press Start" screen interface
@@ -248,23 +231,6 @@ protected:
 
 private:
 
-#if defined ( _PS3 )&& !defined ( NO_STEAM )
-
-	void OnGameBootCheckInvites();
-	void OnGameBootInstallTrophies();
-	void ShowFatalError( uint32 unSize );
-	void PerformPS3GameBootWork();
-	void OnGameBootVerifyPs3DRM();
-	void OnGameBootDrmVerified();
-	void OnGameBootSaveContainerReady();
-
-	STEAM_CALLBACK_MANUAL( CCStrike15BasePanel, Steam_OnUserStatsReceived, UserStatsReceived_t, m_CallbackOnUserStatsReceived );
-	STEAM_CALLBACK_MANUAL( CCStrike15BasePanel, Steam_OnPS3TrophiesInstalled, PS3TrophiesInstalled_t, m_CallbackOnPS3TrophiesInstalled );
-	STEAM_CALLBACK_MANUAL( CCStrike15BasePanel, Steam_OnPSNGameBootInviteResult, PSNGameBootInviteResult_t, m_CallbackOnPSNGameBootInviteResult );
-	STEAM_CALLBACK_MANUAL( CCStrike15BasePanel, Steam_OnLobbyInvite, LobbyInvite_t, m_CallbackOnLobbyInvite );
-
-#endif// _PS3 && !NO_STEAM
-
 	SplitScreenSignonWidget* m_pSplitScreenSignon;
 	bool	m_bStartLogoIsShowing;
 	bool m_bServerBrowserWarningRaised;
@@ -273,13 +239,8 @@ private:
 	bool m_bGameIsShuttingDown;
 };
 
-#ifdef _GAMECONSOLE
-void GameStats_UserStartedPlaying( float flTime );
-void GameStats_ReportAction( char const *szReportAction );
-#else
 inline void GameStats_UserStartedPlaying( float flTime ) {}
 inline void GameStats_ReportAction( char const *szReportAction ) {}
-#endif
 
 #endif // CSTRIKE15BASEPANEL_H
 

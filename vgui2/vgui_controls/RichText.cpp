@@ -8,9 +8,6 @@
 #include "vgui_controls/pch_vgui_controls.h"
 #include "vgui/ILocalize.h"
 #include <vstdlib/vstrtools.h>
-#ifdef _PS3
-#include <wctype.h>
-#endif
 
 // memdbgon must be the last include file in a .cpp file
 #include "tier0/memdbgon.h"
@@ -611,7 +608,7 @@ int RichText::DrawString(int iFirst, int iLast, TRenderState &renderState, HFont
 	for ( int i = iFirst; i <= iLast; i++ )
 	{
 		wchar_t ch = m_TextStream[i];
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
 		wchar_t chBefore = 0;
 		wchar_t chAfter = 0;
 		if ( i > 0 )
@@ -1304,7 +1301,7 @@ void RichText::RecalculateLineBreaks()
 		}
 		
 		// get the width
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
 		wchar_t chBefore = 0;
 		wchar_t chAfter = 0;
 		if ( i > 0 )

@@ -84,7 +84,7 @@ BEGIN_BYTESWAP_DATADESC_( VTFFileHeaderPS3_t, VTFFileBaseHeader_t )
 	DEFINE_FIELD( compressedSize, FIELD_INTEGER ),
 END_DATADESC()
 
-#if defined( POSIX ) || defined( _X360 )
+#if defined( POSIX )
 // stub functions
 const char* S3TC_GetBlock(
         const void *pCompressed,
@@ -297,11 +297,6 @@ CVTFTexture::CVTFTexture()
 	m_pLowResImageData = NULL;
 	m_nLowResImageAllocSize = 0;
 
-#if defined( _X360 ) || defined ( _PS3 )
-	m_nMipSkipCount = 0;
-	*(unsigned int *)m_LowResImageSample = 0;
-#endif
-
 	Assert( m_arrResourcesInfo.Count() == 0 );
 	Assert( m_arrResourcesData.Count() == 0 );
 	Assert( m_arrResourcesData_ForReuse.Count() == 0 );
@@ -315,12 +310,10 @@ CVTFTexture::~CVTFTexture()
 	Shutdown();
 }
 
-#ifndef PLATFORM_X360
 bool CVTFTexture::IsPreTiled() const
 {
 	return false; 
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Compute the mip count based on the size + flags
@@ -462,10 +455,6 @@ bool CVTFTexture::Init( int nWidth, int nHeight, int nDepth, ImageFormat fmt, in
 
 	m_nFaceCount = (iFlags & TEXTUREFLAGS_ENVMAP) ? CUBEMAP_FACE_COUNT : 1;
 
-#if defined( _X360 ) || defined ( _PS3 )
-	m_nMipSkipCount = 0;
-#endif
-
 	// Need to do this because Shutdown deallocates the low-res image
 	m_nLowResImageWidth = m_nLowResImageHeight = 0;
 
@@ -554,10 +543,6 @@ void CVTFTexture::ReleaseResources()
 //-----------------------------------------------------------------------------
 void CVTFTexture::Shutdown()
 {
-#if defined( _GAMECONSOLE )
-	// must be first to ensure X360/PS3 aliased pointers are unhooked, otherwise memory corruption
-	ReleaseImageMemory();
-#endif
 
 	delete[] m_pImageData;
 	m_pImageData = NULL;
@@ -934,7 +919,7 @@ static bool ReadHeaderFromBufferPastBaseHeader( CUtlBuffer &buf, VTFFileHeader_t
 	{
 		buf.Get( pBuf, sizeof(VTFFileHeaderV7_2_t) - sizeof(VTFFileBaseHeader_t) );
 
-		#if defined( _X360 ) || defined (POSIX)
+		#if defined (POSIX)
 			// read 15 dummy bytes to be properly positioned with 7.2 PC data
 			byte dummy[15];
 			buf.Get( dummy, 15 );
@@ -945,7 +930,7 @@ static bool ReadHeaderFromBufferPastBaseHeader( CUtlBuffer &buf, VTFFileHeader_t
 		// previous version 7.0 or 7.1
 		buf.Get( pBuf, sizeof(VTFFileHeaderV7_1_t) - sizeof(VTFFileBaseHeader_t) );
 
-		#if defined( _X360 ) || defined (POSIX)
+		#if defined (POSIX)
 			// read a dummy byte to be properly positioned with 7.0/1 PC data
 			byte dummy;
 			buf.Get( &dummy, 1 );

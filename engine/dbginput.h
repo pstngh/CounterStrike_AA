@@ -4,9 +4,6 @@
 #define DBGINPUT_HDR
 
 #include "threadtools.h"
-#ifdef _PS3
-#include "sys/tty.h"
-#endif
 
 class CDebugInputThread: public CThread
 {
@@ -32,17 +29,6 @@ public:
 	
 	virtual int Run( void )
 	{
-#ifdef _PS3	
-		char buf[1000];
-		uint read;
-		while( !m_bStop && CELL_OK == sys_tty_read( SYS_TTYP3 , buf, sizeof(buf) - 1, &read ) )
-		{
-			m_mx.Lock();
-			buf[ MIN( read, sizeof( buf ) - 1 ) ] = '\0';
-			m_inputString = buf;
-			m_mx.Unlock();
-		}
-#endif
 		return 0;
 	}
 };

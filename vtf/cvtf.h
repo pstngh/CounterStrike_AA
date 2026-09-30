@@ -258,18 +258,6 @@ public:
 
 	virtual bool IsPreTiled() const;
 
-#if defined( _GAMECONSOLE )
-	virtual int UpdateOrCreate( const char *pFilename, const char *pPathID = NULL, bool bForce = false );
-	virtual int FileSize( bool bPreloadOnly, int nMipSkipCount ) const;
-	virtual bool UnserializeFromBuffer( CUtlBuffer &buf, bool bBufferIsVolatile, bool bHeaderOnly, bool bPreloadOnly, int nMipSkipCount );
-	virtual int MappingWidth() const;
-	virtual int MappingHeight() const;
-	virtual int MappingDepth() const;
-	virtual int MipSkipCount() const;
-	virtual unsigned char *LowResImageSample();
-	virtual void ReleaseImageMemory();
-#endif
-
 private:
 	// Unserialization
 	bool ReadHeader( CUtlBuffer &buf, VTFFileHeader_t &header );
@@ -366,15 +354,6 @@ private:
 	// Removes the resource entry info if it's present
 	bool RemoveResourceEntryInfo( unsigned int eType );
 
-#if defined( _X360 )
-	bool ReadHeader( CUtlBuffer &buf, VTFFileHeaderX360_t &header );
-	bool LoadImageData( CUtlBuffer &buf, bool bBufferIsVolatile, int nMipSkipCount );
-#elif defined ( _PS3 )
-	bool ReadHeader( CUtlBuffer &buf, VTFFileHeaderPS3_t &header );
-	bool LoadImageData( CUtlBuffer &buf, bool bBufferIsVolatile, int nMipSkipCount );
-	int GetImageOffset() const;
-#endif
-
 private:
 	// This is to make sure old-format .vtf files are read properly
 	int				m_nVersion[2];
@@ -413,14 +392,6 @@ private:
 	float			m_flAlphaHiFreqThreshhold;
 
 	CByteswap		m_Swap;
-
-#if defined( _X360 ) || defined ( _PS3 )
-	int				m_iPreloadDataSize;
-	int				m_iCompressedSize;
-	// resolves actual dimensions to/from mapping dimensions due to pre-picmipping
-	int				m_nMipSkipCount;
-	unsigned char	m_LowResImageSample[4];
-#endif
 
 	CUtlVector< ResourceEntryInfo > m_arrResourcesInfo;
 

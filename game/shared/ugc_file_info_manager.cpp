@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "ugc_file_info_manager.h"
 
-#if !defined (NO_STEAM) && !defined ( _PS3 )
+#if !defined (NO_STEAM)
 
 CWorkshopFileInfoManager::CWorkshopFileInfoManager( IWorkshopFileInfoManagerCallbackInterface *pCallbackInterface ) :
 	m_bActiveVotingRequest( false ),
@@ -53,8 +53,6 @@ bool CWorkshopFileInfoManager::AddFileInfoQuery( CBasePublishedFileRequest *pReq
 	
 	return false;
 }
-
-#if !defined( _GAMECONSOLE )
 
 //-----------------------------------------------------------------------------
 // Purpose: Callbacks for retrieving information about a published file
@@ -182,15 +180,12 @@ void CWorkshopFileInfoManager::Steam_OnGetPublishedItemVoteDetails( RemoteStorag
 	m_bActiveVotingRequest = false;
 }
 
-#endif // !_GAMECONSOLE
-
 //-----------------------------------------------------------------------------
 // Purpose: Move our information requests forward
 //-----------------------------------------------------------------------------
 void CWorkshopFileInfoManager::UpdatePublishedFileInfoQueries( void )
 {
 #ifndef NO_STEAM
-#if !defined( _GAMECONSOLE )
 	// If we have queries to service and none are in flight, start a new query
 	if ( m_vecPublishedFileInfoQueryList.Count() && m_pActivePublishedFileRequest == NULL )
 	{
@@ -216,7 +211,6 @@ void CWorkshopFileInfoManager::UpdatePublishedFileInfoQueries( void )
 			break;
 		}
 	}
-#endif // !_GAMECONSOLE
 #endif
 }
 
@@ -229,8 +223,6 @@ void CWorkshopFileInfoManager::UpdatePublishedFileVotingInfoQueries( void )
 	if ( m_vecVotingInfoRequests.Count() == 0 )
 		return;
 
-#if !defined( _GAMECONSOLE )
-	
 	// If we have queries to service and none are in flight, start a new query
 	if ( m_bActiveVotingRequest == false ) // FIXME: Need to only let one be active at a time
 	{
@@ -257,7 +249,6 @@ void CWorkshopFileInfoManager::UpdatePublishedFileVotingInfoQueries( void )
 		}
 	}
 
-#endif // !_GAMECONSOLE
 }
 
 //-----------------------------------------------------------------------------
@@ -290,9 +281,7 @@ bool CWorkshopFileInfoManager::AddFileVoteInfoRequest( const PublishedFileInfo_t
 			return true;
 	}
 
-#if !defined( _GAMECONSOLE )	
 		m_vecVotingInfoRequests.Insert( pInfo->m_nPublishedFileId );
-#endif
 
 	Log_Msg( LOG_WORKSHOP, "[BaseModPanel] Added voting info query for %llu\n", pInfo->m_nPublishedFileId );
 	return false;

@@ -92,10 +92,6 @@ public:
 	int			m_nUnscaledHeight;
 
 	// X360 csm resolve offsets
-#if defined(_X360)
-	int			xCsmDstOffset;
-	int			yCsmDstOffset;
-#endif
 
 // the rest are only used by 3D views
 

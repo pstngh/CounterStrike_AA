@@ -208,12 +208,10 @@ IAudioDevice2 *CAudioDeviceList::CreateDevice( audio_device_init_params_t &param
 	Assert( IsValid() );
 	int nSubsystem = m_nSubsystem;
 
-#if !defined( _GAMECONSOLE )
 	if ( params.m_bOverrideDevice )
 	{
 		nSubsystem = params.m_nOverrideSubsystem;
 	}
-#endif
 #if IS_WINDOWS_PC
 	// try xaudio2
 	if ( nSubsystem == AUDIO_SUBSYSTEM_XAUDIO )

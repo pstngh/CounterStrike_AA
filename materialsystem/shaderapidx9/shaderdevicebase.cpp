@@ -23,10 +23,6 @@
 #include "vjobs_interface.h"
 #include "winutils.h"
 
-#ifdef _X360
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -38,12 +34,8 @@ CShaderDeviceBase *g_pShaderDevice;
 CShaderAPIBase *g_pShaderAPI;
 CShaderDeviceMgrBase *g_pShaderDeviceMgr;
 IShaderShadow *g_pShaderShadow;
-#if !defined( _PS3 )
 IShaderUtil* g_pShaderUtil;		// The main shader utility interface
 IVJobs * g_pVJobs;
-#else
-extern IVJobs * g_pVJobs;
-#endif
 
 bool g_bUseShaderMutex = false;	// Shader mutex globals
 bool g_bShaderAccessDisallowed;
@@ -83,7 +75,7 @@ static void InitShaderAPICVars( )
 //-----------------------------------------------------------------------------
 // Read dx support levels
 //-----------------------------------------------------------------------------
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 #define SUPPORT_CFG_FILE "dxsupport_mac.cfg"
 // TODO: make this different for Mac?
 #define SUPPORT_CFG_OVERRIDE_FILE "dxsupport_override.cfg"
@@ -99,7 +91,7 @@ static void InitShaderAPICVars( )
 CShaderDeviceMgrBase::CShaderDeviceMgrBase()
 {
 	m_pDXSupport = NULL;
-#if defined( _PS3 ) || defined( _OSX )
+#if defined( _OSX )
 	g_pShaderDeviceMgr = this;
 #endif
 }
@@ -151,10 +143,8 @@ bool CShaderDeviceMgrBase::Connect( CreateInterfaceFn factory )
 	ConnectTier1Libraries( &actualFactory, 1 );
 	InitShaderAPICVars();
 	ConnectTier2Libraries( &actualFactory, 1 );
-#if !defined( _PS3 )
 	if ( !g_pShaderUtil )
 		g_pShaderUtil = (IShaderUtil*)ShaderDeviceFactory( SHADER_UTIL_INTERFACE_VERSION, NULL );
-#endif
 	if ( !g_pVJobs )
 		g_pVJobs = (IVJobs *)ShaderDeviceFactory( VJOBS_INTERFACE_VERSION, NULL );
 	
@@ -177,10 +167,8 @@ void CShaderDeviceMgrBase::Disconnect()
 {
 	LOCK_SHADERAPI();
 
-#if !defined( _PS3 )
 	g_pShaderDeviceMgr = NULL;
 	g_pShaderUtil = NULL;
-#endif
 	DisconnectTier2Libraries();
 	ConVar_Unregister();
 	DisconnectTier1Libraries();
@@ -526,7 +514,6 @@ void CShaderDeviceMgrBase::LoadHardwareCaps( KeyValues *pGroup, HardwareCaps_t &
 	if( !pGroup )
 		return;
 
-#ifndef _PS3
 	// don't just blanket kill clip planes on POSIX, only shoot them down if we're running ARB, or asked for nouserclipplanes.
 	//FIXME need to take into account the caps bit that GLM can now provide, so NV can use normal clipping and ATI can fall back to fastclip.
 	if ( CommandLine()->FindParm("-arbmode") || CommandLine()->CheckParm( "-nouserclip" ) )
@@ -537,7 +524,6 @@ void CShaderDeviceMgrBase::LoadHardwareCaps( KeyValues *pGroup, HardwareCaps_t &
 	{
 		caps.m_UseFastClipping = ReadBool( pGroup, "setting.NoUserClipPlanes", caps.m_UseFastClipping );
 	}
-#endif
 
 	caps.m_bNeedsATICentroidHack = ReadBool( pGroup, "setting.CentroidHack", caps.m_bNeedsATICentroidHack );
 	caps.m_bDisableShaderOptimizations = ReadBool( pGroup, "setting.DisableShaderOptimizations", caps.m_bDisableShaderOptimizations );
@@ -683,13 +669,11 @@ bool CShaderDeviceMgrBase::GetRecommendedVideoConfig( int nAdapter, int nVendorI
 		GetModeInfo( &configData.displayModes[i], nAdapter, i );
 	}
 	
-#if !defined( _X360 )
 	// Call into the video.cfg file to setup the video config cvars.
 	RecommendedConfig( configData );
 
 	// Update the convars.
 	UpdateVideoConfigConVars( configData.pConfigKeys );
-#endif
 
 	return true;
 //#endif
@@ -737,10 +721,8 @@ bool CShaderDeviceMgrBase::GetRecommendedConfigurationInfo( int nAdapter, int nD
 		GetModeInfo( &configData.displayModes[i], nAdapter, i );
 	}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 	// Call into the video.cfg file to setup the video config cvars.
 	RecommendedConfig( configData );
-#endif
 
 	return true;
 }
@@ -999,7 +981,6 @@ static BOOL CALLBACK EnumWindowsProcNotThis( VD3DHWND hWnd, LPARAM lParam )
 #ifdef USE_ACTUAL_DX
 static LRESULT CALLBACK ShaderDX8WndProc(VD3DHWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-#if !defined( _X360 )
 	// FIXME: Should these IPC messages tell when an app has focus or not?
 	// If so, we'd want to totally disable the shader api layer when an app
 	// doesn't have focus.
@@ -1033,7 +1014,6 @@ static LRESULT CALLBACK ShaderDX8WndProc(VD3DHWND hWnd, UINT msg, WPARAM wParam,
 	}
 
 	return DefWindowProc( hWnd, msg, wParam, lParam );
-#endif
 }
 #endif
 
@@ -1045,7 +1025,6 @@ void CShaderDeviceBase::InstallWindowHook( void* hWnd )
 {
 	Assert( m_hWndCookie == NULL );
 #ifdef USE_ACTUAL_DX
-#if !defined( _X360 )
 	VD3DHWND hParent = GetTopmostParentWindow( (VD3DHWND)hWnd );
 
 	// Attach a child window to the parent; we're gonna store special info there
@@ -1070,13 +1049,11 @@ void CShaderDeviceBase::InstallWindowHook( void* hWnd )
 	// Marks it as a material system window
 	SetWindowLongPtr( (VD3DHWND)m_hWndCookie, GWLP_USERDATA, MATERIAL_SYSTEM_WINDOW_ID );
 #endif
-#endif
 }
 
 void CShaderDeviceBase::RemoveWindowHook( void* hWnd )
 {
 #ifdef USE_ACTUAL_DX
-#if !defined( _X360 )
 	if ( m_hWndCookie )
 	{
 		DestroyWindow( (VD3DHWND)m_hWndCookie ); 
@@ -1087,7 +1064,6 @@ void CShaderDeviceBase::RemoveWindowHook( void* hWnd )
 	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr( hParent, GWLP_HINSTANCE );
 	UnregisterClass( "shaderdx8", hInst );
 #endif
-#endif
 }
 
 
@@ -1097,7 +1073,6 @@ void CShaderDeviceBase::RemoveWindowHook( void* hWnd )
 void CShaderDeviceBase::SendIPCMessage( IPCMessage_t msg )
 {
 #ifdef USE_ACTUAL_DX
-#if !defined( _X360 )
 	// Gotta send this to all windows, since we don't know which ones
 	// are material system apps...
 	if ( msg != EVICT_MESSAGE )
@@ -1108,7 +1083,6 @@ void CShaderDeviceBase::SendIPCMessage( IPCMessage_t msg )
 	{
 		EnumWindows( EnumWindowsProcNotThis, (DWORD)msg );
 	}
-#endif
 #endif
 }
 

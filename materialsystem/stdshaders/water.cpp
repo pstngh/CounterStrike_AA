@@ -626,26 +626,14 @@ BEGIN_VS_SHADER( Water_DX90,
 			DECLARE_DYNAMIC_VERTEX_SHADER( water_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER( water_vs20 );
 
-#ifdef _PS3
-			CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-#else
 			CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
-#endif
 
 			bool bFlashlightShadows = false;
 			bool bUberlight = false;
 			if( hasFlashlight )
 			{
-#ifdef _PS3
-				CCommandBufferBuilder< CFixedCommandStorageBuffer< 256 > > flashlightECB;
-#endif
 
 				pShaderAPI->GetFlashlightShaderInfo( &bFlashlightShadows, &bUberlight );
-#ifdef _PS3
-				{
-					flashlightECB.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4 );
-				}
-#endif
 				if( IsX360())
 				{
 					DynamicCmdsOut.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4 );
@@ -664,18 +652,9 @@ BEGIN_VS_SHADER( Water_DX90,
 				state.m_bFlashlightNoLambert = false;
 				state.m_bSinglePassFlashlight = true;
 
-#ifdef _PS3
-				{
-					flashlightECB.SetPixelShaderFlashlightState( state );
-					flashlightECB.End();
-
-					ShaderApiFast( pShaderAPI )->ExecuteCommandBufferPPU( flashlightECB.Base() );
-				}
-#else
 				{
 					DynamicCmdsOut.SetPixelShaderFlashlightState( state );
 				}
-#endif
 				DynamicCmdsOut.SetPixelShaderConstant( 10, FLASHLIGHTTINT );
 			}
 
@@ -905,32 +884,9 @@ BEGIN_VS_SHADER( Water_DX90,
 
 		if ( ( bReflection || bRefraction || bEnvMap ) && !UsingEditor( params ) && !bForceCheap )
 		{
-			#ifdef _GAMECONSOLE 
-			{
-				if ( IS_FLAG_SET( MATERIAL_VAR_PSEUDO_TRANSLUCENT ) )
-				{
-					// Do not render pseudo translucent water during the auto Z pass on Xbox 360
-					if ( pShaderAPI )
-					{
-						pShaderAPI->EnablePredication( false, true );
-					}
-				}
-			}
-			#endif // _GAMECONSOLE 
 
 			DrawReflectionRefraction( params, pShaderShadow, pShaderAPI, bReflection, bRefraction );
 
-			#ifdef _GAMECONSOLE 
-			{
-				if ( IS_FLAG_SET( MATERIAL_VAR_PSEUDO_TRANSLUCENT ) )
-				{
-					if ( pShaderAPI )
-					{
-						pShaderAPI->DisablePredication();
-					}
-				}
-			}
-			#endif // _GAMECONSOLE 
 		}
 		else
 		{

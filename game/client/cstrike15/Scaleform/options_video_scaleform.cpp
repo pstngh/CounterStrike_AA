@@ -23,9 +23,7 @@
 #include "materialsystem/materialsystem_config.h"
 #include "vgui/ISurface.h"
 
-#ifndef _GAMECONSOLE
 #include "steam/steam_api.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -379,7 +377,6 @@ void COptionsVideoScaleform::SetChoiceWithConVar( OptionChoice_t * pOption, bool
 
 void COptionsVideoScaleform::ResetToDefaults( void )
 {
-#if !defined( _GAMECONSOLE )
 	SF_FORCE_SPLITSCREEN_PLAYER_GUARD( m_iSplitScreenSlot );
 
 	m_bOptionsChanged = true;
@@ -454,7 +451,6 @@ void COptionsVideoScaleform::ResetToDefaults( void )
 	}
 
 	return;
-#endif // !defined( _GAMECONSOLE )
 }
 
 
@@ -650,14 +646,10 @@ void COptionsVideoScaleform::SetAAMode( int nIndex )
 int COptionsVideoScaleform::FindReflection( void )
 {
 	int nResult = -1;
-#ifndef _GAMECONSOLE
 	SplitScreenConVarRef r_waterforceexpensive( "r_waterforceexpensive" );
-#endif
 	SplitScreenConVarRef r_waterforcereflectentities( "r_waterforcereflectentities" );
 
-#ifndef _GAMECONSOLE
 	if ( r_waterforceexpensive.GetBool( 0 ) )
-#endif
 	{
 		if ( r_waterforcereflectentities.GetBool( 0 ) )
 		{
@@ -668,12 +660,10 @@ int COptionsVideoScaleform::FindReflection( void )
 			nResult = 1;
 		}
 	}
-#ifndef _GAMECONSOLE
 	else
 	{
 		nResult = 0;
 	}
-#endif
 
 	return nResult;
 }
@@ -683,21 +673,15 @@ void COptionsVideoScaleform::SetReflection( int nIndex )
 	switch( nIndex )
 	{
 	case 0:
-#ifndef _GAMECONSOLE
 		ApplyChangesToSystemConVar( "r_waterforceexpensive", false );
-#endif
 		ApplyChangesToSystemConVar( "r_waterforcereflectentities", false );
 		break;
 	case 1:
-#ifndef _GAMECONSOLE
 		ApplyChangesToSystemConVar( "r_waterforceexpensive", true );
-#endif
 		ApplyChangesToSystemConVar( "r_waterforcereflectentities", false );
 		break;
 	case 2:
-#ifndef _GAMECONSOLE
 		ApplyChangesToSystemConVar( "r_waterforceexpensive", true );
-#endif
 		ApplyChangesToSystemConVar( "r_waterforcereflectentities", true );
 		break;
 	default:

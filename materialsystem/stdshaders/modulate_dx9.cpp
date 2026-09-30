@@ -13,10 +13,8 @@
 
 #include "cpp_shader_constant_register_map.h"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 	#include "modulate_ps30.inc"
 	#include "unlitgeneric_vs30.inc"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -185,9 +183,7 @@ BEGIN_VS_SHADER( Modulate_DX9,
 
 				pShaderShadow->VertexShaderVertexFormat( flags, numTexCoords, NULL, userDataSize );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 				if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( unlitgeneric_vs20 );
 					SET_STATIC_VERTEX_SHADER_COMBO( VERTEXCOLOR, bVertexColorOrAlpha ? 1 : 0 );
@@ -204,7 +200,6 @@ BEGIN_VS_SHADER( Modulate_DX9,
 						SET_STATIC_PIXEL_SHADER( modulate_ps20 );
 					}
 				}
-#if !defined( _X360 ) && !defined( _PS3 )
 				else
 				{
 					SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
@@ -217,7 +212,6 @@ BEGIN_VS_SHADER( Modulate_DX9,
 					DECLARE_STATIC_PIXEL_SHADER( modulate_ps30 );
 					SET_STATIC_PIXEL_SHADER( modulate_ps30 );
 				}
-#endif
 
 				// We need to fog to *white* regardless of overbrighting...
 				if( bMod2X )
@@ -268,9 +262,7 @@ BEGIN_VS_SHADER( Modulate_DX9,
 				float vVertexColor[4] = { bVertexColorOrAlpha ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
 				pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, vVertexColor, 1 );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 				if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 				{
 					DECLARE_DYNAMIC_VERTEX_SHADER( unlitgeneric_vs20 );
 					SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, pShaderAPI->GetCurrentNumBones() > 0 );
@@ -290,7 +282,6 @@ BEGIN_VS_SHADER( Modulate_DX9,
 						SET_DYNAMIC_PIXEL_SHADER( modulate_ps20 );
 					}
 				}
-#if !defined( _X360 ) && !defined( _PS3 )
 				else
 				{
 					TessellationMode_t nTessellationMode = pShaderAPI->GetTessellationMode();
@@ -325,7 +316,6 @@ BEGIN_VS_SHADER( Modulate_DX9,
 					SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bWriteZ && bFullyOpaque && pShaderAPI->ShouldWriteDepthToDestAlpha() );
 					SET_DYNAMIC_PIXEL_SHADER( modulate_ps30 );
 				}
-#endif
 				
 			}
 			Draw();

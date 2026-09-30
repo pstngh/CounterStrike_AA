@@ -57,7 +57,6 @@ hk_array_index hk_Array<T>::add_element( T element )
 	return m_n_elems++;
 }
 
-#if !defined(_XBOX)
 template <class T>
 void hk_Array<T>::remove_element( hk_array_index idx,
 		void (*static_member_func)( T&, hk_Array<T>* , hk_array_store_index ) )
@@ -69,7 +68,6 @@ void hk_Array<T>::remove_element( hk_array_index idx,
 		get_elems()[idx] = get_elems()[ m_n_elems ];
 	}
 }
-#endif
 
 template <class T>
 void hk_Array<T>::search_and_remove_element( T& t)

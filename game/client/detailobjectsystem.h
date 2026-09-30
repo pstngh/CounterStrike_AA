@@ -65,16 +65,6 @@ public:
 	// Renders all translucent detail objects in a particular leaf up to a particular point
 	virtual void RenderTranslucentDetailObjectsInLeaf( const DistanceFadeInfo_t &info, const Vector &viewOrigin, const Vector &viewForward, const Vector &viewRight, const Vector &viewUp, int nLeaf, const Vector *pVecClosestPoint ) = 0;
 
-#if defined(_PS3)
-	virtual bool ShouldDrawDetailObjects( void ) = 0;
-	virtual void GetDetailFadeValues( float &flDetailFadeStart, float &flDetailFadeEnd ) = 0;
-
-	virtual int GetDetailObjectsCount( void ) = 0;
-	virtual void *GetDetailObjectsBase( void ) = 0;
-	virtual void *GetDetailObjectsOriginOffset( void ) = 0;
-	virtual int GetCDetailModelStride( void ) = 0;
-#endif
-
 };
 
 

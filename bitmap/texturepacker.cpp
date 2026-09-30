@@ -97,23 +97,6 @@ bool CTexturePacker::IsRightChild( int nodeIndexParent, int nodeIndexChild )
 	return !IsLeftChild( nodeIndexParent, nodeIndexChild );
 }
 
-#ifdef _PS3
-
-// Remove some annoying GCC warnings by specializing these template functions to remove a redundant (i>=0) clause
-template <>
-inline bool CUtlNTree<CTexturePacker::TreeEntry_t,short unsigned int>::IsValidIndex( short unsigned int i ) const  
-{ 
-	return (i < m_MaxElementIndex);
-}
-
-template <>
-inline bool CUtlNTree<CTexturePacker::TreeEntry_t,short unsigned int>::IsInTree( short unsigned int i ) const  
-{
-	return (i < m_MaxElementIndex) && (InternalNode(i).m_PrevSibling != i);
-}
-
-#endif // _PS3
-
 
 //-----------------------------------------------------------------------------
 // 

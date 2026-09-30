@@ -383,7 +383,7 @@ void SFHudDeathNoticeAndBotStatus::OnPlayerDeath( IGameEvent * event )
 
 	V_snwprintf( szNotice,
 		ARRAYSIZE( szNotice ),
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 		L"%ls%ls%ls%ls%ls%ls%ls%ls",
 #else
 		L"%s%s%s%s%s%s%s%s",

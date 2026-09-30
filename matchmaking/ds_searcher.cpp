@@ -35,9 +35,7 @@ CDsSearcher::CDsSearcher( KeyValues *pSettings, uint64 uiReserveCookie, IMatchSe
 	m_uiReserveCookie( uiReserveCookie ),
 	m_pReserveSettings( g_pMatchFramework->GetMatchNetworkMsgController()->PackageGameDetailsForReservation( m_pSettings ) ),
 	m_autodelete_pReserveSettings( m_pReserveSettings ),
-#ifdef _X360
-	m_pTitleServers( NULL ),
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_pServerListListener( NULL ),
 	m_nSearchPass( 0 ),
 #endif
@@ -47,10 +45,6 @@ CDsSearcher::CDsSearcher( KeyValues *pSettings, uint64 uiReserveCookie, IMatchSe
 	m_pMatchSession( pMatchSession ),
 	m_ullCrypt( ullCrypt )
 {
-#ifdef _X360
-	ZeroMemory( m_chDatacenterQuery, sizeof( m_chDatacenterQuery ) );
-	ZeroMemory( &m_dc, sizeof( m_dc ) );
-#endif
 
 	DevMsg( "Created DS searcher\n" );
 	KeyValuesDumpAsDevMsg( m_pSettings );
@@ -101,28 +95,7 @@ void CDsSearcher::Update()
 		}
 		break;
 
-#ifdef _X360
-
-	case STATE_XLSP_ENUMERATE_DCS:
-		m_pTitleServers->Update();
-		if ( m_pTitleServers->IsSearchCompleted() )
-			Xlsp_OnEnumerateDcsCompleted();
-		break;
-
-	case STATE_XLSP_NEXT_DC:
-		Xlsp_StartNextDc();
-		break;
-
-	case STATE_XLSP_REQUESTING_SERVERS:
-		if ( Plat_FloatTime() > m_flTimeout )
-		{
-			DevWarning( "XLSP datacenter `%s` timed out.\n", m_dc.m_szGatewayName );
-			m_dc.Destroy();
-			m_eState = STATE_XLSP_NEXT_DC;
-		}
-		break;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	case STATE_STEAM_REQUESTING_SERVERS:
 		if ( Plat_FloatTime() > m_flTimeout )
@@ -144,16 +117,7 @@ void CDsSearcher::OnEvent( KeyValues *pEvent )
 {
 	char const *szEvent = pEvent->GetName();
 
-#ifdef _X360
-	if ( m_eState == STATE_XLSP_REQUESTING_SERVERS &&
-		!Q_stricmp( "M2A_SERVER_BATCH", szEvent ) )
-	{
-		void const *pData = pEvent->GetPtr( "ptr" );
-		int numBytes = pEvent->GetInt( "size" );
-
-		Xlsp_OnDcServerBatch( pData, numBytes );
-	}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	szEvent;
 #endif
 }
@@ -166,20 +130,7 @@ void CDsSearcher::Destroy()
 		m_pAsyncOperation = NULL;
 	}
 
-#ifdef _X360
-	switch ( m_eState )
-	{
-	case STATE_XLSP_ENUMERATE_DCS:
-		if ( m_pTitleServers )
-			m_pTitleServers->Destroy();
-		m_pTitleServers = NULL;
-		break;
-	case STATE_XLSP_REQUESTING_SERVERS:
-	case STATE_RESERVING:
-		m_dc.Destroy();
-		break;
-	}
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( m_pServerListListener )
 	{
 		m_pServerListListener->Destroy();
@@ -205,9 +156,7 @@ void CDsSearcher::DsResult_t::CopyToServerKey( KeyValues *pKvServer, uint64 ullC
 	Assert( m_bDedicated );
 	pKvServer->SetString( "server", "dedicated" );
 
-#ifdef _X360
-	pKvServer->SetString( "adrInsecure", m_szInsecureSendableServerAddress );
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( char const *szEncrypted = MatchSession_EncryptAddressString( m_szPublicConnectionString, ullCrypt ) )
 		pKvServer->SetString( "adronline", szEncrypted );
 	else
@@ -239,9 +188,7 @@ void CDsSearcher::InitDedicatedSearch()
 		return;
 	}
 
-#ifdef _X360
-	Xlsp_EnumerateDcs();
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_flTimeout = Plat_FloatTime() + mm_dedicated_timeout_request.GetFloat();
 	Steam_SearchPass();
 #endif
@@ -249,11 +196,7 @@ void CDsSearcher::InitDedicatedSearch()
 
 void CDsSearcher::InitWithKnownServer()
 {
-#ifdef _X360
-	Assert( 0 );
-	m_eState = STATE_FINISHED;
-	return;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( m_pSettings->GetInt( "server/reserved" ) )
 	{
 		m_Result.m_bDedicated = true;
@@ -290,239 +233,7 @@ void CDsSearcher::InitWithKnownServer()
 #endif
 }
 
-#ifdef _X360
-
-void CDsSearcher::Xlsp_EnumerateDcs()
-{
-	m_eState = STATE_XLSP_ENUMERATE_DCS;
-	m_pTitleServers = new CXlspTitleServers( mm_dedicated_search_maxping.GetInt(), false );
-}
-
-void CDsSearcher::Xlsp_OnEnumerateDcsCompleted()
-{
-	DevMsg( "Xlsp_OnEnumerateDcsCompleted - analyzing QOS results...\n" );
-	
-	CUtlVector< CXlspDatacenter > &arrDcs = m_pTitleServers->GetDatacenters();
-	m_arrDatacenters.AddMultipleToTail( arrDcs.Count(), arrDcs.Base() );
-	
-	m_pTitleServers->Destroy();
-	m_pTitleServers = NULL;
-
-	//
-	// Sort and randomize the accepted results
-	//
-	m_arrDatacenters.Sort( CXlspDatacenter::Compare );
-	for ( int k = 0; k < m_arrDatacenters.Count() - 1; ++ k )
-	{
-		CXlspDatacenter &dc1 = m_arrDatacenters[ k ];
-		CXlspDatacenter &dc2 = m_arrDatacenters[ k + 1 ];
-		if ( dc1.m_nPingBucket == dc2.m_nPingBucket && RandomInt( 0, 1 ) )
-		{
-			CXlspDatacenter dcSwap = dc1;
-			dc1 = dc2;
-			dc2 = dcSwap;
-		}
-	}
-
-	DevMsg( "Xlsp_OnEnumerateDcsCompleted - accepted %d datacenters.\n", m_arrDatacenters.Count() );
-	for ( int k = 0; k < m_arrDatacenters.Count(); ++ k )
-	{
-		DevMsg( "    %d. `%s`\n", k, m_arrDatacenters[k].m_szGatewayName );
-	}
-
-	// Prepare the datacenter query
-	Xlsp_PrepareDatacenterQuery();
-
-	// Go to the next datacenter
-	m_eState = STATE_XLSP_NEXT_DC;
-}
-
-void CDsSearcher::Xlsp_PrepareDatacenterQuery()
-{
-	// Compute CRC of primary user's gamertag
-	byte bSult = RandomInt( 5, 100 );
-	CRC32_t crc32 = 0;
-	if ( IPlayerLocal * player = g_pPlayerManager->GetLocalPlayer( XBX_GetPrimaryUserId() ) )
-	{
-		char const *szPlayerName = player->GetName();
-		crc32 = CRC32_ProcessSingleBuffer( szPlayerName, strlen( szPlayerName ) );
-
-		uint32 sult32 = bSult | ( bSult << 8 ) | ( bSult << 16 ) | ( bSult << 24 );
-		crc32 ^= sult32;
-	}
-	if ( !crc32 )
-		bSult = 0;
-
-	// Search key
-	static ConVarRef sv_search_key( "sv_search_key" );
-	char const *szPrivateKey = sv_search_key.IsValid() ? sv_search_key.GetString() : "";
-	if ( !*szPrivateKey )
-		szPrivateKey = "default";
-
-	//
-	// Build query
-	//
-	Q_snprintf( m_chDatacenterQuery, ARRAYSIZE( m_chDatacenterQuery ),
-		"\\empty\\1"
-		"\\private\\%s"
-		"\\players\\%d"
-		"\\slots\\%d"
-		"\\perm\\%s"
-		"\\acct\\%02x%08x",
-		szPrivateKey,
-		m_pSettings->GetInt( "members/numPlayers", 0 ),
-		m_pSettings->GetInt( "members/numSlots", 0 ),
-		m_pSettings->GetString( "system/access", "public" ),
-		bSult, crc32
-		);
-
-	DevMsg( "Datacenters query: %s\n", m_chDatacenterQuery );
-}
-
-void CDsSearcher::Xlsp_StartNextDc()
-{
-	if ( !m_arrDatacenters.Count() )
-	{
-		m_eState = STATE_FINISHED;
-		return;
-	}
-
-	//
-	// Get the next datacenter off the list
-	//
-	m_dc = m_arrDatacenters.Head();
-	m_arrDatacenters.RemoveMultipleFromHead( 1 );
-	m_flTimeout = Plat_FloatTime() + mm_dedicated_xlsp_timeout.GetFloat();
-
-	DevMsg( "[XLSP] Requesting server batch from %s:%d (%d masters) - ping %d [<= %d]\n"
-		"       ProbesXmit=%3d       ProbesRecv=%3d\n"
-		"    RttMinInMsecs=%3d    RttMedInMsecs=%3d\n"
-		"     UpBitsPerSec=%6d  DnBitsPerSec=%6d\n",
-		m_dc.m_szGatewayName, m_dc.m_nMasterServerPortStart, m_dc.m_numMasterServers, m_dc.m_qos.wRttMedInMsecs, m_dc.m_nPingBucket,
-		m_dc.m_qos.cProbesXmit, m_dc.m_qos.cProbesRecv,
-		m_dc.m_qos.wRttMinInMsecs, m_dc.m_qos.wRttMedInMsecs,
-		m_dc.m_qos.dwUpBitsPerSec, m_dc.m_qos.dwDnBitsPerSec );
-
-	if ( CommandLine()->FindParm( "-xlsp_fake_gateway" ) )
-	{
-		m_dc.m_adrSecure = m_dc.m_xsi.inaServer;
-	}
-	else
-	{
-		//
-		// Resolve the secure address
-		//
-		DWORD ret = g_pMatchExtensions->GetIXOnline()->XNetServerToInAddr( m_dc.m_xsi.inaServer, g_pMatchFramework->GetMatchTitle()->GetTitleServiceID(), &m_dc.m_adrSecure );
-		if ( ret != ERROR_SUCCESS )
-		{
-			DevWarning( "Failed to resolve XLSP secure address (code = 0x%08X)!\n", ret );
-			return;
-		}
-	}
-
-	// Convert to netadr_t on a random master port
-	netadr_t inetAddr;
-	inetAddr.SetType( NA_IP );
-	inetAddr.SetIPAndPort( m_dc.m_adrSecure.s_addr,
-		m_dc.m_nMasterServerPortStart + RandomInt( 0, m_dc.m_numMasterServers - 1 ) );
-
-	//
-	// Prepare the request payload
-	//
-	char msg_buffer[ INetSupport::NC_MAX_ROUTABLE_PAYLOAD ];
-	bf_write msg( msg_buffer, sizeof( msg_buffer ) );
-
-	msg.WriteByte( A2M_GET_SERVERS_BATCH2 );
-	msg.WriteByte( '\n' );
-	msg.WriteLong( 0 );							// batch starts at 0
-	msg.WriteLong( m_dc.m_adrSecure.s_addr );			// datacenter's challenge
-	msg.WriteString( m_chDatacenterQuery );		// datacenter query
-	msg.WriteByte( '\n' );
-
-	g_pMatchExtensions->GetINetSupport()->SendPacket( NULL, INetSupport::NS_SOCK_CLIENT,
-		inetAddr, msg.GetData(), msg.GetNumBytesWritten() );
-
-	m_eState = STATE_XLSP_REQUESTING_SERVERS;
-}
-
-void CDsSearcher::Xlsp_OnDcServerBatch( void const *pData, int numBytes )
-{
-	if ( numBytes < 8 )
-		return;
-
-	bf_read msg( pData, numBytes );
-	
-	int nNextId = msg.ReadLong();
-	nNextId;
-
-	uint nChallenge = msg.ReadLong();
-	if ( nChallenge != m_dc.m_adrSecure.s_addr )
-		return;
-
-	//
-	// Get master server reply message or Secure Gateway name (must match request)
-	//
-	char szReply[ MAX_PATH ] = {0};
-	msg.ReadString( szReply, ARRAYSIZE( szReply ), true );
-
-	if ( !szReply[0] )
-	{
-		DevWarning( "XLSP master server: empty response.\n" );
-		m_dc.Destroy();
-		m_eState = STATE_XLSP_NEXT_DC;
-		return;
-	}
-
-	if ( !Q_stricmp( "##full", szReply ) )
-	{
-		DevWarning( "XLSP master server: full.\n" );
-		m_dc.Destroy();
-		m_eState = STATE_XLSP_NEXT_DC;
-		return;
-	}
-
-	if ( !Q_stricmp( "##local", szReply ) )
-	{
-		DevWarning( "XLSP master server: game is not eligible for dedicated server.\n" );
-		m_dc.Destroy();
-		m_eState = STATE_FINISHED;
-		return;
-	}
-
-	// Bypass the gateway name check if we're faking it.
-	if ( !CommandLine()->FindParm( "-xlsp_fake_gateway" ) )
-	{
-		if ( Q_stricmp( m_dc.m_szGatewayName, szReply ) )
-		{
-			DevWarning( "XLSP master server: wrong reply `%s`, expected gateway `%s`.\n", szReply, m_dc.m_szGatewayName );
-			m_dc.Destroy();
-			m_eState = STATE_XLSP_NEXT_DC;
-			return;
-		}
-	}
-
-	//
-	// Process all the servers in the batch
-	//
-	m_arrServerPorts.RemoveAll();
-	for ( ; ; )
-	{
-		uint16 nPort = msg.ReadWord();
-		if ( !nPort || nPort == 0xFFFF )
-		{
-			// end of list
-			break;
-		}
-
-		m_arrServerPorts.AddToTail( nPort );
-	}
-	DevWarning( "XLSP master server: returned %d servers in batch.\n", m_arrServerPorts.Count() );
-
-	// Go ahead and start reserving
-	ReserveNextServer();
-}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void CDsSearcher::Steam_SearchPass()
 {
@@ -766,34 +477,7 @@ void CDsSearcher::ReserveNextServer()
 {
 	m_eState = STATE_RESERVING;
 
-#ifdef _X360
-
-	if ( !m_arrServerPorts.Count() )
-	{
-		m_dc.Destroy();
-		m_eState = STATE_XLSP_NEXT_DC;
-		return;
-	}
-
-	uint16 nPort = m_arrServerPorts.Head();
-	m_arrServerPorts.RemoveMultipleFromHead( 1 );
-
-	netadr_t inetAddrSecure;
-	inetAddrSecure.SetType( NA_IP );
-	inetAddrSecure.SetIPAndPort( m_dc.m_adrSecure.s_addr, nPort );
-
-	netadr_t inetAddrInsecureSendable;
-	inetAddrInsecureSendable.SetType( NA_IP );
-	inetAddrInsecureSendable.SetIPAndPort( m_dc.m_xsi.inaServer.s_addr, nPort );
-
-	Q_strncpy( m_Result.m_szConnectionString, inetAddrSecure.ToString(), ARRAYSIZE( m_Result.m_szConnectionString ) );
-	Q_strncpy( m_Result.m_szInsecureSendableServerAddress, inetAddrInsecureSendable.ToString(), ARRAYSIZE( m_Result.m_szInsecureSendableServerAddress ) );
-
-	netadr_t addrPublic, addrPrivate;
-	addrPrivate.SetType( NA_NULL );
-	addrPublic = inetAddrSecure;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	if ( !m_arrServerList.Count() )
 	{

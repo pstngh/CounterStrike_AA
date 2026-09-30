@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#if !defined( _GAMECONSOLE ) && defined( _WIN32 )
+#if defined( _WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -364,9 +364,6 @@ bool CFontTextureCache::GetTextureForChars( FontHandle_t hFont, FontDrawType_t t
 				int newCharDataSize = totalNewCharTexels*4;
 				CUtlBuffer newCharData( 0, newCharDataSize, CUtlBuffer::READ_ONLY );
 				unsigned char *pRGBA = (unsigned char *)newCharData.Base();
-#if defined( _X360 ) || defined( _PS3 )
-				pWinFont->GetCharsRGBA( newChars, numNewChars, pRGBA );
-#endif
 				// Copy the data into our font pages
 				for ( int i = 0; i < numNewChars; i++ )
 				{

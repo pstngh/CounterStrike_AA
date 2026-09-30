@@ -29,18 +29,11 @@
 #endif
 
 #if defined( _MEMTEST )
-#if defined( _WIN32 ) || defined( _PS3 )
+#if defined( _WIN32 )
 #define USE_MEM_DEBUG 1
 #endif
 #endif
 
-
-#if defined( _PS3 )
-// Define STEAM_SHARES_GAME_ALLOCATOR to make Steam use the game's tier0 memory allocator.
-// This adds some memory to the game's Small Block Heap and Medium Block Heap, to compensate.
-// This configuration was disabled for Portal 2, as we could not sufficiently test it before ship.
-//#define STEAM_SHARES_GAME_ALLOCATOR
-#endif
 
 #if defined( STEAM_SHARES_GAME_ALLOCATOR )
 #define MBYTES_STEAM_SBH_USAGE 2
@@ -59,10 +52,6 @@
 #ifdef LINUX
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
-#endif
-
-#ifdef _PS3
-#define MEMALLOC_SUPPORTS_ALIGNED_ALLOCATIONS 1
 #endif
 
 #include "tier0/mem.h"
@@ -221,20 +210,8 @@ public:
 //-----------------------------------------------------------------------------
 // Singleton interface
 //-----------------------------------------------------------------------------
-#ifdef _PS3
-
-PLATFORM_INTERFACE IMemAlloc * g_pMemAllocInternalPS3;
-#ifndef PLATFORM_INTERFACE_MEM_ALLOC_INTERNAL_PS3_OVERRIDE
-#define g_pMemAlloc g_pMemAllocInternalPS3
-#else
-#define g_pMemAlloc PLATFORM_INTERFACE_MEM_ALLOC_INTERNAL_PS3_OVERRIDE
-#endif
-
-#else // !_PS3
 
 MEM_INTERFACE IMemAlloc *g_pMemAlloc;
-
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -724,7 +701,7 @@ inline void MemAlloc_GlobalMemoryStatus( size_t *pusedMemory, size_t *pfreeMemor
 
 
 // linux memory tracking via hooks.
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
 PLATFORM_INTERFACE void MemoryLogMessage( char const *s );						// throw a message into the memory log
 PLATFORM_INTERFACE void EnableMemoryLogging( bool bOnOff );
 PLATFORM_INTERFACE void DumpMemoryLog( int nThresh );

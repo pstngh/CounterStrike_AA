@@ -43,11 +43,7 @@
 #define DECAL_BLEND_MODE_NONE										2	// There is no decal texture
 
 // We force aniso on certain textures for the consoles only
-#if defined( _GAMECONSOLE )
-	#define ANISOTROPIC_OVERRIDE TEXTUREFLAGS_ANISOTROPIC
-#else
 	#define ANISOTROPIC_OVERRIDE 0
-#endif
 
 //-----------------------------------------------------------------------------
 // Helper macro for vertex shaders

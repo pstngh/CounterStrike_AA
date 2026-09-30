@@ -625,17 +625,6 @@ float CClientState::GetTime() const
 		return flTickTime;
 	}
 	
-#if defined(_X360) || defined( _PS3 )
-	// This function is called enough under ComputeLightingState to make this little cache worthwhile [10/6/2010 tom]
-	static float lastResult;
-	static int lastTick;
-	if ( lastTick == nTickCount )
-	{
-		return lastResult;
-	}
-	lastTick = nTickCount;
-#endif
-
 	// Tracker 77931:  If the game is paused, then lock the client clock at the previous tick boundary 
 	//  (otherwise we'll keep interpolating through the "remainder" time causing the paused characters
 	//  to twitch like they have the shakes)
@@ -652,9 +641,6 @@ float CClientState::GetTime() const
 		flResult = flTickTime + m_tickRemainder;
 	}
 
-#if defined(_X360) || defined( _PS3 )
-	lastResult = flResult;
-#endif
 	return flResult;
 }
 

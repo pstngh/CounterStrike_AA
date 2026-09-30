@@ -13,11 +13,7 @@
 #pragma once
 #endif
 
-#ifdef _GAMECONSOLE
-#define SUPPORT_NET_CONSOLE 0
-#else
 #define SUPPORT_NET_CONSOLE 1
-#endif
 
 #if SUPPORT_NET_CONSOLE
 #include "tier2/socketcreator.h"

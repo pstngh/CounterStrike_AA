@@ -200,10 +200,6 @@ void CMovieDisplayScreen::SetupMovie( void )
 	if ( m_bInitialized || !IsActive() )
 		return;
 
-#if defined( _GAMECONSOLE )
-	Assert( bik );
-#endif
-
 	if ( !bik )
 		return;
 
@@ -419,9 +415,6 @@ void CMovieDisplayScreen::CalculatePlaybackDimensions( int nSrcWidth, int nSrcHe
 //-----------------------------------------------------------------------------
 bool CMovieDisplayScreen::BeginPlayback( const char *pFilename )
 {
-#if defined( _GAMECONSOLE )
-	Assert( bik );
-#endif
 
 	if ( !bik )
 		return false;

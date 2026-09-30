@@ -26,10 +26,6 @@
 
 extern IVEngineClient *engineClient;
 
-#if defined( _X360 )
-#include "xauddefs.h"
-#endif
-
 #include "steam/steam_api.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -291,11 +287,7 @@ static void VoiceRecord_Stop()
 }
 
 // Hacked functions to create the inputs and codecs..
-#ifdef _PS3
-static IVoiceRecord*	CreateVoiceRecord_DSound(int nSamplesPerSec) { return NULL; }
-#else
 extern IVoiceRecord*	CreateVoiceRecord_DSound(int nSamplesPerSec);
-#endif
 
 ConVar voice_gain_rate( "voice_gain_rate", "1.0", FCVAR_NONE );
 ConVar voice_gain_downward_multiplier( "voice_gain_downward_multiplier", "100.0", FCVAR_NONE );  // how quickly it will lower gain when it detects that the current gain value will cause clipping

@@ -62,9 +62,6 @@ public:
 
     // Bind standard textures
 	virtual void BindStandardTexture( Sampler_t sampler, TextureBindFlags_t nBindFlags, StandardTextureId_t id ) = 0;
-#ifdef _PS3 
-	virtual ShaderAPITextureHandle_t GetStandardTexture( StandardTextureId_t id ) = 0;
-#endif
 
 	// What are the lightmap dimensions?
 	virtual void GetLightmapDimensions( int *w, int *h ) = 0;
@@ -93,14 +90,6 @@ public:
 
 	// Tells the material system to draw a buffer clearing quad
 	virtual void DrawClearBufferQuad( unsigned char r, unsigned char g, unsigned char b, unsigned char a, bool bClearColor, bool bClearAlpha, bool bClearDepth ) = 0;
-
-#ifdef _PS3
-	virtual void DrawReloadZcullQuad() = 0;
-#endif // _PS3
-
-#if defined( _X360 )
-	virtual void ReadBackBuffer( Rect_t *pSrcRect, Rect_t *pDstRect, unsigned char *pData, ImageFormat dstFormat, int nDstStride ) = 0;
-#endif
 
 	// Calls from meshes to material system to handle queing/threading
 	virtual bool OnDrawMesh( IMesh *pMesh, int firstIndex, int numIndices ) = 0;

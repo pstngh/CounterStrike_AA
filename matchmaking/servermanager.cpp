@@ -4,13 +4,11 @@
 //
 //=====================================================================================//
 
-#ifndef _X360
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "mm_framework.h"
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 #include "steam/matchmakingtypes.h"
 #endif
 
@@ -49,7 +47,7 @@ class CServerPinging : public CServer
 public:
 	CServerPinging() : m_flTimeout( 0 ) {}
 public:
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	gameserveritem_t m_gsi;
 #endif
 	float m_flTimeout;
@@ -99,7 +97,7 @@ void CServer::Join()
 
 CServerManager::CServerManager()
 {
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	m_hRequest = NULL;
 #endif
 	m_bUpdateEnabled = false;
@@ -113,7 +111,7 @@ CServerManager::~CServerManager()
 	m_Servers.PurgeAndDeleteElements();
 	m_ServersPinging.PurgeAndDeleteElements();
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	if ( m_hRequest )
 		steamapicontext->SteamMatchmakingServers()->ReleaseRequest( m_hRequest );
 	m_hRequest = NULL;
@@ -140,7 +138,7 @@ void CServerManager::EnableServersUpdate( bool bEnable )
 	m_Servers.PurgeAndDeleteElements();
 	m_ServersPinging.PurgeAndDeleteElements();
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	if ( m_eState == STATE_FETCHING_SERVERS && m_hRequest )
 	{
 		steamapicontext->SteamMatchmakingServers()->ReleaseRequest( m_hRequest );
@@ -246,7 +244,7 @@ void CServerManager::OnEvent( KeyValues *pEvent )
 					if ( nPing >= 1000 )
 						nPing = 999;
 				}
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 				else
 				{
 					nPing = pServerPinging->m_gsi.m_nPing;
@@ -347,7 +345,7 @@ void CServerManager::OnEvent( KeyValues *pEvent )
 	}
 }
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 void CServerManager::ServerResponded( HServerListRequest hReq, int iServer )
 {
 	gameserveritem_t *gsi = steamapicontext->SteamMatchmakingServers()->GetServerDetails( hReq, iServer );
@@ -396,7 +394,7 @@ void CServerManager::RefreshComplete( HServerListRequest hReq, EMatchMakingServe
 
 void CServerManager::Update()
 {
-#if !( !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS ) )
+#if !( !defined( NO_STEAM ) && !defined( SWDS ) )
 	return;
 #endif
 
@@ -459,7 +457,7 @@ void CServerManager::Update()
 		OnGroupFetched();
 		break;
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	case STATE_FETCHING_SERVERS:
 		if ( Plat_FloatTime() > m_lanSearchData.m_flLastBroadcastTime + mm_server_search_inet_ping_timeout.GetFloat() )
 		{
@@ -561,7 +559,7 @@ void CServerManager::RemoveOldServers()
 
 bool CServerManager::StartFetchingGroupServersData()
 {
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 	ISteamUser *pUser = steamapicontext->SteamUser();
 	ISteamFriends *pFriends = steamapicontext->SteamFriends();
 	if ( !pUser || !pFriends )
@@ -585,7 +583,7 @@ bool CServerManager::StartFetchingGroupServersData()
 
 bool CServerManager::FetchGroupServers()
 {
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 
 	static const char gamedataFilterType[] = "gamedataor";
 
@@ -680,7 +678,7 @@ void CServerManager::RequestPingingDetails()
 
 		kv->SetFloat( "timestamp", Plat_FloatTime() );
 		kv->SetUint64( "pingxuid", pServerPinging->m_xuid );
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 		g_pConnectionlessLanMgr->SendPacket( kv, pServerPinging->m_netAdr.GetConnectionAddressString() );
 #else
 		DevWarning( "Cannot request internet pinging server details.\n" );

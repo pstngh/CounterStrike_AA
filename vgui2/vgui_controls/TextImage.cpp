@@ -8,9 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#ifdef _PS3
-#include <wctype.h>
-#endif
 #include <assert.h>
 
 #include <vgui/IPanel.h>
@@ -445,7 +442,7 @@ void TextImage::Paint()
 		}
 
 		// Underlined text wants to draw the spaces anyway
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 		float xPos = x;
     
 		wchar_t chBefore = 0;
@@ -520,7 +517,7 @@ void TextImage::GetTextSize(int &wide, int &tall)
 		}
 	
 		int nCharWidth;
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 		wchar_t chBefore = 0;
 		wchar_t chAfter = 0;
 		if ( i > 0 )
@@ -666,7 +663,7 @@ void TextImage::RecalculateNewLinePositions()
 		bStartAsianWordHere = m_bUseAsianWordWrapping && AsianWordWrap::CanBreakAfter( wsz );
 
 		// get the width
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 		wchar_t chBefore = 0;
 		wchar_t chAfter = 0;
 		if ( wsz > _utext )
@@ -788,7 +785,7 @@ void TextImage::RecalculateEllipsesPosition()
 				}
 			}
 
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 			wchar_t chBefore = 0;
 			wchar_t chAfter = 0;
 			if ( wsz > _utext )
@@ -814,7 +811,7 @@ void TextImage::RecalculateEllipsesPosition()
 				int remainingLength = len;
 				for (const wchar_t *rwsz = wsz + 1; *rwsz != 0; rwsz++)
 				{
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
                   wchar_t chBefore = 0;
                   wchar_t chAfter = 0;
                   if ( rwsz > _utext )
@@ -993,7 +990,7 @@ void TextImage::RecalculateCenterWrapIndents()
 			}
 		}
 
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 		wchar_t chBefore = 0;
 		wchar_t chAfter = 0;
 		if ( wsz > _utext )

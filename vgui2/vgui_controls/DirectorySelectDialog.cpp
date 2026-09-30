@@ -503,7 +503,6 @@ void DirectorySelectDialog::OnCreateDirectory(const char *dir)
 
 		// create the new directory underneath
 		strcat(fullPath, dir);
-#ifndef _GAMECONSOLE
 		if (_mkdir(fullPath) == 0)
 		{
 			// add new path to tree view
@@ -518,7 +517,6 @@ void DirectorySelectDialog::OnCreateDirectory(const char *dir)
 			m_pDirTree->AddSelectedItem( itemID, true );
 		}
 		else
-#endif
 		{
 			// print error message
 			MessageBox *box = new MessageBox("#vgui_CreateDirectoryFail_Title", "#vgui_CreateDirectoryFail_Info");

@@ -61,11 +61,7 @@ char *CreatePlatformFilename( const char *pSourceName, char *pTargetName, int ta
 
 FORCEINLINE const char *AdjustFileExtensionForPlatform( const char *pSourceName, char *pTargetName, int targetLen )
 {
-#ifdef PLATFORM_X360
-	return CreatePlatformFilename( pSourceName, pTargetName, targetLen );
-#else
 	return pSourceName;
-#endif
 }
 
 // simple file classes. File I/O mode (text/binary, read/write) is based upon the subclass chosen.

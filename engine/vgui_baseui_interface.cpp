@@ -97,10 +97,6 @@
 #include "LoadScreenUpdate.h"
 #include "tier0/etwprof.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 #include "vgui_askconnectpanel.h"
 #include "tier1/tokenset.h"
 
@@ -1064,9 +1060,6 @@ void CEngineVGui::Init()
 void CEngineVGui::PostInit()
 {
 	staticGameUIFuncs->PostInit();
-#if defined( _GAMECONSOLE )
-	g_pMatSystemSurface->ClearTemporaryFontCache();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2100,8 +2093,6 @@ void CEngineVGui::Simulate()
 			w = rect.right;
 			h = rect.bottom;
 		}
-#elif defined( _PS3 )
-		g_pMaterialSystem->GetBackBufferDimensions( w, h );
 #else
 #error
 #endif
@@ -2264,8 +2255,6 @@ void CEngineVGui::Paint( PaintMode_t mode )
 		w = rect.right;
 		h = rect.bottom;
 	}
-#elif defined( _PS3 )
-	g_pMaterialSystem->GetBackBufferDimensions( w, h );
 #else
 #error
 #endif

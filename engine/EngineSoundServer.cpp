@@ -151,13 +151,6 @@ public:
 	virtual void SetReplayMusicGain( float flReplayMusicGain ) { Assert( !"Client-only service" ); }
 	virtual float GetReplayMusicGain()const { Assert( !"Client-only service" );  return 0.0f; }
 
-#if defined( _GAMECONSOLE )
-	virtual void UnloadSound( const char *pSample )
-	{
-		AssertMsg( 0, "Not supported" );
-	}
-#endif
-
 private:
 	void EmitSoundInternal( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSoundEntry, HSOUNDSCRIPTHASH iSoundEntryHash, const char *pSample, 
 		float flVolume, soundlevel_t iSoundLevel, int nSeed, int iFlags, int iPitch, 

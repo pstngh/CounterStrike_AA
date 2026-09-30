@@ -746,7 +746,6 @@ void CBaseShader::ApplyColor2Factor( float *pColorOut, bool isLinearSpace ) cons
 		pColorOut[1] *= flColor2[1];
 		pColorOut[2] *= flColor2[2];
 	}
-#ifndef _PS3
 	if ( g_pHardwareConfig->UsesSRGBCorrectBlending() )
 	{
 		IMaterialVar* pSRGBVar = s_ppParams[SRGBTINT];
@@ -769,7 +768,6 @@ void CBaseShader::ApplyColor2Factor( float *pColorOut, bool isLinearSpace ) cons
 			}
 		}
 	}
-#endif
 }
 
 
@@ -1016,11 +1014,7 @@ bool CBaseShader::IsRenderingPaint( IMaterialVar **params ) const
 
 bool CBaseShader::IsHDREnabled( void )
 {
-#ifdef _PS3
-	return true;
-#else
 	// HDRFIXME!  Need to fix this for vgui materials
 	HDRType_t hdr_mode = g_pHardwareConfig->GetHDRType();
 	return ( hdr_mode == HDR_TYPE_INTEGER ) || ( hdr_mode == HDR_TYPE_FLOAT );
-#endif
 }

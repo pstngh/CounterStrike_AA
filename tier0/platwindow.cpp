@@ -8,11 +8,7 @@
 #include "tier0/platwindow.h"
 
 #if defined( PLATFORM_WINDOWS )
-#if !defined( PLATFORM_X360 )
 #include <windows.h>
-#else
-#include "xbox/xbox_win32stubs.h"
-#endif
 #endif
 
 

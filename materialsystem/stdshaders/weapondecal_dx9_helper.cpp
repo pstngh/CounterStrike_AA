@@ -439,13 +439,8 @@ void DrawWeaponDecal(  CBaseVSShader *pShader, IMaterialVar** params, IShaderDyn
 			return;
 		}
 
-#ifdef _PS3
-		CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_SemiStaticCmdsOut.Base() );
-#else
 		CCommandBufferBuilder< CFixedCommandStorageBuffer< 600 > > DynamicCmdsOut;
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
-#endif
 
 		///////////////////////////
 		// dynamic block

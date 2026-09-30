@@ -44,12 +44,8 @@
 #include <unistd.h> // for unlink
 #include <limits.h> // defines PATH_MAX
 #include <alloca.h> // 'cause we like smashing the stack
-#if defined( _PS3 )
-#include <fcntl.h>
-#else
 #include <sys/fcntl.h>
 #include <sys/statvfs.h>
-#endif
 #include <sched.h>
 
 //lwss - Add tier0/platform.h to get this to build. Should be ok since it is header-only.
@@ -61,7 +57,7 @@
 // On OSX the native API file offset is always 64-bit
 // and things like stat64 are deprecated.
 // PS3 doesn't have anything other than the native API.
-#if defined(OSX) || defined(_PS3)
+#if defined(OSX)
 typedef off_t offBig_t;
 typedef struct stat statBig_t;
 typedef struct statvfs statvfsBig_t;
@@ -160,8 +156,6 @@ static int FileSelect( const char *name, const char *mask );
 #if defined( ASYNC_FILEIO )
 #ifdef _WIN32
 #include "winlite.h"
-#elif defined(_PS3)
-// bugbug ps3 - see some aio files under libfs.. skipping for the moment
 #elif defined(POSIX)
 #include <aio.h>
 #else 
@@ -174,13 +168,8 @@ static int FileSelect( const char *name, const char *mask );
 
 #define _rmdir rmdir
 
-#if !defined( _PS3 )
 #define _S_IREAD S_IREAD
 #define _S_IWRITE S_IWRITE
-#else
-#define _S_IREAD S_IRUSR
-#define _S_IWRITE S_IWUSR
-#endif
 
 #endif
 
@@ -284,81 +273,11 @@ void CPathString::PopulateWCharPath()
 //-----------------------------------------------------------------------------
 // Purpose: Helper on PS3 to find next entry that matches the provided pattern
 //-----------------------------------------------------------------------------
-#if defined( _PS3 )
-bool CDirIterator::BFindNextPS3()
-{
-	while (true)
-	{
-		uint32 unDataCount = 0;
-		if (cellFsGetDirectoryEntries( m_hFind, m_pDirEntry, sizeof(CellFsDirectoryEntry), &unDataCount ) != CELL_FS_SUCCEEDED || unDataCount == 0)
-			return false;
-
-		// if we found a new file/directory, need to make sure it matches our desired pattern
-		if (FileSelect( m_pDirEntry->entry_name.d_name, m_strPattern.String() ) != 0)
-			return true;
-	}
-}
-#endif
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-#if defined( _PS3 )
-
-CDirIterator::CDirIterator( const char *pchPath, const char *pchPattern )
-{
-	// init for failure
-	m_bOpenHandle = false;
-	m_bNoFiles = true;
-	m_bUsedFirstFile = true;
-
-	// always create a new entry.. matches win32/posix (guessing so BCurrent functions won't crash?)
-	m_pDirEntry = new CellFsDirectoryEntry;
-	memset( m_pDirEntry, 0, sizeof(CellFsDirectoryEntry) );
-
-	if (!pchPath || !pchPattern)
-		return;
-
-	// fix up path
-	CPathString strPath( pchPath );
-
-	// save pattern
-	m_strPattern = pchPattern;
-
-	// we have a path.. init
-	CellFsErrno e = cellFsOpendir( strPath.GetUTF8Path(), &m_hFind );
-	if (e != CELL_FS_SUCCEEDED)
-		return;
-
-	m_bOpenHandle = true;
-
-	// find first entry
-	if (!BFindNextPS3())
-		return;
-
-	// found at least 1 file
-	m_bNoFiles = false;
-
-	// if we're pointing at . or .., set it as used
-	// so we'll look for the next item when BNextFile() is called
-	m_bUsedFirstFile = !BValidFilename();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Destructor
-//-----------------------------------------------------------------------------
-CDirIterator::~CDirIterator()
-{
-	if (m_bOpenHandle)
-		cellFsClosedir( m_hFind );
-
-	if (m_pDirEntry)
-		delete m_pDirEntry;
-}
-
-
-#else
 
 CDirIterator::CDirIterator( const char *pchPath, const char *pchPattern )
 {
@@ -489,8 +408,6 @@ CDirIterator::~CDirIterator()
 #endif
 }
 
-#endif // _PS3
-
 //-----------------------------------------------------------------------------
 // Purpose: Check for successful construction
 //-----------------------------------------------------------------------------
@@ -498,8 +415,6 @@ bool CDirIterator::IsValid() const
 {
 #if defined(_WIN32)
 	return m_hFind != INVALID_HANDLE_VALUE;
-#elif defined(_PS3)
-	return m_bOpenHandle;
 #else
 	return m_hFind != -1;
 #endif
@@ -512,8 +427,6 @@ bool CDirIterator::BValidFilename()
 {
 #if defined( _WIN32 )
 	const char *pch = m_rgchFileName;
-#elif defined( _PS3 )
-	const char *pch = m_pDirEntry->entry_name.d_name;
 #else
 	const char *pch = m_pFindData->name;
 #endif
@@ -552,8 +465,6 @@ bool CDirIterator::BNextFile()
 			AssertMsg( false, "Q_UnicodeToUTF8 failed on m_pFindData->cFileName in CDirIterator" );
 			bFound = false;
 		}
-#elif defined( _PS3 )
-		bool bFound = BFindNextPS3();
 #else
 		bool bFound = (_findnext( m_hFind, m_pFindData ) == 0);
 #endif
@@ -587,8 +498,6 @@ const char *CDirIterator::CurrentFileName()
 {
 #if defined( _WIN32 )
 	return m_rgchFileName;
-#elif defined( _PS3 )
-	return m_pDirEntry->entry_name.d_name;
 #else
 	return m_pFindData->name;
 #endif
@@ -603,8 +512,6 @@ int64 CDirIterator::CurrentFileLength() const
 #if defined( _WIN32 )
 	LARGE_INTEGER li = { { m_pFindData->nFileSizeLow, m_pFindData->nFileSizeHigh } };
 	return li.QuadPart;
-#elif defined( _PS3 )
-	return m_pDirEntry->attribute.st_size;
 #else
 	return (int64)m_pFindData->size;
 #endif
@@ -631,8 +538,6 @@ time64_t CDirIterator::CurrentFileWriteTime() const
 {
 #if defined( _WIN32 )
 	return FileTimeToUnixTime( m_pFindData->ftLastWriteTime );
-#elif defined( _PS3 )
-	return m_pDirEntry->attribute.st_mtime;
 #else
 	return m_pFindData->time_write;
 #endif
@@ -646,8 +551,6 @@ time64_t CDirIterator::CurrentFileCreateTime() const
 {
 #if defined( _WIN32 )
 	return FileTimeToUnixTime( m_pFindData->ftCreationTime );
-#elif defined( _PS3 )
-	return m_pDirEntry->attribute.st_ctime;
 #else
 	return m_pFindData->time_create;
 #endif
@@ -661,8 +564,6 @@ bool CDirIterator::BCurrentIsDir() const
 {
 #if defined( _WIN32 )
 	return (m_pFindData->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-#elif defined( _PS3 )
-	return (m_pDirEntry->attribute.st_mode & CELL_FS_S_IFDIR ? true : false);
 #else
 	return (m_pFindData->attrib & _A_SUBDIR ? true : false);
 #endif
@@ -676,8 +577,6 @@ bool CDirIterator::BCurrentIsHidden() const
 {
 #if defined( _WIN32 )
 	return (m_pFindData->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
-#elif defined( _PS3 )
-	return false;
 #else
 	return (m_pFindData->attrib & _A_HIDDEN ? true : false);
 #endif
@@ -691,9 +590,6 @@ bool CDirIterator::BCurrentIsReadOnly() const
 {
 #if defined( _WIN32 )
 	return (m_pFindData->dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
-#elif defined( _PS3 )
-	// assume this is windows version of read only.. can execute. Is it writable?
-	return (m_pDirEntry->attribute.st_mode & CELL_FS_S_IWUSR == 0);
 #else
 	return (m_pFindData->attrib & _A_RDONLY ? true : false);
 #endif
@@ -707,8 +603,6 @@ bool CDirIterator::BCurrentIsSystem() const
 {
 #if defined( _WIN32 )
 	return (m_pFindData->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0;
-#elif defined( _PS3 )
-	return false;
 #else
 	return (m_pFindData->attrib & _A_SYSTEM ? true : false);
 #endif
@@ -722,8 +616,6 @@ bool CDirIterator::BCurrentIsMarkedForArchive() const
 {
 #if defined( _WIN32 )
 	return (m_pFindData->dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE) != 0;
-#elif defined( _PS3 )
-	return false;
 #else
 	return (m_pFindData->attrib & _A_ARCH ? true : false);
 #endif
@@ -766,8 +658,6 @@ struct FileWriterOverlapped_t : public OVERLAPPED
     void *m_pvData;
     size_t m_cubData;
 };
-#elif defined(_PS3)
-// bugbug ps3 - impement?
 #elif defined(POSIX)
 // our own version of overlapped structure passed through async writes
 struct FileWriterOverlapped_t : public aiocb
@@ -884,8 +774,6 @@ void CFileWriter::Sleep( uint nMSec )
 {
 #ifdef _WIN32
     ::SleepEx( nMSec, TRUE );
-#elif PLATFORM_PS3
-    sys_timer_usleep( nMSec * 1000 );
 #elif defined(POSIX)
     if ( nMSec == 0 )
         sched_yield();
@@ -961,12 +849,6 @@ bool CFileWriter::Write( const void *pvData, uint32 cubData )
     if  ( cubData == 0 )
         return true;
 
-#if defined( _PS3 )
-    if ( write( (int)m_hFileDest, pvData, cubData ) == cubData )
-        return true;
-
-    return false;
-#else
     BOOL bRet = 0;
 #ifdef ASYNC_FILEIO
     if ( m_bAsync )
@@ -1059,7 +941,6 @@ bool CFileWriter::Write( const void *pvData, uint32 cubData )
     m_cubWritten += cubData;
 
     return ( bRet != 0 );
-#endif // _PS3
 }
 
 //-----------------------------------------------------------------------------
@@ -1169,8 +1050,6 @@ void CFileWriter::ThreadedWriteFileCompletionFunc( unsigned long dwErrorCode, un
 
 
 }
-#elif defined( _PS3 )
-// bugbug PS3
 #elif defined(POSIX)
 void CFileWriter::ThreadedWriteFileCompletionFunc( sigval sigval )
 {
@@ -1199,7 +1078,6 @@ struct DirWatcherOverlapped : public OVERLAPPED
 };
 #endif
 
-#if !defined(_PS3) && !defined(_X360)
 // a buffer full of file names
 static const int k_cubDirWatchBufferSize = 8 * 1024;
 
@@ -1508,8 +1386,6 @@ void CDirWatcher::Validate( CValidator &validator, const char *pchName )
 }
 #endif
 
-#endif // _PS3 || _X360
-
 //-----------------------------------------------------------------------------
 // Purpose: utility function to create dirs & subdirs
 //-----------------------------------------------------------------------------
@@ -1730,8 +1606,6 @@ bool BRemoveDirectoryRecursive( const char *pchPathIn )
 // findfirst/findnext implementation from filesystem/linux_support.[h|cpp]
 // modified a bit for PS3
 
-#if !defined(_PS3)
-
 static char selectBuf[PATH_MAX];
 
 #if defined(OSX) && !defined(__MAC_10_8)
@@ -1747,8 +1621,6 @@ static int FileSelect( const direntBig_t *ent )
 
 	return FileSelect( name, mask );
 }
-
-#endif // !_PS3
 
 static int FileSelect( const char *name, const char *mask )
 {
@@ -1803,8 +1675,6 @@ static int FileSelect( const char *name, const char *mask )
 
 	return(!*mask && !*name); // both of the strings are at the end
 }
-
-#if !defined(_PS3)
 
 int FillDataStruct( _finddata_t *dat )
 {
@@ -1927,6 +1797,5 @@ bool _findclose( int64 handle )
 	return true;
 }
 
-#endif // !_PS3
 #endif
 

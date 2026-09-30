@@ -104,11 +104,7 @@ private:
 	EHANDLE m_hFlame;
 
 	// Limit the max number of extant Gibs (mainly a memory issue):
-#ifdef _GAMECONSOLE
-	static const int MAX_CONCURRENT_GIBS = 25;
-#else
 	static const int MAX_CONCURRENT_GIBS = 75;
-#endif
 	static CUtlVector<EHANDLE> s_ExtantGibs;
 };
 

@@ -5,7 +5,7 @@
 //=============================================================================//
 
 // HACKHACK fix this include
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -59,13 +59,6 @@
 #include "sound.h"
 #include "voice.h"
 #include "sv_rcon.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#include "xbox/xbox_launch.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#include "tls_ps3.h"
-#endif
 #include "filesystem/IQueuedLoader.h"
 #include "filesystem/IXboxInstaller.h"
 #include "toolframework/itoolframework.h"
@@ -153,11 +146,6 @@ bool CanShowHostTvStatus()
 	}
 }
 
-#ifdef _PS3
-ConVar ps3_host_quit_graceperiod( "ps3_host_quit_graceperiod", "7", FCVAR_DEVELOPMENTONLY, "Time granted for save operations to finish" );
-ConVar ps3_host_quit_debugpause( "ps3_host_quit_debugpause", "0", FCVAR_DEVELOPMENTONLY, "Time to stall quit for debug purposes" );
-#endif
-
 ConVar voice_recordtofile("voice_recordtofile", "0", FCVAR_RELEASE, "Record mic data and decompressed voice data into 'voice_micdata.wav' and 'voice_decompressed.wav'");
 ConVar voice_inputfromfile("voice_inputfromfile", "0",FCVAR_RELEASE, "Get voice input from 'voice_input.wav' rather than from the microphone.");
 
@@ -192,233 +180,6 @@ int	gHostSpawnCount = 0;
 
 // If any quit handlers balk, then aborts quit sequence
 bool EngineTool_CheckQuitHandlers();
-
-#if defined( _GAMECONSOLE )
-void Host_Quit_f (void);
-void PS3_sysutil_callback_forwarder( uint64 uiStatus, uint64 uiParam );
-void Quit_gameconsole_f( bool bWarmRestart, bool bUnused )
-{
-#if defined( _DEMO )
-	if ( Host_IsDemoExiting() )
-	{
-		// for safety, only want to play this under demo exit conditions
-		// which guaranteed us a safe exiting context
-		game->PlayVideoListAndWait( "media/DemoUpsellVids.txt" );
-	}
-#endif
-
-#if defined( _X360 ) && defined( _DEMO )
-	// demo version has to support variants of the launch structures
-	// demo version must reply with exact demo launch structure if provided
-	unsigned int launchID;
-	int launchSize;
-	void *pLaunchData;
-	bool bValid = XboxLaunch()->GetLaunchData( &launchID, &pLaunchData, &launchSize );
-	if ( bValid && Host_IsDemoHostedFromShell() )
-	{
-		XboxLaunch()->SetLaunchData( pLaunchData, launchSize, LF_UNKNOWNDATA );
-		g_pMaterialSystem->PersistDisplay();
-		XBX_DisconnectConsoleMonitor();
-
-		const char *pImageName = XLAUNCH_KEYWORD_DEFAULT_APP;
-		if ( launchID == LAUNCH_DATA_DEMO_ID )
-		{
-			pImageName = ((LD_DEMO*)pLaunchData)->szLauncherXEX;
-		}
-		XboxLaunch()->Launch( pImageName );
-		return;
-	}
-#endif
-
-#ifdef _X360
-	// must be first, will cause a reset of the launch if we have never been re-launched
-	// all further XboxLaunch() operations MUST be writes, otherwise reset
-	int launchFlags = LF_EXITFROMGAME;
-
-	// block until the installer stops
-	g_pXboxInstaller->IsStopped( true );
-	if ( g_pXboxInstaller->IsFullyInstalled() )
-	{
-		launchFlags |= LF_INSTALLEDTOCACHE;
-	}
-
-	// allocate the full payload
-	int nPayloadSize = XboxLaunch()->MaxPayloadSize();
-	byte *pPayload = (byte *)stackalloc( nPayloadSize );
-	V_memset( pPayload, 0, sizeof( nPayloadSize ) );
-
-	// payload is at least the command line
-	// any user data needed must be placed AFTER the command line
-	const char *pCmdLine = CommandLine()->GetCmdLine();
-	int nCmdLineLength = (int)strlen( pCmdLine ) + 1;
-	V_memcpy( pPayload, pCmdLine, min( nPayloadSize, nCmdLineLength ) );
-
-	// add any other data here to payload, after the command line
-	// ...
-
-	// Collect settings to preserve across restarts
-	int numGameUsers = XBX_GetNumGameUsers();
-	char slot2ctrlr[4];
-	char slot2guest[4];
-	int ctrlr2storage[4];
-
-	for ( int k = 0; k < 4; ++ k )
-	{
-		slot2ctrlr[k] = (char) XBX_GetUserId( k );
-		slot2guest[k] = (char) XBX_GetUserIsGuest( k );
-		ctrlr2storage[k] = XBX_GetStorageDeviceId( k );
-	}
-
-	// storage device may have changed since previous launch
-	XboxLaunch()->SetStorageID( ctrlr2storage );
-
-	// Close the storage devices
-	g_pXboxSystem->CloseAllContainers();
-
-	DWORD nUserID = XBX_GetPrimaryUserId();
-	XboxLaunch()->SetUserID( nUserID );
-	XboxLaunch()->SetSlotUsers( numGameUsers, slot2ctrlr, slot2guest );
-
-	if ( bWarmRestart )
-	{
-		// a restart is an attempt at a hidden reboot-in-place
-		launchFlags |= LF_WARMRESTART;
-	}
-
-	// set our own data and relaunch self
-	bool bLaunch = XboxLaunch()->SetLaunchData( pPayload, nPayloadSize, launchFlags );
-#if defined( _DEMO )
-	bLaunch = true;
-#endif
-	if ( bLaunch )
-	{
-		// Can't send anything to VXConsole; about to abandon connection
-		// VXConsole tries to respond but can't and throws the timeout crash
-//		COM_TimestampedLog( "Launching: \"%s\" Flags: 0x%8.8x", pCmdLine, XboxLaunch()->GetLaunchFlags() );
-		g_pMaterialSystem->PersistDisplay();
-		XBX_DisconnectConsoleMonitor();
-#if defined( CSTRIKE15 )
-		XboxLaunch()->SetLaunchData( NULL, 0, 0 );
-		XboxLaunch()->Launch( XLAUNCH_KEYWORD_DASH_ARCADE );
-#else
-		XboxLaunch()->Launch();
-#endif // defined( CSTRIKE15 )
-	}
-#elif defined( _PS3 )
-	// TODO: preserve when a "restart" is requested!
-	Assert( !bWarmRestart );
-	Assert( !bUnused );
-	if ( bWarmRestart )
-	{
-		DevWarning( "TODO: PS3 quit_x360 restart is not implemented yet!\n" );
-	}
-
-	// Prevent re-entry
-	static bool s_bQuitPreventReentry = false;
-	if ( s_bQuitPreventReentry )
-		return;
-	s_bQuitPreventReentry = true;
-
-	// We must go into single-threaded rendering
-	Host_AllowQueuedMaterialSystem( false );
-	
-	// Make sure everybody received the EXITGAME callback, might happen multiple times now
-	float const flTimeStampStart = Plat_FloatTime();
-	float flGracePeriod = ps3_host_quit_graceperiod.GetFloat();
-	flGracePeriod = MIN( 7, flGracePeriod );
-	flGracePeriod = MAX( 0, flGracePeriod );
-	float const flTimeStampForceShutdown = flTimeStampStart + flGracePeriod;
-	uint64 uiLastCountdownNotificationSent = 0;
-	for ( ; ; )
-	{
-		enum ShutdownSystemsWait_t
-		{
-			kSysSaveRestore,
-			kSysSaveUtilV2,
-			kSysSteamClient,
-			kSysDebugPause,
-			kSysShutdownSystemsCount
-		};
-		char const *szSystems[kSysShutdownSystemsCount] = {0};
-		char const *szSystemsRequiredState[kSysShutdownSystemsCount] = {0};
-		
-		// Poll systems whether they are ready to shutdown
-		if ( saverestore && saverestore->IsSaveInProgress() )
-			szSystems[kSysSaveRestore] = "saverestore";
-		extern bool SaveUtilV2_CanShutdown();
-		if ( !SaveUtilV2_CanShutdown() )
-			szSystems[kSysSaveUtilV2] = "SaveUtilV2";
-		if ( Steam3Client().SteamUtils() && !Steam3Client().SteamUtils()->BIsReadyToShutdown() )
-			szSystems[kSysSteamClient] = "steamclient";
-		if ( ( ps3_host_quit_debugpause.GetFloat() > 0 ) && ( Plat_FloatTime() < flTimeStampStart + ps3_host_quit_debugpause.GetFloat() ) )
-			szSystems[kSysDebugPause] = "debugpause";
-
-		if ( !Q_memcmp( szSystemsRequiredState, szSystems, sizeof( szSystemsRequiredState ) ) )
-		{
-			DevMsg( "PS3 shutdown procedure: all systems ready (%.2f sec elapsed)\n", ( Plat_FloatTime() - flTimeStampStart ) );
-			break;
-		}
-
-		uint64 uiCountdownNotification = 1 + ( flTimeStampForceShutdown - Plat_FloatTime() );
-		if ( uiCountdownNotification != uiLastCountdownNotificationSent )
-		{
-			uiLastCountdownNotificationSent = uiCountdownNotification;
-			PS3_sysutil_callback_forwarder( CELL_SYSUTIL_REQUEST_EXITGAME, uiCountdownNotification );
-			DevWarning( "PS3 shutdown procedure: %.2f sec elapsed...\n", ( Plat_FloatTime() - flTimeStampStart ) );
-			int nNotReadySystemsCount = 0;
-			for ( int jj = 0; jj < ARRAYSIZE( szSystems ); ++ jj )
-			{
-				if ( szSystems[jj] )
-				{
-					DevWarning( "    system not ready  : %s\n", szSystems[jj] );
-					++ nNotReadySystemsCount;
-				}
-			}
-			DevWarning( "PS3 shutdown procedure: waiting for %d systems to be ready for shutdown (%.2f sec remaining)...\n", nNotReadySystemsCount, ( flTimeStampForceShutdown - Plat_FloatTime() ) );
-		}
-
-		if ( Plat_FloatTime() >= flTimeStampForceShutdown )
-		{
-			DevWarning( "FORCING PS3 SHUTDOWN PROCEDURE: NOT ALL SYSTEMS READY (%.2f sec elapsed)...\n", ( Plat_FloatTime() - flTimeStampStart ) );
-			break;
-		}
-
-		// Perform blank vsync'ed flips
-		static ConVarRef mat_vsync( "mat_vsync" );
-		mat_vsync.SetValue( true );
-		g_pMaterialSystem->SetFlipPresentFrequency( 1 ); // let it flip every VSYNC, we let interrupt handler throttle this loop to conform with TCR#R092 [no more than 60 fps]
-		
-		// Dummy frame
-		g_pMaterialSystem->BeginFrame( 1.0f/60.0f );
-		CMatRenderContextPtr pRenderContext;
-		pRenderContext.GetFrom( g_pMaterialSystem );
-		pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
-		pRenderContext->ClearBuffers( true, true, true );
-		pRenderContext.SafeRelease();
-		g_pMaterialSystem->EndFrame();
-		g_pMaterialSystem->SwapBuffers();
-
-		// Pump system event queue
-		XBX_ProcessEvents();
-		XBX_DispatchEventsQueue();
-	}
-	
-	// QUIT
-	Warning( "[PS3 SYSTEM] REQUEST EXITGAME INITIATING QUIT @ %.3f\n", Plat_FloatTime() );
-	Host_Quit_f();
-#else
-	Assert( 0 );
-#error
-#endif
-}
-
-CON_COMMAND( quit_gameconsole, "" )
-{
-	Quit_gameconsole_f( 
-		args.FindArg( "restart" ) != NULL, 
-		args.FindArg( "invite" ) != NULL );
-}
-#endif
 
 // store arbitrary launch arguments in KeyValues to avoid having to add code for every new
 //   launch parameter (like edit mode, commentary mode, background, etc. do)
@@ -832,256 +593,6 @@ CON_COMMAND( hltv_replay_status, "Show Killer Replay status and some statistics,
 	}
 }
 
-
-
-#if defined( _X360 )
-CON_COMMAND( vx_mapinfo, "" )
-{
-	Vector org;
-	QAngle ang;
-	const char *pName;
-
-	if ( GetBaseLocalClient().IsActive() )
-	{
-		pName = GetBaseLocalClient().m_szLevelNameShort;
-		org = MainViewOrigin();
-		VectorAngles( MainViewForward(), ang );
-		IClientEntity *localPlayer = entitylist->GetClientEntity( GetBaseLocalClient().m_nPlayerSlot + 1 );
-		if ( localPlayer )
-		{
-			org = localPlayer->GetAbsOrigin();
-		}
-	}
-	else
-	{
-		pName = "";
-		org.Init();
-		ang.Init();
-	}
-
-	// HACK: This is only relevant for portal2. 
-	Msg( "BUG REPORT PORTAL POSITIONS:\n" );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "portal_report\n" );
-
-	// send to vxconsole
-	xMapInfo_t mapInfo;
-	mapInfo.position[0] = org[0];
-	mapInfo.position[1] = org[1];
-	mapInfo.position[2] = org[2];
-	mapInfo.angle[0]    = ang[0];
-	mapInfo.angle[1]    = ang[1];
-	mapInfo.angle[2]    = ang[2];
-	mapInfo.build       = build_number();
-	mapInfo.skill       = skill.GetInt();
-
-	// generate the qualified path where .sav files are expected to be written
-	char savePath[MAX_PATH];
-	V_snprintf( savePath, sizeof( savePath ), "%s", saverestore->GetSaveDir() );
-	V_StripTrailingSlash( savePath );
-	g_pFileSystem->RelativePathToFullPath( savePath, "MOD", mapInfo.savePath, sizeof( mapInfo.savePath ) );
-	V_FixSlashes( mapInfo.savePath );
-
-	if ( pName[0] )
-	{
-		// generate the qualified path from where the map was loaded
-		char mapPath[MAX_PATH];
-		V_snprintf( mapPath, sizeof( mapPath ), "maps/%s" PLATFORM_EXT ".bsp", pName );
-		g_pFileSystem->GetLocalPath( mapPath, mapInfo.mapPath, sizeof( mapInfo.mapPath ) );
-		V_FixSlashes( mapInfo.mapPath );
-	}
-	else
-	{
-		mapInfo.mapPath[0] = '\0';
-	}
-
-	mapInfo.details[0] = '\0';
-
-	ConVarRef host_thread_mode( "host_thread_mode" );
-	ConVarRef mat_queue_mode( "mat_queue_mode" );
-	ConVarRef snd_surround_speakers( "snd_surround_speakers" );
-
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Build: %d\n", build_number() ),
-		sizeof( mapInfo.details ) );
-
-	XVIDEO_MODE videoMode;
-	XGetVideoMode( &videoMode );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Display: %dx%d (%s)\n", videoMode.dwDisplayWidth, videoMode.dwDisplayHeight, videoMode.fIsWideScreen ? "widescreen" : "normal" ),
-		sizeof( mapInfo.details ) );
-
-	int backbufferWidth, backbufferHeight;
-	materials->GetBackBufferDimensions( backbufferWidth, backbufferHeight );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "BackBuffer: %dx%d\n", backbufferWidth, backbufferHeight ),
-		sizeof( mapInfo.details ) );
-
-	// audio info
-	const char *pAudioInfo = "Unknown";
-	switch ( snd_surround_speakers.GetInt() )
-	{
-	case 2:
-		pAudioInfo = "Stereo";
-		break;
-	case 5:
-		pAudioInfo = "5.1 Digital Surround";
-		break;
-	}
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Audio: %s\n", pAudioInfo ),
-		sizeof( mapInfo.details ) );
-
-	// ui language
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "UI: %s\n", cl_language.GetString() ),
-		sizeof( mapInfo.details ) );
-
-	// cvars
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "host_thread_mode: %d\n", host_thread_mode.GetInt() ),
-		sizeof( mapInfo.details ) );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "mat_queue_mode: %d\n", mat_queue_mode.GetInt() ),
-		sizeof( mapInfo.details ) );
-
-	XBX_rMapInfo( &mapInfo );
-}
-#elif defined( _PS3 )
-#include "ps3/ps3_sn.h"
-CON_COMMAND( vx_mapinfo, "" )
-{
-	Vector org;
-	QAngle ang;
-	const char *pName;
-
-	if ( GetBaseLocalClient().IsActive() )
-	{
-		pName = GetBaseLocalClient().m_szLevelNameShort;
-		org = MainViewOrigin();
-		VectorAngles( MainViewForward(), ang );
-		IClientEntity *localPlayer = entitylist->GetClientEntity( GetBaseLocalClient().m_nPlayerSlot + 1 );
-		if ( localPlayer )
-		{
-			org = localPlayer->GetAbsOrigin();
-		}
-	}
-	else
-	{
-		pName = "";
-		org.Init();
-		ang.Init();
-	}
-
-	// HACK: This is only relevant for portal2. 
-	Msg( "BUG REPORT PORTAL POSITIONS:\n" );
-	Cbuf_AddText( Cbuf_GetCurrentPlayer(), "portal_report\n" );
-
-	// send to vxconsole
-	xMapInfo_t mapInfo;
-	mapInfo.position[0] = org[0];
-	mapInfo.position[1] = org[1];
-	mapInfo.position[2] = org[2];
-	mapInfo.angle[0]    = ang[0];
-	mapInfo.angle[1]    = ang[1];
-	mapInfo.angle[2]    = ang[2];
-	mapInfo.build       = build_number();
-	mapInfo.skill       = skill.GetInt();
-
-	// generate the qualified path where .sav files are expected to be written
-	char savePath[MAX_PATH];
-	V_snprintf( savePath, sizeof( savePath ), "%s", saverestore->GetSaveDir() );
-	V_StripTrailingSlash( savePath );
-	g_pFileSystem->RelativePathToFullPath( savePath, "MOD", mapInfo.savePath, sizeof( mapInfo.savePath ) );
-	V_FixSlashes( mapInfo.savePath );
-
-	if ( pName[0] )
-	{
-		// generate the qualified path from where the map was loaded
-		char mapPath[MAX_PATH];
-		V_snprintf( mapPath, sizeof( mapPath ), "maps/%s" PLATFORM_EXT ".bsp", pName );
-		g_pFileSystem->GetLocalPath( mapPath, mapInfo.mapPath, sizeof( mapInfo.mapPath ) );
-		V_FixSlashes( mapInfo.mapPath );
-	}
-	else
-	{
-		mapInfo.mapPath[0] = '\0';
-	}
-
-	mapInfo.details[0] = '\0';
-
-	ConVarRef host_thread_mode( "host_thread_mode" );
-	ConVarRef mat_queue_mode( "mat_queue_mode" );
-	ConVarRef snd_surround_speakers( "snd_surround_speakers" );
-
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Build: %d\n", build_number() ),
-		sizeof( mapInfo.details ) );
-
-	/*
-	XVIDEO_MODE videoMode;
-	XGetVideoMode( &videoMode );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Display: %dx%d (%s)\n", videoMode.dwDisplayWidth, videoMode.dwDisplayHeight, videoMode.fIsWideScreen ? "widescreen" : "normal" ),
-		sizeof( mapInfo.details ) );
-
-	int backbufferWidth, backbufferHeight;
-	materials->GetBackBufferDimensions( backbufferWidth, backbufferHeight );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "BackBuffer: %dx%d\n", backbufferWidth, backbufferHeight ),
-		sizeof( mapInfo.details ) );
-	*/
-
-	// audio info
-	const char *pAudioInfo = "Unknown";
-	switch ( snd_surround_speakers.GetInt() )
-	{
-	case 2:
-		pAudioInfo = "Stereo";
-		break;
-	case 5:
-		pAudioInfo = "5.1 Digital Surround";
-		break;
-	}
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "Audio: %s\n", pAudioInfo ),
-		sizeof( mapInfo.details ) );
-
-	// ui language
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "UI: %s\n", cl_language.GetString() ),
-		sizeof( mapInfo.details ) );
-
-	// cvars
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "host_thread_mode: %d\n", host_thread_mode.GetInt() ),
-		sizeof( mapInfo.details ) );
-	V_strncat(
-		mapInfo.details,
-		CFmtStr( "mat_queue_mode: %d\n", mat_queue_mode.GetInt() ),
-		sizeof( mapInfo.details ) );
-
-	XBX_rMapInfo( &mapInfo );
-}
-
-
-CON_COMMAND( vx_screenshot, "" )
-{
-	g_pMaterialSystem->TransmitScreenshotToVX( );
-}	
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -1607,15 +1118,6 @@ public:
 //-----------------------------------------------------------------------------
 void Host_Disconnect( bool bShowMainMenu )
 {
-#ifdef _PS3
-	if ( GetTLSGlobals()->bNormalQuitRequested )
-	{
-		if ( g_nHostDisconnectReentrancyCounter != 0 )
-		{
-			return; // do not disconnect recursively on QUIT
-		}
-	}
-#endif
 
 
 	IGameEvent *disconnectEvent = g_GameEventManager.CreateEvent( "cs_game_disconnected" );
@@ -1677,13 +1179,6 @@ void Host_Disconnect( bool bShowMainMenu )
 				// This must be BEFORE ui gets-rectivated below
 				materials->ResetTempHWMemory( true );
 			}
-
-#ifdef _PS3
-			if ( GetTLSGlobals()->bNormalQuitRequested )
-			{
-					return; // do not disconnect recursively on QUIT
-			}
-#endif
 
 			EngineVGui()->ActivateGameUI();
 		}
@@ -2138,14 +1633,6 @@ void Host_PrintMemoryStatus( const char *mapname )
 	struct mstats stats = mstats();
 	Msg( "[MEMORYSTATUS] [%s] Operating system reports  Used: %.2f MB, Free: %.2f Total: %.2f\n",
 		mapname, MB*stats.bytes_used, MB*stats.bytes_free, MB*stats.bytes_total );
-#elif defined( _PS3 )
-
-	// NOTE: for PS3 nFreeMemory can be negative (on a devkit, we can use more memory than a retail kit has)
-	int nUsedMemory, nFreeMemory, nAvailable;
-	g_pMemAlloc->GlobalMemoryStatus( (size_t *)&nUsedMemory, (size_t *)&nFreeMemory );
-	nAvailable = nUsedMemory + nFreeMemory;
-	Msg( "[MEMORYSTATUS] [%s] Operating system reports Available: %.2f MB, Used: %.2f MB, Free: %.2f MB\n", 
-		mapname, MB*nAvailable, MB*nUsedMemory, MB*nFreeMemory );
 #elif defined(PLATFORM_WINDOWS)
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof(statex);
@@ -2734,12 +2221,8 @@ static ConCommand togglevoicerecord("voicerecord_toggle", Host_VoiceToggle_f);
 CON_COMMAND_F( crash, "Cause the engine to crash (Debug!!)", FCVAR_CHEAT )
 { 
 	Msg( "forcing crash\n" );
-#if defined( _X360 )
-	DmCrashDump( FALSE );
-#else
 	char *p = 0;
 	*p = 0;
-#endif
 }
 
 CON_COMMAND_F( spincycle, "Cause the engine to spincycle (Debug!!)", FCVAR_CHEAT )
@@ -2879,13 +2362,6 @@ CON_COMMAND( cache_print_summary, "cache_print_summary [section]\nPrint out a su
 	}
 	g_pDataCache->OutputReport( DC_SUMMARY_REPORT, pszSection );
 }
-
-#if defined( _X360 )
-CON_COMMAND( vx_datacache_list, "vx_datacache_list" )
-{
-	g_pDataCache->OutputReport( DC_DETAIL_REPORT_VXCONSOLE, NULL );
-}
-#endif
 
 #ifndef _DEMO
 #ifndef DEDICATED

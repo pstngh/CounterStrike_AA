@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#if !defined( _X360 ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void Steam_WriteLeaderboardData( KeyValues *pViewDescription, KeyValues *pViewData );
 

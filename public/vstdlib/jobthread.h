@@ -444,9 +444,6 @@ JOB_INTERFACE void RunThreadPoolTests();
 //-----------------------------------------------------------------------------
 
 JOB_INTERFACE IThreadPool *g_pThreadPool;
-#ifdef _X360
-JOB_INTERFACE IThreadPool *g_pAlternateThreadPool;
-#endif
 
 //-----------------------------------------------------------------------------
 // Class to combine the metadata for an operation and the ability to perform
@@ -913,10 +910,6 @@ public:
 		if ( nItems == 0 )
 			return;
 
-#if defined(_X360)
-		volatile int ignored = ID_TO_PREVENT_COMDATS_IN_PROFILES;
-#endif
-
 		m_nChunkSize = nChunkSize;
 		if ( !pThreadPool )
 		{
@@ -976,9 +969,6 @@ private:
 	{
 		if ( m_pItems < m_pLimit )
 		{
-#if defined(_X360)
-			volatile int ignored = ID_TO_PREVENT_COMDATS_IN_PROFILES;
-#endif
 			m_ItemProcessor.Begin();
 
 			ITEM_TYPE *pLimit = m_pLimit;

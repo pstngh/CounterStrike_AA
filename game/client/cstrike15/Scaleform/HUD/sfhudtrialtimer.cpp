@@ -14,10 +14,6 @@
 #include "vgui/ILocalize.h"
 #include "VGuiMatSurface/IMatSystemSurface.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -50,23 +46,11 @@ public:
 				float timeLeft = 0;
 
 
-#if defined( _X360 )
-				if ( xboxsystem )
-				{
-					bUnlocked = xboxsystem->IsArcadeTitleUnlocked();
-
-					if ( !bUnlocked )
-					{
-						timeLeft = xboxsystem->GetArcadeRemainingTrialTime( m_iFlashSlot - SF_FIRST_SS_SLOT );
-					}
-				}
-#else
 				ConVarRef xbox_arcade_title_unlocked( "xbox_arcade_title_unlocked" );
 				ConVarRef xbox_arcade_remaining_trial_time( "xbox_arcade_remaining_trial_time" );
 
 				bUnlocked = xbox_arcade_title_unlocked.GetBool();
 				timeLeft = xbox_arcade_remaining_trial_time.GetFloat();
-#endif
 				if ( !bUnlocked )
 				{
 					int minutesLeft = floorf( timeLeft / 60.0f );
@@ -126,15 +110,8 @@ public:
 	{
 		bool result = cl_drawhud.GetBool();
 
-#if defined( _X360 )
-		if ( result && xboxsystem )
-		{
-			result = !( xboxsystem->IsArcadeTitleUnlocked() );
-		}
-#else
 		ConVarRef xbox_arcade_title_unlocked( "xbox_arcade_title_unlocked" );
 		result = result && !xbox_arcade_title_unlocked.GetBool();
-#endif
 
 		return result && CHudElement::ShouldDraw();
 	}

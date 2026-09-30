@@ -10,11 +10,7 @@
 #include "engineinterface.h"
 #include "vgui/ISurface.h"
 
-#ifndef _GAMECONSOLE
 #include "steam/steam_api.h"
-#endif
-
-#ifndef _GAMECONSOLE
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -113,4 +109,3 @@ void CGameUiAvatarImage::Paint( void )
 	}
 }
 
-#endif // !_GAMECONSOLE

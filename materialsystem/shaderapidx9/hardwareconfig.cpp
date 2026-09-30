@@ -190,9 +190,6 @@ void CHardwareConfig::ForceCapsToDXLevel( HardwareCaps_t *pCaps, int nDxLevel, c
 		break;
 	}
 
-#ifdef _PS3
-	pCaps->m_NumPixelShaderConstants = MAX_FRAGMENT_PROGRAM_CONSTS; // this is somewhat of a lie... fragment shader constants are special on PS3 and we actually have a larger number of these
-#endif
 }
 
 
@@ -404,12 +401,10 @@ bool CHardwareConfig::IsUnsupported() const
 
 ShadowFilterMode_t CHardwareConfig::GetShadowFilterMode( bool bForceLowQualityShadows, bool bPS30 ) const
 {
-#if PLATFORM_POSIX || !defined( PLATFORM_X360 )
 	static ConVarRef gpu_level( "gpu_level" );
 	int nGPULevel = gpu_level.GetInt();
 	
     const bool bUseLowQualityShadows = ( nGPULevel < 2 ) || ( bForceLowQualityShadows );
-#endif
 	
 #if PLATFORM_POSIX
 	// Currently Mac or PS3
@@ -427,9 +422,6 @@ ShadowFilterMode_t CHardwareConfig::GetShadowFilterMode( bool bForceLowQualitySh
 		// PS3 shaders doesn't use the regular PC/POSIX values. It supports either 9 (the default) or 1 tap (fast) filtering.
 		return bForceLowQualityShadows ? GAMECONSOLE_SINGLE_TAP_PCF : GAMECONSOLE_NINE_TAP_PCF;
 	}
-#elif defined( PLATFORM_X360 )
-	// X360
-	return bForceLowQualityShadows ? GAMECONSOLE_SINGLE_TAP_PCF : GAMECONSOLE_NINE_TAP_PCF;
 #else
 	// PC
 	if ( !m_Caps.m_bSupportsShadowDepthTextures || !ShaderUtil()->GetConfig().ShadowDepthTexture() )
@@ -484,13 +476,8 @@ ShadowFilterMode_t CHardwareConfig::GetShadowFilterMode( bool bForceLowQualitySh
 	return SHADOWFILTERMODE_DEFAULT;
 }
 
-#if defined( CSTRIKE15 ) && defined( _X360 )
-static ConVar r_shader_srgb( "r_shader_srgb", "0", 0, "-1 = use hardware caps. 0 = use hardware srgb. 1 = use shader srgb(software lookup)" );		// -1=use caps 0=off 1=on
-static ConVar r_shader_srgbread( "r_shader_srgbread", "1", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#else
 static ConVar r_shader_srgb( "r_shader_srgb", "0", 0, "-1 = use hardware caps. 0 = use hardware srgb. 1 = use shader srgb(software lookup)" );		// -1=use caps 0=off 1=on
 static ConVar r_shader_srgbread( "r_shader_srgbread", "0", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#endif
 
 int CHardwareConfig::NeedsShaderSRGBConversion() const
 {
@@ -823,10 +810,6 @@ HDRType_t CHardwareConfig::GetHDRType() const
 
 float CHardwareConfig::GetLightMapScaleFactor( void ) const
 {
-#ifdef _PS3
-	// PS3 uses floating point lightmaps but not the full HDR_TYPE_FLOAT codepath
-	return 1.0f;
-#else // _PS3
 	switch( GetHDRType() )
 	{
 	case HDR_TYPE_FLOAT:
@@ -840,7 +823,6 @@ float CHardwareConfig::GetLightMapScaleFactor( void ) const
 	default:
 		return GammaToLinearFullRange( 2.0 );	// light map scale
 	}
-#endif // !_PS3
 }
 
 HDRType_t CHardwareConfig::GetHardwareHDRType() const
@@ -900,22 +882,12 @@ ImageFormat CHardwareConfig::GetNullTextureFormat( void ) const
 
 bool CHardwareConfig::SupportsCascadedShadowMapping( void ) const
 {
-#if defined(_PS3) 
-	return m_Caps.m_bSupportsCascadedShadowMapping;
-#elif defined(_X360)
-	return m_Caps.m_bSupportsCascadedShadowMapping;
-#else
     return m_Caps.m_bSupportsCascadedShadowMapping && ( GetDXSupportLevel() >= 95 );
-#endif
 }
 
 CSMQualityMode_t CHardwareConfig::GetCSMQuality( void ) const
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return CSMQUALITY_VERY_LOW;
-#else
 	return (CSMQualityMode_t)m_Caps.m_nCSMQuality;
-#endif
 }
 
 bool CHardwareConfig::SupportsBilinearPCFSampling() const
@@ -940,9 +912,6 @@ bool CHardwareConfig::SupportsBilinearPCFSampling() const
 // Returns the CSM static combo to select given the current card's capablities and the configured CSM quality level.
 CSMShaderMode_t CHardwareConfig::GetCSMShaderMode( CSMQualityMode_t nQualityLevel ) const
 {
-#if defined( _X360 ) || defined( _PS3 )
-	return CSMSHADERMODE_LOW_OR_VERY_LOW;
-#endif
 
 	// Special case for ATI DX9-class (pre ATI HD 2xxx) cards that don't support NVidia-style PCF filtering - always set to CSMSHADERMODE_ATIFETCH4.
 	if ( !SupportsBilinearPCFSampling() )
@@ -1020,7 +989,3 @@ bool CHardwareConfig::HasFullResolutionDepthTexture(void) const
 	}
 }
 
-#ifdef _PS3
-#include "hardwareconfig_ps3nonvirt.h"
-#include "hardwareconfig_ps3nonvirt.inl"
-#endif

@@ -8,10 +8,6 @@
 
 #include "cbase.h"
 
-#if !defined (_GAMECONSOLE)
-
-#endif  // _GAMECONSOLE
-
 #include "gamestringpool.h"
 #include "mapentities_shared.h"
 #include "game.h"
@@ -605,9 +601,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		return false;
 
 #if !defined( SWDS ) && !defined(NO_STEAM)
-	#ifndef _PS3
 	SteamAPI_InitSafe();
-	#endif
 	s_SteamAPIContext.Init();
 #endif
 #if !defined(NO_STEAM)
@@ -626,13 +620,11 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
  	}
  
 #if !defined(NO_STEAM)
-	#ifndef _PS3
 	if( SteamAPI_RestartAppIfNecessary( engine->GetAppID() ) )
 	{
 		STEAMWORKS_TERMCEGLIBRARY();
 		return false;
 	}
-	#endif
 #endif
 
  	STEAMWORKS_TESTSECRETALWAYS();
@@ -1242,11 +1234,9 @@ CEG_NOINLINE void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edict
 		think_limit.SetValue( 0 );
 	}
 
-#ifndef _XBOX
 	// load the Navigation Mesh for this map
 	TheNavMesh->Load();
 	TheNavMesh->OnServerActivate();
-#endif
 
 #if defined( CSTRIKE_DLL ) // BOTPORT: TODO: move these ifdefs out
 	TheBots->ServerActivate();
@@ -1865,9 +1855,7 @@ CEG_NOINLINE void CServerGameDLL::ReadRestoreHeaders( CSaveRestoreData *s )
 
 void CServerGameDLL::PreSaveGameLoaded( char const *pSaveName, bool bInGame )
 {
-	#ifndef _GAMECONSOLE
 	gamestats->Event_PreSaveGameLoaded( pSaveName, bInGame );
-	#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2646,24 +2634,16 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 	// which it sees all entities so that it gets their basic information.
 	const bool bIsFreshlySpawned = pRecipientPlayer->GetInitialSpawnTime()+3.0f > gpGlobals->curtime;
 	const int skyBoxArea = pRecipientPlayer->m_Local.m_skybox3d.area;
-#ifndef _GAMECONSOLE
 	const bool bIsHLTV = pRecipientPlayer->IsHLTV();
 	const bool bIsReplay = false;
 
 	// m_pTransmitAlways must be set if HLTV client
 	Assert( bIsHLTV == ( pInfo->m_pTransmitAlways != NULL) ||
 		    bIsReplay == ( pInfo->m_pTransmitAlways != NULL) );
-#endif
 	IEngineTrace::CAutoSuspendOcclusionTests autoSuspender( enginetrace ); // suspend the async engine traces for the time being
 	for ( int i=0; i < nEdicts; i++ )
 	{
 		int iEdict = pEdictIndices[i];
-#ifdef _GAMECONSOLE
-		if ( i < nEdicts-1 )
-		{
-			PREFETCH360(&pBaseEdict[pEdictIndices[i+1]],0);
-		}
-#endif
 
 		edict_t *pEdict = &pBaseEdict[iEdict];
 		int nFlags = pEdict->m_fStateFlags & (FL_EDICT_DONTSEND|FL_EDICT_ALWAYS|FL_EDICT_PVSCHECK|FL_EDICT_FULLCHECK);
@@ -2686,12 +2666,10 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 				// mark entity for sending
 				pInfo->m_pTransmitEdict->Set( iEdict );
 	
-#ifndef _GAMECONSOLE
 				if ( bIsHLTV || bIsReplay )
 				{
 					pInfo->m_pTransmitAlways->Set( iEdict );
 				}
-#endif	
 				CServerNetworkProperty *pEnt = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
 				if ( !pEnt )
 					break;
@@ -2735,7 +2713,6 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 
 		CServerNetworkProperty *netProp = static_cast<CServerNetworkProperty*>( pEdict->GetNetworkable() );
 
-#ifndef _GAMECONSOLE
 		if ( bIsHLTV || bIsReplay )
 		{
 			// for the HLTV/Replay we don't cull against PVS
@@ -2749,7 +2726,6 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 			}
 			continue;
 		}
-#endif
 
 		// Always send entities in the player's 3d skybox.
 		// Sidenote: call of AreaNum() ensures that PVS data is up to date for this entity
@@ -3033,9 +3009,7 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 			if ( g_pGameRules )
 			{
 				g_pGameRules->ClientDisconnected( pEdict );
-				#ifndef _GAMECONSOLE
 				gamestats->Event_PlayerDisconnected( player );
-				#endif
 			}
 		}
 

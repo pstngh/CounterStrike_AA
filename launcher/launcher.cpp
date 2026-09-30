@@ -7,11 +7,9 @@
 //==================================================================//
 
 #if defined( _WIN32 )
-#if !defined( _X360 )
 #include <windows.h>
 #include "shlwapi.h" // registry stuff
 #include <direct.h>
-#endif
 #elif defined ( OSX ) 
 #include <Carbon/Carbon.h>
 #elif defined ( LINUX )
@@ -20,8 +18,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <locale.h>
-#elif defined ( _PS3 )
-// nothing here for now...
 #else
 #error
 #endif
@@ -70,20 +66,6 @@
 #include "tier1/fmtstr.h"
 #include "vjobs_interface.h"
 #include "vstdlib/jobthread.h"
-
-#if defined( _PS3 )
-#include "sys/ppu_thread.h"
-#include "ps3/ps3_win32stubs.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_helpers.h"
-#include "ps3/ps3_console.h"
-#include "../public/ps3_pathinfo.h"
-#include "../public/tls_ps3.h"
-#elif defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#include "xbox/xbox_console.h"
-#include "xbox/xbox_launch.h"
-#endif
 
 #ifdef LINUX
 #include "SDL.h"
@@ -137,11 +119,8 @@ static IHammer *g_pHammer;
 
 bool g_bTextMode = false;
 
-#ifndef _PS3
 static char g_szBasedir[MAX_PATH];
 static char g_szGamedir[MAX_PATH];
-#else
-#endif
 
 // copied from sys.h
 struct FileAssociationInfo
@@ -186,7 +165,7 @@ class CLauncherLoggingListener : public ILoggingListener
 public:
 	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
 	{
-#if !defined( _CERT ) && !defined( _PS3 )
+#if !defined( _CERT )
 #if defined ( WIN32 ) || defined( LINUX )
 		if ( pContext->m_Severity == LS_WARNING && pContext->m_ChannelID == LOG_EngineInitialization )
 		{
@@ -225,12 +204,6 @@ public:
 	}
 };
 
-#if defined( _PS3 )
-const char *GetGameDirectory( void )
-{
-	return g_pPS3PathInfo->GameImagePath();
-}
-#else
 //-----------------------------------------------------------------------------
 // Purpose: Return the game directory
 // Output : char
@@ -244,7 +217,6 @@ void SetGameDirectory( const char *game )
 {
 	Q_strncpy( g_szGamedir, game, sizeof(g_szGamedir) );
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Gets the executable name
@@ -268,9 +240,6 @@ bool GetExecutableName( char *out, int outSize )
 //-----------------------------------------------------------------------------
 const char * GetExecutableFilename()
 {
-#ifdef _PS3
-	return "csgo";
-#else // !_PS3
 	char exepath[MAX_PATH];
 	static char filename[MAX_PATH];
 
@@ -293,10 +262,8 @@ const char * GetExecutableFilename()
 	filename[0] = 0;
 #endif
 	return filename;
-#endif // _PS3
 }
 
-#if !defined(_PS3)
 //-----------------------------------------------------------------------------
 // Purpose: Return the base directory
 // Output : char
@@ -305,19 +272,12 @@ char *GetBaseDirectory( void )
 {
 	return g_szBasedir;
 }
-#else
-const char *GetBaseDirectory( void )
-{
-	return g_pPS3PathInfo->GameImagePath();
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Determine the directory where this .exe is running from
 //-----------------------------------------------------------------------------
 void UTIL_ComputeBaseDir()
 {
-#ifndef _PS3
 	g_szBasedir[0] = 0;
 
 	if ( IsX360() )
@@ -362,18 +322,12 @@ void UTIL_ComputeBaseDir()
 #endif
 	Q_FixSlashes( g_szBasedir );
 
-#else
-	
-
-#endif
 }
 
 #ifdef WIN32
 BOOL WINAPI MyHandlerRoutine( DWORD dwCtrlType )
 {
-#if !defined( _X360 )
 	TerminateProcess( GetCurrentProcess(), 2 );
-#endif
 	return TRUE;
 }
 #endif
@@ -381,7 +335,6 @@ BOOL WINAPI MyHandlerRoutine( DWORD dwCtrlType )
 void InitTextMode()
 {
 #ifdef WIN32
-#if !defined( _X360 )
 	AllocConsole();
 
 	SetConsoleCtrlHandler( MyHandlerRoutine, TRUE );
@@ -389,9 +342,6 @@ void InitTextMode()
 	freopen( "CONIN$", "rb", stdin );		// reopen stdin handle as console window input
 	freopen( "CONOUT$", "wb", stdout );		// reopen stout handle as console window output
 	freopen( "CONOUT$", "wb", stderr );		// reopen stderr handle as console window output
-#else
-	XBX_Error( "%s %s: Not Supported", __FILE__, __LINE__ );
-#endif
 #endif
 }
 
@@ -399,14 +349,6 @@ void SortResList( char const *pchFileName, char const *pchSearchPath );
 
 #define ALL_RESLIST_FILE	"all.lst"
 #define ENGINE_RESLIST_FILE  "engine.lst"
-
-#ifdef _PS3
-
-void TryToLoadSteamOverlayDLL()
-{
-}
-
-#else // !_PS3
 
 // create file to dump out to
 class CLogAllFiles
@@ -598,7 +540,7 @@ static bool IsWin98OrOlder()
 {
 	bool retval = false;
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	OSVERSIONINFOEX osvi;
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
 	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -641,7 +583,7 @@ static bool IsWin98OrOlder()
 //-----------------------------------------------------------------------------
 void TryToLoadSteamOverlayDLL()
 {
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	// First, check if the module is already loaded, perhaps because we were run from Steam directly
 	HMODULE hMod = GetModuleHandle( "GameOverlayRenderer.dll" );
 	if ( hMod )
@@ -659,8 +601,6 @@ void TryToLoadSteamOverlayDLL()
 	}
 #endif
 }
-
-#endif // _PS3
 
 //-----------------------------------------------------------------------------
 // Inner loop: initialize, shutdown main systems, load steam to 
@@ -688,17 +628,6 @@ private:
 //-----------------------------------------------------------------------------
 void ReportDirtyDiskNoMaterialSystem()
 {
-#ifdef _X360
-	for ( int i = 0; i < 4; ++i )
-	{
-		if ( XUserGetSigninState( i ) != eXUserSigninState_NotSignedIn )
-		{
-			XShowDirtyDiscErrorUI( i );
-			return;
-		}
-	}
-	XShowDirtyDiscErrorUI( 0 );
-#endif
 }
 
 IVJobs * g_pVJobs = NULL;
@@ -727,14 +656,8 @@ bool CSourceAppSystemGroup::Create()
 	AppSystemInfo_t appSystems[] = 
 	{
 #define LAUNCHER_APPSYSTEM( name ) name DLL_EXT_STRING
-#ifdef _PS3
-		{ LAUNCHER_APPSYSTEM( "vjobs" ),                VJOBS_INTERFACE_VERSION },  // Vjobs must shut down after engine and materialsystem
-#endif
 		{ LAUNCHER_APPSYSTEM( "engine" ),				CVAR_QUERY_INTERFACE_VERSION },	// NOTE: This one must be first!!
 		{ LAUNCHER_APPSYSTEM( "filesystem_stdio" ),		QUEUEDLOADER_INTERFACE_VERSION },
-#if defined( _X360 )
-		{ LAUNCHER_APPSYSTEM( "filesystem_stdio" ),		XBOXINSTALLER_INTERFACE_VERSION },
-#endif
 		{ LAUNCHER_APPSYSTEM( "inputsystem" ),			INPUTSYSTEM_INTERFACE_VERSION },
 #if defined( USE_KISAK_PHYSICS )
         { LAUNCHER_APPSYSTEM( "kisakvphysics" ),				VPHYSICS_INTERFACE_VERSION },
@@ -754,7 +677,6 @@ bool CSourceAppSystemGroup::Create()
 		{ LAUNCHER_APPSYSTEM("soundsystem"),			SOUNDSYSTEM_INTERFACE_VERSION },
 #endif
 
-#if !defined( _GAMECONSOLE )
     #if defined ( AVI_VIDEO )
  		{ LAUNCHER_APPSYSTEM( "valve_avi" ),			AVI_INTERFACE_VERSION },
     #endif 		
@@ -764,9 +686,6 @@ bool CSourceAppSystemGroup::Create()
 	#if defined( QUICKTIME_VIDEO ) 		
  		{ LAUNCHER_APPSYSTEM( "valve_avi" ),			QUICKTIME_INTERFACE_VERSION },
     #endif		
-#elif defined( BINK_ENABLED_FOR_CONSOLE )
-		{ LAUNCHER_APPSYSTEM( "engine" ),				BIK_INTERFACE_VERSION },	
-#endif
 		// NOTE: This has to occur before vgui2.dll so it replaces vgui2's surface implementation
 		{ LAUNCHER_APPSYSTEM( "vguimatsurface" ),		VGUI_SURFACE_INTERFACE_VERSION },
 		{ LAUNCHER_APPSYSTEM( "vgui2" ),				VGUI_IVGUI_INTERFACE_VERSION },
@@ -904,10 +823,6 @@ bool CSourceAppSystemGroup::PreInit()
 	if ( !g_pFullFileSystem || !g_pMaterialSystem )
 		return false;
 
-#ifdef _PS3
-	g_pVJobs = ( IVJobs* )factory( VJOBS_INTERFACE_VERSION, NULL );  // this is done only once; g_pVJobs doesn't change even after multiple reloads of VJobs.prx
-	FileSystem_AddSearchPath_Platform( g_pFullFileSystem, GetGameDirectory() );
-#else // _PS3
 	CFSSteamSetupInfo steamInfo;
 	steamInfo.m_bToolsMode = false;
 	steamInfo.m_bSetSteamDLLPath = false;
@@ -969,8 +884,6 @@ bool CSourceAppSystemGroup::PreInit()
 		g_pMaterialSystem->EnableEditorMaterials();	
 	}
 
-#endif // !_PS3
-
 	StartupInfo_t info;
 	info.m_pInstance = GetAppInstance();
 	info.m_pBaseDirectory = GetBaseDirectory();
@@ -989,10 +902,8 @@ int CSourceAppSystemGroup::Main()
 
 void CSourceAppSystemGroup::PostShutdown()
 {
-#ifndef _PS3
 	// FIXME: Logfiles is mod-specific, needs to move into the engine.
 	g_LogFiles.Shutdown();
-#endif // _PS3
 
 	reslistgenerator->Shutdown();
 
@@ -1462,26 +1373,6 @@ namespace
 // of the vpbdm library. It's RAII because we absolutely positively have
 // to guarantee that the library cleans up after itself on shutdown, 
 // even if we early out of LauncherMain.
-#ifdef _PS3
-class ValvePS3ConsoleInitializerRAII
-{
-public:
-	ValvePS3ConsoleInitializerRAII( bool bDvdDev, bool bSpewDllInfo, bool bWaitForConsole ) 
-	{
-#pragma message("TODO: bdvddev / spewdllinfo / wait for console")
-		ValvePS3ConsoleInit( );	
-		if ( g_pValvePS3Console )
-		{
-		g_pValvePS3Console->InitConsoleMonitor( bWaitForConsole );
-	}
-	}
-
-	~ValvePS3ConsoleInitializerRAII()
-	{
-		ValvePS3ConsoleShutdown();
-	}
-};
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: The real entry point for the application
@@ -1493,8 +1384,6 @@ public:
 //-----------------------------------------------------------------------------
 #ifdef WIN32
 extern "C" __declspec(dllexport) int LauncherMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
-#elif defined( _PS3 )
-int LauncherMain( int argc, char **argv )
 #else
 extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 #endif
@@ -1526,13 +1415,11 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	// Hook the debug output stuff.
 	LoggingSystem_RegisterLoggingListener( &g_LauncherLoggingListener );
 
-#ifndef _PS3
 	// Quickly check the hardware key, essentially a warning shot.  
 	if ( !Plat_VerifyHardwareKeyPrompt() )
 	{
 		return -1;
 	}
-#endif // !_PS3
 
 #ifdef WIN32
 	CommandLine()->CreateCmdLine( IsPC() ? GetCommandLine() : lpCmdLine );
@@ -1547,10 +1434,8 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	CommandLine()->RemoveParm( "+mat_dxlevel" );
 #endif
 
-#ifndef _PS3
 	// Figure out the directory the executable is running from
 	UTIL_ComputeBaseDir();
-#endif // _PS3
 
 #if defined (CSTRIKE15)
 
@@ -1561,16 +1446,6 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 		CommandLine()->AppendParm( "-game", "csgo" );
 	}
 
-#if defined _PS3
-
-	if ( g_pPS3PathInfo->BootType() == CELL_GAME_GAMETYPE_HDD )
-	{
-		CommandLine()->AppendParm( "+sv_search_key", "testlab" );
-		CommandLine()->AppendParm( "-steamBeta", "");
-	}
-
-#endif
-
 #endif
 
 	bool bDvdDev, bSpewDllInfo, bWaitForConsole;
@@ -1578,111 +1453,8 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	bSpewDllInfo    = CommandLine()->CheckParm( "-dllinfo"   ) != NULL;
 	bWaitForConsole = CommandLine()->CheckParm( "-vxconsole" ) != NULL;
 
-#if defined( _X360 )
-	XboxConsoleInit();
-	// sync block until vxconsole responds
-	XBX_InitConsoleMonitor( bWaitForConsole || bSpewDllInfo || bDvdDev );
-	if ( bDvdDev )
-	{
-		// just launched, signal vxconsole to sync the dvddev cache before any files get accessed
-		XBX_rSyncDvdDevCache();
-	}
-#elif defined( _PS3 )
-	ValvePS3ConsoleInitializerRAII VXBDM( bDvdDev, bSpewDllInfo, bWaitForConsole );	
-#endif
-
 #if LOADING_MEMORY_WATCHDOG 
 	g_MemWatchdog.Start();
-#endif
-
-#if defined( _X360 )
-	if ( bWaitForConsole )
-	{
-		COM_TimestampedLog( "LauncherMain: Application Start - %s", CommandLine()->GetCmdLine() );
-	}
-	if ( bSpewDllInfo )
-	{	
-		XBX_DumpDllInfo( GetBaseDirectory() );
-		Error( "Stopped!\n" );
-	}
-
-	int storageIDs[4];
-	XboxLaunch()->GetStorageID( storageIDs );
-	for ( int k = 0; k < 4; ++ k )
-	{
-		DWORD storageID = storageIDs[k];
-		if ( XBX_DescribeStorageDevice( storageID ) )
-		{
-			// Validate the storage device
-			XDEVICE_DATA deviceData;
-			DWORD ret = XContentGetDeviceData( storageID, &deviceData );
-			if ( ret != ERROR_SUCCESS )
-			{
-				// Device was removed
-				storageID = XBX_INVALID_STORAGE_ID;
-				XBX_QueueEvent( XEV_LISTENER_NOTIFICATION, WM_SYS_STORAGEDEVICESCHANGED, 0, 0 );
-			}
-		}
-		XBX_SetStorageDeviceId( k, storageID );
-	}
-
-	int userID = XboxLaunch()->GetUserID();
-	userID = XBX_INVALID_USER_ID;			// TODO: currently game cannot recover from a restart with users signed-in
-	if ( userID == XBX_INVALID_USER_ID )
-	{
-		// didn't come from restart, start up with guest settings
-		XUSER_SIGNIN_INFO info;
-		for ( int i = 0; i < 4; ++i )
-		{
-			if ( ERROR_NO_SUCH_USER != XUserGetSigninInfo( i, 0, &info ) )
-			{
-				userID = i;
-				break;
-			}
-		}
-
-		XBX_SetNumGameUsers( 0 );
-		XBX_SetPrimaryUserId( XBX_INVALID_USER_ID );
-		XBX_ResetUserIdSlots();
-		XBX_SetPrimaryUserIsGuest( 1 );
-	}
-	else
-	{
-		int numGameUsers;
-		char slot2ctrlr[4];
-		char slot2guest[4];
-		XboxLaunch()->GetSlotUsers( numGameUsers, slot2ctrlr, slot2guest );
-
-		XBX_SetNumGameUsers( numGameUsers );
-		XBX_SetPrimaryUserId( userID );
-		if ( numGameUsers == 1 && slot2guest[0] == 1 )
-			XBX_SetPrimaryUserIsGuest( 1 );
-		else
-			XBX_SetPrimaryUserIsGuest( 0 );
-
-		for ( int k = 0; k < 4; ++ k )
-		{
-			XBX_SetUserId( k, slot2ctrlr[k] );
-			XBX_SetUserIsGuest( k, slot2guest[k] );
-		}
-	}
-
-#ifdef PLATFORM_OSX
-	{
-		struct stat st;
-		if ( stat( RELAUNCH_FILE, &st ) == 0 ) 
-		{
-			unlink( RELAUNCH_FILE );
-		}
-	}
-#endif
-
-	DevMsg( "[X360 LAUNCH] Started with the following payload:\n" );
-	DevMsg( "              Num Game Users   = %d\n", XBX_GetNumGameUsers() );
-	for ( int k = 0; k < XUSER_MAX_COUNT; ++ k )
-	{
-		DevMsg( "              Storage Device %d = 0x%08X\n", XBX_GetStorageDeviceId( k ) );
-	}
 #endif
 
 	// check for a named executable
@@ -1711,14 +1483,6 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	}
 #endif
 
-#ifdef _PS3
-	if ( CommandLine()->CheckParm( "-dvddev" ) &&
-		!CommandLine()->CheckParm( "-basedir" ) )
-	{
-		CommandLine()->AppendParm( "-basedir", g_pPS3PathInfo->GameImagePath() );
-	}
-#endif
-	
 #ifndef _CERT
 	if ( CommandLine()->CheckParm( "-tslist" ) )
 	{
@@ -1852,12 +1616,10 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 		}
 	}
 
-#ifndef _PS3
 	// Figure out the directory the executable is running from
 	// and make that be the current working directory
 	// on the PS3, however, there is no concept of current directories
 	_chdir( GetBaseDirectory() );
-#endif
 
 	// When building cubemaps, we don't need sound and can't afford to have async I/O - cubemap writes to the BSP can collide with async bsp reads
 	if ( CommandLine()->CheckParm( "-buildcubemaps") )
@@ -1937,7 +1699,7 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 	// Allow other source apps to run
 	ReleaseSourceMutex();
 
-#if	defined( WIN32 )  && !defined( _X360 )
+#if	defined( WIN32 )
 	// Now that the mutex has been released, check HKEY_CURRENT_USER\Software\Valve\Source\Relaunch URL. If there is a URL here, exec it.
 	// This supports the capability of immediately re-launching the the game via Steam in a different audio language 
 	HKEY hKey; 

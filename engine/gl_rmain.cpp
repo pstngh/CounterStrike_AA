@@ -39,9 +39,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifndef _X360
 extern ConVar r_waterforceexpensive;
-#endif
 
 ConVar r_aspectratio( "r_aspectratio", "0" );
 ConVar r_dynamiclighting( "r_dynamiclighting", "1", FCVAR_CHEAT );
@@ -251,16 +249,7 @@ public:
 	void ViewDrawFade( byte *color, IMaterial* pMaterial, bool mapFullTextureToScreen = true );
 
 	IWorldRenderList * CreateWorldList();
-#if defined(_PS3)
-	IWorldRenderList * CreateWorldList_PS3( int viewID );
-	void BuildWorldLists_PS3_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth );
-	int GetDrawFlags( void );
-	int GetBuildViewID( void );
-	bool IsSPUBuildWRJobsOn( void );
-	void CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace );
-#else
 	void BuildWorldLists_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth );
-#endif
 
 	void BuildWorldLists( IWorldRenderList *pList, WorldListInfo_t* pInfo, int iForceViewLeaf, const VisOverrideData_t* pVisData, bool bShadowDepth, float *pWaterReflectionHeight );
 	void DrawWorldLists( IMatRenderContext *pRenderContext, IWorldRenderList *pList, unsigned long flags, float waterZAdjust );
@@ -1193,13 +1182,6 @@ IWorldRenderList * CRender::CreateWorldList()
 	return AllocWorldRenderList();
 }
 
-#if defined(_PS3)
-IWorldRenderList * CRender::CreateWorldList_PS3( int viewID )
-{
-	return AllocWorldRenderList_PS3( viewID );
-}
-#endif
-
 
 // JasonM TODO: optimize in the case of shadow depth mapping (i.e. don't update lightmaps)
 void CRender::BuildWorldLists( IWorldRenderList *pList, WorldListInfo_t* pInfo, int iForceViewLeaf, const VisOverrideData_t* pVisData, bool bShadowDepth, float *pWaterReflectionHeight )
@@ -1224,14 +1206,6 @@ void CRender::BuildWorldLists( IWorldRenderList *pList, WorldListInfo_t* pInfo, 
 	Assert( m_iLightmapUpdateDepth > 0 || g_LightmapUpdateList.Count() == 0 );
 }
 
-#if defined(_PS3)
-void CRender::BuildWorldLists_PS3_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth )
-{	
-	Assert( pList );
-
-	R_BuildWorldLists_PS3_Epilogue( pList, pInfo, bShadowDepth );
-}
-#else
 void CRender::BuildWorldLists_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth )
 {	
 	Assert( pList );
@@ -1251,7 +1225,6 @@ void CRender::BuildWorldLists_Epilogue( IWorldRenderList *pList, WorldListInfo_t
 
 	Assert( m_iLightmapUpdateDepth > 0 || g_LightmapUpdateList.Count() == 0 );
 }
-#endif
 
 void CRender::DrawWorldLists( IMatRenderContext *pRenderContext, IWorldRenderList *pList, unsigned long flags, float flWaterZAdjust )
 {

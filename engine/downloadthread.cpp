@@ -19,7 +19,7 @@
 #undef PROTECT_FILEIO_FUNCTIONS
 #undef fopen
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 #include "winlite.h"
 #include <WinInet.h>
 #endif
@@ -32,10 +32,6 @@
 #include "tier0/threadtools.h"
 #include "download_internal.h"
 #include "tier1/strtools.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -512,17 +508,6 @@ uintp DownloadThread( void *voidPtr )
 	return rc.status;
 }
 
-#elif defined( _PS3 )
-
-uintp DownloadThread( void *voidPtr )
-{
-	RequestContext& rc = *(RequestContext *)voidPtr;
-
-	Warning( "DownloadThread not implemented on PS3!\n" );
-	Assert( 0 );
-
-	return 0;
-}
 #elif defined( POSIX ) && !defined( DEDICATED )
 
 #include "curl/curl.h"

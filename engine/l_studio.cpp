@@ -39,7 +39,7 @@
 #include "datacache/idatacache.h"
 #include "materialsystem/materialsystem_config.h"
 #include "IHammer.h"
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #include <xmmintrin.h>
 #endif
 #include "staticpropmgr.h"
@@ -81,11 +81,7 @@ static ConVar r_lightaverage( "r_lightaverage", "1", 0, "Activates/deactivate li
 static ConVar r_lightinterp( "r_lightinterp", "5", FCVAR_CHEAT, "Controls the speed of light interpolation, 0 turns off interpolation" );
 static ConVar r_eyeglintlodpixels( "r_eyeglintlodpixels", "20.0", 0, "The number of pixels wide an eyeball has to be before rendering an eyeglint.  Is a floating point value." );
 ConVar r_rootlod( "r_rootlod", "0", FCVAR_MATERIAL_SYSTEM_THREAD, "Root LOD", true, 0, true, MAX_NUM_LODS-1, SetRootLOD_f );
-#ifndef _PS3
 static ConVar r_decalstaticprops( "r_decalstaticprops", "1", 0, "Decal static props test" );
-#else
-static ConVar r_decalstaticprops( "r_decalstaticprops", "0", 0, "Decal static props test" );
-#endif
 static ConCommand r_flushlod( "r_flushlod", FlushLOD_f, "Flush and reload LODs." );
 ConVar r_debugrandomstaticlighting( "r_debugrandomstaticlighting", "0", FCVAR_CHEAT, "Set to 1 to randomize static lighting for debugging.  Must restart for change to take affect." );
 ConVar r_proplightingfromdisk( "r_proplightingfromdisk", "1", 0, "0=Off, 1=On, 2=Show Errors" );
@@ -1023,12 +1019,6 @@ class CResourcePreloadPropLighting : public CResourcePreload
 		s_ModelRender.PurgeCachedStaticPropColorData();
 	}
 
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock()
-	{
-		return true;
-	}
-#endif // _PS3
 };
 static CResourcePreloadPropLighting s_ResourcePreloadPropLighting;
 
@@ -3987,9 +3977,7 @@ void CModelRender::ComputeModelVertexLightingOld( mstudiomodel_t *pModel,
 			{
 				// hint the next vertex
 				// data is loaded with one extra vertex for read past
-#if !defined( _X360 ) // X360TBD
 				_mm_prefetch( (char*)&pFatVerts[i+1], _MM_HINT_T0 );
-#endif
 			}
 #endif
 
@@ -4397,22 +4385,6 @@ void CModelRender::StaticPropColorMeshCallback( void *pContext, const void *pDat
 		}
 
 		meshBuilder.End();
-#elif defined( _PS3 )
-		// CELL_GCM_SWAP_COLORS
-		unsigned char *pIn = (unsigned char *) pVhvHdr->pVertexBase( meshID );
-		unsigned char *pOut = pStaticPropContext->m_pColorMeshData->m_ppTargets[meshID-startMesh];
-
-		for ( int i=0; i < (numVertexes * numLightingComponents ); i++ )
-		{
-			unsigned char red = *pIn++;
-			unsigned char green = *pIn++;
-			unsigned char blue = *pIn++;
-			unsigned char alpha = *pIn++;
-			*pOut++ = alpha;
-			*pOut++ = blue;
-			*pOut++ = green;
-			*pOut++ = red;
-		}
 #else
 		V_memcpy( (void*)pStaticPropContext->m_pColorMeshData->m_ppTargets[meshID-startMesh], pVhvHdr->pVertexBase( meshID ), numVertexes*4*numLightingComponents );
 	

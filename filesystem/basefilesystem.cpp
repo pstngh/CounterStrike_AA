@@ -22,12 +22,6 @@
 #include "vstdlib/vstrtools.h"
 #include "zip_utils.h"
 #include "fmtstr.h"
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#include "xbox/xbox_console.h"
-#elif defined( _PS3 )
-#include <cell/sysmodule.h>
-#endif
 
 #ifndef DEDICATED
 #include "keyvaluescompiler.h"
@@ -40,68 +34,11 @@
 #include <shellapi.h>
 #endif
 
-#if defined( _X360 )
-#include "xbox\xbox_win32stubs.h"
-#undef GetCurrentDirectory
-#endif
-
-#ifdef _PS3
-
-#include "ps3/ps3_core.h"
-#include "ps3_pathinfo.h"
-#include "tls_ps3.h"
-#include <cell/fios.h>
-
-// extern bool g_bUseBdvdGameData;
-#ifndef PLATFORM_EXT
-#pragma message("PLATFORM_EXT define is missing, wtf?")
-#define PLATFORM_EXT ".ps3"
-#endif // ifndef PLATFORM_EXT
-
-void getcwd(...) { AssertMsg(false, "getcwd does not exist on PS3\n"); }
-bool SetupFios();
-bool TeardownFios();
-
-#endif // _PS3
-
-#ifdef _X360
-	#define FS_DVDDEV_REMAP_ROOT "d:"
-	#define FS_DVDDEV_ROOT "d:\\dvddev"
-	#define FS_EXCLUDE_PATHS_FILENAME "xbox_exclude_paths.txt"
-#elif defined( _PS3 )
-	#define FS_DVDDEV_REMAP_ROOT g_pPS3PathInfo->GameImagePath()
-	#define FS_DVDDEV_ROOT "/app_home/dvddev"
-	#define FS_EXCLUDE_PATHS_FILENAME "ps3_exclude_paths.txt"
-#else
 	#define FS_DVDDEV_REMAP_ROOT ""
 	#define FS_DVDDEV_ROOT "dvddev???:::"
 	#define FS_EXCLUDE_PATHS_FILENAME "allbad_exclude_paths.txt"
-#endif
 
-#ifdef _GAMECONSOLE
-static bool IsDvdDevPathString( char const *szPath )
-{
-	if ( IsGameConsole() && StringAfterPrefix( szPath, FS_DVDDEV_ROOT ) &&
-		szPath[ sizeof( FS_DVDDEV_ROOT ) - 1 ] == CORRECT_PATH_SEPARATOR )
-	{
-		return true;
-	}
-	else if ( IsX360() )
-	{
-		const char *pFirstDir = V_strstr( szPath, ":" );
-		if ( pFirstDir )
-		{
-			// skip past colon/slash
-			pFirstDir += 2;
-			return ( V_strnicmp( pFirstDir, "dvddev", 6 ) == false );
-		}
-	}
-
-	return false;
-}
-#else
 #define IsDvdDevPathString( x ) false
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -130,41 +67,6 @@ static void AddSeperatorAndFixPath( char *str );
 CUtlSymbolTableMT g_PathIDTable( 0, 32, true );
 
 int g_iNextSearchPathID = 1;
-
-#if defined (_PS3)
-	
-	// Copied from zip_utils.cpp (we don't want to add the file to the project (for now))
-	BEGIN_BYTESWAP_DATADESC( ZIP_EndOfCentralDirRecord )
-		DEFINE_FIELD( signature, FIELD_INTEGER ),
-		DEFINE_FIELD( numberOfThisDisk, FIELD_SHORT ),
-		DEFINE_FIELD( numberOfTheDiskWithStartOfCentralDirectory, FIELD_SHORT ),
-		DEFINE_FIELD( nCentralDirectoryEntries_ThisDisk, FIELD_SHORT ),
-		DEFINE_FIELD( nCentralDirectoryEntries_Total, FIELD_SHORT ),
-		DEFINE_FIELD( centralDirectorySize, FIELD_INTEGER ),
-		DEFINE_FIELD( startOfCentralDirOffset, FIELD_INTEGER ),
-		DEFINE_FIELD( commentLength, FIELD_SHORT ),
-	END_BYTESWAP_DATADESC()
-
-	BEGIN_BYTESWAP_DATADESC( ZIP_FileHeader )
-		DEFINE_FIELD( signature, FIELD_INTEGER ),
-		DEFINE_FIELD( versionMadeBy, FIELD_SHORT ),
-		DEFINE_FIELD( versionNeededToExtract, FIELD_SHORT ),
-		DEFINE_FIELD( flags, FIELD_SHORT ),
-		DEFINE_FIELD( compressionMethod, FIELD_SHORT ),
-		DEFINE_FIELD( lastModifiedTime, FIELD_SHORT ),
-		DEFINE_FIELD( lastModifiedDate, FIELD_SHORT ),
-		DEFINE_FIELD( crc32, FIELD_INTEGER ),
-		DEFINE_FIELD( compressedSize, FIELD_INTEGER ),
-		DEFINE_FIELD( uncompressedSize, FIELD_INTEGER ),
-		DEFINE_FIELD( fileNameLength, FIELD_SHORT ),
-		DEFINE_FIELD( extraFieldLength, FIELD_SHORT ),
-		DEFINE_FIELD( fileCommentLength, FIELD_SHORT ),
-		DEFINE_FIELD( diskNumberStart, FIELD_SHORT ),
-		DEFINE_FIELD( internalFileAttribs, FIELD_SHORT ),
-		DEFINE_FIELD( externalFileAttribs, FIELD_INTEGER ),
-		DEFINE_FIELD( relativeOffsetOfLocalHeader, FIELD_INTEGER ),
-	END_BYTESWAP_DATADESC()
-#endif
 
 void FixUpPathCaseForPS3(const char* pFilePath)
 {
@@ -313,7 +215,7 @@ static char const * V_FormatFilenameForSymlinking( char (&tempSymlinkBuffer)[MAX
 
 // Win32 dedicated.dll contains both filesystem_steam.cpp and filesystem_stdio.cpp, so it has two
 // CBaseFileSystem objects.  We'll let it manage BaseFileSystem() itself.
-#if !( defined(_WIN32) && defined(DEDICATED) ) || defined( _PS3 )
+#if !( defined(_WIN32) && defined(DEDICATED) )
 static CBaseFileSystem *g_pBaseFileSystem;
 CBaseFileSystem *BaseFileSystem()
 {
@@ -726,10 +628,6 @@ void *CBaseFileSystem::QueryInterface( const char *pInterfaceName )
 }
 
 
-#ifdef _PS3
-// this is strictly a debug variable used to catch errors where we load and tear down more than one filesystem:
-static int s_PS3_libfs_ref_count = 0;
-#endif
 InitReturnVal_t CBaseFileSystem::Init()
 {
 	m_FileTracker2.InitAsyncThread();
@@ -737,19 +635,6 @@ InitReturnVal_t CBaseFileSystem::Init()
 	InitReturnVal_t nRetVal = BaseClass::Init();
 	if ( nRetVal != INIT_OK )
 		return nRetVal;
-
-#ifdef _PS3
-	// load the PS3's file system module to memory
-	AssertMsg1( s_PS3_libfs_ref_count == 0, "%d CBaseFileSystems were instantiated!\n", s_PS3_libfs_ref_count+1 );
-	if ( cellSysmoduleLoadModule(CELL_SYSMODULE_FS) != CELL_OK )
-	{
-		Error( "Could not load system libfs!\n" );
-	}
-	else
-	{
-		s_PS3_libfs_ref_count += 1;
-	}
-#endif
 
 	// This is a special tag to allow iterating just the BSP file, it doesn't show up in the list per se, but gets converted to "GAME" in the filter function
 	m_BSPPathID = g_PathIDTable.AddString( "BSP" );
@@ -784,83 +669,6 @@ InitReturnVal_t CBaseFileSystem::Init()
 		BuildExcludeList();
 	}
 
-#if defined( _X360 )
-	MEM_ALLOC_CREDIT();
-
-#if defined( _DEMO )
-	// under demo conditions cannot allow install or use existing install
-	// slam to expected state, do not override
-	m_bLaunchedFromXboxHDD = false;
-	m_bFoundXboxImageInCache = false;
-	m_bAllowXboxInstall = false;
-	m_bDVDHosted = true;
-#else
-	// determine the type of system where we launched from
-	// this allows other systems (like the installer) to conditionalize the install process
-	// MS may very well auto-install for us at a later date
-	DWORD dwDummyFlags;
-	char szFileSystemName[MAX_PATH];
-	DWORD dwResult = GetVolumeInformation(
-		"D:\\",
-		NULL,
-		0,
-		NULL,
-		0,
-		&dwDummyFlags,
-		szFileSystemName,
-		sizeof( szFileSystemName ) );
-	if ( dwResult != 0 )
-	{
-		m_bLaunchedFromXboxHDD = ( V_stricmp( szFileSystemName, "FATX" ) == 0 );
-	}
-
-	if ( m_DVDMode == DVDMODE_STRICT )
-	{
-		// must be in a strict dvd environment and not explicitly disabled
-		if ( !CommandLine()->FindParm( "-noinstall" ) )
-		{
-			// the install is allowed if we launched from anywhere but the HDD
-			// or it can be tested from the HDD by forcing with command line options
-			m_bAllowXboxInstall = ( m_bLaunchedFromXboxHDD == false ) ||
-								( CommandLine()->FindParm( "-installer" ) != 0 ) ||
-								( CommandLine()->FindParm( "-install" ) != 0 );
-			if ( m_bAllowXboxInstall )
-			{
-				// install may have already occurred
-				m_bFoundXboxImageInCache = IsAlreadyInstalledToXboxHDDCache();
-				if ( m_bFoundXboxImageInCache )
-				{
-					// we are using the installed image
-					// no further installer activity is ever allowed (as the targets will be opened)
-					m_bAllowXboxInstall = false;
-				}
-			}
-		}
-
-		// The update zip is designed to be held resident to avoid MU yanking or other transient issues.
-		// The zip is expected to be < 100K and is a special compressed format.
-		const char *pszUpdatePath = "UPDATE:\\update\\update" PLATFORM_EXT ".zip";
-		if ( !IsCert() && !FileExists( pszUpdatePath ) )
-		{
-			// allows us to fallback and test when it is in the image
-			pszUpdatePath = "D:\\update\\update" PLATFORM_EXT ".zip";
-		}
-		ReadFile( pszUpdatePath, NULL, g_UpdateZipBuffer, 0, 0 );
-	}
-
-	// if we are in any way HDD based, we do not want the reduced DVD experience
-	m_bDVDHosted = ( m_bAllowXboxInstall || CommandLine()->FindParm( "-dvdtest" ) || 
-					( !m_bLaunchedFromXboxHDD && !m_bFoundXboxImageInCache )  );
-#endif
-#elif defined( _PS3 )
-	m_bLaunchedFromXboxHDD = true;
-	m_bFoundXboxImageInCache = false;
-	m_bAllowXboxInstall = false;
-	m_bDVDHosted = false;
-
-	SetupFios();
-#endif
-
 	return INIT_OK;
 }
 
@@ -869,7 +677,6 @@ void CBaseFileSystem::Shutdown()
 	ShutdownAsync();
 	m_FileTracker2.ShutdownAsync();
 
-#if !defined( _X360 ) && !defined( _PS3 )
 	if( m_pLogFile )
 	{
 		if( CommandLine()->FindParm( "-fs_logbins" ) >= 0 )
@@ -910,23 +717,9 @@ void CBaseFileSystem::Shutdown()
 		fprintf( m_pLogFile, ":done\n" );
 		fclose( m_pLogFile ); // STEAM OK
 	}
-#endif
 
 	RemoveAllSearchPaths();
 	Trace_DumpUnclosedFiles();
-
-#if defined( _PS3 )
-	TeardownFios();
-
-	if ( --s_PS3_libfs_ref_count == 0 )
-	{
-		cellSysmoduleUnloadModule(CELL_SYSMODULE_FS);
-	}
-	else
-	{
-		AssertMsg( false, "More than one CBaseFileSystem was instantiated! Failsafe triggered to refcount sysutil libfs.\n" );
-	}
-#endif
 
 	BaseClass::Shutdown();
 }
@@ -2059,11 +1852,7 @@ CZipPackFile::CZipPackFile( CBaseFileSystem* fs, void *pSection )
 	m_nPreloadSectionSize = 0;
 	m_KVPoolKey = 0;
 
-#if defined( _GAMECONSOLE )
-	m_pSection = pSection;
-#else
 	m_pSection = NULL;
-#endif
 }
 
 CZipPackFile::~CZipPackFile()
@@ -2088,12 +1877,7 @@ bool CZipPackFile::CPackFileLessFunc::Less( CZipPackFile::CPackFileEntry const& 
 // Purpose: Search pPath for pak?.pak files and add to search path if found
 // Input  : *pPath - 
 //-----------------------------------------------------------------------------
-#if defined( _GAMECONSOLE )
-#define PACK_NAME_FORMAT "zip%i" PLATFORM_EXT ".zip"
-#define PACK_LOCALIZED_NAME_FORMAT "zip%i_%s" PLATFORM_EXT ".zip"
-#else
 #define PACK_NAME_FORMAT "zip%i.zip"
-#endif
 
 void CBaseFileSystem::AddPackFiles( const char *pPath, const CUtlSymbol &pathID, SearchPathAdd_t addType, int iForceInsertIndex )
 {
@@ -2103,71 +1887,6 @@ void CBaseFileSystem::AddPackFiles( const char *pPath, const CUtlSymbol &pathID,
 	// Xbox Update and DLC zips are purposely not using the ZipN decoration so as not to interfere with the
 	// install process that wants to move zip0 to the cache partition. These zips also have other mounting
 	// requirements that prevent the simpler ZipN discovery logic.
-
-#if defined( _GAMECONSOLE )
-	// hack prepend the update path during first time add only
-	// only specific paths get the update override explicitly prepended
-	const char *pPathIDString = g_PathIDTable.String( pathID );
-	if ( addType == PATH_ADD_TO_TAIL && iForceInsertIndex == 0 && 
-		( !V_stricmp( pPathIDString, "PLATFORM" ) || !V_stricmp( pPathIDString, "GAME" ) || !V_stricmp( pPathIDString, "MOD" ) ) )
-	{
-		// update search path gets added once per allowed pathID
-		bool bFoundSearchPath = false;
-		for ( int i = 0; i < m_SearchPaths.Count(); i++ )
-		{
-			CSearchPath *pSearchPath = &m_SearchPaths[i];
-			if ( pSearchPath->GetPathID() == pathID && !V_stricmp( pSearchPath->GetPathString(), "u:\\update\\" ) )
-			{
-				bFoundSearchPath = true;
-				break;
-			}
-		}
-
-		if ( !bFoundSearchPath && g_UpdateZipBuffer.TellPut() )
-		{
-			// found update blob in executable
-			int nIndex = m_SearchPaths.AddToTail();
-			CSearchPath *sp = &m_SearchPaths[ nIndex ];
-
-			// the path and filename are fake but reserved, they denote this binary resident blob
-			// these names ensure they get ignored during post hdd install sp fixup
-			const char *pFullpath = "u:\\update\\update" PLATFORM_EXT ".zip";
-			sp->m_pPathIDInfo = FindOrAddPathIDInfo( pathID, -1 );
-			sp->m_storeId = g_iNextSearchPathID++;
-			sp->SetPath( g_PathIDTable.AddString( "u:\\update\\" ) );
-
-			// find and alias existing reference
-			CPackFile *pf = NULL;
-			for ( int iPackFile = 0; iPackFile < m_ZipFiles.Count(); iPackFile++ )
-			{
-				if ( !Q_stricmp( m_ZipFiles[iPackFile]->m_ZipName.Get(), pFullpath ) )
-				{
-					// found
-					pf = m_ZipFiles[iPackFile];
-					sp->SetPackFile( pf );
-					pf->AddRef();
-					break;
-				}
-			}
-			if ( !pf )
-			{
-				// there is no 'file', point to the embedded section instead
-				pf = new CZipPackFile( this, g_UpdateZipBuffer.Base() );
-
-				pf->SetPath( sp->GetPath() );
-				pf->m_bIsExcluded = false;
-				pf->m_ZipName = pFullpath;
-
-				m_ZipFiles.AddToTail( pf );
-				sp->SetPackFile( pf );
-
-				pf->m_lPackFileTime = 0;
-				pf->m_hPackFileHandleFS = NULL;
-				pf->Prepare( g_UpdateZipBuffer.TellPut() );
-			}
-		}
-	}
-#endif
 
 	CUtlVector< CUtlString > pakPaths;
 	CUtlVector< CUtlString > pakNames;
@@ -2191,38 +1910,6 @@ void CBaseFileSystem::AddPackFiles( const char *pPath, const CUtlSymbol &pathID,
 		pakNames.AddToTail( pakfile );
 		pakSizes.AddToTail( (int64)((unsigned int)buf.st_size) );
 	}
-
-#if defined( _GAMECONSOLE )
-	// safety measure, ensure 360 dlc zip search path gets added ONLY once per allowed pathID
-	// dlc paths have unique suffixes, _dlc1..._dlcN
-	if ( m_DLCContents.Count() && V_stristr( pPath, "_dlc" ) )
-	{
-		// per pathID, dlc zip should only occur once, but might have already been added
-		bool bFoundSearchPath = false;
-		for ( int i = 0; i < m_SearchPaths.Count(); i++ )
-		{
-			CSearchPath *pSearchPath = &m_SearchPaths[i];
-			if ( pSearchPath->GetPathID() == pathID && V_stristr( pSearchPath->GetPathString(), pPath ) )
-			{
-				bFoundSearchPath = true;
-				break;
-			}
-		}
-
-		if ( !bFoundSearchPath )
-		{
-			char szFullPath[MAX_PATH];
-			V_ComposeFileName( pPath, "dlc" PLATFORM_EXT ".zip", szFullPath, sizeof( szFullPath ) );
-			struct _stat buf;
-			if ( FS_stat( szFullPath, &buf ) != -1 )
-			{
-				pakPaths.AddToTail( pPath );
-				pakNames.AddToTail( "dlc" PLATFORM_EXT ".zip" );
-				pakSizes.AddToTail( (__int64)((unsigned int)buf.st_size) );
-			}
-		}
-	}
-#endif
 
 	// Add any zip files in the format zip1.zip ... zip0.zip
 	// Add them backwards so zip(N) is higher priority than zip(N-1), etc.
@@ -2841,7 +2528,6 @@ void CBaseFileSystem::AddSearchPath( const char *pPath, const char *pathID, Sear
 	char tempSymlinkBuffer[MAX_PATH];
 	pPath = V_FormatFilenameForSymlinking( tempSymlinkBuffer, pPath );
 
-#if !defined( _X360 )
 	// The PC has no concept of update/dlc discovery, it explicitly adds them now
 	// This layout matches the Xbox's search path layout, when the Xbox does late bind the DLC
 	// any platform, game, or mod search paths get subverted in order to prepend the DLC path
@@ -2948,7 +2634,6 @@ void CBaseFileSystem::AddSearchPath( const char *pPath, const char *pathID, Sear
 			}
 		}
 	}
-#endif
 
 	int currCount = m_SearchPaths.Count();
 
@@ -3024,140 +2709,6 @@ void CBaseFileSystem::AddSearchPath( const char *pPath, const char *pathID, Sear
 //-----------------------------------------------------------------------------
 bool CBaseFileSystem::FixupSearchPathsAfterInstall()
 {
-#if defined( _X360 )
-	if ( m_bSearchPathsPatchedAfterInstall )
-	{
-		// do not want to ever call this twice
-		return true;
-	}
-
-	AsyncFinishAll();
-
-	// this is incredibly hardcoded and fragile
-	// after shipping need to revisit and generalize for installs
-	// this assumes exact knowledge of how zips are mounted and the install footprint
-	for ( int i = 0; i < m_SearchPaths.Count(); i++ )
-	{
-		const char *pPathID = m_SearchPaths[i].GetPathIDString();
-		if ( V_stricmp( pPathID, "GAME" ) && V_stricmp( pPathID, "MOD" ) )
-		{
-			// only consider these paths
-			continue;
-		}
-
-		const char *pPath = m_SearchPaths[i].GetPathString();
-		const char *pColon = strchr( pPath, ':' );
-		if ( !pColon || 
-			!V_stristr( pPath, "csgo" ) || 
-			V_stristr( pPath, "_lv" ) || 
-			V_stristr( pPath, "_dlc" ) ||
-			V_stristr( pPath, "_tempcontent" ) )
-		{
-			// ignore relative paths, can't patch those
-			// ignore any non csgo path
-			// ignore lv, dlc, tempcontent path, not installing those zips
-			continue;
-		}
-		if ( !m_SearchPaths[i].GetPackFile() || m_SearchPaths[i].GetPackFile()->m_bIsMapPath )
-		{
-			// ignore non pack based paths
-			// ignore bsps
-			continue;
-		}
-		if ( !V_stristr( m_SearchPaths[i].GetPackFile()->m_ZipName.String(), "zip0" PLATFORM_EXT ".zip" ) )
-		{
-			// only patching zip0
-			continue;
-		}
-
-		// Not installing localized data
-		if ( m_SearchPaths[i].m_bIsLocalizedPath )
-		{
-			continue;
-		}
-
-		char szNewPath[MAX_PATH];
-		V_snprintf( szNewPath, sizeof( szNewPath ), "%s%s", CACHE_PATH_CSTIKRE15, pColon+1 );
-		V_FixSlashes( szNewPath );
-
-		int lastCount = m_SearchPaths.Count();
-		AddSearchPathInternal( szNewPath, pPathID, PATH_ADD_TO_TAIL_ATINDEX, true, i );
-		int numNewPaths = m_SearchPaths.Count() - lastCount;
-		if ( numNewPaths )
-		{
-			// skip paths all the paths we just added
-			i += numNewPaths;
-			// this is really bad, skip past the zip we just considered, the next iteration will skip us to the next zip
-			i++;
-		}
-
-		m_bSearchPathsPatchedAfterInstall = true;
-	}
-
-	if ( m_bSearchPathsPatchedAfterInstall )
-	{
-		// cache paths got added
-		// shutdown non cache paths
-		// must do multiple passes until no removal occurs
-		bool bRemoved;
-		while ( 1 )
-		{
-			bRemoved = false;
-
-			for ( int i = 0; i < m_SearchPaths.Count(); i++ )
-			{
-				const char *pPathID = m_SearchPaths[i].GetPathIDString();
-				if ( V_stricmp( pPathID, "GAME" ) && V_stricmp( pPathID, "MOD" ) )
-				{
-					// only consider these paths
-					continue;
-				}
-			
-				const char *pPath = m_SearchPaths[i].GetPathString();
-				const char *pColon = strchr( pPath, ':' );
-				if ( !pColon || 
-					!V_stristr( pPath, "csgo" ) || 
-					V_stristr( pPath, "_lv" ) || 
-					V_stristr( pPath, "_dlc" ) ||
-					V_stristr( pPath, "_tempcontent" ) )
-				{
-					// ignore relative paths, can't patch those
-					// ignore any non csgo path
-					// ignore lv, dlc, or tempcontent path, not installing those zips
-					continue;
-				}
-				if ( !m_SearchPaths[i].GetPackFile() || m_SearchPaths[i].GetPackFile()->m_bIsMapPath )
-				{
-					// ignore non pack based paths
-					// ignore bsps
-					continue;
-				}
-
-				// Not installing localized data
-				if ( m_SearchPaths[i].m_bIsLocalizedPath )
-				{
-					continue;
-				}
-
-				if ( V_stristr( pPath, "cache:" ) || !V_stristr( m_SearchPaths[i].GetPackFile()->m_ZipName.String(), "zip0" PLATFORM_EXT ".zip" ) )
-				{
-					// ignore any cache oriented paths
-					// only want to remove non-cache paths of zip0.360.zip
-					continue;
-				}
-
-				m_SearchPaths.Remove( i );
-				bRemoved = true;
-				break;
-			}
-
-			if ( !bRemoved )
-			{
-				break;
-			}
-		}
-	}
-#endif
 
 	return m_bSearchPathsPatchedAfterInstall;
 }
@@ -3173,10 +2724,6 @@ void CBaseFileSystem::SyncDvdDevCache()
 		// xbox dvddev only
 		return;
 	}
-
-#if defined( _X360 )
-	XBX_rSyncDvdDevCache();
-#endif
 
 	BuildExcludeList();
 }
@@ -3476,11 +3023,7 @@ const char *CBaseFileSystem::GetWritePath( const char *pFilename, const char *pa
 //-----------------------------------------------------------------------------
 // Reads/writes files to utlbuffers.  Attempts alignment fixups for optimal read
 //-----------------------------------------------------------------------------
-#ifdef _PS3
-#define g_pszReadFilename GetTLSGlobals()->pFileSystemReadFilename
-#else
 CTHREADLOCALPTR(char) g_pszReadFilename;
-#endif
 
 bool CBaseFileSystem::ReadToBuffer( FileHandle_t fp, CUtlBuffer &buf, int nMaxBytes, FSAllocFunc_t pfnAlloc )
 {
@@ -3934,9 +3477,6 @@ public:
 		if ( IsGameConsole() )
 		{
 			fileLoadInfo.m_bSteamCacheOnly = false;
-#ifdef _PS3
-            fileLoadInfo.m_ps3Filetype = PS3_FILETYPE_UNKNOWN;
-#endif
 			return;
 		}
 
@@ -4217,23 +3757,7 @@ FileHandle_t CBaseFileSystem::FindFileInSearchPaths(
 	// Run through all the search paths.
 	PathTypeFilter_t pathFilter = FILTER_NONE;
 
-#if defined( _GAMECONSOLE ) && defined( _DEBUG )
-	// -pakfallbackfs will perform a filesystem search if the
-	// requested file is not in pak zip (very expensive!)
-	static
-		enum PakFallback_t
-		{
-			PAK_FALLBACK_UNKNOWN, PAK_FALLBACK_ALLOW, PAK_FALLBACK_RETAIL
-		}
-		s_PakFallbackType = PAK_FALLBACK_UNKNOWN;
-	if ( s_PakFallbackType == PAK_FALLBACK_UNKNOWN )
-	{
-		s_PakFallbackType = CommandLine()->FindParm( "-pakfallbackfs" ) ? PAK_FALLBACK_ALLOW : PAK_FALLBACK_RETAIL;
-	}
-#define IsPakStrictMode() ( s_PakFallbackType != PAK_FALLBACK_ALLOW )
-#else
 #define IsPakStrictMode() true
-#endif
 	
 	if ( IsGameConsole() && IsPakStrictMode() )
 	{
@@ -4869,9 +4393,6 @@ int CBaseFileSystem::FastFindFile( const CSearchPath *path, const char *pFileNam
 		bFixed = FixupFATXFilename( tempFileName, fixedFATXFilename, sizeof( fixedFATXFilename ) );
 	}
 
-#if defined(_PS3)
-	FixUpPathCaseForPS3(tempFileName);
-#endif
 	if ( FS_stat( bFixed ? fixedFATXFilename : tempFileName, &buf ) != -1 )
 	{
 		LogAccessToFile( "stat", tempFileName, "" );
@@ -5857,8 +5378,6 @@ bool CBaseFileSystem::IsFileWritable( char const *pFileName, char const *pPathID
 		{
 #ifdef WIN32
 			if ( buf.st_mode & _S_IWRITE )
-#elif defined( _PS3 )
-			if( buf.st_mode & S_IWUSR )
 #elif POSIX
 			if ( buf.st_mode & S_IWRITE )
 #else
@@ -5889,8 +5408,6 @@ bool CBaseFileSystem::IsFileWritable( char const *pFileName, char const *pPathID
 		{
 #ifdef WIN32
 			if ( buf.st_mode & _S_IWRITE )
-#elif defined( _PS3 )
-			if( buf.st_mode & S_IWUSR )
 #elif POSIX
 			if ( buf.st_mode & S_IWRITE )
 #else
@@ -5911,8 +5428,6 @@ bool CBaseFileSystem::SetFileWritable( char const *pFileName, bool writable, con
 
 #ifdef _WIN32
 	int pmode = writable ? ( _S_IWRITE | _S_IREAD ) : ( _S_IREAD );
-#elif defined( _PS3 )
-	int pmode = writable ? ( S_IWUSR | S_IRUSR ) : ( S_IRUSR );
 #else
 	int pmode = writable ? ( S_IWRITE | S_IREAD ) : ( S_IREAD );
 #endif
@@ -6086,11 +5601,6 @@ void CBaseFileSystem::CreateDirHierarchy( const char *pRelativePath, const char 
 			*s = '\0';
 #if defined( _WIN32 )
 			_mkdir( szScratchFileName );
-#elif defined( _PS3 )
-			CellFsStat status;
-			//Only create is the path doesn't exist already - Jawad.
-			if ( cellFsStat( szScratchFileName, &status ) != CELL_FS_SUCCEEDED )
-				cellFsMkdir( szScratchFileName, CELL_FS_DEFAULT_CREATE_MODE_1 );
 #elif defined( POSIX )
 			mkdir( szScratchFileName, S_IRWXU |  S_IRGRP |  S_IROTH );// owner has rwx, rest have r
 #endif
@@ -6101,10 +5611,6 @@ void CBaseFileSystem::CreateDirHierarchy( const char *pRelativePath, const char 
 
 #if defined( _WIN32 )
 	_mkdir( szScratchFileName );
-#elif defined( _PS3 )
-	CellFsStat status;
-	if ( cellFsStat( szScratchFileName, &status ) != CELL_FS_SUCCEEDED )
-		cellFsMkdir( szScratchFileName, CELL_FS_DEFAULT_CREATE_MODE_1 );
 #elif defined( POSIX )
 	mkdir( szScratchFileName, S_IRWXU |  S_IRGRP |  S_IROTH );
 #endif
@@ -6118,7 +5624,6 @@ void CBaseFileSystem::CreateDirHierarchy( const char *pRelativePath, const char 
 void CBaseFileSystem::FindFileAbsoluteListHelper( CUtlVector< CUtlString > &outAbsolutePathNames, FindData_t &findData, const char *pAbsoluteFindName )
 {
 	// TODO: figure out what PS3 does without VPKs
-#ifndef _PS3
 	bool bFixed = false;
 	char fixedFATXFilename[MAX_PATH];
 	if ( IsX360() )
@@ -6145,9 +5650,6 @@ void CBaseFileSystem::FindFileAbsoluteListHelper( CUtlVector< CUtlString > &outA
 			findData.findHandle = INVALID_HANDLE_VALUE;
 		}
 	}
-#else
-	Error( "Not implemented!\n" );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6158,7 +5660,6 @@ void CBaseFileSystem::FindFileAbsoluteListHelper( CUtlVector< CUtlString > &outA
 void CBaseFileSystem::FindFileAbsoluteList( CUtlVector< CUtlString > &outAbsolutePathNames, const char *pWildCard, const char *pPathID )
 {
 	// TODO: figure out what PS3 does without VPKs
-#ifndef _PS3
 	VPROF_BUDGET( "CBaseFileSystem::FindFileAbsoluteList", VPROF_BUDGETGROUP_OTHER_FILESYSTEM );
 
 	outAbsolutePathNames.Purge();
@@ -6230,9 +5731,6 @@ void CBaseFileSystem::FindFileAbsoluteList( CUtlVector< CUtlString > &outAbsolut
 			outAbsolutePathNames.AddToTail( result );
 		}
 	}
-#endif
-#else
-Error( "Not implemented!\n" );
 #endif
 }
 
@@ -6594,14 +6092,6 @@ const char *CBaseFileSystem::RelativePathToFullPath( const char *pFileName, cons
 		*pPathType = PATH_IS_NORMAL;
 	}
 
-#ifdef _PS3
-	// crush the filename to lowercase
-	char lowercasedname[256];
-	V_strncpy( lowercasedname, pFileName, 255 );
-	V_strnlwr( lowercasedname, 255 );
-	pFileName = lowercasedname;
-#endif
-
 	// Fill in the default in case it's not found...
 	Q_strncpy( pFullPath, pFileName, fullPathBufferSize );
 
@@ -6698,14 +6188,6 @@ const char *CBaseFileSystem::RelativePathToFullPath( const char *pFileName, cons
 bool CBaseFileSystem::GetPackFileInfoFromRelativePath( const char *pFileName, const char *pPathID, char *pPackPath, int nPackPathBufferSize, int64 &nPosition, int64 &nLength )
 {
 	CHECK_DOUBLE_SLASHES( pFileName );
-
-#ifdef _PS3
-	// crush the filename to lowercase
-	char lowercasedname[256];
-	V_strncpy( lowercasedname, pFileName, 255 );
-	V_strnlwr( lowercasedname, 255 );
-	pFileName = lowercasedname;
-#endif
 
 	CSearchPathsIterator iter( this, &pFileName, pPathID, FILTER_CULLNONPACK );
 	for ( CSearchPath *pSearchPath = iter.GetFirst(); pSearchPath != NULL; pSearchPath = iter.GetNext() )
@@ -6909,9 +6391,9 @@ bool CBaseFileSystem::RenameFile( char const *pOldPath, char const *pNewPath, co
 //-----------------------------------------------------------------------------
 bool CBaseFileSystem::GetCurrentDirectory( char* pDirectory, int maxlen )
 {
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 	if ( !::GetCurrentDirectoryA( maxlen, pDirectory ) )
-#elif ( defined( POSIX ) && !defined( _PS3 ) ) || defined( _X360 )
+#elif ( defined( POSIX ) )
 	if ( !getcwd( pDirectory, maxlen ) )
 #endif
 		return false;
@@ -7485,7 +6967,7 @@ void CBaseFileSystem::BlockingFileAccess_LeaveCriticalSection()
 
 bool CBaseFileSystem::GetFileTypeForFullPath( char const *pFullPath, wchar_t *buf, size_t bufSizeInBytes )
 {
-#if !defined( _X360 ) && !defined( POSIX )
+#if !defined( POSIX )
 	wchar_t wcharpath[512];
 	::MultiByteToWideChar( CP_UTF8, 0, pFullPath, -1, wcharpath, sizeof( wcharpath ) / sizeof(wchar_t) );
 	wcharpath[(sizeof( wcharpath ) / sizeof(wchar_t)) - 1] = L'\0';
@@ -7864,273 +7346,14 @@ bool CFileHandle::EndOfFile()
 	return ( Tell() >= Size() );
 }
 
-#ifdef _GAMECONSOLE
-static int s_DLC_Numeric_Supported[] =
-{
-	0, 0, 0, 0, 0, // 5
-	0, 0, 0, 0, 0, // 10
-	0, 0, 0, 0, 0, // 15
-	0, 0, 0, 0, 20, // 20
-	0, 0, 0, 0, 0, // 25
-	0, 0, 0, 0, 0, // 30
-};
-static bool IsDlcNumericSupported( int iDLC )
-{
-#if defined( CSTRIKE15 )
-	return ( iDLC >= 1 && iDLC < 31 );
-#else // CSTRIKE15
-	for ( int k = 0; k < ARRAYSIZE( s_DLC_Numeric_Supported ); ++ k )
-		if ( s_DLC_Numeric_Supported[k] == iDLC )
-			return true;
-	return false;
-#endif // CSTRIKE15
-}
-#else
 static bool IsDlcNumericSupported( int iDLC )
 {
 	return false;
 }
-#endif
 
 bool CBaseFileSystem::DiscoverDLC( int iController )
 {
-#if !defined( _X360 )
 	return false;
-#else
-	DevMsg( "Discovering DLC...\n" );
-
-	// clear prior corrupt results
-	m_CorruptDLC.Purge();
-
-	CUtlSortVector< DLCContent_t, CDLCLess > dlcResults;
-
-	// development path supports locally mounting the dlc when not using XLAST or XBL
-	// this is development only, retail runtime would never have command line dictated DLC
-	// command line trumps ANY discovery so we can have a desired exact DLC testing state
-	bool bUsingCommandLineDLC = false;
-	const char *pCmdLine = CommandLine()->GetCmdLine();
-	while( pCmdLine )
-	{
-		pCmdLine = V_stristr( pCmdLine, "-dlc" );
-		if ( !pCmdLine )
-			break;
-
-		bUsingCommandLineDLC = true;
-
-		int nDLC = atoi( pCmdLine + 4 );
-		if ( nDLC == 0 )
-		{
-			// malformed command line dev args
-			DevWarning( "Bad argument: %s\n", pCmdLine );
-			break;
-		}
-		
-		// get the required dlcflags -dlc<n> 0x<flags>
-		// user must supply as the lower word identifies control bits
-		char const *szDlcNflags = CommandLine()->ParmValue( CFmtStr( "-dlc%d", nDLC ), "0x0" );
-		unsigned int nDLCFlags = 0;
-		if ( 1 != sscanf( szDlcNflags, "0x%x", &nDLCFlags ) )
-		{
-			DevWarning( "Bad DLC flags: -dlc%d %s\n", nDLC, szDlcNflags );
-			break;
-		}
-
-		// form the license mask
-		// identify development DLCN as N.0 in the upper MSW, the retail version is at least N.1
-		// the LSW are the control flags
-		unsigned int nLicenseMask = ( ( nDLC & 0xFF ) << 24 ) | ( nDLCFlags & 0xFFFF );
-
-		DLCContent_t dlcContent;
-
-		// should be part of test image
-		// the real DLC encodes descriptive data we can only spoof
-		V_strcpy( dlcContent.m_szVolume, "D" );
-		V_strtowcs( CFmtStr( "DLC%d Dev Name (0x%8.8x)", nDLC, nLicenseMask ), -1, dlcContent.m_ContentData.szDisplayName, sizeof( dlcContent.m_ContentData.szDisplayName ) );
-
-		dlcContent.m_nController = 0;
-		dlcContent.m_LicenseMask = nLicenseMask;
-		dlcContent.m_bMounted = ( nLicenseMask & DLCFLAGS_PRESENCE_ONLY ) != 0;
-
-		dlcResults.Insert( dlcContent );
-
-		// next arg
-		pCmdLine += 4;
-	}
-
-	if ( bUsingCommandLineDLC )
-	{
-		for ( int i = 0; i < dlcResults.Count(); i++ )
-		{
-			// only care about new unique occurring DLC
-			// skip over any DLC that we have already discovered
-			bool bFound = false;
-			for ( int j = 0; j < m_DLCContents.Count() && !bFound; j++ )
-			{
-				bFound = ( DLC_LICENSE_ID( m_DLCContents[j].m_LicenseMask ) == DLC_LICENSE_ID( dlcResults[i].m_LicenseMask ) );
-			}
-			if ( !bFound )
-			{
-				m_DLCContents.Insert( dlcResults[i] );
-			}
-		}
-	}
-	else
-	{
-		CUtlMemory< BYTE >	buffer;
-		DWORD nNumItems = 0;
-		BYTE *pBuffer = NULL;
-
-		// find additional content
-		// must have a signed in user, otherwise cannot find enhanced content
-		DWORD nBufferSize;
-		HANDLE hEnumerator;
-		if ( XContentCreateEnumerator(	
-				iController, 
-				XCONTENTDEVICE_ANY,
-				XCONTENTTYPE_MARKETPLACE, 
-				0, 
-				100, 
-				&nBufferSize, 
-				&hEnumerator ) == ERROR_SUCCESS )
-		{
-			if ( nBufferSize )
-			{
-				// get a buffer to capture enumeration results
-				buffer.EnsureCapacity( nBufferSize );
-				pBuffer = buffer.Base();
-				if ( XEnumerate( hEnumerator, pBuffer, nBufferSize, &nNumItems, NULL ) != ERROR_SUCCESS )
-				{
-					nNumItems = 0;
-				}
-			}
-		}
-
-		::CloseHandle( hEnumerator );
-		if ( !nNumItems )
-		{
-			return false;
-		}
-
-		char szFilename[XCONTENT_MAX_FILENAME_LENGTH+1];
-		szFilename[XCONTENT_MAX_FILENAME_LENGTH] = 0;
-		XCONTENT_DATA *pContentData;
-
-		// determine all our dlc content
-		for ( unsigned int i = 0; i < nNumItems; i++ )
-		{
-			// filenames are encoded encryptions, useless to anything but the system
-			pContentData = (XCONTENT_DATA *)pBuffer + i;
-			V_memcpy( szFilename, pContentData->szFileName, XCONTENT_MAX_FILENAME_LENGTH );
-
-			// must mount to get license mask
-			// license mask is ONLY available for content downloaded through XBL (not mounted locally)
-			DWORD licenseMask = 0;
-			DWORD dwStatus = XContentCreate( iController, "DLC", pContentData, XCONTENTFLAG_OPENEXISTING, NULL, &licenseMask, NULL );
-			if ( dwStatus != ERROR_SUCCESS )
-			{
-				// assume corrupt
-				DLCCorrupt_t dlcCorrupt;
-				dlcCorrupt.m_ContentData = *pContentData;
-				m_CorruptDLC.AddToTail( dlcCorrupt );
-				continue;
-			}
-
-			// always unmount, highest version will get re-mounted
-			// as we might rev the DLC without a TU
-			XContentClose( "DLC", NULL );
-
-			// DLC N
-			int nDlcNumericId = DLC_LICENSE_ID( licenseMask );
-			bool bDlcIsSupported = IsDlcNumericSupported( nDlcNumericId );
-
-			// only consider DLC with a valid license mask
-			// we DONT/CANT support install-test-locally DLC because DLC lacks license mask to decode
-			if ( nDlcNumericId && bDlcIsSupported )
-			{
-				// insert into ascending sorted list, ensures dlc1..dlcN order
-				DLCContent_t dlcContent;
-				dlcContent.m_ContentData = *pContentData;
-				dlcContent.m_LicenseMask = licenseMask;
-				dlcContent.m_nController = iController;
-				dlcContent.m_szVolume[0] = '\0';
-				dlcContent.m_bMounted = false;
-				dlcResults.Insert( dlcContent );
-			}
-			else
-			{
-				// assume corrupt
-				DLCCorrupt_t dlcCorrupt;
-				dlcCorrupt.m_ContentData = *pContentData;
-				m_CorruptDLC.AddToTail( dlcCorrupt );
-				continue;
-			}
-		}
-
-		// mount the highest version of each type
-		// sorted results order guarantees ascending type/version order
-		for ( int i = 0; i < dlcResults.Count(); )
-		{
-			// iterate ascending list determine highest version of matching type
-			DWORD dlcType = DLC_LICENSE_ID( dlcResults[i].m_LicenseMask );
-			int nBest = i;
-			for ( int j = i+1; j < dlcResults.Count(); j++ )
-			{
-				if ( dlcType != DLC_LICENSE_ID( dlcResults[j].m_LicenseMask ) )
-				{
-					// wrong one, due to sort order, no more of this type
-					break;
-				}
-				nBest = j;
-			}	
-
-			// only care about unique DLC types, can't handle newly discovered sub versions of the same type
-			// iterate for a match
-			bool bFound = false;
-			for ( int j = 0; j < m_DLCContents.Count() && !bFound; j++ )
-			{
-				bFound = ( DLC_LICENSE_ID( m_DLCContents[j].m_LicenseMask ) == DLC_LICENSE_ID( dlcResults[nBest].m_LicenseMask ) );
-			}
-			if ( !bFound )
-			{
-				// mount the highest version of each type only
-				DLCContent_t dlcContent = dlcResults[nBest];
-				V_strcpy( dlcContent.m_szVolume, CFmtStr( "DLC%d", DLC_LICENSE_ID( dlcContent.m_LicenseMask ) ) );
-
-				DWORD dwResults;
-				if ( dlcContent.m_LicenseMask & DLCFLAGS_PRESENCE_ONLY )
-				{
-					// we have it, that's all that is required
-					// what's inside it is never acessed
-					dwResults = ERROR_SUCCESS;
-					dlcContent.m_bMounted = true;
-				}
-				else
-				{
-					dwResults = XContentCreate(
-									iController,
-									dlcContent.m_szVolume,
-									&dlcContent.m_ContentData,
-									XCONTENTFLAG_OPENEXISTING,
-									NULL,
-									NULL,
-									NULL );
-				}
-				if ( dwResults == ERROR_SUCCESS )
-				{
-					// already handled corrupt errors, so expecting success
-					m_DLCContents.Insert( dlcContent );
-				}
-			}
-
-			// continue with next dlc type
-			i = nBest + 1;
-		}
-	}
-
-	PrintDLCInfo();
-
-	return ( m_DLCContents.Count() != 0 );
-#endif
 }
 
 // Returns the number of DLC components found
@@ -8505,36 +7728,6 @@ bool CBaseFileSystem::AddXLSPUpdateSearchPath( const void *pData, int nSize )
 void CBaseFileSystem::MarkLocalizedPath( CSearchPath *sp )
 {
 // game console only for now
-#ifdef _GAMECONSOLE
-	const char *pPath = g_PathIDTable.String( sp->GetPath() );
-	if ( !pPath || !*pPath )
-		return;
-
-	if ( !XBX_IsAudioLocalized() )
-	{
-		return;
-	}
-
-	const char *pLanguage = XBX_GetLanguageString();
-	if ( !pLanguage || !V_stricmp( pLanguage, "english" ) )
-	{
-		return;
-	}
-
-	int languagelen = V_strlen( pLanguage );
-	int pathlen = V_strlen( pPath );
-	// ignore trailing slash
-	if ( pPath[ pathlen - 1 ] == '\\' || pPath[ pathlen - 1 ] == '/' )
-	{
-		--pathlen;
-	}
-
-	if ( pathlen > languagelen &&
-		 V_strnicmp( pPath + pathlen - languagelen, pLanguage, languagelen ) == 0 )
-	{
-		sp->m_bIsLocalizedPath = true;
-	}
-#endif
 }
 #ifdef SUPPORT_IODELAY_MONITORING
 class CIODelayAlarmThread : public CThread

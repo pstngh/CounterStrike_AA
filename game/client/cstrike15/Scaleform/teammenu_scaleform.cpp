@@ -366,9 +366,6 @@ void CCSTeamMenuScaleform::Show( void )
 			// Start the force team select timer
 			if ( m_bMatchStart )
 			{
-#if defined( _X360 )
-				( ( CCStrike15BasePanel* )BasePanel() )->Xbox_PromptSwitchToGameVoiceChannel();
-#endif
 
 				HandleForceSelect();
 			}

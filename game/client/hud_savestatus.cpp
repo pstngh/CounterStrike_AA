@@ -17,9 +17,6 @@
 #include "tier0/memdbgon.h"
 
 // Actually must access console primary user id
-#if defined( _GAMECONSOLE ) && defined( XBX_GetPrimaryUserId )
-#undef XBX_GetPrimaryUserId
-#endif
 
 using namespace vgui;
 
@@ -100,14 +97,6 @@ void CHudSaveStatus::SetSavingLabels( bool bIsGameSave )
 //-----------------------------------------------------------------------------
 bool CHudSaveStatus::ShouldDraw()
 {
-#ifdef _GAMECONSOLE
-	ASSERT_LOCAL_PLAYER_RESOLVABLE();
-	int nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
-	if ( XBX_GetUserId( nSlot ) != ( int )XBX_GetPrimaryUserId() )
-	{
-		return false;
-	}
-#endif
 
 	bool bNeedsDraw = false;
 
@@ -124,9 +113,6 @@ bool CHudSaveStatus::ShouldDraw()
 		!( IsPC() && engine->IsAutoSaveInProgress() ) ) 
 	{
 		bool bPrimaryUserIsGuest = false;
-#if defined( _GAMECONSOLE )
-		bPrimaryUserIsGuest = ( XBX_GetPrimaryUserIsGuest() != 0 );
-#endif
 		int iController = XBX_GetActiveUserId();
 		DWORD nStorageDevice = XBX_GetStorageDeviceId( iController );
 		bool bHasStorageDevice = ( XBX_DescribeStorageDevice( nStorageDevice ) != 0 );
@@ -137,27 +123,6 @@ bool CHudSaveStatus::ShouldDraw()
 			bNeedsDraw = true;
 		}
 	}
-
-#if defined( _PS3 )
-	bool bIsSteamProfileSave = false;
-	bool bPS3SaveUtilBusy = ps3saveuiapi->IsSaveUtilBusy();
-	if ( bPS3SaveUtilBusy )
-	{
-		uint32 nOpTag = ps3saveuiapi->GetCurrentOpTag();
-		if ( nOpTag == kSAVE_TAG_WRITE_STEAMINFO )
-		{
-			bNeedsDraw = true;
-			bIsSteamProfileSave = true;
-		}
-	}
-
-	if ( bPS3SaveUtilBusy && ( m_bIsSteamProfileSave != bIsSteamProfileSave ) )
-	{
-		// change to correct label
-		m_bIsSteamProfileSave = bIsSteamProfileSave;
-		SetSavingLabels( !m_bIsSteamProfileSave );
-	}
-#endif
 
 	if ( m_bNeedsDraw != bNeedsDraw )
 	{
@@ -216,14 +181,6 @@ bool CHudSaveStatus::ShouldDraw()
 			m_flFadeOutTime = 0;
 		}
 	}
-
-#if defined( _PS3 )
-	if ( !bNeedsDraw && m_bIsSteamProfileSave )
-	{
-		m_bIsSteamProfileSave = false;
-		SetSavingLabels( !m_bIsSteamProfileSave );
-	}
-#endif
 
 	return bNeedsDraw;
 }

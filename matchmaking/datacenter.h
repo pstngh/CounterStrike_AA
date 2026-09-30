@@ -81,15 +81,7 @@ protected:
 	KeyValues *m_pDataInfo;
 	KeyValues *m_pInfoChunks;
 
-#ifdef _X360
-	CXlspConnection *m_pXlspConnection;
-	CXlspConnectionCmdBatch *m_pXlspBatch;
-	bool m_bStorageDeviceAvail[ XUSER_MAX_COUNT ];
-	int m_nVersionStored;
-	int m_nVersionApplied;
-	int m_numDelayedMountAttempts;
-	float m_flDcRequestDelayUntil;
-#elif !defined( NO_STEAM ) && !defined( NO_STEAM_GAMECOORDINATOR ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( NO_STEAM_GAMECOORDINATOR ) && !defined( SWDS )
 	friend class CGCClientJobDataRequest;
 	JobID_t	m_JobIDDataRequest;
 #endif
@@ -168,10 +160,6 @@ public:
 	virtual void Update();
 
 protected:
-#ifdef _X360
-	CXlspConnection *m_pXlspConnection;
-	CXlspConnectionCmdBatch *m_pXlspBatch;
-#endif
 
 	CDatacenter *m_pParent;
 	CUtlVector< KeyValues * > m_arrCommands;

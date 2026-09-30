@@ -57,11 +57,6 @@
 #include "mathlib/volumeculler.h"
 #include "vstdlib/jobthread.h"
 
-#if defined(_PS3)
-#include "buildindices_PS3.h"
-#include "buildworldlists_PS3.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -131,11 +126,6 @@ static ConVar r_fastzrejectdisp( "r_fastzrejectdisp", "0", 0, "Activates/deactiv
 
 ConVar r_skybox_draw_last( "r_skybox_draw_last", IsPS3()? "1" : "0", 0, "Draws skybox after world brush geometry, rather than before." );
 
-
-#if defined(_PS3)
-ConVar r_PS3_SPU_buildindices( "r_PS3_SPU_buildindices", "1", 0, "0: PPU, 1: SPU, 2: SPU with debug stop on job entry" );
-ConVar r_PS3_SPU_buildworldlists( "r_PS3_SPU_buildworldlists", "1", 0, "0: PPU, 1: SPU" );
-#endif
 
 ConVar r_csm_static_vb("r_csm_static_vb","1", 0, "Use a precomputed static VB for CSM rendering");
 ConVar r_csm_fast_path("r_csm_fast_path","1", FCVAR_DEVELOPMENTONLY, "Use shadow fast path for CSM rendering - minimize number of draw call");
@@ -296,10 +286,6 @@ public:
 		Purge();
 	}
 
-#if defined(_PS3)
-	static CWorldRenderList *FindOrCreateList_PS3( int nSurfaces, int viewID );
-#endif
-
 	static CWorldRenderList *FindOrCreateList( int nSurfaces )
 	{
 		CWorldRenderList *p = g_Pool.GetObject();
@@ -339,9 +325,6 @@ public:
 		m_DispSortList.Init(materials->GetNumSortIDs(), 32);
 		m_VisitedSurfs.Resize( nSurfaces );
 		m_leaves.EnsureCapacity(1024);
-#if defined(_PS3)
-		m_SPUDecalSurfsToAdd.EnsureCapacity(0x180);
-#endif
 		m_DecalSurfsToAdd.EnsureCapacity( 512 );
 		m_bSkyVisible = false;
 		m_bWaterVisible = false;
@@ -359,9 +342,6 @@ public:
 		m_SortList.Shutdown();
 		m_DispSortList.Shutdown();
 		m_AlphaSurfaces.Purge();
-#if defined(_PS3)
-		m_SPUDecalSurfsToAdd.Purge();
-#endif
 		m_DecalSurfsToAdd.Purge();
 	}
 
@@ -384,9 +364,6 @@ public:
 		// We haven't found any visible leafs this frame
 		m_leaves.RemoveAll();
 
-#if defined(_PS3)
-		m_SPUDecalSurfsToAdd.RemoveAll();
-#endif
 		m_DecalSurfsToAdd.RemoveAll();
 
 		m_VisitedSurfs.ClearAll();
@@ -435,120 +412,6 @@ public:
 		}
 	}
 
-#if defined(_PS3)
-	// kludgy, but get theory of this working first TODO:tidy...
-
-	// these must match the same definitions in job_worldlists.cpp
-#define MAX_DRAWN_SURF	0x260
-#define MAX_LEAVES		0x520 
-#define MAX_DECAL_SURF	0x180
-
-	void EnsureCapacityForSPU( int maxSortID, int surfVisited )
-	{
-		m_SortList.EnsureCapacityForSPU(maxSortID, MAX_DRAWN_SURF);
-		m_DispSortList.EnsureCapacityForSPU(maxSortID, MAX_DRAWN_SURF/8); // was 32
-		m_VisitedSurfs.Resize( surfVisited );
-		m_leaves.EnsureCapacity(MAX_LEAVES);
-		m_AlphaSurfaces.EnsureCapacity(MAX_DRAWN_SURF/2);  // was 512
-
-		for ( int i = 0; i < MAX_MAT_SORT_GROUPS; i++ )
-		{
-			m_DlightSurfaces[i].EnsureCapacity(MAX_DRAWN_SURF/4);
-			m_PaintedSurfaces[i].EnsureCapacity(MAX_DRAWN_SURF/4);
-		}
-
-		m_bSkyVisible = false;
-		m_bWaterVisible = false;
-
-		m_VisitedSurfs.ClearAll();
-
-		m_SPUDecalSurfsToAdd.EnsureCapacity(MAX_DECAL_SURF);
-	}
-
-
-	void FillOutputParamsForSPU( job_buildworldlists::buildWorldListsDMAOut *pDMAOut )
-	{
-		// renderlist destination dma data
-
-		// m_SortList
-		pDMAOut->m_pSortList_m_list					= uintp(m_SortList.GetMaterialList());
-		pDMAOut->m_pSortList_m_listUtlPtr			= uintp(m_SortList.GetMaterialListUtlPtr());
-		pDMAOut->m_pSortList_m_groupsShared			= uintp(m_SortList.GetGroupsShared());
-		pDMAOut->m_pSortList_m_groupsSharedUtlPtr	= uintp(m_SortList.GetGroupsSharedUtlPtr());
-		pDMAOut->m_pSortList_m_groupIndices			= uintp(m_SortList.GetGroupIndices());
-		pDMAOut->m_pSortList_m_groupIndicesUtlPtr	= uintp(m_SortList.GetGroupIndicesUtlPtr());
-		for( int lp = 0; lp < MAX_MAT_SORT_GROUPS; lp++ )
-		{
-			pDMAOut->m_pSortList_m_sortGroupLists[lp]		= uintp(m_SortList.GetSortGroupLists( lp ));
-			pDMAOut->m_pSortList_m_sortGroupListsUtlPtr[lp]	= uintp(m_SortList.GetSortGroupListsUtlPtr( lp ));
-		}
-
-		// m_DispSortList
-		pDMAOut->m_pDispSortList_m_list					= uintp(m_DispSortList.GetMaterialList());
-		pDMAOut->m_pDispSortList_m_listUtlPtr			= uintp(m_DispSortList.GetMaterialListUtlPtr());
-		pDMAOut->m_pDispSortList_m_groupsShared			= uintp(m_DispSortList.GetGroupsShared());
-		pDMAOut->m_pDispSortList_m_groupsSharedUtlPtr	= uintp(m_DispSortList.GetGroupsSharedUtlPtr());
-		pDMAOut->m_pDispSortList_m_groupIndices			= uintp(m_DispSortList.GetGroupIndices());
-		pDMAOut->m_pDispSortList_m_groupIndicesUtlPtr	= uintp(m_DispSortList.GetGroupIndicesUtlPtr());
-		for( int lp = 0; lp < MAX_MAT_SORT_GROUPS; lp++ )
-		{
-			pDMAOut->m_pDispSortList_m_sortGroupLists[lp] = uintp(m_DispSortList.GetSortGroupLists( lp ));
-			pDMAOut->m_pDispSortList_m_sortGroupListsUtlPtr[lp] = uintp(m_DispSortList.GetSortGroupListsUtlPtr( lp ));
-		}
-
-		// m_AlphaSurfaces
-		pDMAOut->m_pAlphaSurfaces					= uintp(m_AlphaSurfaces.Base());
-		pDMAOut->m_pAlphaSurfacesUtlPtr				= uintp(&m_AlphaSurfaces);
-
-		// m_DlightSurfaces
-		for( int lp = 0; lp < MAX_MAT_SORT_GROUPS; lp++ )
-		{
-			pDMAOut->m_pDlightSurfaces[lp]			= uintp(m_DlightSurfaces[lp].Base());
-			pDMAOut->m_pDlightSurfacesUtlPtr[lp]	= uintp(&m_DlightSurfaces[lp]);
-		}
-
-		// m_PaintedSurfaces
-		for( int lp = 0; lp < MAX_MAT_SORT_GROUPS; lp++ )
-		{
-			pDMAOut->m_pPaintedSurfaces[lp]			= uintp(m_PaintedSurfaces[lp].Base());
-			pDMAOut->m_pPaintedSurfacesUtlPtr[lp]	= uintp(&m_PaintedSurfaces[lp]);
-		}
-
-		// m_leaves
-		pDMAOut->m_pLeaves							= uintp(m_leaves.Base());
-		pDMAOut->m_pLeavesUtlPtr					= uintp(&m_leaves);
-
-		// m_VisitedSurfs
-		pDMAOut->m_pVisitedSurfs					= uintp(m_VisitedSurfs.m_bits.Base());
-
-		// decal surfs to add
-		pDMAOut->m_pDecalSurfsToAdd					= uintp(m_SPUDecalSurfsToAdd.Base());
-		pDMAOut->m_pDecalSurfsToAddUtlPtr			= uintp(&m_SPUDecalSurfsToAdd);
-
-		// m_bSkyVisible
-		pDMAOut->m_pSkyVisible						= uintp(&m_bSkyVisible);
-
-		// m_bWaterVisible
-		pDMAOut->m_pWaterVisible					= uintp(&m_bWaterVisible);
-	}
-
-	void AddSPUDecalSurfs( void )
-	{
-		int count = m_SPUDecalSurfsToAdd.Count();
-
-		for( int i = 0; i < count ; i++ )
-		{
-			job_buildworldlists::decalSurfPair &surfPair = m_SPUDecalSurfsToAdd[i];
-
-			DecalSurfaceAdd( (SurfaceHandle_t)surfPair.m_surfID, surfPair.m_renderGroup  );
-		}
-	}
-
-
-	CUtlVector<job_buildworldlists::decalSurfPair> m_SPUDecalSurfsToAdd;
-
-#endif
-
 	struct DecalSurfPair_t
 	{
 		SurfaceHandle_t m_surfID;
@@ -596,39 +459,6 @@ IWorldRenderList *AllocWorldRenderList()
 {
 	return CWorldRenderList::FindOrCreateList( host_state.worldbrush->numsurfaces );
 }
-
-#if defined(_PS3)
-static CWorldRenderList g_Pool_PS3[ MAX_CONCURRENT_BUILDVIEWS ];
-
-// use viewID to ensure a unique list is grabbed from the pool every time
-IWorldRenderList *AllocWorldRenderList_PS3( int viewID )
-{
-	return CWorldRenderList::FindOrCreateList_PS3( host_state.worldbrush->numsurfaces, viewID );
-}
-
-CWorldRenderList *CWorldRenderList::FindOrCreateList_PS3( int nSurfaces, int viewID )
-{
-	if( viewID >= MAX_CONCURRENT_BUILDVIEWS )
-	{
-		Error("*** Exceeded max concurrent buildviews, FindOrCreateList_PS3 ***\n");
-	}
-
-	CWorldRenderList *p = &g_Pool_PS3[ viewID ];
-
-	if ( p->m_VisitedSurfs.GetSize() != nSurfaces )
-	{
-		p->Init(nSurfaces);
-	}
-// 	else
-// 	{
-// 		p->AddRef();
-// 		AssertMsg( p->m_VisitedSurfs.GetSize() == nSurfaces, "World render list pool not cleared between maps" );
-// 	}
-
-	return p;
-}
-
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -1153,10 +983,6 @@ static void Shader_DrawChainsStatic( IMatRenderContext *pRenderContext, const CM
 
 	int i, listIndex = 0;
 
-#if defined(_PS3)
-	g_pBuildIndicesJob->m_buildIndicesJobData.EnsureCapacity( count );
-#endif
-
 	//PIXEVENT( pRenderContext, "Shader_DrawChainsStatic" );
 
 	int nMaxIndices = pRenderContext->GetMaxIndicesToRender();
@@ -1173,63 +999,6 @@ static void Shader_DrawChainsStatic( IMatRenderContext *pRenderContext, const CM
 
 		// start SPU job here
 
-#if defined(_PS3)
-
-		if( r_PS3_SPU_buildindices.GetInt() ) //&& ( count < g_pBuildIndicesJob->m_buildIndicesJobData.Count() ) )
-		{
-			PS3BuildIndicesJobData *pJobData	 = g_pBuildIndicesJob->GetJobData();
-
-			// fill SPU job struct
-			buildIndicesJob_SPU *pjob_SPU		 = &pJobData->buildIndicesJobSPU;
-
-			pjob_SPU->debugJob					 = r_PS3_SPU_buildindices.GetInt() == 2;
-
-			pjob_SPU->count						 = count;
-			pjob_SPU->maxIndices				 = nMaxIndices;
-			pjob_SPU->worldStaticMeshesCount	 = g_WorldStaticMeshes.Count();
-
-			pjob_SPU->listIndex					 = listIndex;
-			pjob_SPU->indexCount				 = indexCount;
-			pjob_SPU->meshListCount				 = meshList.Count();
-			pjob_SPU->batchListCount			 = batchList.Count();
-	
-			pjob_SPU->pEA_sortList_materiallist  = (void *)sortList.GetMaterialList();
-
-			pjob_SPU->group_listHead			 = (group).listHead;
-
-			pjob_SPU->pEA_worldbrush_surfaces1   = host_state.worldbrush->surfaces1;
-			pjob_SPU->pEA_worldbrush_surfaces2   = host_state.worldbrush->surfaces2;
-			pjob_SPU->pEA_worldbrush_primitives  = host_state.worldbrush->primitives;
-			pjob_SPU->pEA_worldbrush_primindices = host_state.worldbrush->primindices;
-			pjob_SPU->worldbrush_numsurfaces     = host_state.worldbrush->numsurfaces;
-
-			pjob_SPU->pEA_indexbuilder_indices   = meshBuilder.m_pIndices;
-			pjob_SPU->indexbuilder_indexSize     = meshBuilder.m_nIndexSize;
-
-			// push buildindices job
-			job_buildindices::JobDescriptor_t *pJobDescriptor = &pJobData->jobDescriptor;
-
-			pJobDescriptor->header = g_buildIndicesJobDescriptor.header;
-
-			pJobDescriptor->header.useInOutBuffer	= 1;
-			pJobDescriptor->header.sizeStack		= (40*1024)/8;
-			pJobDescriptor->header.sizeInOrInOut	= 0;
-			pJobDescriptor->header.sizeDmaList		= 0;
-
-			AddInputDma( pJobDescriptor, sizeof(buildIndicesJob_SPU), pjob_SPU );
-			AddInputDma( pJobDescriptor, ROUNDUPTONEXT16B( sizeof(IMesh *) * g_WorldStaticMeshes.Count() ), g_WorldStaticMeshes.Base() );
-			AddInputDma( pJobDescriptor, ROUNDUPTONEXT16B( sizeof(surfacesortgroup_t *) * (count) ), groupList.Base() );
-
-			// push
-			g_pBuildIndicesJob->Push( pJobDescriptor );
-
-			// debug
-			if( pjob_SPU->debugJob )
-			{
-				g_pBuildIndicesJob->Sync();
-			}
-		}
-#endif
 		for ( ; listIndex < count; listIndex++ )
 		{
 
@@ -1293,10 +1062,6 @@ static void Shader_DrawChainsStatic( IMatRenderContext *pRenderContext, const CM
 			meshList[meshIndex].numbatches++;
 
 
-#if defined(_PS3)
-			if( r_PS3_SPU_buildindices.GetInt() == 0 )
-			{
-#endif
 			MSL_FOREACH_SURFACE_IN_GROUP_BEGIN(sortList, group, surfID)
 			{
 				Assert( meshBuilder.m_nFirstVertex == 0 );
@@ -1304,18 +1069,8 @@ static void Shader_DrawChainsStatic( IMatRenderContext *pRenderContext, const CM
 				BuildIndicesForWorldSurface( meshBuilder, surfID, host_state.worldbrush );
 			}
 			MSL_FOREACH_SURFACE_IN_GROUP_END()
-#if defined(_PS3)
-			}
-#endif
 
 		}
-
-#if defined(_PS3)
-		if( r_PS3_SPU_buildindices.GetInt() )
-		{
- 			meshBuilder.AdvanceIndices( indexCount );
-		}
-#endif
 
   		// close out the index buffer
  		meshBuilder.End( false, false );
@@ -1455,22 +1210,6 @@ static void Shader_DrawChainsStatic( IMatRenderContext *pRenderContext, const CM
 	}
 
 }
-
-
-#if defined(_PS3)
-
-//-----------------------------------------------------------------------------
-// End of frame sync point for SPURS jobs that require it
-//-----------------------------------------------------------------------------
-void R_FrameEndSPURSSync( int flags )
-{
-	if( r_PS3_SPU_buildindices.GetInt() )
-	{
-		g_pBuildIndicesJob->Sync();
-	}
-}
-
-#endif
 
 
 
@@ -1929,7 +1668,6 @@ static void Shader_DrawChains( IMatRenderContext *pRenderContext, const CWorldRe
 	if ( DepthMode != DEPTH_MODE_NORMAL )	// Skip debug stuff in shadow depth map
 		return;
 
-#ifndef _PS3
 #ifdef USE_CONVARS
 	if ( g_ShaderDebug.anydebug )
 	{
@@ -1954,7 +1692,6 @@ static void Shader_DrawChains( IMatRenderContext *pRenderContext, const CWorldRe
 		}
 		MSL_FOREACH_GROUP_END()
 	}
-#endif
 #endif
 }
 
@@ -3077,10 +2814,6 @@ static void Shader_WorldZFill( IMatRenderContext *pRenderContext, CWorldRenderLi
 	int g;
 	const CMSurfaceSortList &sortList = pRenderList->m_SortList;
 
-#ifdef _X360
-	bool bFastZRejectDisplacements = s_bFastZRejectDisplacements || ( r_fastzrejectdisp.GetInt() != 0 );
-#endif
-
 	for ( g = 0; g < MAX_MAT_SORT_GROUPS; ++g )
 	{
 		if ( ( flags & ( 1 << g ) ) == 0 )
@@ -3100,15 +2833,6 @@ static void Shader_WorldZFill( IMatRenderContext *pRenderContext, CWorldRenderLi
 		}
 		MSL_FOREACH_GROUP_END()
 
-#ifdef _X360
-		// Draws opaque displacement surfaces along with shadows, overlays, flashlights, etc.
-		// NOTE: This only makes sense on the 360, since the extra batches aren't
-		// worth it on the PC (I think!)
-		if ( bFastZRejectDisplacements )
-		{
-			Shader_DrawDispChain( pRenderContext, nSortGroup, pRenderList->m_DispSortList, flags, true );
-		}
-#endif
 	}
 
 	if ( nVertexCount == 0 )
@@ -3753,7 +3477,6 @@ void Shader_DrawTranslucentSurfaces( IMatRenderContext *pRenderContext, IWorldRe
 //
 //=============================================================
 
-#if !defined(_PS3)
 static void FASTCALL R_DrawSurface( CWorldRenderList *pRenderList, SurfaceHandle_t surfID )
 {
 	ASSERT_SURF_VALID( surfID );
@@ -3771,12 +3494,10 @@ static void FASTCALL R_DrawSurface( CWorldRenderList *pRenderList, SurfaceHandle
 		Shader_WorldSurface( pRenderList, surfID );
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Draws displacements in a leaf
 //-----------------------------------------------------------------------------
-#if !defined(_PS3)
 static inline void DrawDisplacementsInLeaf( CWorldRenderList *pRenderList, mleaf_t* pLeaf )
 {
 	// add displacement surfaces
@@ -3809,77 +3530,6 @@ static inline void DrawDisplacementsInLeaf( CWorldRenderList *pRenderList, mleaf
 		}
 	}
 }
-#else
-
-static uint32 s_Disp_ParentSurfID_offset;
-static uint32 s_Disp_BB_offset;
-
-inline void MLeaf_Displacement_BBs( mleaf_t *pLeaf, int index, Vector*	pBBoxMin, Vector*	pBBoxMax, SurfaceHandle_t *pParentSurfID)
-{
-	int dispIndex = host_state.worldbrush->m_pDispInfoReferences[pLeaf->dispListStart+index];
-
-	CDispArray *pArray = static_cast<CDispArray*>( host_state.worldbrush->hDispInfos );
-
-	uint8* pInfo = (uint8*)(pArray->m_pDispInfos + dispIndex );
-
-	*pParentSurfID = *((SurfaceHandle_t*)(pInfo + s_Disp_ParentSurfID_offset));
-
-	Vector* pSrcVector = (Vector*)(pInfo + s_Disp_BB_offset);
-
-	*pBBoxMin = pSrcVector[0];
-	*pBBoxMax = pSrcVector[1];
-}
-
-#define GET_OFFSET(type, field)    ((uint32)&(((type *)0)->field))
-
-static inline void DrawDisplacementsInLeaf( CWorldRenderList *pRenderList, mleaf_t* pLeaf )
-{
-	// add displacement surfaces
-	if (!pLeaf->dispCount)
-		return;
-
-	s_Disp_ParentSurfID_offset = GET_OFFSET(CDispInfo, m_ParentSurfID);
-	s_Disp_BB_offset		   = GET_OFFSET(CDispInfo, m_BBoxMin);
-
-	CVisitedSurfs &visitedSurfs = pRenderList->m_VisitedSurfs;
-	for ( int i = 0; i < pLeaf->dispCount; i++ )
-	{
-		// 		CDispInfo *pDispInfo = static_cast<CDispInfo *>(MLeaf_Disaplcement( pLeaf, i ));
-		// 
-		SurfaceHandle_t parentSurfID;
-		Vector			bbMin;
-		Vector			bbMax;
-
-		MLeaf_Displacement_BBs(pLeaf, i, &bbMin, &bbMax, &parentSurfID);
-
-		// 		if (bbMin != pDispInfo->m_BBoxMin) DebuggerBreak();
-		// 		if (bbMax != pDispInfo->m_BBoxMax) DebuggerBreak();
-		// 		if (parentSurfID != pDispInfo->m_ParentSurfID) DebuggerBreak();
-
-
-		// NOTE: We're not using the displacement's touched method here 
-		// because we're just using the parent surface's visframe in the
-		// surface add methods below...
-
-		// already processed this frame? Then don't do it again!
-		if ( visitedSurfs.VisitSurface( parentSurfID ) )
-		{
-			if ( g_Frustum.CullBox( bbMin, bbMax ) )
-				continue;
-			if ( MSurf_Flags( parentSurfID ) & SURFDRAW_TRANS)
-			{
-				Shader_TranslucentDisplacementSurface( pRenderList, parentSurfID );
-			}
-			else
-			{
-				Shader_DisplacementSurface( pRenderList, parentSurfID );
-			}
-		}
-	}
-}
-
-
-#endif
 
 
 int LeafToIndex( mleaf_t* pLeaf );
@@ -4152,9 +3802,6 @@ void CBuildWorldListsJob::R_RecursiveWorldNode( CWorldRenderList *pRenderList, m
 
 	while (true)
 	{
-#if defined( _X360 ) || defined( _PS3 )
-		PREFETCH_128(node->plane,0);
-#endif
 		// no polygons in solid nodes
 		if (node->contents == CONTENTS_SOLID)
 			return;		// solid
@@ -4177,12 +3824,6 @@ void CBuildWorldListsJob::R_RecursiveWorldNode( CWorldRenderList *pRenderList, m
 			R_DrawLeaf( pRenderList, (mleaf_t *)node );
 			return;
 		}
-#if defined( _X360 ) || defined( _PS3 )
-		PREFETCH_128(node->children[0],0);
-		PREFETCH_128(node->children[1],0);
-		PREFETCH_128(node->children[0],offsetof(mnode_t,plane));
-		PREFETCH_128(node->children[1],offsetof(mnode_t,plane));
-#endif
 
 		// node is just a decision point, so go down the appropriate sides
 
@@ -4371,10 +4012,6 @@ void CBuildWorldListsJob::R_BuildWorldListNoCull( CWorldRenderList *pRenderList,
 				}
 				else
 				{
-#if defined( _X360 ) || defined( _PS3 )
-					PREFETCH_128(node->children[0],0);
-					PREFETCH_128(node->children[1],0);
-#endif
 					// node is just a decision point, so go down the appropriate sides
 					nodeList[nodeWriteIndex] = node->children[0];
 					nodeWriteIndex = (nodeWriteIndex+1) & (NODELIST_MAX-1);
@@ -4434,9 +4071,6 @@ bool CBuildWorldListsJob::R_CullNodeTopView( mnode_t *pNode )
 void CBuildWorldListsJob::R_DrawLeaf( CWorldRenderList *pRenderList, mleaf_t *pleaf )
 {
 	SurfaceHandle_t *pSurfID = &host_state.worldbrush->marksurfaces[pleaf->firstmarksurface];
-#if defined( _X360 ) || defined( _PS3 )
-	PREFETCH_128(pSurfID,0);
-#endif
 	// Add this leaf to the list of visible leaves
 	UpdateVisibleLeafLists( pRenderList, pleaf );
 
@@ -4455,13 +4089,6 @@ void CBuildWorldListsJob::R_DrawLeaf( CWorldRenderList *pRenderList, mleaf_t *pl
 #endif
 
 	// Add non-displacement surfaces
-#if defined( _X360 ) || defined( _PS3 )
-	int count = MIN(pleaf->nummarksurfaces, 7);
-	for ( int i = 0; i < count; ++i )
-	{
-		PREFETCH_128(pSurfID[i],0);
-	}
-#endif
 
 	int i;
 	int nSurfaceCount = pleaf->nummarknodesurfaces;
@@ -4476,9 +4103,6 @@ void CBuildWorldListsJob::R_DrawLeaf( CWorldRenderList *pRenderList, mleaf_t *pl
 		Assert( !SurfaceHasDispInfo(surfID) );
 		// mark this one to be drawn at the node
 		visitedSurfs.MarkSurfaceVisited( surfID );
-#if defined( _X360 ) || defined( _PS3 )
-		PREFETCH_128(pSurfID[i+7],0);
-#endif
 	}
 
 #ifdef USE_CONVARS
@@ -4489,10 +4113,6 @@ void CBuildWorldListsJob::R_DrawLeaf( CWorldRenderList *pRenderList, mleaf_t *pl
 	for ( ; i < pleaf->nummarksurfaces; i++ )
 	{
 		SurfaceHandle_t surfID = pSurfID[i];
-#if defined( _X360 )// || defined( _PS3 )
-		PREFETCH_128(surfID->plane,0);
-		PREFETCH_128(pSurfID[i+7],0);
-#endif
 
 		// Don't process the same surface twice
 		if ( !visitedSurfs.VisitSurface( surfID ) )
@@ -4503,13 +4123,8 @@ void CBuildWorldListsJob::R_DrawLeaf( CWorldRenderList *pRenderList, mleaf_t *pl
 		// Back face cull; only func_detail are drawn here
 		if ( (flags & SURFDRAW_NOCULL) == 0 )
 		{
-#if !defined(_PS3)
 			if ( (DotProduct(surfID->plane->normal, m_modelOrigin) - surfID->plane->dist ) < BACKFACE_EPSILON )
 				continue;
-#else
-			if ( (DotProduct(surfID->m_plane.normal, m_modelOrigin) - surfID->m_plane.dist ) < BACKFACE_EPSILON )
-				continue;
-#endif		
 		}
 
 		int sortGroup = (flags & SURFDRAW_SORTGROUP_MASK) >> SURFDRAW_SORTGROUP_SHIFT;
@@ -4745,57 +4360,6 @@ void R_BuildWorldLists( IWorldRenderList *pRenderListIn, WorldListInfo_t* pInfo,
 
 
 
-#if defined( _PS3 )
-	extern IBaseClientDLL *g_ClientDLL;
-	extern CUtlVector< Frustum_t > g_AreaFrustum;
-	extern unsigned char g_RenderAreaBits[32];
-	extern bool g_bViewerInSolidSpace;
-
-	if( r_PS3_SPU_buildworldlists.GetInt() && g_ClientDLL->IsSPUBuildWRJobsOn() )
-	{
-		// Run BuildWorldLists on SPU
-
-		// this goes hand-in-hand with building renderables on SPU and runs the job in parallel while the PPU continues 
-		// a sync point is required while drawing and entry into here assumes 2 passes over the rendering
-		// lists are built during the 1st pass, drawn during the 2nd (where/when the jobs started in pass 1 are synced)
-
-		Frustum_t *pgFrustum, *pgAreaFrustum;
-		unsigned char *pgRenderAreaBits;
-		void *pVC = NULL;
-
-		SNPROF("R_BuildWorldLists_SPUpath");
-
-		if ( !r_drawtopview )
-		{
-			R_SetupAreaBits( iForceViewLeaf, pVisData, pWaterReflectionHeight );
-		}
-
-		g_ClientDLL->CacheFrustumData( &g_Frustum, g_AreaFrustum.Base(), g_RenderAreaBits, g_AreaFrustum.Count(), g_bViewerInSolidSpace );
-
-		if( s_pTopViewVolumeCuller )
-		{
-			pVC = g_ClientDLL->GetBuildViewVolumeCuller();
-		}
-		pgFrustum		 = g_ClientDLL->GetBuildViewFrustum();
-		pgAreaFrustum	 = g_ClientDLL->GetBuildViewAreaFrustum();
-		pgRenderAreaBits = g_ClientDLL->GetBuildViewRenderAreaBits();
-
-		int buildViewID  = g_ClientDLL->GetBuildViewID();
-
-		job_buildworldlists::JobParams_t* pParam = job_buildworldlists::GetJobParams( &g_buildWorldListsJobDescriptor[ buildViewID ] );
-
-		pRenderList->EnsureCapacityForSPU( AlignValue( materials->GetNumSortIDs(), 16 ), host_state.worldbrush->numsurfaces );
-
-		pRenderList->FillOutputParamsForSPU( &g_buildWorldListsDMAOutData[ buildViewID ] );
-
-		g_pBuildWorldListsJob->BuildWorldLists_SPU( pParam, &g_buildWorldListsDMAOutData[ buildViewID ], 
-													r_drawtopview, pVC/*(void *)s_pTopViewVolumeCuller*/, s_OrthographicCenter.Base(), s_OrthographicHalfDiagonal.Base(), r_bTopViewNoBackfaceCulling, r_bTopViewNoVisCheck, 
-													bShadowDepth, pInfo, pRenderList->m_leaves.Base(), g_ClientDLL->GetDrawFlags(), 
-													pgFrustum, pgAreaFrustum, pgRenderAreaBits, 
-													buildViewID );
-	}
-	else
-#endif
 	{
 		extern IBaseClientDLL *g_ClientDLL;
 		extern CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > > g_AreaFrustum;
@@ -4851,59 +4415,6 @@ void Shader_WorldBegin_Pass2( CWorldRenderList *pRenderList )
 	//	g_pShadowMgr->ClearShadowRenderList( );
 }
 
-#if defined(_PS3)
-
-void R_BuildWorldLists_PS3_Epilogue( IWorldRenderList *pRenderListIn, WorldListInfo_t* pInfo, bool bShadowDepth )
-{
-	CWorldRenderList *pRenderList = assert_cast<CWorldRenderList *>(pRenderListIn);
-
-	// if doing 2 pass, this epilogue will be on 2nd pass 
-	// => need to call a lite version of Shader_WorldBegin that does away with resetting the world lists
-
-	Shader_WorldBegin_Pass2( pRenderList );
-
-
-
-	// Don't bother in topview?
-	if ( !r_drawtopview && !bShadowDepth )
-	{
-		// epilogue - add decal surfs
-		pRenderList->AddSPUDecalSurfs();
-
-		// This builds all lightmaps, including those for translucent surfaces
-		Shader_BuildDynamicLightmaps( pRenderList );
-	}
-
-	// 
-	if ( pInfo )
-	{
-		// Compute fog volume info for rendering
-		if ( !bShadowDepth )
-		{
-			FogVolumeInfo_t fogInfo;
-			ComputeFogVolumeInfo( &fogInfo, CurrentViewOrigin() );
-			if( fogInfo.m_InFogVolume )
-			{
-				pInfo->m_ViewFogVolume = MAT_SORT_GROUP_STRICTLY_UNDERWATER;
-			}
-			else
-			{
-				pInfo->m_ViewFogVolume = MAT_SORT_GROUP_STRICTLY_ABOVEWATER;
-			}
-		}
-		else
-		{
-			pInfo->m_ViewFogVolume = MAT_SORT_GROUP_STRICTLY_ABOVEWATER;
-		}
-	}
-
-//	Msg("PPU LeafCount %d\n", pRenderList->m_leaves.Count());
-
-
-}
-
-#else
-
 void R_BuildWorldLists_Epilogue( IWorldRenderList *pRenderListIn, WorldListInfo_t* pInfo, bool bShadowDepth )
 {
 	CWorldRenderList *pRenderList = assert_cast<CWorldRenderList *>(pRenderListIn);
@@ -4923,8 +4434,6 @@ void R_BuildWorldLists_Epilogue( IWorldRenderList *pRenderListIn, WorldListInfo_
 		Shader_BuildDynamicLightmaps( pRenderList );
 	}
 }
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Used to determine visible fog volumes
@@ -5204,9 +4713,6 @@ void R_SceneBegin( void )
 void R_SceneEnd( void )
 {
 
-#if defined(_PS3)
-	R_FrameEndSPURSSync( 0 );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5472,12 +4978,6 @@ void R_Surface_LevelShutdown()
 {
 	CWorldRenderList::PurgeAll();
 
-#if defined(_PS3)
-	for( int lp = 0; lp < MAX_CONCURRENT_BUILDVIEWS; lp++ )
-	{
-		g_Pool_PS3[ lp ].Purge();
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -5820,152 +5320,6 @@ struct EnumLeafSphereInfo_t
 
 
 // NOTE: These leaf list routines only return non-solid leaves!  Only use them for rendering-related queries!
-#ifdef _X360
-struct ListLeafBoxInfo_t
-{
-	VectorAligned m_vecBoxMax;
-	VectorAligned m_vecBoxMin;
-	VectorAligned m_vecBoxCenter;
-	VectorAligned m_vecBoxHalfDiagonal;
-};
-
-static fltx4 AlignThatVector(const Vector &vc)
-{
-	fltx4 out = __loadunalignedvector(vc.Base());
-
-	/*
-	out.x = vc.x;
-	out.y = vc.y;
-	out.z = vc.z;
-	*/
-
-	// squelch the w component 
-	return __vrlimi( out, __vzero(), 1, 0 );
-}
-
-static int ListLeafsInBox( mnode_t * RESTRICT node, ListLeafBoxInfo_t * RESTRICT pInfo, unsigned short * RESTRICT pList, int listMax )
-{
-	int leafCount = 0;
-	const int NODELIST_MAX = 2048;
-	mnode_t *nodeList[NODELIST_MAX];
-	int nodeReadIndex = 0;
-	int nodeWriteIndex = 0;
-
-	while (1)
-	{
-		// no polygons in solid nodes (don't report these leaves either)
-		if (node->contents >= 0)
-		{
-			if (node->contents != CONTENTS_SOLID)
-			{
-				// if a leaf node, report it to the iterator...
-				if ( leafCount < listMax )
-				{
-					pList[leafCount++] = LeafToIndex( (mleaf_t *)node );
-				}
-			}
-			if ( nodeReadIndex == nodeWriteIndex )
-				return leafCount;
-			node = nodeList[nodeReadIndex];
-			nodeReadIndex = (nodeReadIndex+1) & (NODELIST_MAX-1);
-		}
-		else
-		{
-			// speculatively get the children into the cache
-			PREFETCH_128(node->children[0],0);
-			PREFETCH_128(node->children[1],0);
-
-			// constructing these here prevents LHS if we spill.
-			// it's not quite a quick enough operation to do extemporaneously.
-			fltx4 infoBoxCenter = LoadAlignedSIMD(pInfo->m_vecBoxCenter);
-			fltx4 infoBoxHalfDiagonal = LoadAlignedSIMD(pInfo->m_vecBoxHalfDiagonal);
-
-			Assert(IsBoxIntersectingBoxExtents(AlignThatVector(node->m_vecCenter), AlignThatVector(node->m_vecHalfDiagonal), 
-				LoadAlignedSIMD(pInfo->m_vecBoxCenter), LoadAlignedSIMD(pInfo->m_vecBoxHalfDiagonal)) ==
-				IsBoxIntersectingBoxExtents((node->m_vecCenter), node->m_vecHalfDiagonal,
-				pInfo->m_vecBoxCenter, pInfo->m_vecBoxHalfDiagonal));
-
-
-			// rough cull...
-			if (IsBoxIntersectingBoxExtents(LoadAlignedSIMD(node->m_vecCenter), LoadAlignedSIMD(node->m_vecHalfDiagonal), 
-				infoBoxCenter, infoBoxHalfDiagonal))
-			{
-				// Does the node plane split the box?
-				// find which side of the node we are on
-				cplane_t* RESTRICT plane = node->plane;
-				if ( plane->type <= PLANE_Z )
-				{
-					if (pInfo->m_vecBoxMax[plane->type] <= plane->dist)
-					{
-						node = node->children[1];
-					}
-					else if (pInfo->m_vecBoxMin[plane->type] >= plane->dist)
-					{
-						node = node->children[0];
-					}
-					else
-					{
-						// Here the box is split by the node
-						nodeList[nodeWriteIndex] = node->children[0];
-						nodeWriteIndex = (nodeWriteIndex+1) & (NODELIST_MAX-1);
-						// check for overflow of the ring buffer
-						Assert(nodeWriteIndex != nodeReadIndex);
-						node = node->children[1];
-					}
-				}
-				else
-				{
-					// take advantage of high throughput/high latency
-					fltx4 planeNormal = LoadUnaligned3SIMD( plane->normal.Base() );
-					fltx4 vecBoxMin = LoadAlignedSIMD(pInfo->m_vecBoxMin);
-					fltx4 vecBoxMax = LoadAlignedSIMD(pInfo->m_vecBoxMax);
-					fltx4 cornermin, cornermax;
-					// by now planeNormal is ready...
-					fltx4 control = XMVectorGreaterOrEqual( planeNormal, __vzero() );
-					// now control[i] = planeNormal[i] > 0 ? 0xFF : 0x00
-					cornermin = XMVectorSelect( vecBoxMax, vecBoxMin, control); // cornermin[i] = control[i] ? vecBoxMin[i] : vecBoxMax[i]
-					cornermax = XMVectorSelect( vecBoxMin, vecBoxMax, control);
-
-					// compute dot products
-					fltx4 dotCornerMax = __vmsum3fp(planeNormal, cornermax); // vsumfp ignores w component
-					fltx4 dotCornerMin = __vmsum3fp(planeNormal, cornermin);
-					fltx4 vPlaneDist = ReplicateX4(plane->dist);
-					UINT conditionRegister;
-					XMVectorGreaterR(&conditionRegister,vPlaneDist,dotCornerMax);
-					if (XMComparisonAllTrue(conditionRegister)) // plane->normal . cornermax <= plane->dist
-					{
-						node = node->children[1];
-					}
-					else
-					{
-						XMVectorGreaterOrEqualR(&conditionRegister,dotCornerMin,vPlaneDist);
-						if ( XMComparisonAllTrue(conditionRegister) )
-						{
-							node = node->children[0];
-						}
-						else
-						{
-							// Here the box is split by the node
-							nodeList[nodeWriteIndex] = node->children[0];
-							nodeWriteIndex = (nodeWriteIndex+1) & (NODELIST_MAX-1);
-							// check for overflow of the ring buffer
-							Assert(nodeWriteIndex != nodeReadIndex);
-							node = node->children[1];
-						}
-					}
-				}
-			}
-			else
-			{
-				if ( nodeReadIndex == nodeWriteIndex )
-					return leafCount;
-				node = nodeList[nodeReadIndex];
-				nodeReadIndex = (nodeReadIndex+1) & (NODELIST_MAX-1);
-			}
-		}
-	}
-}
-#else
 static int ListLeafsInBox( mnode_t * RESTRICT node, const Vector &center, const Vector &extents, unsigned short * RESTRICT pList, int listMax )
 {
 	int leafCount = 0;
@@ -6013,8 +5367,6 @@ static int ListLeafsInBox( mnode_t * RESTRICT node, const Vector &center, const 
 		}
 	}
 }
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Returns all leaves that lie within a spherical volume
@@ -6356,21 +5708,11 @@ bool CEngineBSPTree::EnumerateLeavesAtPoint( const Vector& pt,
 
 int CEngineBSPTree::ListLeavesInBox( const Vector& mins, const Vector& maxs, unsigned short *pList, int listMax )
 {
-#ifdef _X360
-	ListLeafBoxInfo_t info;
-	VectorAdd( mins, maxs, info.m_vecBoxCenter );
-	info.m_vecBoxCenter *= 0.5f;
-	VectorSubtract( maxs, info.m_vecBoxCenter, info.m_vecBoxHalfDiagonal );
-	info.m_vecBoxMax = maxs;
-	info.m_vecBoxMin = mins;
-	return ListLeafsInBox( host_state.worldbrush->nodes, &info, pList, listMax );
-#else
 	Vector center, extents;
 	VectorAdd(mins, maxs, center );
 	center *= 0.5f;
 	VectorSubtract(maxs, center, extents);
 	return ListLeafsInBox( host_state.worldbrush->nodes, center, extents, pList, listMax );
-#endif
 }
 
 int CEngineBSPTree::ListLeavesInSphereWithFlagSet( int *pLeafsInSphere, const Vector& vecCenter, float flRadius, int nLeafCount, const uint16 *pLeafs, int nLeafStride, int nFlagsCheck )

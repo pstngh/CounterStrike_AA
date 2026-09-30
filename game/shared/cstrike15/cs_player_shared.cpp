@@ -2840,11 +2840,7 @@ QAngle CCSPlayer::GetRawAimPunchAngle() const
 //-----------------------------------------------------------------------------
 int CCSPlayer::GetDefaultCrouchedFOV( void ) const
 {
-#ifdef _GAMECONSOLE
-	return GetDefaultFOV() - 5;
-#else
 	return GetDefaultFOV();
-#endif
 }
 
 bool CCSPlayer::CanMove() const

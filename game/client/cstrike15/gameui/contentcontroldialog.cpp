@@ -9,10 +9,8 @@
 #include <stdio.h>
 // dgoodenough - memory.h doesn't exist on PS3
 // PS3_BUILDFIX
-#if !defined( _PS3 )
 #include <memory.h>
-#endif
-#if !defined( _GAMECONSOLE ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 #include <windows.h>
 #endif
 
@@ -34,12 +32,6 @@
 
 // dgoodenough - select correct stub header based on console
 // PS3_BUILDFIX
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>

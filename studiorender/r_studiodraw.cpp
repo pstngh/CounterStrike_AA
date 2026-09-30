@@ -727,7 +727,7 @@ static void ComputeSkinMatrixToMemory( mstudioboneweight_t &boneweights, matrix3
 void ComputeSkinMatrixToMemorySSE( mstudioboneweight_t &boneweights, matrix3x4_t *pPoseToWorld, matrix3x4_t &result )
 {
 	// NOTE: pPoseToWorld, being cache aligned, doesn't need explicit initialization
-#if defined( _WIN32 ) && !defined( _WIN64 ) && !defined( _X360 )
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	switch( boneweights.numbones )
 	{
 	default:
@@ -932,15 +932,13 @@ void ComputeSkinMatrixToMemorySSE( mstudioboneweight_t &boneweights, matrix3x4_t
 	}
 #elif POSIX || _WIN64
 	ComputeSkinMatrixToMemory( boneweights, pPoseToWorld, result );
-#elif defined( _X360 )
-	ComputeSkinMatrixToMemory( boneweights, pPoseToWorld, result );
 #endif
 }
 
 matrix3x4_t *ComputeSkinMatrixSSE( mstudioboneweight_t &boneweights, matrix3x4_t *pPoseToWorld, matrix3x4_t &scratchMatrix )
 {
 	// NOTE: pPoseToWorld, being cache aligned, doesn't need explicit initialization
-#if defined( _WIN32 ) && !defined( _WIN64 ) && !defined( _X360 )
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	switch( boneweights.numbones )
 	{
 	default:
@@ -1187,7 +1185,7 @@ inline void CStudioRender::R_ComputeLightAtPoint3( const Vector &pos, const Vect
 
 // define SPECIAL_SSE_MESH_PROCESSOR to enable code which contains a special optimized SSE lighting loop, significantly
 // improving software vertex processing performace.
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #define SPECIAL_SSE_MESH_PROCESSOR
 #endif
 
@@ -1374,14 +1372,14 @@ public:
 		}
 #endif
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 		// Precaches the data
 		_mm_prefetch( (char*)((int)pGroupToMesh & (~0x1F)), _MM_HINT_NTA );
 #endif
 		for ( int i = 0; i < PREFETCH_VERT_COUNT; ++i )
 		{
 			ntemp[i] = pGroupToMesh[i];
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 			char *pMem = (char*)&pVertices[ntemp[i]];
 			_mm_prefetch( pMem, _MM_HINT_NTA );
 			_mm_prefetch( pMem + 32, _MM_HINT_NTA );
@@ -1395,7 +1393,7 @@ public:
 		int n, idx;
 		for ( int j=0; j < numVertices; ++j )
 		{
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 			char *pMem = (char*)&pGroupToMesh[j + PREFETCH_VERT_COUNT + 1];
 			_mm_prefetch( (char*)((int)pMem & (~0x1F)), _MM_HINT_NTA );
 #endif
@@ -1438,7 +1436,7 @@ public:
 			R_TransformVert( pSrcPos, pSrcNorm, pSrcTangentS, pSkinMat, 
 				*(VectorAligned*)&dstVertex.m_vecPosition, dstVertex.m_vecNormal, *(Vector4DAligned*)&dstVertex.m_vecUserData );
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 			_mm_prefetch( (char*)&pVertices[ntemp[idx]], _MM_HINT_NTA);
 			_mm_prefetch( (char*)&pVertices[ntemp[idx]] + 32, _MM_HINT_NTA );
 			if ( nHasTangentSpace )
@@ -1449,12 +1447,8 @@ public:
 
 			dstVertex.m_vecTexCoord = vert.m_vecTexCoord; 
 
-#if !defined( _X360 )
 			Assert( dstVertex.m_vecUserData.w == -1.0f || dstVertex.m_vecUserData.w == 1.0f );
 			meshBuilder.FastVertexSSE( dstVertex );
-#else
-			meshBuilder.VertexDX8ToX360( dstVertex );
-#endif
 		}
 		meshBuilder.FastAdvanceNVertices( numVertices );
 	}

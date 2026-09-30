@@ -717,11 +717,7 @@ bool SFHudInfoPanel::SetHintText( wchar_t *text )
 	return true;
 }
 
-#ifndef _GAMECONSOLE
 ConVar cl_display_scaleform_achievement_popups( "cl_display_scaleform_achievement_popups", "0", FCVAR_CLIENTDLL );
-#else
-ConVar cl_display_scaleform_achievement_popups( "cl_display_scaleform_achievement_popups", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE );
-#endif
 
 void SFHudInfoPanel::FireGameEvent( IGameEvent * event )
 {

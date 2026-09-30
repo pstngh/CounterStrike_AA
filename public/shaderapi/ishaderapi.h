@@ -36,9 +36,6 @@ enum MaterialCullMode_t;
 class IDataCache;   
 struct MorphWeight_t;
 struct MeshInstanceData_t;
-#ifdef _X360
-enum RTMultiSampleCount360_t;
-#endif
 struct ShaderComboInformation_t;
 
 //-----------------------------------------------------------------------------
@@ -153,7 +150,6 @@ struct ShaderRasterState_t
 //-----------------------------------------------------------------------------
 enum ShaderStencilOp_t 
 {
-#if !defined( _X360 )
 	SHADER_STENCILOP_KEEP = 1,
 	SHADER_STENCILOP_ZERO = 2,
 	SHADER_STENCILOP_SET_TO_REFERENCE = 3,
@@ -162,22 +158,11 @@ enum ShaderStencilOp_t
 	SHADER_STENCILOP_INVERT = 6,
 	SHADER_STENCILOP_INCREMENT_WRAP = 7,
 	SHADER_STENCILOP_DECREMENT_WRAP = 8,
-#else
-	SHADER_STENCILOP_KEEP = D3DSTENCILOP_KEEP,
-	SHADER_STENCILOP_ZERO = D3DSTENCILOP_ZERO,
-	SHADER_STENCILOP_SET_TO_REFERENCE = D3DSTENCILOP_REPLACE,
-	SHADER_STENCILOP_INCREMENT_CLAMP = D3DSTENCILOP_INCRSAT,
-	SHADER_STENCILOP_DECREMENT_CLAMP = D3DSTENCILOP_DECRSAT,
-	SHADER_STENCILOP_INVERT = D3DSTENCILOP_INVERT,
-	SHADER_STENCILOP_INCREMENT_WRAP = D3DSTENCILOP_INCR,
-	SHADER_STENCILOP_DECREMENT_WRAP = D3DSTENCILOP_DECR,
-#endif
 	SHADER_STENCILOP_FORCE_DWORD = 0x7fffffff
 };
 
 enum ShaderStencilFunc_t 
 {
-#if !defined( _X360 )
 	SHADER_STENCILFUNC_NEVER = 1,
 	SHADER_STENCILFUNC_LESS = 2,
 	SHADER_STENCILFUNC_EQUAL = 3,
@@ -186,29 +171,9 @@ enum ShaderStencilFunc_t
 	SHADER_STENCILFUNC_NOTEQUAL = 6,
 	SHADER_STENCILFUNC_GEQUAL = 7,
 	SHADER_STENCILFUNC_ALWAYS = 8,
-#else
-	SHADER_STENCILFUNC_NEVER = D3DCMP_NEVER,
-	SHADER_STENCILFUNC_LESS = D3DCMP_LESS,
-	SHADER_STENCILFUNC_EQUAL = D3DCMP_EQUAL,
-	SHADER_STENCILFUNC_LEQUAL = D3DCMP_LESSEQUAL,
-	SHADER_STENCILFUNC_GREATER = D3DCMP_GREATER,
-	SHADER_STENCILFUNC_NOTEQUAL = D3DCMP_NOTEQUAL,
-	SHADER_STENCILFUNC_GEQUAL = D3DCMP_GREATEREQUAL,
-	SHADER_STENCILFUNC_ALWAYS = D3DCMP_ALWAYS,
-#endif
 
 	SHADER_STENCILFUNC_FORCE_DWORD = 0x7fffffff
 };
-
-#if defined( _X360 )
-enum ShaderHiStencilFunc_t 
-{
-	SHADER_HI_STENCILFUNC_EQUAL = D3DHSCMP_EQUAL,
-	SHADER_HI_STENCILFUNC_NOTEQUAL = D3DHSCMP_NOTEQUAL,
-
-	SHADER_HI_STENCILFUNC_FORCE_DWORD = 0x7fffffff
-};
-#endif
 
 //-----------------------------------------------------------------------------
 // Stencil state
@@ -224,13 +189,6 @@ struct ShaderStencilState_t
 	uint32 m_nTestMask;
 	uint32 m_nWriteMask;
 
-#if defined( _X360 )
-	bool m_bHiStencilEnable;
-	bool m_bHiStencilWriteEnable;
-	ShaderHiStencilFunc_t m_HiStencilCompareFunc;
-	int m_nHiStencilReferenceValue;
-#endif
-
 	ShaderStencilState_t()
 	{
 		m_bEnable = false;
@@ -239,12 +197,6 @@ struct ShaderStencilState_t
 		m_nReferenceValue = 0;
 		m_nTestMask = m_nWriteMask = 0xFFFFFFFF;
 
-#if defined( _X360 )
-		m_bHiStencilEnable = false;
-		m_bHiStencilWriteEnable = false;
-		m_HiStencilCompareFunc = SHADER_HI_STENCILFUNC_EQUAL;
-		m_nHiStencilReferenceValue = 0;
-#endif
 	}
 };
 
@@ -647,40 +599,6 @@ public:
 
 	virtual bool SupportsMSAAMode( int nMSAAMode ) = 0;
 
-#if defined( _GAMECONSOLE )
-	virtual bool PostQueuedTexture( const void *pData, int nSize, ShaderAPITextureHandle_t *pHandles, int nHandles, int nWidth, int nHeight, int nDepth, int nMips, int *pRefCount ) = 0;
-#endif // _GAMECONSOLE
-
-#if defined( _X360 )
-	virtual HXUIFONT OpenTrueTypeFont( const char *pFontname, int tall, int style ) = 0;
-	virtual void CloseTrueTypeFont( HXUIFONT hFont ) = 0;
-	virtual bool GetTrueTypeFontMetrics( HXUIFONT hFont, wchar_t wchFirst, wchar_t wchLast, XUIFontMetrics *pFontMetrics, XUICharMetrics *pCharMetrics ) = 0;
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	virtual bool GetTrueTypeGlyphs( HXUIFONT hFont, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset ) = 0;
-	virtual ShaderAPITextureHandle_t CreateRenderTargetSurface( int width, int height, ImageFormat format, RTMultiSampleCount360_t multiSampleCount, const char *pDebugName, const char *pTextureGroupName ) = 0;
-	virtual void PersistDisplay() = 0;
-	virtual void *GetD3DDevice() = 0;
-
-	virtual void PushVertexShaderGPRAllocation( int iVertexShaderCount = 64 ) = 0;
-	virtual void PopVertexShaderGPRAllocation( void ) = 0;
-
-	// 360 allows us to bypass vsync blocking up to 60 fps without creating a new device
-	virtual void EnableVSync_360( bool bEnable ) = 0; 
-
-	virtual void SetCacheableTextureParams( ShaderAPITextureHandle_t *pHandles, int count, const char *pFilename, int mipSkipCount ) = 0;
-	virtual void FlushHiStencil() = 0;
-#endif
-#if defined( _GAMECONSOLE )
-	virtual void BeginConsoleZPass2( int nNumDynamicIndicesNeeded ) = 0;
-	virtual void EndConsoleZPass() = 0;
-	virtual unsigned int GetConsoleZPassCounter() const  = 0;
-#endif
-	
-#if defined( _PS3 )
-	virtual void FlushTextureCache() = 0;
-#endif
 	virtual void AntiAliasingHint( int nHint ) = 0;
 
 	virtual bool OwnGPUResources( bool bEnable ) = 0;
@@ -744,10 +662,6 @@ public:
 	virtual void FogMaxDensity( float flMaxDensity ) = 0;
 
 	virtual void *GetD3DTexturePtr( ShaderAPITextureHandle_t hTexture ) = 0;
-#ifdef _PS3
-	virtual void GetPs3Texture(void* tex, ShaderAPITextureHandle_t hTexture ) = 0;
-	virtual void GetPs3Texture(void* tex, StandardTextureId_t nTextureId ) = 0;
-#endif 
 	virtual bool IsStandardTextureHandleValid( StandardTextureId_t textureId ) = 0;
 
 	// Create a multi-frame texture (equivalent to calling "CreateTexture" multiple times, but more efficient)
@@ -812,14 +726,6 @@ public:
 	virtual void OnPresent( void ) = 0;
 
 	virtual void UpdateGameTime( float flTime ) = 0;
-
-#ifdef _GAMECONSOLE
-	// Backdoor used by the queued context to directly use write-combined memory	
-	virtual IMesh *GetExternalMesh( const ExternalMeshInfo_t& info ) = 0;
-	virtual void SetExternalMeshData( IMesh *pMesh, const ExternalMeshData_t &data ) = 0;
-	virtual IIndexBuffer *GetExternalIndexBuffer( int nIndexCount, uint16 *pIndexData ) = 0;
-	virtual void FlushGPUCache( void *pBaseAddr, size_t nSizeInBytes ) = 0;
-#endif
 
 	virtual bool IsStereoSupported() const = 0;
 	virtual void UpdateStereoTexture( ShaderAPITextureHandle_t texHandle, bool *pStereoActiveThisFrame ) = 0;

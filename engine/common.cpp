@@ -36,12 +36,6 @@
 #include "matchmaking/imatchframework.h"
 #include "tier2/tier2.h"
 #include "cl_steamauth.h"
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#elif defined(_PS3)
-#include "tls_ps3.h"
-#include "ps3_pathinfo.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -922,14 +916,6 @@ void COM_InitFilesystem( const char *pFullModPath )
 #endif // NO_STEAM
 	}
 
-#if defined( _GAMECONSOLE )
-	if ( XBX_IsAudioLocalized() )
-	{
-		// allow non-english audio localization for gameconsole configured language
-		V_strncpy( language, XBX_GetLanguageString(), sizeof( language ) );
-	}
-#endif
-
 	if ( ( Q_strlen( language ) > 0 ) && ( Q_stricmp( language, "english" ) != 0 ) )
 	{
 		initInfo.m_pLanguage = language;
@@ -937,19 +923,7 @@ void COM_InitFilesystem( const char *pFullModPath )
 #endif
 	
 	initInfo.m_pFileSystem = g_pFileSystem;
-#if !defined(_PS3)
 	initInfo.m_pDirectoryName = pFullModPath;
-#else
-	char ps3NeedsAbsoluteModPath[256];
-
-#ifdef HDD_BOOT
-	snprintf( ps3NeedsAbsoluteModPath, 256, "%s", pFullModPath );
-#else
-	snprintf( ps3NeedsAbsoluteModPath, 256, "%s/%s", g_pPS3PathInfo->GameImagePath(), pFullModPath );
-#endif    
-
-	initInfo.m_pDirectoryName = ps3NeedsAbsoluteModPath;
-#endif
 	if ( !initInfo.m_pDirectoryName )
 	{
 		initInfo.m_pDirectoryName = GetCurrentGame();

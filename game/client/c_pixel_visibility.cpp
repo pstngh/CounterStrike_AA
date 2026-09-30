@@ -48,11 +48,7 @@ ConVar r_pixelvisibility_spew( "r_pixelvisibility_spew", "0" );
 
 extern ConVar building_cubemaps;
 
-#ifndef _GAMECONSOLE
 const float MIN_PROXY_PIXELS = 5.0f;
-#else
-const float MIN_PROXY_PIXELS = 25.0f;
-#endif
 
 
 extern view_id_t CurrentViewID();

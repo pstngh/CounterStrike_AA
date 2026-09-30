@@ -42,19 +42,6 @@
 // uncomment to get disassembled (asm) shader code in your game dir as *.asm
 //#define WRITE_ASSEMBLY
 
-#if defined( DYNAMIC_SHADER_COMPILE ) && defined( _X360 ) && !defined( X360_LINK_WITH_SHADER_COMPILE )
-// automatically turn on X360_LINK_WITH_SHADER_COMPILE with dynamic shader compile
-#define X360_LINK_WITH_SHADER_COMPILE 1
-#endif
-
-#if defined( _X360 )
-// Define this to link shader compilation code from D3DX9.LIB
-//#define X360_LINK_WITH_SHADER_COMPILE 1
-#endif
-#if defined( X360_LINK_WITH_SHADER_COMPILE ) && defined( _CERT )
-#error "Don't ship with X360_LINK_WITH_SHADER_COMPILE defined!! It causes 2MB+ DLL bloat. Only define it while revving XDKs."
-#endif
-
 //-----------------------------------------------------------------------------
 // Vertex + pixel shader manager
 //-----------------------------------------------------------------------------
@@ -114,12 +101,7 @@ public:
 
 	virtual void AddShaderComboInformation( const ShaderComboSemantics_t *pSemantics ) = 0;
 
-#if defined( _X360 )
-	virtual const char *GetActiveVertexShaderName() = 0;
-	virtual const char *GetActivePixelShaderName() = 0;
-#endif
-
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	virtual void DoStartupShaderPreloading() = 0;
 #endif
 

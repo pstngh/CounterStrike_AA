@@ -13,15 +13,11 @@
 
 #include <assert.h>
 #include "tier0/platform.h"
-#ifdef _PS3
-#include "sys/sys_time.h"
-#else
 inline uint64 sys_time_get_timebase_frequency()
 {
 	DebuggerBreak(); // Error("sys_time_get_timebase_frequency called on non-PS3 platform.");
 	return 1; // this function should never ever be called.
 }
-#endif
 
 PLATFORM_INTERFACE uint64 g_ClockSpeed;
 PLATFORM_INTERFACE unsigned long g_dwClockSpeed;

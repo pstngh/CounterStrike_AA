@@ -17,9 +17,7 @@
 #include "materialsystem/imaterialproxyfactory.h"
 #include "IHardwareConfigInternal.h"
 #include "utlsymbol.h"
-#if !defined( _PS3 )
 #include <malloc.h>
-#endif //!_PS3
 #include "filesystem.h"
 #include <keyvalues.h>
 #include "mempool.h"
@@ -452,7 +450,6 @@ static inline bool IsVector( char const* v )
 //-----------------------------------------------------------------------------
 #include "tier0/memdbgoff.h"
 
-#ifndef _GAMECONSOLE
 struct EditorRenderStateList_t
 {
 	// Store combo of alpha, color, fixed-function baked lighting, flashlight, editor mode
@@ -460,7 +457,6 @@ struct EditorRenderStateList_t
 
 	DECLARE_FIXEDSIZE_ALLOCATOR( EditorRenderStateList_t );
 };
-#endif
 
 struct StandardRenderStateList_t
 {
@@ -472,9 +468,7 @@ struct StandardRenderStateList_t
 
 #include "tier0/memdbgon.h"
 
-#ifndef _GAMECONSOLE
 DEFINE_FIXEDSIZE_ALLOCATOR( EditorRenderStateList_t, 256, true );
-#endif
 DEFINE_FIXEDSIZE_ALLOCATOR( StandardRenderStateList_t, 256, true );
 
 
@@ -519,12 +513,6 @@ CMaterial::CMaterial( char const* materialName, const char *pTextureGroupName, K
 	// Strip off the extension
 	Q_StripExtension( materialName, pTemp, len+1 );
 	Q_strlower( pTemp );
-
-#if defined( _X360 )
-	// material names are expected to be forward slashed for correct sort and find behavior!
-	// assert now to track alternate or regressed path that is source of inconsistency
-	Assert( strchr( pTemp, '\\' ) == NULL );
-#endif
 
 	// Convert it to a symbol
 	m_Name = pTemp;
@@ -698,13 +686,11 @@ RenderPassList_t *CMaterial::CreateRenderPassList()
 		StandardRenderStateList_t *pList = new StandardRenderStateList_t;
 		pRenderPassList = (RenderPassList_t*)pList->m_Snapshots;
 	}
-#ifndef _GAMECONSOLE
 	else
 	{
 		EditorRenderStateList_t *pList = new EditorRenderStateList_t;
 		pRenderPassList = (RenderPassList_t*)pList->m_Snapshots;
 	}
-#endif
 
 	int nSnapshotCount = SnapshotTypeCount();
 	memset( pRenderPassList, 0, nSnapshotCount * sizeof(RenderPassList_t) );
@@ -740,13 +726,11 @@ void CMaterial::DestroyRenderPassList( RenderPassList_t *pPassList )
 		StandardRenderStateList_t *pList = (StandardRenderStateList_t*)pPassList;
 		delete pList;
 	}
-#ifndef _GAMECONSOLE
 	else
 	{
 		EditorRenderStateList_t *pList = (EditorRenderStateList_t*)pPassList;
 		delete pList;
 	}
-#endif
 }
 
 	

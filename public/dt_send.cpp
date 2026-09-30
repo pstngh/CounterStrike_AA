@@ -862,14 +862,7 @@ SendProp::~SendProp()
 int SendProp::GetNumArrayLengthBits() const
 {
 	Assert( GetType() == DPT_Array );
-#if defined( _X360 )
-	int elemCount = GetNumElements();
-	if ( !elemCount )
-		return 1;
-	return (32 - _CountLeadingZeros(GetNumElements()));
-#else
 	return Q_log2( GetNumElements() ) + 1;
-#endif
 }
 
 

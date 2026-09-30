@@ -10,7 +10,7 @@
 #undef fopen
 #endif
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #include <windows.h>
 #include <direct.h>
 #include <io.h>
@@ -28,30 +28,13 @@
 #include "keyvalues.h"
 #include "appframework/IAppSystemGroup.h"
 #include "tier1/smartptr.h"
-#if defined( _X360 )
-#include "xbox\xbox_win32stubs.h"
-#endif
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#include "ps3/ps3_helpers.h"
-#include "ps3_pathinfo.h"
-#endif
 
 #include "tier2/tier2.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
-#if !defined( _X360 )
 #define GAMEINFO_FILENAME			"gameinfo.txt"
-#else
-// The .xtx file is a TCR requirement, as .txt files cannot live on the DVD.
-// The .xtx file only exists outside the zips (same as .txt and is made during the image build) and is read to setup the search paths.
-// So all other code should be able to safely expect gameinfo.txt after the zip is mounted as the .txt file exists inside the zips.
-// The .xtx concept is private and should only have to occurr here. As a safety measure, if the .xtx file is not found
-// a retry is made with the original .txt name
-#define GAMEINFO_FILENAME			"gameinfo.xtx"
-#endif
 #define GAMEINFO_FILENAME_ALTERNATE	"gameinfo.txt"
 
 static char g_FileSystemError[256];
@@ -76,7 +59,7 @@ public:
 
 		const char *pValue = NULL;
 
-#if defined( _WIN32 ) || defined( _GAMECONSOLE )
+#if defined( _WIN32 )
 		// Use GetEnvironmentVariable instead of getenv because getenv doesn't pick up changes
 		// to the process environment after the DLL was loaded.
 		char szBuf[ 4096 ];
@@ -127,7 +110,7 @@ public:
 		if ( !pszBuf || ( nBufSize <= 0 ) )
 			return 0;
 	
-#if defined( _WIN32 ) || defined( _GAMECONSOLE )
+#if defined( _WIN32 )
 		// Use GetEnvironmentVariable instead of getenv because getenv doesn't pick up changes
 		// to the process environment after the DLL was loaded.
 		return GetEnvironmentVariable( m_pVarName, pszBuf, nBufSize );
@@ -153,7 +136,7 @@ public:
 		Q_vsnprintf( valueString, sizeof( valueString ), pValue, marker );
 		va_end( marker );
 
-#if defined( WIN32 ) || defined( _GAMECONSOLE )
+#if defined( WIN32 )
 		char str[4096];
 		Q_snprintf( str, sizeof( str ), "%s=%s", m_pVarName, valueString );
 		_putenv( str );
@@ -164,7 +147,7 @@ public:
 
 	void ClearValue()
 	{
-#if defined( WIN32 ) || defined( _GAMECONSOLE )
+#if defined( WIN32 )
 		char str[512];
 		Q_snprintf( str, sizeof( str ), "%s=", m_pVarName );
 		_putenv( str );
@@ -214,10 +197,6 @@ void Q_getwd( char *out, int outSize )
 #if defined( _WIN32 ) || defined( WIN32 )
 	_getcwd( out, outSize );
 	Q_strncat( out, "\\", outSize, COPY_ALL_CHARACTERS );
-#elif defined( _PS3 )
-	Assert( 0 );
-	if ( outSize > 0 )
-		out[0] = '\0';
 #else
 	getcwd( out, outSize );
 	strcat( out, "/" );
@@ -357,10 +336,6 @@ static bool Sys_GetExecutableName( char *out, int len )
 	}
 	Q_FixSlashes( out );
 
-#elif defined( _PS3 )
-
-	Q_snprintf( out, len, "%s/valve.self", g_pPS3PathInfo->SelfDirectory() );
-
 #else
 
 	if ( CommandLine()->GetParm(0) )
@@ -442,11 +417,6 @@ bool FileSystem_GetExecutableDir( char *exedir, int exeDirLen )
 
 static bool FileSystem_GetBaseDir( char *baseDir, int baseDirLen )
 {
-#ifdef _PS3
-	V_strncpy( baseDir,  g_pPS3PathInfo->GameImagePath(), baseDirLen );
-		
-	return baseDir[0] != 0;
-#else
 	if ( FileSystem_GetExecutableDir( baseDir, baseDirLen ) )
 	{
 		Q_StripFilename( baseDir );
@@ -454,12 +424,11 @@ static bool FileSystem_GetBaseDir( char *baseDir, int baseDirLen )
 	}
 
 	return false;
-#endif
 }
 
 void LaunchVConfig()
 {
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 	char vconfigExe[MAX_PATH];
 	FileSystem_GetExecutableDir( vconfigExe, sizeof( vconfigExe ) );
 	Q_AppendSlash( vconfigExe, sizeof( vconfigExe ) );
@@ -473,8 +442,6 @@ void LaunchVConfig()
 	};
 
 	_spawnv( _P_NOWAIT, vconfigExe, argv );
-#elif defined( _X360 )
-	Msg( "Launching vconfig.exe not supported\n" );
 #endif
 }
 
@@ -529,19 +496,6 @@ FSReturnCode_t LoadGameInfoFile(
 	Q_strncat( gameinfoFilename, GAMEINFO_FILENAME, sizeof( gameinfoFilename ), COPY_ALL_CHARACTERS );
 	Q_FixSlashes( gameinfoFilename );
 	pMainFile = ReadKeyValuesFile( gameinfoFilename );
-#if defined( _PS3 )
-	if ( IsPS3() && !pMainFile )
-	{
-		Q_strncpy( gameinfoFilename, g_pPS3PathInfo->GameImagePath(), sizeof( gameinfoFilename ) );
-		Q_AppendSlash( gameinfoFilename, sizeof( gameinfoFilename ) );
-		Q_strncat( gameinfoFilename, pDirectoryName, sizeof( gameinfoFilename ) );
-		Q_AppendSlash( gameinfoFilename, sizeof( gameinfoFilename ) );
-		Q_strncat( gameinfoFilename, GAMEINFO_FILENAME_ALTERNATE, sizeof( gameinfoFilename ), COPY_ALL_CHARACTERS );
-		Q_FixSlashes( gameinfoFilename );
-		Msg("Attempting %s\n", gameinfoFilename);
-		pMainFile = ReadKeyValuesFile( gameinfoFilename );
-	}
-#endif
 	if ( IsX360() && !pMainFile )
 	{
 		// try again
@@ -622,9 +576,6 @@ bool IsLowViolenceBuild( void )
 	}
 
 	return retVal;
-#elif defined( _GAMECONSOLE )
-	// console builds must be compiled with _LOWVIOLENCE
-	return false;
 #elif POSIX
 	return false;
 #else
@@ -779,22 +730,6 @@ FSReturnCode_t FileSystem_LoadSearchPaths( CFSSearchPathsInit &initInfo )
 		}
 	}
 
-#ifdef _PS3
-	// Always base GAMEBIN PRX location off of main PRX path (unless content and PRX paths are same)
-	if ( Q_strncmp( g_pPS3PathInfo->GameImagePath(), g_pPS3PathInfo->PrxPath(), Q_strlen( g_pPS3PathInfo->GameImagePath() ) ) )
-	{
-		char gamebindir[CELL_GAME_PATH_MAX];
-		// get the moddirname
-		const char *pModName;
-		for ( pModName = initInfo.m_ModPath + strlen(initInfo.m_ModPath) - 1 ;
-			  pModName > initInfo.m_ModPath && *(pModName-1) != '/' ;
-			  pModName--);
-
-		V_snprintf( gamebindir, CELL_GAME_PATH_MAX, "%s/../%s", g_pPS3PathInfo->PrxPath(), pModName );
-		AddGameBinDir( initInfo.m_pFileSystem, gamebindir, true );
-	}
-#endif
-
 	pMainFile->deleteThis();
 
 	//
@@ -874,7 +809,7 @@ FSReturnCode_t FileSystem_LoadSearchPaths( CFSSearchPathsInit &initInfo )
 	initInfo.m_pFileSystem->PrintSearchPaths();
 #endif
 
-#if defined( ENABLE_RUNTIME_STACK_TRANSLATION ) && !defined( _GAMECONSOLE )
+#if defined( ENABLE_RUNTIME_STACK_TRANSLATION )
 	//copy search paths to stack tools so it can grab pdb's from all over. But only on P4 or Steam Beta builds
 	if( (CommandLine()->FindParm( "-steam" ) == 0) || //not steam
 		(CommandLine()->FindParm( "-internalbuild" ) != 0) ) //steam beta is ok
@@ -927,12 +862,7 @@ bool DoesFileExistIn( const char *pDirectoryName, const char *pFilename )
 	Q_AppendSlash( filename, sizeof( filename ) );
 	Q_strncat( filename, pFilename, sizeof( filename ), COPY_ALL_CHARACTERS );
 	Q_FixSlashes( filename );
-#ifdef _PS3
-	Assert( 0 );
-	bool bExist = false;
-#else  // !_PS3
 	bool bExist = ( _access( filename, 0 ) == 0 );
-#endif // _PS3
 
 	return ( bExist );
 }
@@ -1220,8 +1150,6 @@ FSReturnCode_t SetSteamInstallPath( char *steamInstallPath, int steamInstallPath
 	// under Linux & OSX the bin lives in the bin/ folder, so step back one
 
 	Q_StripLastDir( steamInstallPath, steamInstallPathLen );
-#elif defined( _PS3 )
-	const char *pchSteamDLL = "steam_ps3.ps3";
 #else
 #error
 #endif
@@ -1390,13 +1318,11 @@ FSReturnCode_t FileSystem_SetBasePaths( IFileSystem *pFileSystem )
 {
 	pFileSystem->RemoveSearchPaths( "EXECUTABLE_PATH" );
 
-#ifndef _PS3
 	char executablePath[MAX_PATH];
 	if ( !FileSystem_GetExecutableDir( executablePath, sizeof( executablePath ) )	)
 		return SetupFileSystemError( false, FS_INVALID_PARAMETERS, "FileSystem_GetExecutableDir failed." );
 
 	pFileSystem->AddSearchPath( executablePath, "EXECUTABLE_PATH" );
-#endif
 	return FS_OK;
 }
 
@@ -1413,11 +1339,7 @@ FSReturnCode_t FileSystem_GetFileSystemDLLName( char *pFileSystemDLL, int nMaxLe
 	if ( !FileSystem_GetExecutableDir( executablePath, sizeof( executablePath ) )	)
 		return SetupFileSystemError( false, FS_INVALID_PARAMETERS, "FileSystem_GetExecutableDir failed." );
 	
-#if defined( _PS3 )
-	Q_snprintf( pFileSystemDLL, nMaxLen, "%s%cfilesystem_stdio" DLL_EXT_STRING, g_pPS3PathInfo->PrxPath(), CORRECT_PATH_SEPARATOR );
-#else
 	Q_snprintf( pFileSystemDLL, nMaxLen, "%s%cfilesystem_stdio" DLL_EXT_STRING, executablePath, CORRECT_PATH_SEPARATOR );
-#endif
 
 	return FS_OK;
 }
@@ -1446,7 +1368,7 @@ FSReturnCode_t FileSystem_SetupSteamEnvironment( CFSSteamSetupInfo &fsInfo )
 		return ret;
 
 	// This is so that processes spawned by this application will have the same VPROJECT
-#if defined( WIN32 ) || defined( _GAMECONSOLE )
+#if defined( WIN32 )
 	char pEnvBuf[MAX_PATH+32];
 	Q_snprintf( pEnvBuf, sizeof(pEnvBuf), "%s=%s", GAMEDIR_TOKEN, fsInfo.m_GameInfoPath );
 	_putenv( pEnvBuf );
@@ -1592,11 +1514,7 @@ void FileSystem_AddSearchPath_Platform( IFileSystem *pFileSystem, const char *sz
 	{
 		Q_strncpy( platform, szGameInfoPath, MAX_PATH );
 		Q_StripTrailingSlash( platform );
-#ifdef _PS3
-		Q_strncat( platform, "/platform", MAX_PATH, MAX_PATH );
-#else // _PS3
 		Q_strncat( platform, "/../platform", MAX_PATH, MAX_PATH );
-#endif // !_PS3
 	}
 
 	pFileSystem->AddSearchPath( platform, "PLATFORM" );

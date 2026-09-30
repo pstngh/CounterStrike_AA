@@ -871,11 +871,7 @@ static inline bool DoesBitRangeMatch( const uint32* RESTRICT pOld, const uint32*
 
 	for(; pCurrNew != pEndNew; ++pCurrNew, ++pCurrOld )
 	{
-#if defined (_PS3) || defined (_X360)
-        uint32 nDiff = DWordSwap((*pCurrNew ^ *pCurrOld));
-#else
         uint32 nDiff = (*pCurrNew ^ *pCurrOld);
-#endif
 		if( nDiff )
 		{
 			//we have a diff, handle masking our range
@@ -1068,11 +1064,7 @@ static FORCEINLINE void AdvanceToNextChange( const uint32* RESTRICT pFrom, const
 	{
 		if( *pCurrFrom != *pCurrTo )
 		{
-#if defined(_PS3) || defined(_X360)
-			*pnDataDiff = DWordSwap((*pCurrFrom ^ *pCurrTo));
-#else
             *pnDataDiff = *pCurrFrom ^ *pCurrTo;
-#endif
 			break;
 		}
 	}

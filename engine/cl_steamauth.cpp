@@ -4,10 +4,8 @@
 //
 //=============================================================================//
 #ifdef _WIN32
-#if !defined( _X360 )
 #include "winlite.h"
 #include <winsock2.h> // INADDR_ANY defn
-#endif
 #elif POSIX
 #include <netinet/in.h>
 #endif
@@ -124,12 +122,7 @@ void CSteam3Client::Activate()
 
 #if !defined( NO_STEAM )
 
-	#ifndef _PS3
 	SteamAPI_InitSafe(); // ignore failure, that will fall out later when they don't get a valid logon cookie
-	#else
-	extern SteamPS3Params_t g_EngineSteamPS3Params;
-	SteamAPI_Init( &g_EngineSteamPS3Params );
-	#endif
 
 	m_bInitialized = Init(); // Steam API context init
 

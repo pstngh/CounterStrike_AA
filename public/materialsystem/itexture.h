@@ -21,16 +21,6 @@ class IVTFTexture;
 class ITexture;
 struct Rect_t;
 
-#ifdef _X360
-enum RTMultiSampleCount360_t
-{
-	RT_MULTISAMPLE_NONE = 0,
-	RT_MULTISAMPLE_2_SAMPLES = 2,
-	RT_MULTISAMPLE_4_SAMPLES = 4,
-	RT_MULTISAMPLE_MATCH_BACKBUFFER
-};
-#endif
-
 struct AsyncTextureContext_t
 {
 	ITexture		*m_pTexture;
@@ -133,11 +123,6 @@ public:
 	virtual bool IsDefaultPool() const = 0;
 
 	virtual void DeleteIfUnreferenced() = 0;
-
-#if defined( _X360 )
-	virtual bool ClearTexture( int r, int g, int b, int a ) = 0;
-	virtual bool CreateRenderTargetSurface( int width, int height, ImageFormat format, bool bSameAsTexture, RTMultiSampleCount360_t multiSampleCount = RT_MULTISAMPLE_NONE ) = 0;
-#endif
 
 	// swap everything except the name with another texture
 	virtual void SwapContents( ITexture *pOther ) = 0;

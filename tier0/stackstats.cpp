@@ -19,14 +19,6 @@
 #include <dbghelp.h>
 #endif
 
-#if defined( PLATFORM_X360 )
-#include <xbdm.h>
-#include "xbox/xbox_console.h"
-#include "xbox/xbox_vxconsole.h"
-#include <map>
-#include <set>
-#endif
-
 #include "tier0/valve_on.h"
 
 #include "tier0/memdbgon.h"

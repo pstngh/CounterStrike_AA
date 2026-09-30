@@ -58,9 +58,6 @@ extern IEngineSpatialQuery* g_pToolBSPTree;
 
 class IWorldRenderList;
 IWorldRenderList *AllocWorldRenderList();
-#if defined(_PS3)
-IWorldRenderList *AllocWorldRenderList_PS3( int viewID );
-#endif
 
 void R_Surface_LevelInit();
 void R_Surface_LevelShutdown();
@@ -69,12 +66,7 @@ void R_SceneEnd( void );
 void R_BuildWorldLists( IWorldRenderList *pRenderList, WorldListInfo_t* pInfo, int iForceViewLeaf, const struct VisOverrideData_t* pVisData, bool bShadowDepth = false, float *pWaterReflectionHeight = NULL );
 void R_DrawWorldLists( IMatRenderContext *pRenderContext, IWorldRenderList *pRenderList, unsigned long flags, float waterZAdjust );
 
-#if defined(_PS3)
-void R_BuildWorldLists_PS3_Epilogue( IWorldRenderList *pRenderListIn, WorldListInfo_t* pInfo, bool bShadowDepth );
-void R_FrameEndSPURSSync( int flags );
-#else
 void R_BuildWorldLists_Epilogue( IWorldRenderList *pRenderListIn, WorldListInfo_t* pInfo, bool bShadowDepth );
-#endif
 
 void R_GetWorldListIndicesInfo( WorldListIndicesInfo_t * pInfoOut, IWorldRenderList *pRenderList, unsigned long nFlags );
 

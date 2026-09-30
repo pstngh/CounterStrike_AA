@@ -39,10 +39,6 @@
 #include "tier0/memdbgon.h"
 
 ConVar g_cv_miniprofiler_dump( "miniprofiler_dump", "0" );
-#if defined( _X360 )
-ConVar g_cv_frame_pcm( "frame_pcm", "0" );
-bool g_started_frame_pcm = false;
-#endif
 DLL_IMPORT void PublishAllMiniProfilers(int nHistoryMax);
 
 // In other C files.
@@ -84,11 +80,6 @@ void SCR_BeginLoadingPlaque( const char *levelName /*= NULL*/ )
 	if ( !scr_drawloading )
 	{
 		MEM_ALLOC_CREDIT();
-
-#if defined( _DEMO ) && defined( _X360 )
-		// disable demo timeouts during loading
-		Host_EnableDemoTimeout( false );
-#endif
 
 		scr_loadingStartTime = Plat_FloatTime();
 
@@ -148,10 +139,6 @@ void SCR_EndLoadingPlaque( void )
 	// MATCHMAKING:UNDONE: This pattern came over from l4d but needed to change since the new clients don't have the same mission/game structure
 	if ( scr_drawloading )
 	{
-#if defined( _DEMO ) && defined( _X360 )
-		// allow demo timeouts
-		Host_EnableDemoTimeout( true );
-#endif
 
 		scr_engineevent_loadingstarted = false;
 
@@ -331,19 +318,6 @@ void SCR_UpdateScreen( void )
 
 #if !defined( _CERT )
 	PublishAllMiniProfilers( g_cv_miniprofiler_dump.GetInt() );
-#if defined( _X360 )
-	if ( g_started_frame_pcm )
-	{
-		g_started_frame_pcm = false;
-		PMCStopAndReport();
-	}
-	if ( g_cv_frame_pcm.GetInt() )
-	{
-		g_cv_frame_pcm.SetValue("0");
-		g_started_frame_pcm = true;
-		PMCInstallAndStart(ePMCSetup(PMC_SETUP_OVERVIEW_PB0T0 + GetCurrentProcessorNumber()));
-	}
-#endif
 #endif
 
 	// NOTE: It isn't super awesome to do this here, but it has to occur after

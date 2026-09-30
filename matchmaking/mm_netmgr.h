@@ -25,11 +25,7 @@ public:
 public:
 	void Update();
 	void SendPacket( KeyValues *msg, char const *szAddress = NULL, INetSupport::NetworkSocket_t eSock
-#ifdef _X360
-		= INetSupport::NS_SOCK_SYSTEMLINK
-#else
 		= INetSupport::NS_SOCK_CLIENT
-#endif
 		);
 	KeyValues * UnpackPacket( netpacket_t *packet );
 

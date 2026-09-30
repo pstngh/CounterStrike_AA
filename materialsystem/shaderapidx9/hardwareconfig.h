@@ -54,9 +54,6 @@ enum
 
 	MAX_OUTPUTS = 3,
 
-#if defined( _PS3 )
-	MAX_FRAGMENT_PROGRAM_CONSTS = 96,
-#endif
 };
 
 //-----------------------------------------------------------------------------

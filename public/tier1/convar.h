@@ -27,8 +27,6 @@
 #define FORCEINLINE_CVAR FORCEINLINE
 #elif POSIX
 #define FORCEINLINE_CVAR inline
-#elif defined(_PS3)
-#define FORCEINLINE_CVAR __attribute__((always_inline)) FORCEINLINE 
 #else
 #error "implement me"
 #endif
@@ -138,11 +136,7 @@ public:
 //-----------------------------------------------------------------------------
 // Helper method for console development
 //-----------------------------------------------------------------------------
-#if defined( USE_VXCONSOLE )
-void ConVar_PublishToVXConsole();
-#else
 inline void ConVar_PublishToVXConsole() {}
-#endif
 
 
 //-----------------------------------------------------------------------------

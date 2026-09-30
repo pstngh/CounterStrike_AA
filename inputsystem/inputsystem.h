@@ -29,7 +29,7 @@
 #include "appframework/ilaunchermgr.h"
 #endif
 
-#if defined(PLATFORM_POSIX) && !defined(_PS3)
+#if defined(PLATFORM_POSIX)
 #ifdef PLATFORM_OSX
 #define DWORD DWORD
 #define CARBON_WORKAROUND
@@ -54,15 +54,6 @@ typedef char xKey_t;
 #include "inputsystem/iinputsystem.h"
 #include "tier2/tier2.h"
 
-#ifdef _PS3
-#include "ps3/ps3_platform.h"
-#include "ps3/ps3_win32stubs.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3stubs.h"
-
-#include <cell/pad.h>
-#endif
-
 #include "tier1/UtlStringMap.h"
 #include "inputsystem/ButtonCode.h"
 #include "inputsystem/AnalogCode.h"
@@ -72,11 +63,6 @@ typedef char xKey_t;
 #include "input_device.h"
 
 #include "steam/steam_api.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#include "xbox/xbox_console.h"
-#endif
 
 enum
 {
@@ -165,17 +151,6 @@ public:
 	void HIDAddElement(CFTypeRef refElement, JoystickInfo_t &info );
 #endif
 
-#ifdef _PS3
-	virtual void SetPS3CellPadDataHook( BCellPadDataHook_t hookFunc );
-	virtual void SetPS3CellPadNoDataHook( BCellPadNoDataHook_t hookFunc );
-
-	virtual void SetPS3StartButtonIdentificationMode();
-	virtual bool GetPS3CursorPos( int &x, int &y );
-	virtual void DisableHardwareCursor( void );
-	virtual void EnableHardwareCursor( void );
-	void ExitHardwareCursor( void );
-#endif
-
 #if defined( USE_SDL )
 	virtual void DisableHardwareCursor( void );
 	virtual void EnableHardwareCursor( void );
@@ -237,7 +212,7 @@ public:
 	
 	struct JoystickInfo_t
 	{
-#if defined(PLATFORM_WINDOWS) || defined(_GAMECONSOLE)
+#if defined(PLATFORM_WINDOWS)
 		JOYINFOEX m_JoyInfoEx;
 #elif defined(PLATFORM_OSX)
 		FFDeviceObjectReference m_FFInterface;
@@ -386,16 +361,6 @@ public:
 	uint32 m_press_x360_buttons[ 2 ];
 #endif
 
-#if defined( _PS3 )
-	void PS3_PollKeyboard( void );
-	void PS3_PollMouse( void );
-	void PS3_XInputPollEverything( BCellPadDataHook_t hookFunc, BCellPadNoDataHook_t hookNoDataFunc );
-	DWORD PS3_XInputGetState( DWORD dwUserIndex, PXINPUT_STATE pState );
-	void HandlePS3SharpshooterButtons( void );
-	void HandlePS3Move( PXINPUT_STATE& pState );
-
-	virtual void PS3SetupHardwareCursor( void* image );
-#endif
 	void QueueMoveControllerRumble( float fRightMotor );
 
 	// Posts an Xbox key event, ignoring key repeats 
@@ -600,13 +565,6 @@ private:
 public:
 
 	InputCursorHandle_t m_hCursor;
-#ifdef _PS3
-	BCellPadDataHook_t m_pPS3CellPadDataHook;
-	BCellPadNoDataHook_t m_pPS3CellNoPadDataHook;
-
-	bool	m_PS3KeyboardConnected;
-	bool	m_PS3MouseConnected;
-#endif
 
 	// describes all connected devices.  A bitmask of InputDevice entries
 	InputDevice_t m_currentlyConnectedInputDevices; 

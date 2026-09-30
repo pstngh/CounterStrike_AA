@@ -11,7 +11,7 @@
 	#define _WIN32_WINNT 0x0500
 #endif
 
-#if defined( WIN32) && !defined( _X360 )
+#if defined( WIN32)
 #include <windows.h>
 #endif
 #ifdef OSX
@@ -57,16 +57,9 @@ ILauncherMgr *g_pLauncherMgr = NULL;
 #include "mathlib/vmatrix.h"
 #include <tier0/vprof.h>
 #include "materialsystem/itexture.h"
-#ifndef _PS3
 #include <malloc.h>
-#else
-#include <wctype.h>
-#endif
 #include "../vgui2/src/VPanel.h"
 #include <vgui/IInputInternal.h>
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 #include "xbox/xboxstubs.h"
 
 #pragma warning( disable : 4706 )
@@ -83,11 +76,7 @@ ILauncherMgr *g_pLauncherMgr = NULL;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined( _GAMECONSOLE )
-#define MODEL_PANEL_RT_NAME	"_rt_SmallFB0"
-#else // _GAMECONSOLE
 #define MODEL_PANEL_RT_NAME	"_rt_FullScreen"
-#endif // !_GAMECONSOLE
 
 #define VPANEL_NORMAL	((vgui::SurfacePlat *) NULL)
 #define VPANEL_MINIMIZED ((vgui::SurfacePlat *) 0x00000001)
@@ -176,10 +165,6 @@ CMatEmbeddedPanel::CMatEmbeddedPanel() : BaseClass( NULL, "MatSystemTopPanel" )
 {
 	SetPaintBackgroundEnabled( false );
 
-#if defined( _X360 )
-	SetPos( 0, 0 );
-	SetSize( GetSystemMetrics( SM_CXSCREEN ), GetSystemMetrics( SM_CYSCREEN ) );
-#endif
 }
 
 void CMatEmbeddedPanel::OnThink()
@@ -530,7 +515,7 @@ void CMatSystemSurface::Shutdown( void )
 	m_Titles.Purge();
 	m_PaintStateStack.Purge();
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 
 	HMODULE gdiModule = NULL;
 
@@ -595,7 +580,7 @@ void CMatSystemSurface::Shutdown( void )
 
 	Cursor_ClearUserCursors();
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	if ( gdiModule )
 	{
 		::FreeLibrary(gdiModule);
@@ -2323,7 +2308,6 @@ bool CMatSystemSurface::AddCustomFontFile( const char *fontFileName )
 	}
 
 #if defined(WIN32)
-#if !defined( _X360 )
 
 #ifdef SUPPORT_CUSTOM_FONT_FORMAT
 	// Just load the font data, decrypt in memory and register for this process
@@ -2381,9 +2365,6 @@ bool CMatSystemSurface::AddCustomFontFile( const char *fontFileName )
 	Assert( success );
 	return success;
 #endif
-#endif // X360
-#elif defined( _PS3 )
-	return true;
 #elif defined( OSX )
 	// Just load the font data, decrypt in memory and register for this process
 	CUtlBuffer buf;
@@ -4382,7 +4363,7 @@ void CMatSystemSurface::DeleteHTMLWindow(IHTML *htmlwin)
 		_htmlWindows.FindAndRemove( IE );
 		delete IE;
 	}
-#elif !defined( _X360 ) && !defined( _PS3 )
+#else
 //#error "GameUI now NEEDS the HTML component!!"
 #endif
 }
@@ -4433,74 +4414,6 @@ void CMatSystemSurface::DrawSetSubTextureRGBA( int textureID, int drawX, int dra
 {
 	TextureDictionary()->SetSubTextureRGBA( textureID, drawX, drawY, rgba, subTextureWide, subTextureTall );
 }
-
-#if defined( _X360 )
-
-//-----------------------------------------------------------------------------
-// Purpose: Get the texture id for the local gamerpic.
-//-----------------------------------------------------------------------------
-int CMatSystemSurface::GetLocalGamerpicTextureID( void )
-{
-	return TextureDictionary()->GetLocalGamerpicTextureID();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-//-----------------------------------------------------------------------------
-bool CMatSystemSurface::SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName )
-{
-	return TextureDictionary()->SetLocalGamerpicTexture( userIndex, pDefaultGamerpicFileName );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Set the current texture to be the local gamerpic.
-//-----------------------------------------------------------------------------
-bool CMatSystemSurface::DrawSetTextureLocalGamerpic( void )
-{
-	int id = TextureDictionary()->GetLocalGamerpicTextureID();
-	if ( id != INVALID_TEXTURE_ID )
-	{
-		DrawSetTexture( id );
-		return true;
-	}
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get the texture id for a remote gamerpic with the given xuid.
-//-----------------------------------------------------------------------------
-int CMatSystemSurface::GetRemoteGamerpicTextureID( XUID xuid )
-{
-	return TextureDictionary()->GetRemoteGamerpicTextureID( xuid );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Update the remote gamerpic texture for the given xuid. 
-// Use the given texture if a gamerpic cannot be loaded.
-//-----------------------------------------------------------------------------
-bool CMatSystemSurface::SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName )
-{
-	return TextureDictionary()->SetRemoteGamerpicTextureID( xuid, pDefaultGamerpicFileName );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Set the current texture to be the remote player's gamerpic.
-// Returns false if the remote gamerpic texture has not been set for the given xuid.
-//-----------------------------------------------------------------------------
-bool CMatSystemSurface::DrawSetTextureRemoteGamerpic( XUID xuid )
-{
-	int id = TextureDictionary()->GetRemoteGamerpicTextureID( xuid );
-	if ( id != INVALID_TEXTURE_ID )
-	{
-		DrawSetTexture( id );
-		return true;
-	}
-
-	return false;
-}
-
-#endif // _X360
 
 void CMatSystemSurface::DrawUpdateRegionTextureRGBA( int nTextureID, int x, int y, const unsigned char *pchData, int wide, int tall, ImageFormat imageFormat )
 {
@@ -4737,7 +4650,7 @@ void CMatSystemSurface::SetPanelForInput( VPANEL vpanel )
 	}
 }
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 static bool GetIconSize( ICONINFO& iconInfo, int& w, int& h )
 {
 	w = h = 0;
@@ -4852,7 +4765,7 @@ vgui::IImage *CMatSystemSurface::GetIconImageForFullPath( char const *pFullPath 
 {
 	vgui::IImage *newIcon = NULL;
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	SHFILEINFO info = { 0 };
 	DWORD_PTR dwResult = SHGetFileInfo( 
 		pFullPath,

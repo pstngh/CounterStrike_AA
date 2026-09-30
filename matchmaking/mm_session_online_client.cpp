@@ -273,19 +273,6 @@ void CMatchSessionOnlineClient::DebugPrint()
 
 bool CMatchSessionOnlineClient::IsAnotherSessionJoinable( const char *pszAnotherSessionInfo )
 {
-#ifdef _X360
-	if ( m_pSysSession )
-	{
-		XSESSION_INFO xsi;
-		if ( m_pSysSession->GetHostNetworkAddress( xsi ) )
-		{
-			XSESSION_INFO xsiAnother;
-			MMX360_SessionInfoFromString( xsiAnother, pszAnotherSessionInfo );
-			if ( !memcmp( &xsiAnother.sessionID, &xsi.sessionID, sizeof( xsi.sessionID ) ) )
-				return false;
-		}
-	}
-#endif
 	return true;
 }
 
@@ -535,9 +522,6 @@ void CMatchSessionOnlineClient::InitializeGameSettings()
 		pMembers->SetInt( "numMachines", 1 );
 
 		int numPlayers = 1;
-#ifdef _GAMECONSOLE
-		numPlayers = XBX_GetNumGameUsers();
-#endif
 		pMembers->SetInt( "numPlayers", numPlayers );
 		pMembers->SetInt( "numSlots", numPlayers );
 
@@ -546,9 +530,6 @@ void CMatchSessionOnlineClient::InitializeGameSettings()
 			XUID machineid = g_pPlayerManager->GetLocalPlayer( XBX_GetPrimaryUserId() )->GetXUID();
 
 			pMachine->SetUint64( "id", machineid );
-#if defined( _PS3 ) && !defined( NO_STEAM )
-			pMachine->SetUint64( "psnid", steamapicontext->SteamUser()->GetConsoleSteamID().ConvertToUint64() );
-#endif
 			pMachine->SetUint64( "flags", MatchSession_GetMachineFlags() );
 			pMachine->SetInt( "numPlayers", numPlayers );
 			pMachine->SetUint64( "dlcmask", g_pMatchFramework->GetMatchSystem()->GetDlcManager()->GetDataInfo()->GetUint64( "@info/installed" ) );
@@ -560,9 +541,6 @@ void CMatchSessionOnlineClient::InitializeGameSettings()
 				if ( KeyValues *pPlayer = pMachine->FindKey( CFmtStr( "player%d", k ), true ) )
 				{
 					int iController = 0;
-#ifdef _GAMECONSOLE
-					iController = XBX_GetUserId( k );
-#endif
 					IPlayerLocal *player = g_pPlayerManager->GetLocalPlayer( iController );
 
 					pPlayer->SetUint64( "xuid", player->GetXUID() );

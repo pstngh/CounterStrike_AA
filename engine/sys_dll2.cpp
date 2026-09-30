@@ -14,11 +14,8 @@
 #endif
 
 #if defined( _WIN32 ) 
-#if !defined( _X360 )
 #include "winlite.h"
-#endif
 #elif defined(LINUX)
-#elif defined( _PS3 )
 #elif defined(OSX)
 #include <Carbon/Carbon.h>
 #else
@@ -95,24 +92,7 @@
 #include <imm.h>
 #endif
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
-
-#if defined( _PS3 ) && !defined( NO_STEAM )
-#include "ps3_pathinfo.h"
-#include "steam/steamps3params_internal.h"
-SteamPS3ParamsInternal_t g_EngineSteamPS3ParamsInternal;
-SteamPS3Params_t g_EngineSteamPS3Params;
-#endif
-
-#ifdef _PS3
-#include <np.h>
-#include "ps3_cstrike15/ps3_title_id.h"
-#include "ps3/saverestore_ps3_api_ui.h"
-#endif
 
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -131,9 +111,6 @@ ILauncherMgr *g_pLauncherMgr = NULL;
 #endif
 IAvi *avi = NULL;
 IBik *bik = NULL;
-#ifdef _PS3
-IPS3SaveRestoreToUI *ps3saveuiapi = NULL;
-#endif
 #if defined( INCLUDE_SCALEFORM )
 IScaleformUI* g_pScaleformUI = NULL;
 #elif defined( INCLUDE_ROCKETUI )
@@ -178,8 +155,6 @@ HWND *pmainwindow = NULL;
 #elif OSX
 WindowRef pmainwindow;
 #elif LINUX
-void *pmainwindow = NULL;
-#elif defined( _PS3 )
 void *pmainwindow = NULL;
 #else
 #error
@@ -293,7 +268,7 @@ void MoveConsoleWindowToFront()
 #endif
 }
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #include <conio.h>
 #endif
 CUtlVector<char> g_TextModeLine;
@@ -575,15 +550,9 @@ bool CEngineAPI::Connect( CreateInterfaceFn factory )
 			return false;
 	}
 
-#if ( !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE ) ) && defined( BINK_VIDEO )
+#if defined( BINK_VIDEO )
 	bik = (IBik*)factory( BIK_INTERFACE_VERSION, NULL );
 	if ( !bik )
-		return false;
-#endif
-
-#ifdef _PS3
-	ps3saveuiapi = (IPS3SaveRestoreToUI *)factory( IPS3SAVEUIAPI_VERSION_STRING, NULL );
-	if ( !ps3saveuiapi )
 		return false;
 #endif
 
@@ -664,67 +633,6 @@ bool CEngineAPI::SetStartupInfo( StartupInfo_t &info )
 	// Copy off all the startup info
 	m_StartupInfo = info;
 
-#if defined( _PS3 ) && !defined( NO_STEAM )
-	{
-		bool bPublicUniverse = !CommandLine()->FindParm( "-steamBeta" );
-		
-		//////// DISABLE FOR SHIP! //////////
-		// BETA:   bPublicUniverse = !!CommandLine()->FindParm( "-steamPublic" ); // default=beta; require -steamPublic to run against public
-		// PUBLIC: bPublicUniverse = !CommandLine()->FindParm( "-steamBeta" ); // default=public; require -steamBeta to run against beta
-		
-		if ( bPublicUniverse )
-		{
-			Msg( "Connecting to Steam Public\n" );
-			g_EngineSteamPS3Params.m_nAppId = 710;
-		}
-		else
-		{
-			Msg( "Connecting to Steam Beta\n" );
-			g_EngineSteamPS3Params.m_nAppId = 710;
-			g_EngineSteamPS3ParamsInternal.m_nVersion = STEAM_PS3_PARAMS_INTERNAL_VERSION;
-			g_EngineSteamPS3ParamsInternal.m_eUniverse = k_EUniverseBeta;
-			g_EngineSteamPS3ParamsInternal.m_pchCMForce = "";
-			g_EngineSteamPS3ParamsInternal.m_bAutoReloadVGUIResources = false;
-			g_EngineSteamPS3Params.pReserved = &g_EngineSteamPS3ParamsInternal;
-		}
-
-		if ( int nSteamTTY = CommandLine()->ParmValue( "-steamTTY", int(0) ) )
-			g_EngineSteamPS3Params.m_cSteamInputTTY = nSteamTTY;
-
-		g_EngineSteamPS3Params.m_unVersion = STEAM_PS3_CURRENT_PARAMS_VER;
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchInstallationPath, g_pPS3PathInfo->PrxPath(), sizeof( g_EngineSteamPS3Params.m_rgchInstallationPath ) );
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchSystemCache, g_pPS3PathInfo->SystemCachePath(), sizeof( g_EngineSteamPS3Params.m_rgchSystemCache ) );
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchGameData, g_pPS3PathInfo->SystemCachePath(), sizeof( g_EngineSteamPS3Params.m_rgchGameData ) );
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchNpServiceID, PS3_GAME_SERVICE_ID, STEAM_PS3_SERVICE_ID_MAX );
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchNpCommunicationID, PS3_GAME_COMMUNICATION_ID, STEAM_PS3_COMMUNICATION_ID_MAX );
-		const SceNpCommunicationSignature npcommsign = PS3_GAME_COMMUNICATION_SIGNATURE;
-		Q_memcpy( g_EngineSteamPS3Params.m_rgchNpCommunicationSig, &npcommsign, STEAM_PS3_COMMUNICATION_SIG_MAX );
-		Q_strncpy( g_EngineSteamPS3Params.m_rgchSteamLanguage, XBX_GetLanguageString(), STEAM_PS3_LANGUAGE_MAX );
-		
-		if ( !V_stricmp( g_pPS3PathInfo->GetParamSFO_TitleID(), PS3_GAME_TITLE_ID_WW_SCEE ) )
-			Q_strncpy( g_EngineSteamPS3Params.m_rgchRegionCode, "SCEE", STEAM_PS3_REGION_CODE_MAX );
-		else if ( !V_stricmp( g_pPS3PathInfo->GetParamSFO_TitleID(), PS3_GAME_TITLE_ID_WW_SCEJ ) )
-			Q_strncpy( g_EngineSteamPS3Params.m_rgchRegionCode, "SCEJ", STEAM_PS3_REGION_CODE_MAX );
-		else
-			Q_strncpy( g_EngineSteamPS3Params.m_rgchRegionCode, "SCEA", STEAM_PS3_REGION_CODE_MAX );
-
-		MEM_ALLOC_CREDIT_( "STEAM: g_EngineSteamPS3Params.m_sysNetInitInfo" );
-		g_EngineSteamPS3Params.m_sysNetInitInfo.m_bNeedInit = true;		
-		g_EngineSteamPS3Params.m_sysNetInitInfo.m_nMemorySize = 512 * 1024;
-		g_EngineSteamPS3Params.m_sysNetInitInfo.m_pMemory = malloc( g_EngineSteamPS3Params.m_sysNetInitInfo.m_nMemorySize );
-		g_EngineSteamPS3Params.m_sysSysUtilUserInfo.m_bNeedInit = true;
-
-		g_EngineSteamPS3Params.m_sysJpgInitInfo.m_bNeedInit = true;
-		g_EngineSteamPS3Params.m_sysPngInitInfo.m_bNeedInit = true;
-		g_EngineSteamPS3Params.m_bIncludeNewsPage = false;
-#if defined(NO_STEAM_PS3_OVERLAY)
-		g_EngineSteamPS3Params.m_bPersonaStateOffline = true;
-#else
-		g_EngineSteamPS3Params.m_bPersonaStateOffline = false;
-#endif
-	}
-#endif
-
 	// Needs to be done prior to init material system config
 	TRACEINIT( COM_InitFilesystem( m_StartupInfo.m_pInitialMod ), COM_ShutdownFileSystem() );
 
@@ -776,7 +684,7 @@ bool CEngineAPI::SetStartupInfo( StartupInfo_t &info )
 	extern void Sys_Version( bool bDedicated );
 	Sys_Version( false );
 
-#if !defined( NO_STEAM ) && !defined( _GAMECONSOLE )
+#if !defined( NO_STEAM )
 	if ( !CommandLine()->FindParm( "-nobreakpad" ) )
 	{
 		// AppID of the client will be automatically used
@@ -859,7 +767,7 @@ InitReturnVal_t CEngineAPI::Init()
 	m_bRunningSimulation = false;
 
 	// Initialize the FPU control word
-#if !defined( DEDICATED ) && !defined( _X360 ) && !defined( _PS3 ) && !defined( PLATFORM_64BITS ) && !defined( LINUX ) && !defined(__clang__)
+#if !defined( DEDICATED ) && !defined( PLATFORM_64BITS ) && !defined( LINUX ) && !defined(__clang__)
 	_asm
 	{
 		fninit
@@ -882,7 +790,7 @@ InitReturnVal_t CEngineAPI::Init()
 		return HandleSetModeError();
 	}
 
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
     // on OSX by the time we've initialized cl_language we've already initialized the 
     // font manager and made a bunch of language-related decisions.
     // on windows, the code sniffs the registry directly (slightly evil) and doesn't have
@@ -1103,7 +1011,6 @@ void CEngineAPI::PumpMessagesEditMode( bool &bIdle, long &lIdleCount )
 	 
 		ReleaseEvent(theEvent);
 	}
-#elif defined( _PS3 )
 #elif defined( LINUX )
 #else
 #error
@@ -1200,10 +1107,6 @@ void CEngineAPI::ShutdownRegistry( )
 	}
 }
 
-#if defined( _PS3 )
-int PS3_WindowProc_Proxy( xevent_t const &ev );
-#endif
-
 //-----------------------------------------------------------------------------
 // One-time setup, based on the initially selected mod
 // FIXME: This should move into the launcher!
@@ -1264,12 +1167,6 @@ bool CEngineAPI::OnStartup( void *pInstance, const char *pStartupModName )
 	InitMaterialSystemConfig( InEditMode() );
 	
 	{
-#if defined( _X360 )
-		XBX_NotifyCreateListener( XNOTIFY_ALL );
-#elif defined( _PS3 )
-		ps3syscbckeventhdlr_t hdlr = { PS3_WindowProc_Proxy };
-		XBX_NotifyCreateListener( reinterpret_cast< uint64 >( &hdlr ) );
-#endif
 	}
 
 	COM_TimestampedLog( "ShutdownRegistry" );
@@ -1308,9 +1205,6 @@ void CEngineAPI::OnShutdown()
 
 	splitscreen->Shutdown();
 
-#ifdef _PS3
-	XBX_NotifyCreateListener( 0 );
-#endif
 }
 
 static bool IsValveMod( const char *pModName )
@@ -1345,9 +1239,7 @@ bool CEngineAPI::ModInit( const char *pModName, const char *pGameDir )
 
 	// This sets up the game search path, depends on host_parms
 	TRACEINIT( MapReslistGenerator_Init(), MapReslistGenerator_Shutdown() );
-#if !defined( _X360 )
 	TRACEINIT( DevShotGenerator_Init(), DevShotGenerator_Shutdown() );
-#endif
 
 	COM_TimestampedLog( "Host_ReadPreStartupConfiguration - Start" );
 
@@ -1373,9 +1265,7 @@ void CEngineAPI::ModShutdown()
 	// Stop accepting input from the window
 	game->InputDetachFromGameWindow();
 
-#if !defined( _X360 )
 	TRACESHUTDOWN( DevShotGenerator_Shutdown() );
-#endif
 	TRACESHUTDOWN( MapReslistGenerator_Shutdown() );
 
 	ShutdownRegistry();
@@ -1458,26 +1348,6 @@ int CEngineAPI::RunListenServer()
 	return nRunResult;
 }
 
-#if defined( _PS3 ) && !defined(NO_STEAM) && !defined(_CERT)
-CON_COMMAND_F( steam_login_new_acct, "logs in and creates a new account if necessary", FCVAR_DEVELOPMENTONLY )
-{
-	Steam3Client().SteamUser()->LogOnAndCreateNewSteamAccountIfNeeded( false );
-}
-
-CON_COMMAND_F( steam_login_link_acct, "<username> <password>", FCVAR_DEVELOPMENTONLY )
-{
-	if ( args.ArgC() != 3 )
-		return;
-
-	Steam3Client().SteamUser()->LogOnAndLinkSteamAccountToPSN( false, args[1], args[2] );
-}
-
-CON_COMMAND_F( steam_login, "log into steam with an already linked account", FCVAR_DEVELOPMENTONLY )
-{
-	Steam3Client().SteamUser()->LogOn( false );
-}
-#endif
-
 CON_COMMAND( reload_vjobs, "reload vjobs module" )
 {
 	const char * pModuleName = "vjobs" DLL_EXT_STRING;
@@ -1518,12 +1388,8 @@ extern void S_ClearBuffer();
 extern bool g_bUpdateMinidumpComment;
 void GetSpew( char *buf, size_t buflen );
 
-#if defined( _X360 )
-#define DUMP_COMMENT_SIZE 3500
-#else
 // should not exceed 32K, since current breakpad minidump reading code limits total comment size to 32k.
 #define DUMP_COMMENT_SIZE 32768
-#endif
 
 // Turn this to 1 to allow for > 3kb of comments in dumps
 static ConVar sys_minidumpexpandedspew( "sys_minidumpexpandedspew", "0" );
@@ -1550,7 +1416,6 @@ public:
 
 	void BuildComment( char const *pchSysErrorText )
 	{
-#if !defined( _PS3 )
 #ifdef IS_WINDOWS_PC
 		// This warning is not actually true in this context.
 #pragma warning( suppress : 4535 ) // warning C4535: calling _set_se_translator() requires /EHa
@@ -1689,7 +1554,6 @@ public:
 		_set_se_translator( curfilter );
 #endif
 
-#endif
 	}
 
 public:
@@ -1709,7 +1573,7 @@ void BuildMinidumpComment( char const *pchSysErrorText )
 extern "C" void __cdecl WriteMiniDumpUsingExceptionInfo( unsigned int uStructuredExceptionCode, struct _EXCEPTION_POINTERS * pExceptionInfo	)
 {
 	// TODO: dynamically set the minidump comment from contextual info about the crash (i.e current VPROF node)?
-#if !defined( NO_STEAM ) && !defined( _PS3 )
+#if !defined( NO_STEAM )
 
 	if ( g_bUpdateMinidumpComment )
 	{
@@ -1742,9 +1606,7 @@ int CEngineAPI::Run()
 		Host_DisallowSecureServers();
 	}
 
-#ifdef _X360
-	return RunListenServer(); // don't handle exceptions on 360 (because if we do then minidumps won't work at all)
-#elif defined ( _WIN32 )
+#if defined ( _WIN32 )
 	if ( !Plat_IsInDebugSession() && !CommandLine()->FindParm( "-nominidumps") )
 	{
 		// This warning is not actually true in this context.
@@ -1757,7 +1619,7 @@ int CEngineAPI::Run()
 		}
 		catch( ... )
 		{
-#if defined(_WIN32) && !defined( _X360 )
+#if defined(_WIN32)
 			// We don't want global destructors in our process OR in any DLL to get executed.
 			// _exit() avoids calling global destructors in our module, but not in other DLLs.
 			TerminateProcess( GetCurrentProcess(), 100 );
@@ -1771,8 +1633,6 @@ int CEngineAPI::Run()
 	{
 		return RunListenServer();
 	}
-#elif defined( _PS3 )
-	return RunListenServer();
 #else
 	Assert( !"Impl minidump handling on Posix" );
 	return RunListenServer();
@@ -1795,7 +1655,7 @@ bool CModAppSystemGroup::AddLegacySystems()
 	if ( !AddSystems( appSystems ) ) 
 		return false;
 
-#if !defined( _LINUX ) && !defined( _GAMECONSOLE )
+#if !defined( _LINUX )
 //	if ( CommandLine()->FindParm( "-tools" ) )
 	{
 		AppModule_t toolFrameworkModule = LoadModule( "engine" DLL_EXT_STRING );
@@ -2047,14 +1907,7 @@ static bool ParsePerforceInfFile( const char *szFileName, uint64 &unFileSystemMa
 
 void Sys_Version( bool bDedicated )
 {
-#if defined( _X360 )
-	// [Forrest] $FIXME Hack: The Xbox doesn't have a steam.inf file from which to load a patch version.
-	// However, if GetHostVersion doesn't match between the Xbox and the PC dedicated server then they can't connect.
-	// Perhaps the version checks should be removed when an Xbox is connected, but for now I'll just hard-code a matching version.
-	sHostVersion = 10040;
-#endif
 
-#if !defined( _X360 )
 	g_sVersionString = VERSION_STRING;
 	g_sProductString = PRODUCT_STRING;
 
@@ -2097,7 +1950,6 @@ void Sys_Version( bool bDedicated )
 		AssertMsg( !g_pFileSystem->FileExists( "perforce.inf" ), "<mod dir>\\perforce.inf included in a steam cache, remove it!" );
 	}
 #endif // _WIN32
-#endif 
 }
 
 
@@ -2321,7 +2173,7 @@ bool CModAppSystemGroup::Create()
 	if ( !AddSystems( systems.Base() ) ) 
 		return false;
 
-#if !defined( _LINUX ) && !defined( _GAMECONSOLE )
+#if !defined( _LINUX )
 //	if ( CommandLine()->FindParm( "-tools" ) )
 	{
 		AppModule_t toolFrameworkModule = LoadModule( "engine" DLL_EXT_STRING );
@@ -2761,7 +2613,7 @@ bool CDedicatedServerAPI::ModInit( ModInfo_t &info )
 	// Parse AppID from steam.inf file
 	Sys_Version( true );
 
-#if !defined( NO_STEAM ) && !defined( _GAMECONSOLE )
+#if !defined( NO_STEAM )
 	if ( !CommandLine()->FindParm( "-nobreakpad" ) )
 	{
 		bool bValveDS = false;

@@ -530,16 +530,10 @@ void CPhysicsPushedEntities::UpdatePusherPhysicsEndOfTick()
 		// FIXME: Need to make moved entities not touch triggers until we know we're ok
 		// FIXME: it'd be better for the engine to just have a touch method
 		info.m_pEntity->PhysicsTouchTriggers( &info.m_vecStartAbsOrigin );
-#if ( defined(_X360) || defined(_PS3) )
-		PREFETCH_128( info.m_pEntity->VPhysicsGetObject(), 0 );
-#endif
 	}
 	for ( int i = 0; i < m_rgUpdatedChildren.Count(); i++ )
 	{
 		m_rgUpdatedChildren[i]->PhysicsTouchTriggers();
-#if ( defined(_X360) || defined(_PS3) )
-		PREFETCH_128( m_rgUpdatedChildren[i]->VPhysicsGetObject(), 0 );
-#endif
 	}
 	for ( int i = 0; i < nCount; i++ )
 	{
@@ -959,9 +953,6 @@ void CPhysicsPushedEntities::SetupAllInHierarchy( CBaseEntity *pRoot )
 	m_rgPusher[i].m_pEntity = pRoot;
 	int nRecurseIndex = 0;
 	CBaseEntity *pEntity = pRoot;
-#if ( defined(_X360) || defined(_PS3) )
-	PREFETCH_128( pRoot, CBaseEntity::GetOriginPrefetchOffset() );
-#endif
 
 	do
 	{
@@ -969,10 +960,6 @@ void CPhysicsPushedEntities::SetupAllInHierarchy( CBaseEntity *pRoot )
 		{
 			i = m_rgPusher.AddToTail();
 			m_rgPusher[i].m_pEntity = pChild;
-#if ( defined(_X360) || defined(_PS3) )
-			PREFETCH_128( pChild, CBaseEntity::GetOriginPrefetchOffset() );
-			PREFETCH_128( pChild, 228 );
-#endif
 		}
 		nRecurseIndex++;
 		if ( nRecurseIndex >= m_rgPusher.Count() )

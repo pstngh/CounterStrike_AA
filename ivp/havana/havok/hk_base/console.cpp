@@ -8,11 +8,7 @@
 #	ifndef WIN32_LEAN_AND_MEAN
 #		define	WIN32_LEAN_AND_MEAN
 #	endif
-#	ifdef _XBOX
-#		include <xtl.h>
-#	else
 #		include <windows.h>
-#	endif
 #endif
 
 hk_Console *hk_Console::m_console = HK_NULL;

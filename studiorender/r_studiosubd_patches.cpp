@@ -1033,9 +1033,7 @@ FORCEINLINE fltx4 VectorLength( fltx4 &A )
 
 FORCEINLINE fltx4 CrossProduct( const fltx4 &A, const fltx4 &B )
 {
-#if defined( _X360 )
-	return XMVector3Cross( A, B );
-#elif defined( _WIN32 )
+#if defined( _WIN32 )
 	fltx4 A1 = _mm_shuffle_ps( A, A, MM_SHUFFLE_REV( 1, 2, 0, 3 ) );
 	fltx4 B1 = _mm_shuffle_ps( B, B, MM_SHUFFLE_REV( 2, 0, 1, 3 ) );
 	fltx4 Result1 = MulSIMD( A1, B1 );

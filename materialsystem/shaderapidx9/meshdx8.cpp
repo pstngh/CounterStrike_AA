@@ -18,7 +18,7 @@
 #include "smartptr.h"
 
 // fixme - stick this in a header file.
-#if defined( _DEBUG ) && !defined( _GAMECONSOLE )
+#if defined( _DEBUG )
 // define this if you want to range check all indices when drawing
 #define CHECK_INDICES
 #endif
@@ -43,19 +43,6 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-#ifdef _GAMECONSOLE
-
-#define MAX_TEMP_BUFFER 3
-static int s_nMemoryFrame;
-static CMemoryStack s_BufferMemory[MAX_TEMP_BUFFER];
-
-void *AllocateTempBuffer( size_t nSizeInBytes )
-{
-	return s_BufferMemory[s_nMemoryFrame].Alloc( nSizeInBytes, true );
-}
-
-#endif // _GAMECONSOLE
 
 //-----------------------------------------------------------------------------
 
@@ -255,46 +242,6 @@ private:
 	friend class CExternalIndexBufferDx8;
 };
 
-
-#ifdef _GAMECONSOLE
-
-#include "tier0/memdbgoff.h"
-
-//-----------------------------------------------------------------------------
-// For externally allocated index buffers
-//-----------------------------------------------------------------------------
-class CExternalIndexBufferDx8 : public CIndexBufferDx8
-{
-	typedef CIndexBufferDx8 BaseClass;
-
-public:
-	// constructor
-	CExternalIndexBufferDx8( ) : BaseClass( SHADER_BUFFER_TYPE_STATIC, MATERIAL_INDEX_FORMAT_16BIT, 0, "external ib - ignore" )
-	{
-	}
-
-	virtual ~CExternalIndexBufferDx8() 
-	{
-		if( IsPS3() )
-		{
-			m_pIndexBuffer = NULL; // we don't have to release the external dynamic IB
-		}
-	}
-
-	void Init( int nIndexCount, uint16 *pIndexData )
-	{
-		m_pIndexBuffer = CreateExternalDynamicIB( pIndexData, nIndexCount );
-		m_nBufferSize = m_nFirstUnwrittenOffset = nIndexCount * sizeof(uint16);
-		m_nIndexCount = nIndexCount;
-	}
-	
-
-	virtual bool IsExternal() const { return true; }
-};
-
-#include "tier0/memdbgon.h"
-
-#endif // _GAMECONSOLE
 
 //-----------------------------------------------------------------------------
 //
@@ -683,125 +630,6 @@ private:
 };
 
 
-#ifdef _GAMECONSOLE
-//-----------------------------------------------------------------------------
-// For use as a mesh that we've already written into write-combined memory
-//-----------------------------------------------------------------------------
-class CExternalMeshDX8 : public CMeshDX8
-{
-	typedef CMeshDX8 BaseClass;
-
-public:
-	// constructor, destructor
-	CExternalMeshDX8() : BaseClass( "external vb - ignore" ) 
-	{
-		m_pVertexBufferExternal = new CVertexBuffer;
-		m_pIndexBufferExternal = new CIndexBuffer;
-	}
-
-	virtual ~CExternalMeshDX8() 
-	{
-		CleanUp();
-	}
-	
-	void CleanUp()
-	{
-		if ( m_pVertexBufferExternal )
-		{
-			if( m_pVertexBufferExternal == m_pVertexBuffer )
-			{
-				m_pVertexBuffer = NULL; // let's avoid double-delete
-			}
-			delete m_pVertexBufferExternal;
-			m_pVertexBufferExternal = NULL;
-		}
-
-		if ( m_pIndexBufferExternal )
-		{
-			if( m_pIndexBufferExternal == m_pIndexBuffer )
-			{
-				m_pIndexBuffer = NULL; // let's avoid double-delete
-			}
-			delete m_pIndexBufferExternal;
-			m_pIndexBufferExternal = NULL;
-		}
-	}
-
-	// Initializes the mesh
-	void Init( const ExternalMeshInfo_t& info )
-	{
-		m_NumVertices = 0;
-		m_NumIndices = 0;
-
-		// SetMaterial is only for debugging; 
-		// it actually shows up a tiny bit on the profile might as well ifdef it
-#ifdef _DEBUG
-		SetMaterial( info.m_pMaterial );
-#endif
-		if ( info.m_pVertexOverride )
-		{
-			CBaseMeshDX8 *pDX8Mesh = static_cast<CBaseMeshDX8*>( info.m_pVertexOverride );
-			SetVertexFormat( pDX8Mesh->GetVertexFormat(), true, ( info.m_pIndexOverride != NULL ) );
-			m_pVertexBuffer = pDX8Mesh->GetVertexBuffer();
-		}
-		else
-		{
-			SetVertexFormat( info.m_VertexFormat, false, ( info.m_pIndexOverride != NULL ) );
-			m_pVertexBuffer = m_pVertexBufferExternal;
-		}
-
-		if ( info.m_pIndexOverride )
-		{
-			CBaseMeshDX8 *pDX8Mesh = static_cast<CBaseMeshDX8*>( info.m_pIndexOverride );
-			m_pIndexBuffer = pDX8Mesh->GetIndexBuffer();
-		}
-		else
-		{
-			m_pIndexBuffer = m_pIndexBufferExternal;
-		}
-	}
-
-	void SetExternalData( const ExternalMeshData_t &data )
-	{
-		if ( m_pVertexBuffer == m_pVertexBufferExternal )
-		{
-			if ( data.m_nVertexCount > 0 )
-			{
-				m_pVertexBuffer->Init( Dx9Device(), GetVertexFormat(), 
-					0, data.m_pVertexData, data.m_nVertexSizeInBytes, data.m_nVertexCount );
-				m_NumVertices = data.m_nVertexCount;
-			}
-			else
-			{
-				m_pVertexBuffer = NULL;
-				m_NumVertices = 0;
-			}
-		}
-
-		if ( m_pIndexBuffer == m_pIndexBufferExternal )
-		{
-			if ( data.m_nIndexCount > 0 )
-			{
-				m_pIndexBuffer->Init( Dx9Device(), data.m_pIndexData, data.m_nIndexCount );
-				m_NumIndices = data.m_nIndexCount;
-			}
-			else
-			{
-				m_pIndexBuffer = NULL;
-				m_NumIndices = 0;
-			}
-		}
-	}
-
-	virtual bool IsExternal() const { return true; }
-
-private:
-	CVertexBuffer *m_pVertexBufferExternal;
-	CIndexBuffer *m_pIndexBufferExternal;
-};
-#endif // _GAMECONSOLE
-
-
 //-----------------------------------------------------------------------------
 // A mesh that stores temporary vertex data in the correct format (for modification)
 //-----------------------------------------------------------------------------
@@ -1002,16 +830,6 @@ public:
 	virtual void MarkUnusedVertexFields( unsigned int nFlags, int nTexCoordCount, bool *pUnusedTexCoords );
 	virtual void DrawInstances( int nInstanceCount, const MeshInstanceData_t *pInstances );
 
-#ifdef _GAMECONSOLE
-	virtual int GetDynamicIndexBufferAllocationCount();
-	virtual int GetDynamicIndexBufferIndicesLeft();
-
-	// Backdoor used by the queued context to directly use write-combined memory
-	virtual IMesh *GetExternalMesh( const ExternalMeshInfo_t& info );
-	virtual void SetExternalMeshData( IMesh *pMesh, const ExternalMeshData_t &data );
-	virtual IIndexBuffer *GetExternalIndexBuffer( int nIndexCount, uint16 *pIndexData );
-#endif
-
 	int UnusedVertexFields() const { return m_nUnusedVertexFields; }
 	int UnusedTextureCoords() const { return m_nUnusedTextureCoords; }
 
@@ -1126,11 +944,6 @@ private:
 	// 4096 byte static VB containing all-zeros
 	IDirect3DVertexBuffer9 *m_pZeroVertexBuffer;
 
-#ifdef _GAMECONSOLE
-	CExternalMeshDX8 m_ExternalMesh;
-	CExternalMeshDX8 m_ExternalFlexMesh;
-	CExternalIndexBufferDx8 m_ExternalIndexBuffer;
-#endif // _GAMECONSOLE
 };
 
 //-----------------------------------------------------------------------------
@@ -1184,56 +997,10 @@ inline void D3DSetIndices( IDirect3DIndexBuffer9 *pIndexBuffer )
 //-----------------------------------------------------------------------------
 void Unbind( IDirect3DIndexBuffer9 *pIndexBuffer )
 {
-#ifdef _X360
-	IDirect3DIndexBuffer9 *pBoundBuffer;
-	Dx9Device()->GetIndices( &pBoundBuffer );
-	if ( pBoundBuffer == pIndexBuffer )
-	{
-		// xboxissue - cannot lock indexes set in a d3d device, clear possibly set indices
-		Dx9Device()->SetIndices( NULL );
-		g_pLastIndex = NULL;
-		g_pLastIndexBuffer = NULL;
-	}
-
-	if ( pBoundBuffer )
-	{
-		pBoundBuffer->Release();
-	}
-#endif
 }
 
 void Unbind( IDirect3DVertexBuffer9 *pVertexBuffer )
 {
-#ifdef _X360
-	UINT nOffset, nStride;
-	IDirect3DVertexBuffer9 *pBoundBuffer;
-	for ( int i = 0; i < MAX_DX8_STREAMS; ++i )
-	{
-		Dx9Device()->GetStreamSource( i, &pBoundBuffer, &nOffset, &nStride );
-		if ( pBoundBuffer == pVertexBuffer )
-		{
-			// xboxissue - cannot lock indexes set in a d3d device, clear possibly set indices
-			Dx9Device()->SetStreamSource( i, 0, 0, 0 );
-			switch ( i )
-			{
-			case 0:
-				g_pLastVertex = NULL;
-				g_pLastVertexBuffer = NULL;
-				break;
-
-			case 1:
-				g_pLastColorBuffer = NULL;
-				g_nLastColorMeshVertOffsetInBytes = 0;
-				break;
-			}
-		}
-
-		if ( pBoundBuffer )
-		{
-			pBoundBuffer->Release();
-		}
-	}
-#endif
 }
 
 
@@ -1372,7 +1139,6 @@ bool CIndexBufferDx8::Allocate()
 	HRESULT hr = Dx9Device()->CreateIndexBuffer( 
 		m_nBufferSize, usage, format, d3dPool, &m_pIndexBuffer, NULL );
 
-#if !defined( _X360 )
 	if ( ( hr == D3DERR_OUTOFVIDEOMEMORY ) || ( hr == E_OUTOFMEMORY ) )
 	{
 		// Don't have the memory for this.  Try flushing all managed resources
@@ -1382,7 +1148,6 @@ bool CIndexBufferDx8::Allocate()
 		hr = Dx9Device()->CreateIndexBuffer( 
 			m_nBufferSize, usage, format, d3dPool, &m_pIndexBuffer, NULL );
 	}
-#endif // !X360
 
 	if ( FAILED(hr) || ( m_pIndexBuffer == NULL ) )
 	{
@@ -1630,16 +1395,11 @@ bool CIndexBufferDx8::Lock( int nMaxIndexCount, bool bAppend, IndexDesc_t &desc 
 		}
 	}
 
-#if !defined( _X360 )
 	#if SHADERAPI_NO_D3DDeviceWrapper
 	hr = m_pIndexBuffer->Lock( m_nFirstUnwrittenOffset, nMemoryRequired, &pLockedData, nLockFlags );
 	#else
 	hr = Dx9Device()->Lock( m_pIndexBuffer, m_nFirstUnwrittenOffset, nMemoryRequired, &pLockedData, nLockFlags );
 	#endif
-#else
-	hr = m_pIndexBuffer->Lock( 0, 0, &pLockedData, nLockFlags );
-	pLockedData = ( ( unsigned char * )pLockedData + m_nFirstUnwrittenOffset );
-#endif
 
 	if ( FAILED( hr ) )
 	{
@@ -1817,7 +1577,6 @@ bool CVertexBufferDx8::Allocate()
 	HRESULT hr = Dx9Device()->CreateVertexBuffer( 
 		m_nBufferSize, usage, 0, pool, &m_pVertexBuffer, NULL );
 
-#if !defined( _X360 )
 	if ( ( hr == D3DERR_OUTOFVIDEOMEMORY ) || ( hr == E_OUTOFMEMORY ) )
 	{
 		// Don't have the memory for this.  Try flushing all managed resources
@@ -1827,7 +1586,6 @@ bool CVertexBufferDx8::Allocate()
 		hr = Dx9Device()->CreateVertexBuffer( 
 			m_nBufferSize, usage, 0, pool, &m_pVertexBuffer, NULL );
 	}
-#endif // !X360
 
 	if ( FAILED(hr) || ( m_pVertexBuffer == NULL ) )
 	{
@@ -2049,16 +1807,11 @@ bool CVertexBufferDx8::Lock( int nMaxVertexCount, bool bAppend, VertexDesc_t &de
 		}
 	}
 
-#if !defined( _X360 )
 	#if SHADERAPI_NO_D3DDeviceWrapper
 	hr = m_pVertexBuffer->Lock( m_nFirstUnwrittenOffset, nMemoryRequired, &pLockedData, nLockFlags );
 	#else
 	hr = Dx9Device()->Lock( m_pVertexBuffer, m_nFirstUnwrittenOffset, nMemoryRequired, &pLockedData, nLockFlags );
 	#endif
-#else
-	hr = m_pVertexBuffer->Lock( 0, 0, &pLockedData, nLockFlags );
-	pLockedData = (unsigned char*)pLockedData + m_nFirstUnwrittenOffset;
-#endif
 
 	if ( FAILED( hr ) )
 	{
@@ -2622,7 +2375,7 @@ int CMeshDX8::s_nPrims;
 unsigned int CMeshDX8::s_FirstVertex;
 unsigned int CMeshDX8::s_NumVertices;
 
-#if ( PLATFORM_WINDOWS_PC || ( defined( _X360 ) ) )
+#if ( PLATFORM_WINDOWS_PC )
 #define PLATFORM_SUPPORTS_TRIANGLE_FANS 1
 #else
 #define PLATFORM_SUPPORTS_TRIANGLE_FANS 0
@@ -2635,10 +2388,6 @@ inline D3DPRIMITIVETYPE ComputeMode( MaterialPrimitiveType_t type )
 {
 	switch(type)
 	{
-#ifdef _X360
-	case MATERIAL_INSTANCED_QUADS:
-		return D3DPT_QUADLIST;
-#endif
 
 	case MATERIAL_POINTS:
 		return D3DPT_POINTLIST;
@@ -3521,9 +3270,6 @@ void CMeshDX8::SetCustomStreamsState()
 	{
 		LPDIRECT3DVERTEXBUFFER *arrRawStreams = m_bHasRawHardwareDataStreams ? m_arrRawHardwareDataStreams : NULL;
 		g_pLastRawHardwareDataStream = arrRawStreams;
-#ifdef _PS3
-		Dx9Device()->SetRawHardwareDataStreams( arrRawStreams );
-#endif
 	}
 
 	if ( m_pVertexStreamSpec.Get() != g_pLastStreamSpec )
@@ -3564,28 +3310,6 @@ void CMeshDX8::SetCustomStreamsState()
 
 void *CMeshDX8::AccessRawHardwareDataStream( uint8 nRawStreamIndex, uint32 numBytes, uint32 uiFlags, void *pvContext )
 {
-#ifdef _PS3
-	if ( nRawStreamIndex < ARRAYSIZE( m_arrRawHardwareDataStreams ) )
-	{
-		if ( !m_arrRawHardwareDataStreams[nRawStreamIndex] )
-		{
-			Dx9Device()->CreateVertexBuffer( numBytes, uiFlags, 0, D3DPOOL_MANAGED, &m_arrRawHardwareDataStreams[nRawStreamIndex], NULL );
-			if ( m_arrRawHardwareDataStreams[nRawStreamIndex] )
-			{
-				void *pbData = NULL;
-				m_arrRawHardwareDataStreams[nRawStreamIndex]->Lock( 0, numBytes, &pbData, D3DLOCK_NOOVERWRITE );
-				m_bHasRawHardwareDataStreams = true;
-				return pbData;
-			}
-		}
-		else if ( !numBytes && pvContext )
-		{
-			m_arrRawHardwareDataStreams[nRawStreamIndex]->Unlock();
-			return NULL;
-		}
-	}
-	Error( "<vitaliy> CMeshDX8::AccessRawHardwareDataStream unsupported codepath!\n" );
-#endif
 	return NULL;
 }
 
@@ -3681,7 +3405,7 @@ void CMeshDX8::SetVertexStreamState( int nVertOffsetInBytes, bool bIsRenderingIn
 	if( !bUsingPreTessPatches )
 	{
 		// [will] - Added defined( OSX ) because Scaleform renderer circumvents the MeshMgr and changes internal vertex buffer, so we can't rely on caching it.
-#if defined( _GAMECONSOLE ) || defined( OSX )
+#if defined( OSX )
 		if ( ( g_pLastVertex != m_pVertexBuffer ) || m_pVertexBuffer->IsDynamic() || m_pVertexBuffer->IsExternal() || ( g_nLastVertOffsetInBytes != nVertOffsetInBytes ) )
 #else
 		if ( ( g_pLastVertex != m_pVertexBuffer ) || ( g_nLastVertOffsetInBytes != nVertOffsetInBytes ) )
@@ -3714,9 +3438,6 @@ void CMeshDX8::SetVertexStreamState( int nVertOffsetInBytes, bool bIsRenderingIn
 	{
 		LPDIRECT3DVERTEXBUFFER *arrRawStreams = m_bHasRawHardwareDataStreams ? m_arrRawHardwareDataStreams : NULL;
 		g_pLastRawHardwareDataStream = arrRawStreams;
-#ifdef _PS3
-		Dx9Device()->SetRawHardwareDataStreams( arrRawStreams );
-#endif
 	}
 }
 
@@ -3724,11 +3445,7 @@ void CMeshDX8::SetIndexStreamState( int firstVertexIdx )
 {
 	if( !( GetTessellationType() > 0 ) )
 	{
-#ifdef _GAMECONSOLE
-		if ( ( g_pLastIndexBuffer != NULL ) || (g_pLastIndex != m_pIndexBuffer) || m_pIndexBuffer->IsDynamic() || m_pIndexBuffer->IsExternal() || ( firstVertexIdx != g_LastVertexIdx ) )
-#else
 		if ( ( g_pLastIndexBuffer != NULL ) || (g_pLastIndex != m_pIndexBuffer) || ( firstVertexIdx != g_LastVertexIdx ) )
-#endif
 		{
 			Assert( m_pIndexBuffer );
 
@@ -4036,13 +3753,6 @@ void CMeshDX8::RenderPass( const unsigned char *pInstanceCommandBuffer )
 				VPROF_INCREMENT_COUNTER( "DrawIndexedPrimitive", 1 );
 				VPROF_INCREMENT_COUNTER( "numPrimitives", numPrimitives );
 
-#if defined( _X360 )
-				IDirect3DVertexShader9 *pVertShader = NULL; 
-				Dx9Device()->GetVertexShader( &pVertShader );
-				if ( pVertShader != NULL )
-				{
-					pVertShader->Release(); // NOTE: IDirect3DDevice9::GetVertexShader increments the shader's internal refcount!
-#endif // _X360
 				Dx9Device()->DrawIndexedPrimitive( 
 					m_Mode,			// Member of the D3DPRIMITIVETYPE enumerated type, describing the type of primitive to render. D3DPT_POINTLIST is not supported with this method.
 
@@ -4056,13 +3766,6 @@ void CMeshDX8::RenderPass( const unsigned char *pInstanceCommandBuffer )
 					pPrim->m_FirstIndex, // Index of the first index to use when accessing the vertex buffer. Beginning at StartIndex to index vertices from the vertex buffer.
 
 					numPrimitives );// Number of primitives to render. The number of vertices used is a function of the primitive count and the primitive type.
-#if defined( _X360 )
-				}
-				else
-				{
-					Warning( "CMeshDX8::RenderPass - Material \"%s\" has no vertex shader applied!\n", ShaderAPI()->GetBoundMaterial()->GetName() );
-				}
-#endif // _X360
 			}
 		}
 	}
@@ -5163,16 +4866,6 @@ CMeshMgr::~CMeshMgr()
 //-----------------------------------------------------------------------------
 void CMeshMgr::Init()
 {
-#ifdef _GAMECONSOLE
-	s_nMemoryFrame = 0;
-	for ( int i = 0; i < MAX_TEMP_BUFFER; ++i )
-	{
-		// NOTE: Debugging modes consume a bunch of this. Need only 64 when not using them.
-		static int nStackCount = 0;
-		CFmtStr stackName( "CMeshMgr::s_BufferMemory[%d]", nStackCount++ );
-		s_BufferMemory[i].Init( (const char *)stackName, ( IsPS3() ? 2 /* PS3 allocates more objects */ : 1 ) * 256 * 1024, 32 * 1024, 32 * 1024 );
-	}
-#endif
 
 	m_DynamicMesh.Init( 0 );
 	m_DynamicFlexMesh.Init( 1 );
@@ -5249,12 +4942,6 @@ void CMeshMgr::CleanUp()
 	DestroyEmptyColorBuffer();
 	DestroyPreTessPatchIndexBuffers();
 	DestroyPreTessPatchVertexBuffers();
-
-#ifdef _GAMECONSOLE
-	m_ExternalMesh.CleanUp();
-	m_ExternalFlexMesh.CleanUp();
-	// if we need m_ExternalIndexBuffer.CleanUp(), this would be the place to call it
-#endif
 
 	m_DynamicIndexBuffer.Free();
 	m_DynamicVertexBuffer.Free();
@@ -5716,55 +5403,6 @@ void CMeshMgr::DiscardVertexBuffers()
 		m_pDynamicIndexBuffer->FlushAtFrameStart();
 	}
 
-#ifdef _GAMECONSOLE
-	// Unbind everything. We're going to be decommitting memory
-	// and we don't want the slightest chance that there could be 
-	// D3D internal state pointing at this memory
-	// (defensive fix for tracker bug 49836)
-	for ( int i = 0; i < 4; ++i )
-	{
-		D3DSetStreamSource( i, 0, 0, 0 );
-	}
-
-	g_bUsingVertexID = false;
-	g_nLastVertexIDOffset = -1;
-	g_bUsingPreTessPatches = false;
-	g_pLastStreamSpec = NULL;
-	g_pLastVertex = NULL;
-	g_pLastVertexBuffer = NULL;
-	g_nLastVertOffsetInBytes = -1;
-	g_pLastColorBuffer = NULL;
-	g_nLastColorMeshVertOffsetInBytes = 0;
-
-	if ( ++s_nMemoryFrame >= MAX_TEMP_BUFFER )
-	{
-		s_nMemoryFrame = 0;
-	}
-
-/*
-	static int s_nHisto[ 33 ];
-	static int s_nHistoCount;
-	int nMem = s_BufferMemory[s_nMemoryFrame].GetUsed() / ( 32 * 1024 );
-	s_nHisto[ nMem ]++;
-	if ( ( ++s_nHistoCount % 1024 ) == 0 )
-	{
-		Msg( "DynamicBuffers: " );
-		bool bFound = false;
-		for( int i = 32; i >= 0; --i )
-		{
-			if ( s_nHisto[i] )
-			{
-				bFound = true;
-			}
-			if ( !bFound )
-				continue;
-			Msg( "[%dk %d] ", i * 32, s_nHisto[i] );
-		}
-		Msg( "\n" );
-	}
-*/
-	s_BufferMemory[s_nMemoryFrame].FreeAll();
-#endif
 }
 
 
@@ -5810,14 +5448,12 @@ void CMeshMgr::DestroyVertexBuffers()
 	RECORD_INT( 0 );
 	D3DSetStreamSource( 2, 0, 0, 0 );
 
-#ifndef _X360
 	RECORD_COMMAND( DX8_SET_STREAM_SOURCE, 4 );
 	RECORD_INT( -1 );
 	RECORD_INT( 3 );
 	RECORD_INT( 0 );
 	RECORD_INT( 0 );
 	D3DSetStreamSource( 3, 0, 0, 0 );
-#endif
 
 	for (int i = m_DynamicVertexBuffers.Count(); --i >= 0; )
 	{
@@ -6212,57 +5848,6 @@ CIndexBuffer *CMeshMgr::GetDynamicIndexBufferInternal()
 {
 	return m_pDynamicIndexBuffer;
 }
-
-#ifdef _GAMECONSOLE
-int CMeshMgr::GetDynamicIndexBufferAllocationCount()
-{
-	if ( !GetDynamicIndexBufferInternal() )
-	{
-		return 0;
-	}
-
-	return GetDynamicIndexBufferInternal()->AllocationCount();
-}
-
-
-int CMeshMgr::GetDynamicIndexBufferIndicesLeft()
-{
-	if ( !GetDynamicIndexBufferInternal() )
-	{
-		return 0;
-	}
-
-	return GetDynamicIndexBufferInternal()->GetIndicesLeft();
-}
-
-//-----------------------------------------------------------------------------
-// Backdoor used by the queued context to directly use write-combined memory
-//-----------------------------------------------------------------------------
-IMesh *CMeshMgr::GetExternalMesh( const ExternalMeshInfo_t& info )
-{
-	if ( info.m_bFlexMesh )
-	{
-		m_ExternalFlexMesh.Init( info );
-		return &m_ExternalFlexMesh;
-	}
-	
-	m_ExternalMesh.Init( info );
-	return &m_ExternalMesh;
-}
-
-void CMeshMgr::SetExternalMeshData( IMesh *pMesh, const ExternalMeshData_t &data )
-{
-	CExternalMeshDX8 *pExternalMesh = assert_cast< CExternalMeshDX8* >( pMesh );
-	pExternalMesh->SetExternalData( data );
-}
-
-IIndexBuffer *CMeshMgr::GetExternalIndexBuffer( int nIndexCount, uint16 *pIndexData )
-{
-	m_ExternalIndexBuffer.Init( nIndexCount, pIndexData );
-	return &m_ExternalIndexBuffer;
-}
-
-#endif // _GAMECONSOLE
 
 IVertexBuffer *CMeshMgr::GetDynamicVertexBuffer( IMaterial *pMaterial, bool buffered )
 {

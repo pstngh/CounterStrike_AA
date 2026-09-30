@@ -60,29 +60,6 @@ inline KeyValues * SessionMembersFindPlayer( KeyValues *pSessionSettings, XUID x
 
 inline XUID SessionMembersFindNonGuestXuid( XUID xuid )
 {
-#ifdef _X360
-	if ( !g_pMatchFramework )
-		return xuid;
-
-	if ( !g_pMatchFramework->GetMatchSession() )
-		return xuid;
-
-	KeyValues *pMachine = NULL;
-	KeyValues *pPlayer = SessionMembersFindPlayer( g_pMatchFramework->GetMatchSession()->GetSessionSettings(), xuid, &pMachine );
-	if ( !pPlayer || !pMachine )
-		return xuid;
-
-	if ( !strchr( pPlayer->GetString( "name" ), '(' ) )
-		return xuid;
-
-	int numPlayers = pMachine->GetInt( "numPlayers" );
-	for ( int k = 0; k < numPlayers; ++ k )
-	{
-		XUID xuidOtherPlayer = pMachine->GetUint64( CFmtStr( "player%d/xuid", k ) );
-		if ( xuidOtherPlayer && !strchr( pMachine->GetString( CFmtStr( "player%d/xuid", k ) ), '(' ) )
-			return xuidOtherPlayer;	// found a replacement that is not guest
-	}
-#endif
 
 	return xuid;
 }

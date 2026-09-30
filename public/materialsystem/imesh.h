@@ -23,10 +23,6 @@
 #define	OPENGL_SWAP_COLORS
 #endif
 
-#ifdef _PS3
-	#define CELL_GCM_SWAP_COLORS
-#endif
-
 // Max number of instances that will be submitted at once on consoles in the model fast path
 // (This is important because console builds have smaller stack sizes than PC and we stackalloc()
 // a lot of intermediate data per batch)
@@ -64,13 +60,8 @@ enum
 // Internal maximums for sizes. Don't use directly, use IMaterialSystem::GetMaxToRender()
 enum
 {
-#ifdef PLATFORM_X360
-	INDEX_BUFFER_SIZE  = 65504,
-	DYNAMIC_VERTEX_BUFFER_MEMORY = ( 4096 ) * 1024,
-#else
 	INDEX_BUFFER_SIZE  = 32768,
 	DYNAMIC_VERTEX_BUFFER_MEMORY = ( 1024 + 512 ) * 1024,
-#endif
 	DYNAMIC_VERTEX_BUFFER_MEMORY_SMALL = 384 * 1024, // Only allocate this much during map transitions
 };
 
@@ -272,8 +263,6 @@ inline int PackRGBToPlatformColor( int r, int g, int b, int a )
 {
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | a;
 	#else
 		int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
@@ -654,10 +643,6 @@ public:
 
 	// Add number of verts and current vert since FastVertex routines do not update.
 	void FastAdvanceNVertices( int n );	
-
-#if defined( _X360 )
-	void VertexDX8ToX360( const ModelVertexDX8_t &vertex );
-#endif
 
 	// FIXME: Remove! Backward compat so we can use this from a CMeshBuilder.
 	void AttachBegin( IMesh* pMesh, int nMaxVertexCount, const MeshDesc_t &desc );
@@ -1246,7 +1231,7 @@ inline void CVertexBuilder::FastVertex( const ModelVertexDX8_t &vertex )
 
 #if defined( __aarch64__ )
 	memcpy( m_pCurrPosition, &vertex, sizeof( vertex ) );
-#elif defined( _WIN32 ) && !defined( _X360 ) && !defined( _M_X64 )
+#elif defined( _WIN32 ) && !defined( _M_X64 )
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm
@@ -1312,7 +1297,7 @@ inline void CVertexBuilder::FastVertexSSE( const ModelVertexDX8_t &vertex )
 
 #if defined( __aarch64__ )
 	memcpy( m_pCurrPosition, &vertex, sizeof( vertex ) );
-#elif defined( _WIN32 ) && !defined( _X360 ) && !defined( _M_X64 )
+#elif defined( _WIN32 ) && !defined( _M_X64 )
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm
@@ -1362,7 +1347,7 @@ inline void CVertexBuilder::FastQuadVertexSSE( const QuadTessVertex_t &vertex )
 
 #if defined( __aarch64__ )
 	memcpy( m_pCurrPosition, &vertex, sizeof( vertex ) );
-#elif defined( _WIN32 ) && !defined( _X360 ) && !defined( _M_X64 )
+#elif defined( _WIN32 ) && !defined( _M_X64 )
 	const void *pRead = &vertex;
 	void *pCurrPos = m_pCurrPosition;
 	__asm
@@ -1403,52 +1388,6 @@ inline int CVertexBuilder::GetCurrentVertex() const
 //-----------------------------------------------------------------------------
 // Copies a vertex into the x360 format
 //-----------------------------------------------------------------------------
-#if defined( _X360 )
-inline void CVertexBuilder::VertexDX8ToX360( const ModelVertexDX8_t &vertex )
-{
-	Assert( m_CompressionType == VERTEX_COMPRESSION_NONE ); // FIXME: support compressed verts if needed
-	Assert( m_nCurrentVertex < m_nMaxVertexCount );
-
-	// get the start of the data
-	unsigned char *pDst = (unsigned char*)m_pCurrPosition;
-
-	Assert( m_VertexSize_Position > 0 ); // Assume position is always present
-	Assert( GetVertexElementSize( VERTEX_ELEMENT_POSITION, VERTEX_COMPRESSION_NONE ) == sizeof( vertex.m_vecPosition ) );
-	memcpy( pDst, vertex.m_vecPosition.Base(), sizeof( vertex.m_vecPosition ) );
-	pDst += sizeof( vertex.m_vecPosition );
-
-	if ( m_VertexSize_Normal )
-	{
-		Assert( GetVertexElementSize( VERTEX_ELEMENT_NORMAL, VERTEX_COMPRESSION_NONE ) == sizeof( vertex.m_vecNormal ) );
-		memcpy( pDst, vertex.m_vecNormal.Base(), sizeof( vertex.m_vecNormal ) );
-		pDst += sizeof( vertex.m_vecNormal );
-	}
-
-	if ( m_VertexSize_TexCoord[0] )
-	{
-		Assert( GetVertexElementSize( VERTEX_ELEMENT_TEXCOORD2D_0, VERTEX_COMPRESSION_NONE ) == sizeof( vertex.m_vecTexCoord ) );
-		memcpy( pDst, vertex.m_vecTexCoord.Base(), sizeof( vertex.m_vecTexCoord ) );
-		pDst += sizeof( vertex.m_vecTexCoord );
-	}
-
-	if ( m_VertexSize_UserData )
-	{
-		Assert( GetVertexElementSize( VERTEX_ELEMENT_USERDATA4, VERTEX_COMPRESSION_NONE ) == sizeof( vertex.m_vecUserData ) );
-		memcpy( pDst, vertex.m_vecUserData.Base(), sizeof( vertex.m_vecUserData ) );
-		pDst += sizeof( vertex.m_vecUserData );
-	}
-
-	// ensure code is synced with the mesh builder that established the offsets
-	Assert( pDst - (unsigned char*)m_pCurrPosition == m_VertexSize_Position );
-
-	IncrementFloatPointer( m_pCurrPosition, m_VertexSize_Position );
-
-#if ( defined( _DEBUG ) && ( COMPRESSED_NORMALS_TYPE == COMPRESSED_NORMALS_COMBINEDTANGENTS_UBYTE4 ) )
-	m_bWrittenNormal   = false;
-	m_bWrittenUserData = false;
-#endif
-}
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -1746,8 +1685,6 @@ inline void	CVertexBuilder::Color3f( float r, float g, float b )
 
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(b) << 8) | (FastFToC(g) << 16) | (FastFToC(r) << 24) | 0x000000FF;
 #else
 	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
 #endif
@@ -1764,8 +1701,6 @@ inline void	CVertexBuilder::Color3fv( const float *rgb )
 
 #ifdef OPENGL_SWAP_COLORS	
 	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(rgb[2]) << 8) | (FastFToC(rgb[1]) << 16) | (FastFToC(rgb[0]) << 24) | 0x000000FF;
 #else
 	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
 #endif
@@ -1781,8 +1716,6 @@ inline void	CVertexBuilder::Color4f( float r, float g, float b, float a )
 
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(b) << 8) | (FastFToC(g) << 16) | (FastFToC(r) << 24) | (FastFToC(a));
 #else
 	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
 #endif
@@ -1799,8 +1732,6 @@ inline void	CVertexBuilder::Color4fv( const float *rgba )
 
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(rgba[0])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[2]) << 16) | (FastFToC(rgba[3]) << 24);
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(rgba[2]) << 8) | (FastFToC(rgba[1]) << 16) | (FastFToC(rgba[0]) << 24) | (FastFToC(rgba[3]));
 #else
 	int col = (FastFToC(rgba[2])) | (FastFToC(rgba[1]) << 8) | (FastFToC(rgba[0]) << 16) | (FastFToC(rgba[3]) << 24);
 #endif
@@ -1819,8 +1750,6 @@ inline void CVertexBuilder::Color3ub( unsigned char r, unsigned char g, unsigned
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = (b << 8) | (g << 16) | (r << 24) | 0x000000FF;
 	#else
 		int col = b | (g << 8) | (r << 16) | 0xFF000000;
 	#endif
@@ -1834,8 +1763,6 @@ inline void CVertexBuilder::Color3ubv( unsigned char const* rgb )
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
 		int col = rgb[0] | (rgb[1] << 8) | (rgb[2] << 16) | 0xFF000000;	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( rgb[2] << 8 ) | ( rgb[1] << 16 ) | ( rgb[0] << 24 ) | 0x000000FF; 
 	#else
 		int col = rgb[2] | (rgb[1] << 8) | (rgb[0] << 16) | 0xFF000000;
 	#endif
@@ -1848,8 +1775,6 @@ inline void CVertexBuilder::Color4ub( unsigned char r, unsigned char g, unsigned
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | a;
 	#else
 		int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
@@ -1862,8 +1787,6 @@ inline void CVertexBuilder::Color4ub( int nVertexOffset, unsigned char r, unsign
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | a;
 	#else
 		int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
@@ -1878,8 +1801,6 @@ inline void CVertexBuilder::Color4ubv( unsigned char const* rgba )
 	Assert( m_pColor && m_pCurrColor );
 	#ifdef OPENGL_SWAP_COLORS
 		int col = rgba[0] | (rgba[1] << 8) | (rgba[2] << 16) | (rgba[3] << 24);	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( rgba[0] << 24 ) | ( rgba[1] << 16 ) | ( rgba[2] << 8 ) | rgba[3];
 	#else
 		int col = rgba[2] | (rgba[1] << 8) | (rgba[0] << 16) | (rgba[3] << 24);
 	#endif
@@ -1907,8 +1828,6 @@ inline void	CVertexBuilder::Specular3f( float r, float g, float b )
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | 0xFF000000;
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(b) << 8) | (FastFToC(g) << 16) | (FastFToC(r) << 24) | 0x000000FF;
 #else
 	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | 0xFF000000;
 #endif
@@ -1926,8 +1845,6 @@ inline void	CVertexBuilder::Specular3fv( const float *rgb )
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | 0xFF000000;
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(rgb[2]) << 8) | (FastFToC(rgb[1]) << 16) | (FastFToC(rgb[0]) << 24) | 0x000000FF;
 #else
 	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | 0xFF000000;
 #endif
@@ -1944,8 +1861,6 @@ inline void	CVertexBuilder::Specular4f( float r, float g, float b, float a )
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(r)) | (FastFToC(g) << 8) | (FastFToC(b) << 16) | (FastFToC(a) << 24);
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(b) << 8) | (FastFToC(g) << 16) | (FastFToC(r) << 24) | (FastFToC(a));
 #else
 	int col = (FastFToC(b)) | (FastFToC(g) << 8) | (FastFToC(r) << 16) | (FastFToC(a) << 24);
 #endif
@@ -1963,8 +1878,6 @@ inline void	CVertexBuilder::Specular4fv( const float *rgb )
 	unsigned char* pSpecular = &m_pSpecular[m_nCurrentVertex * m_VertexSize_Specular];
 #ifdef OPENGL_SWAP_COLORS
 	int col = (FastFToC(rgb[0])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[2]) << 16) | (FastFToC(rgb[3]) << 24);
-#elif defined( CELL_GCM_SWAP_COLORS )
-	int col = (FastFToC(rgb[2]) << 8) | (FastFToC(rgb[1]) << 16) | (FastFToC(rgb[0]) << 24) | (FastFToC(rgb[3]));
 #else
 	int col = (FastFToC(rgb[2])) | (FastFToC(rgb[1]) << 8) | (FastFToC(rgb[0]) << 16) | (FastFToC(rgb[3]) << 24);
 #endif
@@ -1978,8 +1891,6 @@ inline void CVertexBuilder::Specular3ub( unsigned char r, unsigned char g, unsig
 
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | 0xFF000000;	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | 0x000000FF;
 	#else
 		int col = b | (g << 8) | (r << 16) | 0xFF000000;
 	#endif
@@ -1994,8 +1905,6 @@ inline void CVertexBuilder::Specular3ubv( unsigned char const *c )
 
 	#ifdef OPENGL_SWAP_COLORS
 		int col = c[0] | (c[1] << 8) | (c[2] << 16) | 0xFF000000;	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( c[0] << 24 ) | ( c[1] << 16 ) | ( c[2] << 8 ) | 0x000000FF;
 	#else
 		int col = c[2] | (c[1] << 8) | (c[0] << 16) | 0xFF000000;
 	#endif
@@ -2010,8 +1919,6 @@ inline void CVertexBuilder::Specular4ub( unsigned char r, unsigned char g, unsig
 
 	#ifdef OPENGL_SWAP_COLORS
 		int col = r | (g << 8) | (b << 16) | (a << 24);	// r, g, b, a in memory
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( r << 24 ) | ( g << 16 ) | ( b << 8 ) | a;
 	#else
 		int col = b | (g << 8) | (r << 16) | (a << 24);
 	#endif
@@ -2026,8 +1933,6 @@ inline void CVertexBuilder::Specular4ubv( unsigned char const *c )
 
 	#ifdef OPENGL_SWAP_COLORS
 		int col = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
-	#elif defined( CELL_GCM_SWAP_COLORS )
-		int col = ( c[0] << 24 ) | ( c[1] << 16 ) | ( c[2] << 8 ) | c[3];
 	#else
 		int col = c[2] | (c[1] << 8) | (c[0] << 16) | (c[3] << 24);
 	#endif
@@ -2137,21 +2042,7 @@ inline void	CVertexBuilder::TexCoord4f( int stage, float s, float t, float u, fl
 
 inline void CVertexBuilder::TexCoord4f( int nStage, const fltx4 &fl4stuv )
 {
-#ifdef _GAMECONSOLE
-	// can't storeUnaligned4SIMD into write combined memory on the 360 unless
-	// the address is actually aligned.
-	// The same thing happens on PS3: you can't write into RSX local memory using stvlx/stvrx 
-	// unless the effective address (EA) is actually 16-byte aligned, or it crashes.
-	float *pDst = m_pCurrTexCoord[nStage];
-	float *pSrc = (float *)(&fl4stuv);
-
-	*pDst++ = *pSrc++;
-	*pDst++ = *pSrc++;
-	*pDst++ = *pSrc++;
-	*pDst = *pSrc;
-#else
 	StoreUnalignedSIMD( m_pCurrTexCoord[nStage], fl4stuv );
-#endif
 }
 
 inline void	CVertexBuilder::TexCoord4fv( int stage, const float *stuv )
@@ -3460,10 +3351,6 @@ public:
 	// Add number of verts and current vert since FastVertexxx routines do not update.
 	void FastAdvanceNVertices(int n);	
 
-#if defined( _X360 )
-	void VertexDX8ToX360( const ModelVertexDX8_t &vertex );
-#endif
-
 	// this low level function gets you a pointer to the vertex output data. It is dangerous - any
 	// caller using it must understand the vertex layout that it is building. It is for optimized
 	// meshbuilding loops like particle drawing that use special shaders. After writing to the output
@@ -4096,12 +3983,6 @@ FORCEINLINE void CMeshBuilder::FastQuadVertexSSE( const QuadTessVertex_t &vertex
 //-----------------------------------------------------------------------------
 // Copies a vertex into the x360 format
 //-----------------------------------------------------------------------------
-#if defined( _X360 )
-inline void CMeshBuilder::VertexDX8ToX360( const ModelVertexDX8_t &vertex )
-{
-	m_VertexBuilder.VertexDX8ToX360( vertex );
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Vertex field setting methods

@@ -263,9 +263,6 @@ void CMatchSessionOfflineCustom::InitializeGameSettings()
 		pMembers->SetInt( "numMachines", 1 );
 
 		int numPlayers = 1;
-#ifdef _GAMECONSOLE
-		numPlayers = XBX_GetNumGameUsers();
-#endif
 		pMembers->SetInt( "numPlayers", numPlayers );
 		pMembers->SetInt( "numSlots", numPlayers );
 
@@ -285,9 +282,6 @@ void CMatchSessionOfflineCustom::InitializeGameSettings()
 				if ( KeyValues *pPlayer = pMachine->FindKey( CFmtStr( "player%d", k ), true ) )
 				{
 					int iController = 0;
-#ifdef _GAMECONSOLE
-					iController = XBX_GetUserId( k );
-#endif
 					IPlayerLocal *player = g_pPlayerManager->GetLocalPlayer( iController );
 					if ( player )
 					{

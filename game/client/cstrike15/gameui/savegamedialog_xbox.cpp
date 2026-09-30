@@ -172,7 +172,7 @@ void CSaveGameDialogXbox::InitiateSaving()
 		// PS3_BUILDFIX
 		// FIXME - this will need a workover
 		// @wge Same for OSX
-#if defined ( _PS3 ) || defined( _OSX ) || defined (LINUX)
+#if defined( _OSX ) || defined (LINUX)
 		unsigned currentTime = 0;
 #else
 		// Create a new save game (name is created from the current time, which should be pretty unique)
@@ -281,21 +281,4 @@ void CSaveGameDialogXbox::OnDoneScanningSaveGames( void )
 // dgoodenough - limit this to _X360 for now.
 // PS3_BUILDFIX
 // FIXME - do we need something here on PS3?
-#ifdef _X360
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Slamming controller for xbox storage id to 0" )
-	if ( XBX_GetStorageDeviceId( 0 ) == XBX_INVALID_STORAGE_ID || XBX_GetStorageDeviceId( 0 ) == XBX_STORAGE_DECLINED )
-		return;
-
-	// We only allow 10 save games minus the number of autosaves, autosavedangerous, and autosave0?'s at once
-	if ( GetNumPanels() >= 10 - ( 2 + (unsigned)save_history_count.GetInt() ) )
-		return;
-
-	if ( GetStorageSpaceUsed() + XBX_SAVEGAME_BYTES > XBX_PERSISTENT_BYTES_NEEDED )
-		return;
-
-	m_bNewSaveAvailable = true;
-	SaveGameDescription_t bogusDesc = { "#GameUI_SaveGame_NewSavedGame", "#GameUI_SaveGame_NewSave", "#GameUI_SaveGame_NewSave", "#GameUI_SaveGame_NewSave", "#GameUI_SaveGame_NewSave", "#GameUI_SaveGame_NewSave", "#GameUI_SaveGame_NewSave", 0, 0 };
-	CGameSavePanel *newSavePanel = SETUP_PANEL( new CGameSavePanel( this, &bogusDesc, true ) );
-	AddPanel( newSavePanel );
-#endif // _GAMECONSOLE
 }

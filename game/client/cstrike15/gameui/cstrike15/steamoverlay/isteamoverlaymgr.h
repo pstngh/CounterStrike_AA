@@ -12,10 +12,6 @@ public:
 	virtual void		Destroy( void ) = 0;
 };
 
-#ifdef _PS3
-extern ISteamOverlayManager *g_pISteamOverlayMgr;
-#else
 #define g_pISteamOverlayMgr ( ( ISteamOverlayManager * ) 0 )
-#endif
 
 #endif // ISTEAMOVERLAYMGR_H

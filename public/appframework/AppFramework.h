@@ -61,7 +61,6 @@ void AppShutdown( CAppSystemGroup *pAppSystemGroup );
 	EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CAppLaunchableDLL, ILaunchableDLL, LAUNCHABLE_DLL_INTERFACE_VERSION, __g_AppLaunchableDLL ); 
 
 
-#if !defined( _X360 )
 #if defined( _OSX )
 #define DEFINE_WINDOWED_APPLICATION_OBJECT_GLOBALVAR( _globalVarName ) \
 	int main( int argc, char **argv )										\
@@ -83,27 +82,12 @@ void AppShutdown( CAppSystemGroup *pAppSystemGroup );
 		return AppMain( hInstance, hPrevInstance, lpCmdLine, nCmdShow, &_globalVarName );		\
 	}
 #endif
-#else
-#define DEFINE_WINDOWED_APPLICATION_OBJECT_GLOBALVAR( _globalVarName )	\
-	DLL_EXPORT int AppMain360( struct HINSTANCE__* hInstance, struct HINSTANCE__* hPrevInstance, NULLTERMINATED char *lpCmdLine, int nCmdShow )	\
-	{																				\
-		return AppMain( hInstance, hPrevInstance, lpCmdLine, nCmdShow, &_globalVarName );	\
-	}
-#endif
 
-#if !defined( _X360 )
 #define DEFINE_CONSOLE_APPLICATION_OBJECT_GLOBALVAR( _globalVarName ) \
 	int main( int argc, char **argv )			\
 	{											\
 		return AppMain( argc, argv, &_globalVarName );	\
 	}
-#else
-#define DEFINE_CONSOLE_APPLICATION_OBJECT_GLOBALVAR( _globalVarName ) \
-	DLL_EXPORT int AppMain360( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )	\
-	{																				\
-		return AppMain( hInstance, hPrevInstance, lpCmdLine, nCmdShow, &_globalVarName );	\
-	}
-#endif
 
 #define DEFINE_BINLAUNCHABLE_APPLICATION_OBJECT_GLOBALVAR( _globalVarName )	\
 	class CApplicationDLL : public ILaunchableDLL								\

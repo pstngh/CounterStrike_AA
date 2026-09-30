@@ -1280,10 +1280,6 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 	STUDIORENDER_TEMP_DATA_MALLOC( MeshInstanceData_t, pInstance, nTotalStripCount * sizeof(MeshInstanceData_t) );
 	IMaterial *pLastMaterial = NULL;
 	IMesh *pLastMesh = NULL;
-#ifdef _GAMECONSOLE
-	bool bLastUsingFlashlight = false;
-	bool bSavedFlashlightEnable = pRenderContext->GetFlashlightMode();
-#endif // _GAMECONSOLE
 	int nMaxBoneCount = 0;
 	int nMaxLightCount = 0;
 	bool bIsSkinned = drawInfo.m_pStudioHdr->numbones > 1;
@@ -1303,19 +1299,10 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 			continue;
 
 		if ( ( pLastMaterial != data.m_pMaterial ) || ( pLastMesh != data.m_pGroup->m_pMesh ) 
-#ifdef _GAMECONSOLE
-			|| ( bLastUsingFlashlight != ( pCurrInstance->m_nFlashlightUsage != 0 ) ) 
-#endif // _GAMECONSOLE
 			)
 		{
 			if ( nInstanceCount > 0 )
 			{
-#ifdef _GAMECONSOLE
-				if ( pRenderContext->IsCullingEnabledForSinglePassFlashlight() )
-				{
-					pRenderContext->SetFlashlightMode( bLastUsingFlashlight );
-				}				
-#endif // _GAMECONSOLE
 				pRenderContext->SetNumBoneWeights( bIsSkinned ? nMaxBoneCount : 0 );
 				pRenderContext->Bind( pLastMaterial, NULL );
 				pRenderContext->DrawInstances( nInstanceCount, pInstance );
@@ -1325,9 +1312,6 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 			nMaxLightCount = 0;
 			pLastMesh = data.m_pGroup->m_pMesh;
 			pLastMaterial = data.m_pMaterial;
-#ifdef _GAMECONSOLE
-			bLastUsingFlashlight = pCurrInstance->m_nFlashlightUsage != 0;
-#endif // _GAMECONSOLE
 		}
 
 		studiomeshgroup_t* pGroup = data.m_pGroup;
@@ -1372,20 +1356,11 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 
 	if ( nInstanceCount > 0 )
 	{
-#ifdef _GAMECONSOLE
-		if ( pRenderContext->IsCullingEnabledForSinglePassFlashlight() )
-		{
-			pRenderContext->SetFlashlightMode( bLastUsingFlashlight );
-		}
-#endif // _GAMECONSOLE
 		pRenderContext->SetNumBoneWeights( bIsSkinned ? nMaxBoneCount : 0 );
 		pRenderContext->Bind( pLastMaterial, NULL );
 		pRenderContext->DrawInstances( nInstanceCount, pInstance );
 	}
 
-#ifdef _GAMECONSOLE
-	pRenderContext->SetFlashlightMode( bSavedFlashlightEnable );
-#endif // _GAMECONSOLE
 	pRenderContext->SetNumBoneWeights( 0 );
 
 	STUDIORENDER_TEMP_DATA_FREE( pInstance );
@@ -1409,10 +1384,6 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 	int nLastMeshBoneCount = 0;
 	VertexCompressionType_t nLastCompressionType = VERTEX_COMPRESSION_INVALID;
 	bool bLastMeshUsedColorMesh = false;
-#ifdef _GAMECONSOLE
-	bool bLastUsingFlashlight = false;
-	bool bSavedFlashlightEnable = pRenderContext->GetFlashlightMode();
-#endif // _GAMECONSOLE
 	int nStartingStripIndex = 0; // used to interrupt batching within a group if the number of strips exceeds the max batch size
 	
 	for ( int i = 0; i < nCount; ++i )
@@ -1430,19 +1401,10 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 			( nLastMeshBoneCount != data.m_nMeshBoneCount ) ||			// # of bones in the mesh data is different
 			( bLastMeshUsedColorMesh != bUsingColorMesh ) || 			// Lighting type is different
 			( IsGameConsole() && ( nInstanceCount >= nMaxBatchSize ) )	// max # of batches to render at once due to stack limitations on console
-#ifdef _GAMECONSOLE
-			|| ( bLastUsingFlashlight != ( pCurrInstance->m_nFlashlightUsage != 0 ) )
-#endif // _GAMECONSOLE
 			)
 		{
 			if ( nInstanceCount > 0 )
 			{
-#ifdef _GAMECONSOLE
-				if ( pRenderContext->IsCullingEnabledForSinglePassFlashlight() )
-				{
-					pRenderContext->SetFlashlightMode( bLastUsingFlashlight );
-				}
-#endif // _GAMECONSOLE
 				pRenderContext->SetNumBoneWeights( nLastMeshBoneCount > 0 ? nMaxBoneCount : 0 );
 				pRenderContext->Bind( pLastMaterial, NULL );
 				pRenderContext->DrawInstances( nInstanceCount, pInstance );
@@ -1454,9 +1416,6 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 			pLastMaterial = data.m_pMaterial;
 			nLastMeshBoneCount = data.m_nMeshBoneCount;
 			bLastMeshUsedColorMesh = bUsingColorMesh;
-#ifdef _GAMECONSOLE
-			bLastUsingFlashlight = pCurrInstance->m_nFlashlightUsage != 0;
-#endif // _GAMECONSOLE
 		}
 
 		studiomeshgroup_t* pGroup = data.m_pGroup;
@@ -1517,20 +1476,11 @@ void CStudioRender::DrawMeshRenderData( IMatRenderContext *pRenderContext,
 
 	if ( nInstanceCount > 0 )
 	{
-#ifdef _GAMECONSOLE
-		if ( pRenderContext->IsCullingEnabledForSinglePassFlashlight() )
-		{
-			pRenderContext->SetFlashlightMode( bLastUsingFlashlight );
-		}
-#endif // _GAMECONSOLE
 		pRenderContext->SetNumBoneWeights( nLastMeshBoneCount > 0 ? nMaxBoneCount : 0 );
 		pRenderContext->Bind( pLastMaterial, NULL );
 		pRenderContext->DrawInstances( nInstanceCount, pInstance );
 	}
 
-#ifdef _GAMECONSOLE
-	pRenderContext->SetFlashlightMode( bSavedFlashlightEnable );
-#endif // _GAMECONSOLE
 	pRenderContext->SetNumBoneWeights( 0 );
 
 	STUDIORENDER_TEMP_DATA_FREE( pInstance );

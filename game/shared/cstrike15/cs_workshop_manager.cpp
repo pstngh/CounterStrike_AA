@@ -6,7 +6,7 @@
 
 #include "tier2/fileutils.h"
 
-#if !defined ( _GAMECONSOLE ) && !defined ( NO_STEAM )
+#if !defined ( NO_STEAM )
 #define COMMUNITY_MAP_PATH				"maps/workshop"	// Path to Workshop maps downloaded from Steam
 #define COMMUNITY_MAP_THUMBNAIL_PREFIX	"thumb"			// Prefix for thumbnail filename
 

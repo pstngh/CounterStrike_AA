@@ -7625,27 +7625,6 @@ static bool Helper_CheckFieldAppliesToTeam( char const *szField, int nTeam )
             m_endMatchOnThink = true;
         }
 
-#if defined ( _GAMECONSOLE )
-        bool isReallyEndOfRound = false;
-        if ((m_iRoundWinStatus == WINNER_TER) || (m_iRoundWinStatus == WINNER_CT))
-            isReallyEndOfRound = true;
-
-        if (playerCount > 1 && isReallyEndOfRound)
-        {
-            IGameEvent * updateMatchStatsEvent = gameeventmanager->CreateEvent( "update_matchmaking_stats" );
-            if (updateMatchStatsEvent)
-            {
-                gameeventmanager->FireEvent( updateMatchStatsEvent);
-            }
-
-            IGameEvent * writeProfileEvent = gameeventmanager->CreateEvent( "write_profile_data" );
-            if ( writeProfileEvent )
-            {
-                gameeventmanager->FireEvent( writeProfileEvent );
-            }
-        }		
-#endif
-
         if ( !IsFinite( gpGlobals->curtime ) )
         {
             Warning( "NaN curtime in RestartRound\n" );
@@ -7678,9 +7657,7 @@ static bool Helper_CheckFieldAppliesToTeam( char const *szField, int nTeam )
         }
 
 
-#if !defined ( _GAMECONSOLE )
         ProcessAutoBalance();
-#endif
 
         //If this is the first restart since halftime, do the appropriate bookkeeping.
         bool bClearAccountsAfterHalftime = false;
@@ -18349,14 +18326,7 @@ static ConVar sv_competitive_minspec( "sv_competitive_minspec",
 
 #ifdef CLIENT_DLL
 
-#if defined( _GAMECONSOLE )
-
-// ENABLE_COMPETITIVE_CONVAR( convar, range minimum, range maximum, number of additional distinct valid values, distinct valid values... );
-
-ENABLE_COMPETITIVE_CONVAR( fps_max, 29, FLT_MAX, 1, 0 );	// force fps_max above 59. One additional value (0) works
-#else
 ENABLE_COMPETITIVE_CONVAR( fps_max, 59, FLT_MAX, 1, 0 );	// force fps_max above 59. One additional value (0) works
-#endif
 ENABLE_COMPETITIVE_CONVAR( cl_interp_ratio, 1, 2 );			// force cl_interp_ratio from 1 to 2
 ENABLE_COMPETITIVE_CONVAR( cl_interp, 0, 0.031 );			// force cl_interp from 0.0152 to 0.031
 ENABLE_COMPETITIVE_CONVAR( cl_updaterate, 10, 150 );		// force cl_updaterate from 10 to 150

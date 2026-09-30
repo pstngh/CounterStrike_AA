@@ -5,15 +5,7 @@
 //=============================================================================//
 
 #ifdef _WIN32
-#if !defined( _X360 )
 #include <windows.h>
-#endif
-#elif defined( _PS3 )
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include "basetypes.h"
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
 #elif defined( POSIX )
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,10 +24,6 @@
 #include "host_phonehome.h"
 #include "mathlib/IceKey.H"
 #include "blockingudpsocket.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -259,8 +247,6 @@ private:
 			{
 				Q_strncpy( username, "???", sizeof( username )  );
 			}
-#elif defined( _PS3 )
-			Q_strncpy( username, "PS3", sizeof( username )  );
 #else
 			struct passwd *pass = getpwuid( getuid() );
 			if ( pass )

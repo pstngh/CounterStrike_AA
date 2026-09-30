@@ -22,7 +22,7 @@
 #include "flexrenderdata.h"
 #include "mathlib/compressed_vector.h"
 #include "r_studiolight.h"
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #include <xmmintrin.h>
 #endif
 #include "tier0/dbg.h"
@@ -265,7 +265,7 @@ public:
 	// Performs the lighting computation
 	inline void R_ComputeLightAtPoint3( const Vector &pos, const Vector &norm, Vector &color );
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 	// sse-ized lighting pipeline. lights 4 vertices at once
 	inline void R_ComputeLightAtPoints3( const FourVectors &pos, const FourVectors &norm, FourVectors &color );
 	void R_MouthLighting( __m128 fIllum, const FourVectors& normal, const FourVectors& forward, FourVectors& light );
@@ -914,7 +914,7 @@ public:
 
 			NO_DEFAULT;
 		} 
-#if defined _PS3 || defined __e2k__
+#if defined __e2k__
 		Assert( false ); // PS3 doesn't have true __assume (used in NO_DEFAULT), so a return value is expected
 		return 0.0f;
 #endif
@@ -964,7 +964,7 @@ public:
 
 			NO_DEFAULT;
 		} 
-#if defined _PS3 || defined __e2k__
+#if defined __e2k__
 		Assert( false ); // PS3 doesn't have true __assume (used in NO_DEFAULT), so a return value is expected
 		return 0.0f;
 #endif
@@ -981,7 +981,7 @@ inline float CStudioRender::R_WorldLightAngle( const LightDesc_t *wl, const Vect
 		case MATERIAL_LIGHT_SPOT:			return CWorldLightAngleWrapper<MATERIAL_LIGHT_SPOT>::WorldLightAngle( wl, lnormal, snormal, delta );
 		NO_DEFAULT;
 	}
-#if defined _PS3 || defined __e2k__
+#if defined __e2k__
 	Assert( false ); // PS3 doesn't have true __assume (used in NO_DEFAULT), so a return value is expected
 	return 0.0f;
 #endif

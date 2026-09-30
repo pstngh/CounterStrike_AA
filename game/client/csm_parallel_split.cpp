@@ -73,13 +73,7 @@ namespace CCSMFrustumDefinition
 
 static void InvertVMatrix( const VMatrix &src, VMatrix &dst )
 {
-#ifdef PLATFORM_X360
-	XMVECTOR vDet;
-	XMMATRIX vInverse = XMMatrixInverse( &vDet, XMLoadFloat4x4( reinterpret_cast< const XMFLOAT4X4 * >( &src ) ) );
-	XMStoreFloat4x4( reinterpret_cast< XMFLOAT4X4 * >( &dst ), vInverse );
-#else
 	src.InverseGeneral( dst );
-#endif
 }
 
 CCSMParallelSplit::CCSMParallelSplit() :

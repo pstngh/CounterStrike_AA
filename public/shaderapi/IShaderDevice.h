@@ -44,9 +44,6 @@ struct ShaderDisplayMode_t
 	ImageFormat m_Format;			// use ImageFormats (ignored for windowed mode)
 	int m_nRefreshRateNumerator;	// Refresh rate. Use 0 in numerator + denominator for a default setting.
 	int m_nRefreshRateDenominator;	// Refresh rate = numerator / denominator.
-#ifdef _PS3
-	float m_flAspectRatio;
-#endif
 };
 
 	
@@ -303,7 +300,7 @@ public:
 	virtual void RefreshFrontBufferNonInteractive( ) = 0;
 	virtual void HandleThreadEvent( uint32 threadEvent ) = 0;
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	virtual void DoStartupShaderPreloading( void ) = 0;
 #endif
 	

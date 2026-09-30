@@ -13,10 +13,8 @@
 #include "depthwrite_ps20b.inc"
 #include "depthwrite_vs20.inc"
 
-#if !defined( _X360 ) &&! defined( _PS3 )
 #include "depthwrite_ps30.inc"
 #include "depthwrite_vs30.inc"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -86,9 +84,7 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 		int nTreeSwayMode = GetIntParam( TREESWAY, params, 0 );
 		nTreeSwayMode = clamp( nTreeSwayMode, 0, 2 );
 		bool bHasDisplacement = params[DISPLACEMENTMAP]->IsTexture();
-#if !defined( PLATFORM_X360 ) && !defined( _PS3 )
 		bool bHasDisplacementWrinkles = params[DISPLACEMENTWRINKLE]->GetIntValue() != 0;
-#endif
 		int nColorDepth = GetIntParam( COLOR_DEPTH, params, 0 );
 
 		SHADOW_STATE
@@ -128,9 +124,7 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 
 
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( !g_pHardwareConfig->SupportsPixelShaders_3_0() )
-#endif
 			{
 				DECLARE_STATIC_VERTEX_SHADER( depthwrite_vs20 );
 				SET_STATIC_VERTEX_SHADER_COMBO( ONLY_PROJECT_POSITION, !bAlphaClip && IsX360() && !nColorDepth ); //360 needs to know if it *shouldn't* output texture coordinates to avoid shader patches
@@ -157,7 +151,6 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 					}
 				}
 			}
-#if !defined( _X360 ) && !defined( _PS3 )
 			else
 			{
 				SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
@@ -176,14 +169,11 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 				SET_STATIC_PIXEL_SHADER_COMBO( COLOR_DEPTH, nColorDepth );
 				SET_STATIC_PIXEL_SHADER( depthwrite_ps30 );
 			}
-#endif
 		}
 		DYNAMIC_STATE
 		{
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( !g_pHardwareConfig->SupportsPixelShaders_3_0() )
-#endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( depthwrite_vs20 );
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, pShaderAPI->GetCurrentNumBones() > 0 );
@@ -217,7 +207,6 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 					SET_DYNAMIC_PIXEL_SHADER( depthwrite_ps20 );
 				}
 			}
-#if !defined( _X360 ) && !defined( _PS3 )
 			else // 3.0 shader case (PC only)
 			{
 				TessellationMode_t nTessellationMode = pShaderAPI->GetTessellationMode();
@@ -274,7 +263,6 @@ BEGIN_VS_SHADER_FLAGS( DepthWrite, "Help for Depth Write", SHADER_NOT_EDITABLE )
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( ALPHACLIP, bAlphaClip );
 				SET_DYNAMIC_PIXEL_SHADER( depthwrite_ps30 );
 			}
-#endif
 
 			if ( nTreeSwayMode != 0 )
 			{

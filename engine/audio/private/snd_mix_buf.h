@@ -84,12 +84,8 @@ extern portable_samplepair_t *g_curcenterpaintbuffer;
 #define	PAINTBUFFER_MEM_SIZE		(PAINTBUFFER_SIZE+4)
 
 // size in samples of copy buffer used by pitch shifters in mixing
-#if defined(_GAMECONSOLE)
-#define TEMP_COPY_BUFFER_SIZE	(PAINTBUFFER_MEM_SIZE * 2)
-#else
 // allow more memory for this on PC for developers to pitch-shift their way through dialog
 #define TEMP_COPY_BUFFER_SIZE	(PAINTBUFFER_MEM_SIZE * 4)
-#endif
 
 // hard clip input value to -32767 <= y <= 32767
 #define CLIP(x) ((x) > 32767 ? 32767 : ((x) < -32767 ? -32767 : (x)))

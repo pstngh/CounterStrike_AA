@@ -14,10 +14,8 @@
 #include "shadowbuildtexture_ps20.inc"
 #include "shadowbuildtexture_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 	#include "shadowbuildtexture_ps30.inc"
 	#include "unlitgeneric_vs30.inc"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -88,19 +86,13 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 	//		pShaderShadow->DepthFunc( SHADER_DEPTHFUNC_ALWAYS );
 		pShaderShadow->EnableDepthTest( false );
 
-#if defined( _PS3 )
-			pShaderShadow->EnableDepthTest( false );
-#else
-#endif
 			// Specify vertex format (note that this shader supports compression)
 			unsigned int flags = VERTEX_POSITION | VERTEX_FORMAT_COMPRESSED;
 			unsigned int nTexCoordCount = 1;
 			unsigned int userDataSize = 0;
 			pShaderShadow->VertexShaderVertexFormat( flags, nTexCoordCount, NULL, userDataSize );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 			{
 				DECLARE_STATIC_VERTEX_SHADER( unlitgeneric_vs20 );
 				SET_STATIC_VERTEX_SHADER_COMBO( VERTEXCOLOR, 0  );
@@ -117,7 +109,6 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 					SET_STATIC_PIXEL_SHADER( shadowbuildtexture_ps20 );
 				}
 			}
-#if !defined( _X360 ) && !defined( _PS3 )
 			else
 			{
 				SET_FLAGS2( MATERIAL_VAR2_USES_VERTEXID );
@@ -130,7 +121,6 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 				DECLARE_STATIC_PIXEL_SHADER( shadowbuildtexture_ps30 );
 				SET_STATIC_PIXEL_SHADER( shadowbuildtexture_ps30 );
 			}
-#endif
 			PI_BeginCommandBuffer();
 			PI_SetModulationVertexShaderDynamicState();
 			PI_EndCommandBuffer();
@@ -152,10 +142,8 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 				pShaderAPI->BindStandardTexture( SHADER_SAMPLER0, bHDR ? TEXTURE_BINDFLAGS_NONE : TEXTURE_BINDFLAGS_SRGBREAD, TEXTURE_LIGHTMAP_FULLBRIGHT );
 			}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			TessellationMode_t nTessellationMode = TESSELLATION_MODE_DISABLED;
 			if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 			{
 				// Compute the vertex shader index.
 				DECLARE_DYNAMIC_VERTEX_SHADER( unlitgeneric_vs20 );
@@ -175,7 +163,6 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 					SET_DYNAMIC_PIXEL_SHADER( shadowbuildtexture_ps20 );
 				}
 			}
-#if !defined( _X360 ) && !defined( _PS3 )
 			else
 			{
 				nTessellationMode = pShaderAPI->GetTessellationMode();
@@ -209,7 +196,6 @@ BEGIN_VS_SHADER_FLAGS( ShadowBuild_DX9, "Help for ShadowBuild", SHADER_NOT_EDITA
 				DECLARE_DYNAMIC_PIXEL_SHADER( shadowbuildtexture_ps30 );
 				SET_DYNAMIC_PIXEL_SHADER( shadowbuildtexture_ps30 );
 			}
-#endif
 
 			
 		}

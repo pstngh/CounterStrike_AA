@@ -9,7 +9,7 @@
 
 #include "platform.h"
 
-#if !defined( _X360 ) && defined( WIN32 )
+#if defined( WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #pragma warning(push, 1)
 #pragma warning(disable: 4005)
@@ -17,10 +17,6 @@
 #include <mmsystem.h>
 #pragma warning(pop)
 #include <mmreg.h>
-#endif
-
-#ifdef _PS3
-#include "ps3/ps3_core.h"
 #endif
 
 #include "basetypes.h"
@@ -50,11 +46,7 @@
 #include "snd_convars.h"
 #include "snd_dev_common.h"
 #include "snd_dev_direct.h"
-#ifdef _PS3
-#include "snd_dev_ps3audio.h"
-#else
 #include "snd_dev_xaudio.h"
-#endif
 #include "snd_sfx.h"
 #include "snd_stubs.h"
 #include "snd_audio_source.h"

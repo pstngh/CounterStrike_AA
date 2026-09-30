@@ -1561,11 +1561,7 @@ bool CEngineTrace::ClipTraceToTrace( trace_t &clipTrace, trace_t *pFinalTrace )
 
 inline bool ShouldTestStaticProp( IHandleEntity *pHandleEntity )
 {
-#if defined( _GAMECONSOLE )
-	return pHandleEntity->m_bIsStaticProp;
-#else
 	return true;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3078,9 +3074,7 @@ public:
 
 
 // create a macro that is true if we are allowed to debug traces during thinks, and compiles out to nothing otherwise.
-#ifndef _PS3
 #include "engine/thinktracecounter.h"
-#endif
 
 /// Used only in debugging: get/set/clear/increment the trace debug counter. See comment below for details.
 int CEngineTrace::GetSetDebugTraceCounter( int value, DebugTraceCounterBehavior_t behavior )

@@ -305,7 +305,7 @@ inline float CBot<T>::GetMoveSpeed( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	return this->MaxSpeed();
 #else
 	return MaxSpeed();
@@ -374,7 +374,7 @@ inline bool CBot<T>::IsPlayerFacingMe( CBasePlayer *other ) const
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	Vector toOther = other->GetAbsOrigin() - this->GetAbsOrigin();
 #else
 	Vector toOther = other->GetAbsOrigin() - GetAbsOrigin();
@@ -396,7 +396,7 @@ inline bool CBot<T>::IsPlayerLookingAtMe( CBasePlayer *other, float cosTolerance
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	Vector toOther = other->GetAbsOrigin() - this->GetAbsOrigin();
 #else
 	Vector toOther = other->GetAbsOrigin() - GetAbsOrigin();
@@ -421,7 +421,7 @@ inline const Vector &CBot<T>::GetViewVector( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	AngleVectors( this->EyeAngles() + this->GetViewPunchAngle(), &m_viewForward );
 #else
 	AngleVectors( EyeAngles() + GetViewPunchAngle(), &m_viewForward );
@@ -506,7 +506,7 @@ inline void CBot< PlayerType >::Spawn( void )
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
 	// I probably don't need to have the two separate statements, prepending "this->" *ought* to be harmless and benign.
 	// However my paranoia and conservatism got the better of me.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	this->AddFlag( FL_CLIENT | FL_FAKECLIENT );
 #else
 	AddFlag( FL_CLIENT | FL_FAKECLIENT );
@@ -651,7 +651,7 @@ inline bool CBot< PlayerType >::IsJumping( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 )	 || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	if (FBitSet( this->GetFlags(), FL_ONGROUND ))
 #else
 	if (FBitSet( GetFlags(), FL_ONGROUND ))
@@ -737,7 +737,7 @@ inline float CBot< PlayerType >::GetActiveWeaponAmmoRatio( void ) const
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	CWeaponCSBase *weapon = this->GetActiveCSWeapon();
 #else
 	CWeaponCSBase *weapon = GetActiveCSWeapon();
@@ -763,7 +763,7 @@ inline bool CBot< PlayerType >::IsActiveWeaponClipEmpty( void ) const
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	CWeaponCSBase *gun = this->GetActiveCSWeapon();
 #else
 	CWeaponCSBase *gun = GetActiveCSWeapon();
@@ -785,7 +785,7 @@ inline bool CBot< PlayerType >::IsActiveWeaponOutOfAmmo( void ) const
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	CWeaponCSBase *weapon = this->GetActiveCSWeapon();
 #else
 	CWeaponCSBase *weapon = GetActiveCSWeapon();
@@ -807,7 +807,7 @@ inline bool CBot< PlayerType >::IsUsingScope( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	if (this->GetFOV() < this->GetDefaultFOV())
 #else
 	if (GetFOV() < GetDefaultFOV())
@@ -855,7 +855,7 @@ inline void CBot< PlayerType >::UpdatePlayer( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 )	|| defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	if ( this->IsEFlagSet(EFL_BOT_FROZEN) )
 #else
 	if ( IsEFlagSet(EFL_BOT_FROZEN) )
@@ -871,7 +871,7 @@ inline void CBot< PlayerType >::UpdatePlayer( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	BuildUserCmd( m_userCmd, this->EyeAngles(), m_forwardSpeed, m_strafeSpeed, m_verticalSpeed, m_buttonFlags, 0 );
 #else
 	BuildUserCmd( m_userCmd, EyeAngles(), m_forwardSpeed, m_strafeSpeed, m_verticalSpeed, m_buttonFlags, 0 );
@@ -883,7 +883,7 @@ inline void CBot< PlayerType >::UpdatePlayer( void )
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	this->ProcessUsercmds( &m_userCmd, 1, 1, 0, false );
 #else
 	ProcessUsercmds( &m_userCmd, 1, 1, 0, false );
@@ -1014,7 +1014,7 @@ inline bool CBot< PlayerType >::IsEnemy( CBaseEntity *ent ) const
 	// dgoodenough - Fix GCC / MSVC difference
 	// PS3_BUILDFIX
 	// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 	if (player->GetTeamNumber() == this->GetTeamNumber())
 #else
 	if (player->GetTeamNumber() == GetTeamNumber())
@@ -1103,7 +1103,7 @@ inline bool CBot< PlayerType >::IsLocalPlayerWatchingMe( void ) const
 		// dgoodenough - Fix GCC / MSVC difference
 		// PS3_BUILDFIX
 		// For reasons unknown, GCC requires an explicit this-> to be able to find this function, while MSVC doesn't.
-#if defined( _PS3 ) || defined( LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _OSX )
 		return this->entindex() == cv_bot_debug_target.GetInt();
 #else
 		return entindex() == cv_bot_debug_target.GetInt();

@@ -9,10 +9,8 @@
 #define PROTECTED_THINGS_DISABLE
 
 #if defined( WIN32 )
-#if !defined( _GAMECONSOLE )
 #include "winlite.h"
 #include <shellapi.h>
-#endif
 #elif defined( POSIX )
 #include <stdlib.h>
 #define _stat stat
@@ -47,17 +45,6 @@
 #include <vgui_controls/ImageList.h>
 #include <vgui_controls/MenuItem.h>
 #include <vgui_controls/Tooltip.h>
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#undef GetCurrentDirectory
-#endif
-
-#if defined( _PS3 )
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#undef GetCurrentDirectory
-#endif
 
 #include "tier1/fmtstr.h"
 
@@ -591,9 +578,7 @@ void FileOpenDialog::OnOpenInExplorer()
 	char pCurrentDirectory[MAX_PATH];
 	GetCurrentDirectory( pCurrentDirectory, sizeof(pCurrentDirectory) );
 #if defined( WIN32 )
-#if !defined( _GAMECONSOLE )
 	ShellExecute( NULL, NULL, pCurrentDirectory, NULL, NULL, SW_SHOWNORMAL );
-#endif
 #elif defined( OSX )
 	char szCmd[ MAX_PATH ];
 	Q_snprintf( szCmd, sizeof(szCmd), "/usr/bin/open \"%s\"", pCurrentDirectory );
@@ -911,8 +896,6 @@ void FileOpenDialog::BuildFileList()
 	m_Files.RemoveAll();
 	m_Filtered.RemoveAll();
 
-#ifndef _GAMECONSOLE
-
 	// get the current directory
 	char currentDir[MAX_PATH * 4];
 	char dir[MAX_PATH * 4];
@@ -993,7 +976,6 @@ void FileOpenDialog::BuildFileList()
 		pszFileName = g_pFullFileSystem->FindNext( findHandle );
 	}
 	g_pFullFileSystem->FindClose( findHandle );
-#endif
 }
 
 // Static method to do wildcard matching for *, ? and . characters

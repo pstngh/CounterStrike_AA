@@ -42,10 +42,6 @@
 #include "csgo_limits.h"
 #include "csgo_limits.inl"
 
-#if defined( _PS3 )
-		#include <sysutil/sysutil_userinfo.h>
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -70,20 +66,10 @@ void UpdateNameFromSteamID( IConVar *pConVar, CSteamID *pSteamID )
 	if ( !pConVar || !pSteamID || !Steam3Client().SteamFriends() )
 		return;
 
-#if defined( _PS3 )
-	CSteamID sPsnId = Steam3Client().SteamUser()->GetConsoleSteamID();
-	if ( sPsnId.IsValid() )
-	{
-		const char *pszName = Steam3Client().SteamFriends()->GetFriendPersonaName( sPsnId );
-		pConVar->SetValue( pszName );
-	}
-#else
-
 	Assert( pSteamID->GetAccountID() != 0 || CommandLine()->FindParm( "-ignoreSteamAsserts" ) );
 	const char *pszName = Steam3Client().SteamFriends()->GetFriendPersonaName( *pSteamID );
 	pConVar->SetValue( pszName );
 
-#endif  // _PS3
 #endif
 }
 
@@ -212,10 +198,6 @@ ConVar  cl_decryptdata_key( "cl_decryptdata_key", "", FCVAR_RELEASE, "Key to dec
 ConVar  cl_decryptdata_key_pub( "cl_decryptdata_key_pub", "", FCVAR_RELEASE, "Key to decrypt public encrypted GOTV messages" );
 ConVar	cl_hideserverip( "cl_hideserverip", "0", FCVAR_RELEASE, "If set to 1, server IPs will be hidden in the console (except when you type 'status')" );
 
-
-#ifdef _X360
-ConVar	cl_networkid_force ( "networkid_force", "", FCVAR_USERINFO | FCVAR_SS | FCVAR_PRINTABLEONLY | FCVAR_SERVER_CAN_EXECUTE | FCVAR_DEVELOPMENTONLY, "Forceful value for network id (e.g. XUID)" );
-#endif
 
 static ConVar cl_failremoteconnections( "cl_failremoteconnections", "0", FCVAR_DEVELOPMENTONLY, "Force connection attempts to time out" );
 
@@ -1938,20 +1920,6 @@ bool CBaseClientState::ProcessConnectionlessPacket( netpacket_t *packet )
 	case A2A_ACK:			
 		ConMsg ("A2A_ACK from %s\n", ns_address_render( packet->from ).String() );
 
-#if defined( _GAMECONSOLE )
-		// skip \r\n
-		msg.ReadByte();
-		msg.ReadByte();
-
-		const void *pvData = msg.GetBasePointer() + ( msg.GetNumBitsRead() >> 3 );
-		int numBytes = msg.GetNumBytesLeft();
-
-		KeyValues *notify = new KeyValues( "A2A_ACK" );
-		notify->SetPtr( "ptr", const_cast< void * >( pvData ) );
-		notify->SetInt( "size", numBytes );
-
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( notify );
-#endif
 		break;
 
 	case A2A_CUSTOM:
@@ -2012,68 +1980,6 @@ bool CBaseClientState::ProcessConnectionlessPacket( netpacket_t *packet )
 			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( notify );
 		}
 		return true;
-#endif
-
-#if defined( _GAMECONSOLE )
-	case M2A_SERVER_BATCH:
-		{
-			// skip \n
-			msg.ReadByte();
-
-			const void *pvData = msg.GetBasePointer() + ( msg.GetNumBitsRead() >> 3 );
-			int numBytes = msg.GetNumBytesLeft();
-
-			KeyValues *notify = new KeyValues( "M2A_SERVER_BATCH" );
-			notify->SetPtr( "ptr", const_cast< void * >( pvData ) );
-			notify->SetInt( "size", numBytes );
-
-			g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( notify );
-		}
-		break;
-
-	case A2A_KV_CMD:
-		{
-			int nVersion = msg.ReadByte();
-			if ( nVersion == A2A_KV_VERSION )
-			{
-				int nHeader = msg.ReadLong();
-				int nReplyId = msg.ReadLong();
-				int nChallenge = msg.ReadLong();
-				int nExtra = msg.ReadLong();
-				int numBytes = msg.ReadLong();
-
-				KeyValues *kvData = NULL;
-				if ( numBytes > 0 && numBytes <= MAX_ROUTABLE_PAYLOAD )
-				{
-					void *pvBytes = stackalloc( numBytes );
-					if ( msg.ReadBytes( pvBytes, numBytes ) )
-					{
-						kvData = new KeyValues( "" );
-						CUtlBuffer buf( pvBytes, numBytes, CUtlBuffer::READ_ONLY );
-						buf.ActivateByteSwapping( !CByteswap::IsMachineBigEndian() );
-						if ( !kvData->ReadAsBinary( buf ) )
-						{
-							kvData->deleteThis();
-							kvData = NULL;
-						}
-					}
-				}
-
-				KeyValues *notify = new KeyValues( "A2A_KV_CMD" );
-				if ( kvData )
-					notify->AddSubKey( kvData );
-
-				notify->SetInt( "version", nVersion );
-				notify->SetInt( "header", nHeader );
-				notify->SetInt( "replyid", nReplyId );
-				notify->SetInt( "challenge", nChallenge );
-				notify->SetInt( "extra", nExtra );
-				notify->SetInt( "size", numBytes );
-
-				g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( notify );
-			}
-		}
-		break;
 #endif
 
 	case S2A_INFO_SRC:
@@ -2752,7 +2658,7 @@ bool CBaseClientState::SVCMsg_ServerInfo( const CSVCMsg_ServerInfo& msg )
 			char bspModelName[ MAX_PATH ];
 			Q_snprintf( bspModelName, sizeof( bspModelName ), "maps/%s.bsp", msg.map_name().c_str() );
 
-#if !defined( _GAMECONSOLE ) && !defined( DEDICATED )
+#if !defined( DEDICATED )
 			bool bCrcClientMapValid = false;
 			CRC32_t crcClientMap;
 			CRC32_Init( &crcClientMap );

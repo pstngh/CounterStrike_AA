@@ -18,10 +18,6 @@
 #pragma once
 #endif
 
-#ifdef _PS3
-#define CBCMD_MAX_PS3TEX 8			// Max PS3 textures set in an ECB
-#endif
-
 //-----------------------------------------------------------------------------
 // Commands used by the per-pass command buffers
 //-----------------------------------------------------------------------------
@@ -34,13 +30,6 @@ enum CommandBufferCommand_t
 													// non-sequentially allocated storage
 	CBCMD_JSR,										// int cmd, void *adr. subroutine call to another stream.
 
-#ifdef _PS3
-	CBCMD_PS3TEX,									// Textures. This command stores pointers to the BIND_TEXTURE commands
-													// Will fill in the Bind Texture commands just before issueing the ECB to the SPU
-													// This better emulates what happens on DX platforms, and so allows the weaponcache to function
-													// whilst still allowing the VRAM defrag feature om PS3
-	CBCMD_LENGTH,									// Length of command buffer
-#endif
 	// constant setting commands
 	CBCMD_SET_PIXEL_SHADER_FLOAT_CONST,				// int cmd,int first_reg, int nregs, float values[nregs*4]
 
@@ -55,10 +44,6 @@ enum CommandBufferCommand_t
 
 	CBCMD_BIND_STANDARD_TEXTURE,					// cmd, sampler, texture id
 	CBCMD_BIND_SHADERAPI_TEXTURE_HANDLE,			// cmd, sampler, texture handle
-#ifdef _PS3
-	CBCMD_BIND_PS3_TEXTURE,							// cmd, CPs3BindTexture_t
-	CBCMD_BIND_PS3_STANDARD_TEXTURE,				// cmd, idx
-#endif
 
 	// shaders
 	CBCMD_SET_PSHINDEX,								// cmd, idx

@@ -44,11 +44,7 @@ ConVar r_avglightmap( "r_avglightmap", "0", FCVAR_CHEAT | FCVAR_MATERIAL_SYSTEM_
 ConVar r_maxdlights( "r_maxdlights", "32" );
 
 // Disable dlights on console by default (for the sake of memory and perf):
-#ifdef _GAMECONSOLE
-ConVar r_dlightsenable( "r_dlightsenable", "0", FCVAR_CHEAT | FCVAR_MATERIAL_SYSTEM_THREAD );
-#else
 ConVar r_dlightsenable( "r_dlightsenable", "1", FCVAR_CHEAT | FCVAR_MATERIAL_SYSTEM_THREAD );
-#endif
 
 
 extern ConVar r_unloadlightmaps;
@@ -568,9 +564,6 @@ static void AccumulateLightstyles( ColorRGBExp32* pLightmap, unsigned char *pLig
 		blocklights[0][i][1] += flG;
 		blocklights[0][i][2] += flB;
 
-#if defined(_PS3)
-		blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		// lightmapAlphaData3 implies new data in alpha for fixed CSM blending, old path for compatibility
 		if ( g_bHasLightmapAlphaData3 )
@@ -582,7 +575,6 @@ static void AccumulateLightstyles( ColorRGBExp32* pLightmap, unsigned char *pLig
 		{
 			blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 	}
 }
 
@@ -614,9 +606,6 @@ static void AccumulateLightstylesFlat( ColorRGBExp32* pLightmap, unsigned char *
 		blocklights[0][i][1] += flG;
 		blocklights[0][i][2] += flB;
 
-#if defined(_PS3)
-		blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		if ( g_bHasLightmapAlphaData3 )
 		{
@@ -627,7 +616,6 @@ static void AccumulateLightstylesFlat( ColorRGBExp32* pLightmap, unsigned char *
 		{
 			blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 	}
 }
 
@@ -673,9 +661,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		blocklights[0][i][0] += flR;
 		blocklights[0][i][1] += flG;
 		blocklights[0][i][2] += flB;
-#if defined(_PS3)
-		blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		if ( g_bHasLightmapAlphaData3 )
 		{
@@ -685,7 +670,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		{
 			blocklights[0][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 		Assert( blocklights[0][i][0] >= 0.0f );
 		Assert( blocklights[0][i][1] >= 0.0f );
 		Assert( blocklights[0][i][2] >= 0.0f );
@@ -696,9 +680,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		blocklights[1][i][0] += flR;
 		blocklights[1][i][1] += flG;
 		blocklights[1][i][2] += flB;
-#if defined(_PS3)
-		blocklights[1][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		if ( g_bHasLightmapAlphaData3 )
 		{
@@ -708,7 +689,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		{
 			blocklights[1][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 
 		Assert( blocklights[1][i][0] >= 0.0f );
 		Assert( blocklights[1][i][1] >= 0.0f );
@@ -723,9 +703,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		blocklights[2][i][0] += flR;
 		blocklights[2][i][1] += flG;
 		blocklights[2][i][2] += flB;
-#if defined(_PS3)
-		blocklights[2][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		if ( g_bHasLightmapAlphaData3 )
 		{
@@ -735,7 +712,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		{
 			blocklights[2][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 		Assert( blocklights[2][i][0] >= 0.0f );
 		Assert( blocklights[2][i][1] >= 0.0f );
 		Assert( blocklights[2][i][2] >= 0.0f );
@@ -746,9 +722,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		blocklights[3][i][0] += flR;
 		blocklights[3][i][1] += flG;
 		blocklights[3][i][2] += flB;
-#if defined(_PS3)
-		blocklights[3][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) : 0.0f;
-#else
 		// this won't work on platforms that have fp lightmaps
 		if ( g_bHasLightmapAlphaData3 )
 		{
@@ -758,7 +731,6 @@ static void AccumulateBumpedLightstyles( ColorRGBExp32* pLightmap, unsigned char
 		{
 			blocklights[3][i][3] += pLightmapExtraData ? ( ( float )pLightmapExtraData[i] ) * ( 1.0f / 255.0f ) * ( flR * 0.2125 + flG * 0.7154 + flB * 0.0721 ) / 16.0f : 0.0f;
 		}
-#endif
 		Assert( blocklights[3][i][0] >= 0.0f );
 		Assert( blocklights[3][i][1] >= 0.0f );
 		Assert( blocklights[3][i][2] >= 0.0f );

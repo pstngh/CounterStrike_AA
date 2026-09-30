@@ -39,9 +39,6 @@
 #include "MapReslistGenerator.h"
 #include "filesystem/IQueuedLoader.h"
 #include "matchmaking/imatchframework.h"
-#ifdef _PS3
-#include "tls_ps3.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

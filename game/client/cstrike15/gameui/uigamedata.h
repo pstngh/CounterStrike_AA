@@ -192,7 +192,7 @@ namespace BaseModUI {
 
 	#endif
 
-	#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+	#if !defined( NO_STEAM )
 
 		STEAM_CALLBACK( CUIGameData, Steam_OnPersonaStateChanged, PersonaStateChange_t, m_CallbackPersonaStateChanged );
 
@@ -289,19 +289,6 @@ extern const GameModeItem gGameModeItems[2];
 const char *GameModeStringFromInt( int i );
 const char *GameModeLocKeyFromInt( int iMode );
 int GameModeIntFromString( const char *szString );
-
-
-#if defined( _PS3 )
-
-class IPS3SaveSteamInfoProviderUiGameData : public IPS3SaveSteamInfoProvider
-{
-public:
-	virtual void RunFrame() = 0;
-	virtual void WriteSteamStats() = 0;
-};
-IPS3SaveSteamInfoProviderUiGameData * GetPs3SaveSteamInfoProvider();
-
-#endif
 
 
 

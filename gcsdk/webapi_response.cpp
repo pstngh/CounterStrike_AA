@@ -925,7 +925,7 @@ int64 CWebAPIValues::GetInt64Value() const
 		}
 		else
 		{
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 			return strtoll( (const char *)m_pStringBuffer->Base() +  m_nStrValuePos, NULL, 10);
 #else
 			return _strtoi64( (const char *)m_pStringBuffer->Base() +  m_nStrValuePos, NULL, 10);
@@ -957,7 +957,7 @@ uint64 CWebAPIValues::GetUInt64Value() const
 		}
 		else
 		{
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 			return strtoull( (const char *)m_pStringBuffer->Base() +  m_nStrValuePos, NULL, 10);
 #else
 			return _strtoui64( (const char *)m_pStringBuffer->Base() +  m_nStrValuePos, NULL, 10);

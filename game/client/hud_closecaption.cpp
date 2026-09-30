@@ -9,21 +9,6 @@
 #include "cbase.h"
 #include <ctype.h>
 #include <vstdlib/vstrtools.h>
-#ifdef _PS3
-#include <wctype.h>
-int wcsnlen( wchar_t const *wsz, int nMaxLen )
-{
-	int nLen = 0;
-	while ( nMaxLen -- > 0 )
-	{
-		if ( *( wsz ++ ) )
-			++ nLen;
-		else
-			break;
-	}
-	return nLen;
-}
-#endif
 #include "sentence.h"
 #include "hud_closecaption.h"
 #include "tier1/strtools.h"
@@ -2487,7 +2472,7 @@ void CHudCloseCaption::ProcessAsyncWork()
 			}
 			else
 			{
-#if defined( POSIX ) && !defined( PLATFORM_PS3 )
+#if defined( POSIX )
 				wchar_t localStream[ MAX_CAPTION_CHARACTERS ];
 				
 				// we persist to disk as ucs2 so convert back to real unicode here
@@ -3078,22 +3063,6 @@ void OnCaptionLanguageChanged( IConVar *pConVar, const char *pOldString, float f
 
 
 ConVar cc_lang( "cc_lang", "", FCVAR_ARCHIVE, "Current close caption language (emtpy = use game UI language)", OnCaptionLanguageChanged );
-
-#if defined( _GAMECONSOLE )
-// internal issued command evented by DLC mount, not meant for users
-CON_COMMAND_F( cc_reload, "", 0 )
-{
-	CHudCloseCaption *hudCloseCaption = GET_FULLSCREEN_HUDELEMENT( CHudCloseCaption );
-	if ( hudCloseCaption )
-	{
-		// minimal changes, TU DLC hack
-		// Clears a private store that otherwise prevents the cc's from a rull re-init, the language hasn't changed, but the underlying data has
-		// due to new search path mounts.
-		hudCloseCaption->ClearCurrentLanguage();
-		OnCaptionLanguageChanged( &cc_lang, cc_lang.GetString(), cc_lang.GetFloat() );
-	}
-}
-#endif
 
 CON_COMMAND( cc_findsound, "Searches for soundname which emits specified text." )
 {

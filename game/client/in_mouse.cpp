@@ -6,7 +6,7 @@
 // $Date:         $
 // $NoKeywords: $
 //===========================================================================//
-#if defined( WIN32 ) && !defined( _GAMECONSOLE )
+#if defined( WIN32 )
 #define _WIN32_WINNT 0x0502
 #include <windows.h>
 #endif
@@ -30,13 +30,6 @@
 #include "tier1/convar_serverbounded.h"
 #include "inputsystem/iinputsystem.h"
 #include "inputsystem/iinputstacksystem.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -618,7 +611,6 @@ void CInput::AccumulateMouse( int nSlot )
 
 		user.m_flAccumulatedMouseXMovement += current_posx - x;
 		user.m_flAccumulatedMouseYMovement += current_posy - y;
-#elif defined( _PS3 )
 #else
 #error
 #endif

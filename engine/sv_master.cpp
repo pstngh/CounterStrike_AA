@@ -32,9 +32,7 @@ static void SvSearchKeyChangeCallback( IConVar *pConVar, const char *pOldValue, 
 }
 
 ConVar sv_search_key( "sv_search_key",
-#if defined( _PS3 )
-						"csgo-ps3-rc0",
-#elif defined( SERVER_XLSP ) || defined( _X360 )
+#if defined( SERVER_XLSP )
 						"csgo-x360-rc1",
 #else
 						"",

@@ -18,9 +18,6 @@
 #include "vgui/IVGui.h"
 
 
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#endif
 #include "keyvalues.h"
 #include "engineinterface.h"
 #include "modinfo.h"

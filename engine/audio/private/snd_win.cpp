@@ -131,17 +131,6 @@ IAudioDevice *IAudioDevice::AutoDetectInit()
 #error
 #endif
 	}
-#if defined( _X360 )
-	else
-	{
-		pDevice = Audio_CreateXAudioDevice( true );
-		if ( pDevice )
-		{
-			// xaudio requires threaded mixing
-			S_EnableThreadedMixing( true );
-		}
-	}
-#endif
 
 	snd_firsttime = false;
 

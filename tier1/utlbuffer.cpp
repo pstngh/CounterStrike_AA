@@ -245,9 +245,6 @@ CUtlBuffer::CUtlBuffer( const CUtlBuffer& copyFrom )
 , m_Error( copyFrom.m_Error )
 , m_Flags( copyFrom.m_Flags )
 , m_Reserved( copyFrom.m_Reserved )
-#if defined( _GAMECONSOLE )
-, pad( copyFrom.pad )
-#endif
 , m_nTab( copyFrom.m_nTab )
 , m_nMaxPut( copyFrom.m_nMaxPut )
 , m_nOffset( copyFrom.m_nOffset )
@@ -283,9 +280,6 @@ CUtlBuffer& CUtlBuffer::operator=( const CUtlBuffer& copyFrom )
 	m_Error = copyFrom.m_Error;
 	m_Flags = copyFrom.m_Flags;
 	m_Reserved = copyFrom.m_Reserved;
-#if defined( _GAMECONSOLE )
-	pad = copyFrom.pad;
-#endif
 	m_nTab = copyFrom.m_nTab;
 	m_nMaxPut = copyFrom.m_nMaxPut;
 	m_nOffset = copyFrom.m_nOffset;
@@ -304,9 +298,6 @@ CUtlBuffer::CUtlBuffer( CUtlBuffer&& moveFrom ) // = default
 , m_Error( Move( moveFrom.m_Error ) )
 , m_Flags( Move( moveFrom.m_Flags ) )
 , m_Reserved( Move( moveFrom.m_Reserved ) )
-#if defined( _GAMECONSOLE )
-, pad( Move( moveFrom.pad ) )
-#endif
 , m_nTab( Move( moveFrom.m_nTab ) )
 , m_nMaxPut( Move( moveFrom.m_nMaxPut ) )
 , m_nOffset( Move( moveFrom.m_nOffset ) )
@@ -323,9 +314,6 @@ CUtlBuffer& CUtlBuffer::operator=( CUtlBuffer&& moveFrom ) // = default
 	m_Error = Move( moveFrom.m_Error );
 	m_Flags = Move( moveFrom.m_Flags );
 	m_Reserved = Move( moveFrom.m_Reserved );
-#if defined( _GAMECONSOLE )
-	pad = Move( moveFrom.pad );
-#endif
 	m_nTab = Move( moveFrom.m_nTab );
 	m_nMaxPut = Move( moveFrom.m_nMaxPut );
 	m_nOffset = Move( moveFrom.m_nOffset );

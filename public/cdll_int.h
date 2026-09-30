@@ -24,9 +24,7 @@
 #include "bitvec.h"
 #include "steam/isteamremotestorage.h"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "xbox/xboxstubs.h"
-#endif
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -403,10 +401,6 @@ public:
 
 	// Allow the sound system to paint additional data (during lengthy rendering operations) to prevent stuttering sound.
 	virtual void				Sound_ExtraUpdate( void ) = 0;
-#if defined(_PS3)
-	// Allow sound system updates from engine, ensure only done if sv.IsActive() is true 
-	virtual void				Sound_ServerUpdateSoundsPS3( void ) = 0;
-#endif
 
 	// Get the current game directory ( e.g., hl2, tf2, cstrike, hl1 )
 	virtual const char			*GetGameDirectory( void ) = 0;
@@ -815,19 +809,6 @@ public:
 	virtual bool SOSSetOpvarFloat( const char *pOpVarName, float flValue ) = 0;
 	virtual bool SOSGetOpvarFloat( const char *pOpVarName, float &flValue ) = 0;
 
-#if defined(_PS3)
-		virtual void* GetHostStateWorldBrush( void )	= 0;
-	virtual bool PS3_IsUserRestrictedFromChat( void ) = 0;
-	virtual bool PS3_IsUserRestrictedFromOnline( void ) = 0;
-	virtual bool PS3_PendingInvitesFound( void ) = 0;
-	virtual void PS3_ShowInviteOverlay( void ) = 0;
-
-	virtual bool  bOverrideCSMConvars( void )		= 0; 
-	virtual bool  bDrawWorldIntoCSM( void )			= 0;
-	virtual bool  bDrawStaticPropsIntoCSM( void )	= 0; 
-	virtual float GetCSMMaxDist( void )				= 0;
-#endif
-
 	virtual bool IsSubscribedMap( const char *pchMapName, bool bOnlyOnDisk ) = 0;
 	virtual bool IsFeaturedMap( const char *pchMapName, bool bOnlyOnDisk ) = 0;
 
@@ -1094,22 +1075,11 @@ public:
 
 #endif
 
-#if defined(_PS3)
-	virtual int				GetDrawFlags( void ) = 0;
-	virtual int				GetBuildViewID( void ) = 0;
-	virtual bool			IsSPUBuildWRJobsOn( void ) = 0;
-	virtual void			CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace ) = 0;
-	virtual void			*GetBuildViewVolumeCuller( void ) = 0;
-	virtual Frustum_t		*GetBuildViewFrustum( void ) = 0;
-	virtual Frustum_t		*GetBuildViewAreaFrustum( void ) = 0;
-	virtual unsigned char	*GetBuildViewRenderAreaBits( void ) = 0;
-#else
 	virtual bool			IsBuildWRThreaded( void ) = 0;
 	virtual void			QueueBuildWorldListJob( CJob* pJob ) = 0;
 	virtual void			CacheFrustumData( const Frustum_t& frustum, const CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > >& aeraFrustums ) = 0;
 	virtual const Frustum_t* GetBuildViewFrustum( void ) const = 0;
 	virtual const CUtlVector< Frustum_t, CUtlMemoryAligned< Frustum_t,16 > >* GetBuildViewAeraFrustums( void ) const = 0;
-#endif
 
 	virtual bool IsSubscribedMap( const char *pchMapName, bool bOnlyOnDisk ) = 0;
 	virtual bool IsFeaturedMap( const char *pchMapName, bool bOnlyOnDisk ) = 0;

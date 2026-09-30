@@ -210,18 +210,10 @@ static void FogOverrideCallback( IConVar *pConVar, char const *pOldString, float
 // Water-related convars
 //-----------------------------------------------------------------------------
 static ConVar r_debugcheapwater( "r_debugcheapwater", "0", FCVAR_CHEAT );
-#ifndef _GAMECONSOLE
 static ConVar r_waterforceexpensive( "r_waterforceexpensive", "0" );
-#endif
 static ConVar r_waterforcereflectentities( "r_waterforcereflectentities", "0" );
 
-#if defined( _GAMECONSOLE ) && ( defined( PORTAL2 ) || defined( CSTRIKE15 ) )
-// Portal 2 doesn't use refractive water in many places, and where it does, it's too expensive for consoles (and probably low-end PCs as well)
-// Just force it off here so as not to mess with high-end PCs
-static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", IsPS3()? "0" : "1", 0, "Enable water refraction" );
-#else
 static ConVar r_WaterDrawRefraction( "r_WaterDrawRefraction", "1", 0, "Enable water refraction" );
-#endif
 
 static ConVar r_WaterDrawReflection( "r_WaterDrawReflection", "1", 0, "Enable water reflection" );
 
@@ -241,19 +233,6 @@ extern ConVar cl_leveloverview;
 ConVar r_fastzreject( "r_fastzreject", "0", 0, "Activate/deactivates a fast z-setting algorithm to take advantage of hardware with fast z reject. Use -1 to default to hardware settings" );
 
 // For CSS15, simpleworldmodel_waterreflections don't work.  They were added for Portal 2.  If we want, we can look into making them work, until then, we don't enable it.
-#if defined( _GAMECONSOLE )
-ConVar r_simpleworldmodel_waterreflections_fullscreen( "r_simpleworldmodel_waterreflections_fullscreen", "0" );
-ConVar r_simpleworldmodel_drawforrecursionlevel_fullscreen( "r_simpleworldmodel_drawforrecursionlevel_fullscreen", "-1" );
-ConVar r_simpleworldmodel_drawbeyonddistance_fullscreen( "r_simpleworldmodel_drawbeyonddistance_fullscreen", "-1" );
-
-ConVar r_simpleworldmodel_waterreflections_splitscreen( "r_simpleworldmodel_waterreflections_splitscreen", "0" );
-ConVar r_simpleworldmodel_drawforrecursionlevel_splitscreen( "r_simpleworldmodel_drawforrecursionlevel_splitscreen", "2" );
-ConVar r_simpleworldmodel_drawbeyonddistance_splitscreen( "r_simpleworldmodel_drawbeyonddistance_splitscreen", "600" );
-
-ConVar r_simpleworldmodel_waterreflections_pip( "r_simpleworldmodel_waterreflections_pip", "1" );
-ConVar r_simpleworldmodel_drawforrecursionlevel_pip( "r_simpleworldmodel_drawforrecursionlevel_pip", "2" );
-ConVar r_simpleworldmodel_drawbeyonddistance_pip( "r_simpleworldmodel_drawbeyonddistance_pip", "600" );
-#else
 ConVar r_simpleworldmodel_waterreflections_fullscreen( "r_simpleworldmodel_waterreflections_fullscreen", "0" );
 ConVar r_simpleworldmodel_drawforrecursionlevel_fullscreen( "r_simpleworldmodel_drawforrecursionlevel_fullscreen", "-1" );
 ConVar r_simpleworldmodel_drawbeyonddistance_fullscreen( "r_simpleworldmodel_drawbeyonddistance_fullscreen", "-1" );
@@ -265,7 +244,6 @@ ConVar r_simpleworldmodel_drawbeyonddistance_splitscreen( "r_simpleworldmodel_dr
 ConVar r_simpleworldmodel_waterreflections_pip( "r_simpleworldmodel_waterreflections_pip", "0" );
 ConVar r_simpleworldmodel_drawforrecursionlevel_pip( "r_simpleworldmodel_drawforrecursionlevel_pip", "-1" );
 ConVar r_simpleworldmodel_drawbeyonddistance_pip( "r_simpleworldmodel_drawbeyonddistance_pip", "-1" );
-#endif
 
 void GetSimpleWorldModelConfiguration( bool &bSimpleWorldModeWaterReflectionOut, int &nSimpleWorldModelRecursionLevelOut, float &flSimpleWorldModelDrawBeyondDistanceOut )
 {
@@ -330,44 +308,6 @@ static bool	g_bRenderingView = false;			// For debugging...
 static int g_CurrentViewID = VIEW_NONE;
 bool g_bRenderingScreenshot = false;
 
-#if defined( CSTRIKE15 ) && defined(_PS3)
-static ConVar r_PS3_2PassBuildDraw( "r_PS3_2PassBuildDraw", "1" );
-static ConVar r_ps3_csm_disableWorldInListenServer( "r_ps3_csm_disableWorldInListenServer", "1" );
-
-CConcurrentViewBuilderPS3 g_viewBuilder;
-
-#define PROLOGUE_PASS_DRAWLISTS g_viewBuilder.SetDrawFlags( m_DrawFlags );
-
-#define EPILOGUE_PASS_DRAWLISTS if( m_pWorldRenderList == NULL )\
-{\
-	m_pWorldRenderList = g_viewBuilder.GetWorldRenderListElement();\
-}
-
-#define SYNC_BUILDWORLD_JOB( bShadowDepth ) if( g_viewBuilder.IsSPUBuildRWJobsOn() )\
-{\
-	SNPROF("SyncBuildWorldJob");\
-CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildWorld[ g_viewBuilder.GetBuildViewID() ].sync( 0 ) );\
-BuildWorldRenderLists_PS3_Epilogue( bShadowDepth );\
-}
-
-#define SYNC_BUILDRENDERABLES_JOB if( g_viewBuilder.IsSPUBuildRWJobsOn() )\
-{\
-	SNPROF("SyncBuildRenderablesJob");\
-	CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ g_viewBuilder.GetBuildViewID() ].sync( 0 ) );\
-	BuildRenderableRenderLists_PS3_Epilogue();\
-}
-
-
-#define BEGIN_2PASS_BUILD_BLOCK if( g_viewBuilder.GetPassFlags() & PASS_BUILDLISTS_PS3 ) {
-#define BEGIN_2PASS_DRAW_BLOCK if( g_viewBuilder.GetPassFlags() & PASS_DRAWLISTS_PS3 ) {
-#define END_2PASS_BLOCK }
-
-
-#define PS3_SPUPATH_INVALID( s ) if( g_viewBuilder.IsSPUBuildRWJobsOn() )\
-		Warning("Rendering path not fully supported in %s or tested on SPU, and SPU jobs are enabled!\n", s);
-
-#else
-
 static ConVar r_2PassBuildDraw( "r_2PassBuildDraw", "1", FCVAR_DEVELOPMENTONLY );
 static ConVar r_threaded_buildWRlist( "r_threaded_buildWRlist", "1", FCVAR_DEVELOPMENTONLY, "Threaded BuildWorldList and BuildRenderables list" );
 
@@ -413,8 +353,6 @@ CConcurrentViewBuilder g_viewBuilder;
 	BuildRenderableRenderLists_Epilogue( viewID );
 
 #define PS3_SPUPATH_INVALID( s )
-
-#endif
 
 static FrustumCache_t s_FrustumCache;
 FrustumCache_t *FrustumCache( void )
@@ -478,15 +416,6 @@ struct ClientWorldListInfo_t : public CRefCounted1<WorldListInfo_t>
 		m_pOriginalLeafIndex = NULL;
 		m_bPooledAlloc = false;
 	}
-
-#if defined(_PS3)
-	void Init()
-	{
-		memset( (WorldListInfo_t *)this, 0, sizeof(WorldListInfo_t) ); 
-		m_pOriginalLeafIndex = NULL;
-		m_bPooledAlloc = false;
-	}
-#endif
 
 	// Allocate a list intended for pruning
 	static ClientWorldListInfo_t *AllocPooled( const ClientWorldListInfo_t &exemplar );
@@ -1415,10 +1344,6 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 	CMatRenderContextPtr pRenderContext( materials );
 	MDLCACHE_CRITICAL_SECTION();
 	
-	#if defined( _X360 )
-		pRenderContext->PushVertexShaderGPRAllocation( 32 );
-	#endif
-
 	PIXEVENT( pRenderContext, "DrawViewModels()" );
 
 	// Restore the matrices
@@ -1576,9 +1501,6 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
 	pRenderContext->PopMatrix();
 	
-	#if defined( _X360 )
-		pRenderContext->PopVertexShaderGPRAllocation();
-	#endif
 }
 
 
@@ -1811,19 +1733,6 @@ bool CViewRender::UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *p
 }
 
 
-#if defined(CSTRIKE15) && defined(_PS3)
-//-----------------------------------------------------------------------------
-// Purpose: Initialise mem area for SPU BuildWorldLists, BuildRenderables
-//-----------------------------------------------------------------------------
-void CViewRender::InitSPUBuildRenderingJobs( void )
-{
-	// reset job view index
-	g_viewBuilder.ResetBuildViewID();
-
-	ClientLeafSystem()->PrepRenderablesListForSPU();
-}
-#endif
-
 static bool IsThirdPersonOverview( void )
 {
 	return input->CAM_IsThirdPersonOverview();
@@ -1854,11 +1763,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 
 		// On the 360, we call this even when we don't have shadow depth textures enabled, so that
 		// the flashlight state gets set up properly
-#if defined(_PS3)
-		g_pClientShadowMgr->ComputeShadowDepthTextures( view, g_viewBuilder.GetPassFlags() & PASS_BUILDLISTS_PS3 );
-#else
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view, ( g_viewBuilder.GetPassFlags() == PASS_BUILDLISTS ) );
-#endif
 	}
 
 	m_BaseDrawFlags = baseDrawFlags;
@@ -2799,22 +2704,11 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 
 	CMatRenderContextPtr pRenderContext( materials );
 
-#if defined(_PS3)
-	pRenderContext->AntiAliasingHint( AA_HINT_MESHES );
-
-	// init SPU render job data for buildworldlists, buildrenderables
-	InitSPUBuildRenderingJobs();
-
-	g_viewBuilder.SetPassFlags( PASS_BUILDLISTS_PS3 | PASS_DRAWLISTS_PS3 );
-#else
-
 	g_viewBuilder.Init();
 	g_viewBuilder.SetPassFlags( PASS_BUILDLISTS | PASS_DRAWLISTS );
 
 	// Update bounds of all renderables
 	ClientLeafSystem()->ComputeAllBounds();
-
-#endif
 
 	ITexture *saveRenderTarget = pRenderContext->GetRenderTarget();
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode
@@ -2905,77 +2799,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 			}
 			#endif
 
-#if defined(_PS3)
-
-			// Entry point for 2 pass rendering on PS3, for CSTRIKE15
-			// pass 1 - build - kick off build world and renderable lists on SPU
-			// pass 2 - draw - sync build jobs and draw
-			// 2 passes allows the building jobs to be kicked off asap, and the rendering can then
-			// be performed in parallel
-			// This path is still undergoing testing, and does not support all rendering paths (refraction, proper reflection, etc)
-
-			// sync points and other 2 pass macros near the top of this file - wrap code to be performed in on or other pass with a begin/end macro (see examples)
-			
-			if( r_PS3_2PassBuildDraw.GetInt() )
-			{
-				int numViews[2];
-
-				SNPROF("2PassBuildWRLists");
-
-				g_viewBuilder.Init();
-
-				// turn on SPU BuildWorld/Renderables jobs
-				g_viewBuilder.SPUBuildRWJobsOn( true );
-
-				// reset job view index
-				g_viewBuilder.ResetBuildViewID();
-
-				// Pass 1 - Build World and Renderables Lists
-				g_viewBuilder.SetPassFlags( PASS_BUILDLISTS_PS3 );
-				ViewDrawScene( bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
-
-				numViews[0] = g_viewBuilder.GetBuildViewID();
-
-				// push all stored up buildrenderable jobs 
-				g_viewBuilder.PushBuildRenderableJobs();
-
-				
-				// kick off threaded audio here, this only does anything when running IsServer is true
-				// helps to hide any sync on buildworld/renderable jobs
-				engine->Sound_ServerUpdateSoundsPS3();
-
-				// reset job view index
-				g_viewBuilder.ResetBuildViewID();
-
-				// Pass 2 - Draw
-				g_viewBuilder.SetPassFlags( PASS_DRAWLISTS_PS3 );
-				ViewDrawScene( bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
-
-				numViews[1] = g_viewBuilder.GetBuildViewID();
-
-				if( numViews[0] != numViews[1] )
-				{
-					Warning("PS3 2 pass draw error - numViews mismatch, p0:%d p1:%d\n", numViews[0], numViews[1]);
-				}
-
-				// turn off SPU BuildWorld/Renderables jobs
-				g_viewBuilder.SPUBuildRWJobsOn( false );
-
-				g_viewBuilder.Purge();
-			}
-			else
-			{
-				g_viewBuilder.Init();
-				g_viewBuilder.SPUBuildRWJobsOn( true );
-
-				g_viewBuilder.SetPassFlags( PASS_BUILDLISTS_PS3 | PASS_DRAWLISTS_PS3 );
-				ViewDrawScene( bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
-
-				g_viewBuilder.SPUBuildRWJobsOn( false );
-				g_viewBuilder.Purge();
-			}
-
-#else
 			g_viewBuilder.Init();
 
 			// Entry point for 2 pass rendering for CSTRIKE15
@@ -3034,7 +2857,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 			}
 
 			g_viewBuilder.Purge();
-#endif
 		}
 		else
 		{
@@ -3066,13 +2888,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 		RenderPlayerSprites();
 
 		// Image-space motion blur and depth of field
-		#if defined( _X360 )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			pRenderContext->PushVertexShaderGPRAllocation( 16 ); //Max out pixel shader threads
-			pRenderContext.SafeRelease();
-		}
-		#endif
 		
 		Rect_t curViewport;
 		if ( IsPS3() )
@@ -3126,14 +2941,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 			pRenderContext.SafeRelease();
 		}
 
-		#if defined( _X360 )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			pRenderContext->PopVertexShaderGPRAllocation();
-			pRenderContext.SafeRelease();
-		}
-		#endif
-
 		RenderSmokeOverlay( true );
 		DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
 		RenderSmokeOverlay( false );
@@ -3141,14 +2948,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 		DrawUnderwaterOverlay();
 		
 		PixelVisibility_EndScene();
-
-		#if defined( _X360 )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			pRenderContext->PushVertexShaderGPRAllocation( 16 ); //Max out pixel shader threads
-			pRenderContext.SafeRelease();
-		}
-		#endif
 
 		// Draw fade over entire screen if needed
 		byte color[4];
@@ -3251,14 +3050,6 @@ void CViewRender::RenderView( const CViewSetup &view, const CViewSetup &hudViewS
 		}
 
 		PerformScreenSpaceEffects( view.x, view.y, view.width, view.height );
-
-		#if defined( _X360 )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			pRenderContext->PopVertexShaderGPRAllocation();
-			pRenderContext.SafeRelease();
-		}
-		#endif
 
 
 		GetClientMode()->DoPostScreenSpaceEffects( &view );
@@ -3543,11 +3334,7 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 		return;
 	}
 
-#ifdef _GAMECONSOLE
-	bool bForceExpensive = false;
-#else
 	bool bForceExpensive = r_waterforceexpensive.GetBool();
-#endif
 	bool bForceReflectEntities = r_waterforcereflectentities.GetBool();
 
 	bool bForceCheap = false;
@@ -3583,11 +3370,7 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 
 	// Unless expensive water is active, reflections are off.
 	bool bLocalReflection;
-#ifdef _GAMECONSOLE
-	if( !r_WaterDrawReflection.GetBool() )
-#else
 	if( !bForceExpensive || !r_WaterDrawReflection.GetBool() )
-#endif
 	{
 		bLocalReflection = false;
 	}
@@ -3608,15 +3391,8 @@ void CViewRender::DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVol
 	// Gary says: I'm reverting this change so that water LOD works on dx9 for ep2.
 
 	// Check if the water is out of the cheap water LOD range; if so, use cheap water
-#ifdef _GAMECONSOLE
-	if ( !bForceExpensive && ( bForceCheap || ( fogVolumeInfo.m_flDistanceToWater >= m_flCheapWaterEndDistance ) ) )
-	{
-		return;
-	}
-#else
 	if ( ( (fogVolumeInfo.m_flDistanceToWater >= m_flCheapWaterEndDistance) && !bLocalReflection ) || bForceCheap )
  		return;
-#endif
 	// Get the material that is for the water surface that is visible and check to see
 	// what render targets need to be rendered, if any.
 	if ( !r_WaterDrawRefraction.GetBool() )
@@ -3916,11 +3692,7 @@ void CViewRender::ViewDrawScene_Intro( const CViewSetup &view, int nClearFlags, 
 		// Shadowed flashlights supported on ps_2_b and up...
 		if ( r_flashlightdepthtexture.GetBool() )
 		{
-#if defined(_PS3)
-			g_pClientShadowMgr->ComputeShadowDepthTextures( playerView, g_viewBuilder.GetPassFlags() & PASS_BUILDLISTS_PS3 );
-#else
 			g_pClientShadowMgr->ComputeShadowDepthTextures( playerView, ( g_viewBuilder.GetPassFlags() == PASS_BUILDLISTS ) );
-#endif
 		}
 
 		SetupCurrentView( playerView.origin, playerView.angles, VIEW_INTRO_PLAYER );
@@ -4271,35 +4043,18 @@ VPlane* CBase3dView::GetFrustum()
 CObjectPool<ClientWorldListInfo_t> ClientWorldListInfo_t::gm_Pool;
 
 
-#if defined(_PS3)
-CClientRenderablesList g_RenderablesPool[ MAX_CONCURRENT_BUILDVIEWS ];
-ClientWorldListInfo_t  g_WorldListInfoPool[ MAX_CONCURRENT_BUILDVIEWS ];
-#endif
-
 //-----------------------------------------------------------------------------
 // Base class for 3d views
 //-----------------------------------------------------------------------------
 CRendering3dView::CRendering3dView(CViewRender *pMainView) :
 	CBase3dView( pMainView ),
 	m_pWorldRenderList( NULL ), 
-#if !defined(_PS3)
 	m_pRenderables( NULL ),
 	m_pWorldListInfo( NULL ), 
-#endif
 	m_pCustomVisibility( NULL ),
 	m_DrawFlags( 0 ),
 	m_ClearFlags( 0 )
 {
-
-#if defined( CSTRIKE15 ) && defined(_PS3)
-	BEGIN_2PASS_BUILD_BLOCK
-	for( int i = 0; i < MAX_CONCURRENT_BUILDVIEWS; i++ )
-	{
-		m_pRenderablesList[ i ] = NULL;
-		m_pWorldListInfo[ i ]   = NULL;
-	}
-	END_2PASS_BLOCK
-#endif
 
 }
 
@@ -4313,16 +4068,7 @@ void CRendering3dView::Setup( const CViewSetup &setup )
 	memcpy( static_cast<CViewSetup *>(this), &setup, sizeof( setup ) );
 	ReleaseLists();
 
-#if defined( CSTRIKE15 ) && defined(_PS3)
-	// only want this statically allocated once ever really, or use a mempool
- 	for( int i = 0; i < MAX_CONCURRENT_BUILDVIEWS; i++ )
- 	{
- 		m_pRenderablesList[ i ] = &g_RenderablesPool[ i ];
-		m_pWorldListInfo[ i ]   = &g_WorldListInfoPool[ i ];
- 	}
-#else
 	//m_pRenderables = new CClientRenderablesList; 
-#endif
 
 	m_pCustomVisibility = NULL;
 }
@@ -4334,18 +4080,10 @@ void CRendering3dView::Setup( const CViewSetup &setup )
 void CRendering3dView::ReleaseLists()
 {
 
-#if defined( CSTRIKE15 ) && defined(_PS3)
-	for( int i = 0; i < MAX_CONCURRENT_BUILDVIEWS; i++ )
-	{
-		m_pRenderablesList[ i ] = NULL;
-		m_pWorldListInfo[ i ]   = NULL;
-	}
-#else
 	SafeRelease( m_pWorldRenderList );
 
 	SafeRelease( m_pRenderables );
 	SafeRelease( m_pWorldListInfo );
-#endif
 
 	m_pCustomVisibility = NULL;
 }
@@ -4379,21 +4117,15 @@ void CRendering3dView::SetupRenderablesList( int viewID, bool bFastEntityRenderi
 
 	VPROF_BUDGET( "SetupRenderablesList", "SetupRenderablesList" );
 
-#if !defined( _PS3 )
 	// Create the list
 	m_pRenderables = new CClientRenderablesList; 
 	g_viewBuilder.SetRenderablesListElement( m_pRenderables );
-#endif
 
 	// Clear the list.
 	int i;
 	for( i=0; i < RENDER_GROUP_COUNT; i++ )
 	{
-#if defined( CSTRIKE15 ) && defined(_PS3)
-		m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[i] = 0;
-#else
 		m_pRenderables->m_RenderGroupCounts[i] = 0;
-#endif
 	}
 
 	// Now collate the entities in the leaves.
@@ -4406,10 +4138,6 @@ void CRendering3dView::SetupRenderablesList( int viewID, bool bFastEntityRenderi
 	SetupRenderInfo_t setupInfo;
 	setupInfo.m_nRenderFrame = m_pMainView->BuildRenderablesListsNumber();	// only one incremented?
 	setupInfo.m_nDetailBuildFrame = m_pMainView->BuildWorldListsNumber();	//
-#if defined( CSTRIKE15 ) && defined(_PS3)
-	setupInfo.m_pWorldListInfo = m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ];
-	setupInfo.m_pRenderList    = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ];
-#endif
 	setupInfo.m_bDrawDetailObjects = GetClientMode()->ShouldDrawDetailObjects() && r_DrawDetailProps.GetInt();
 	if ( m_bCSMView )
 	{
@@ -4441,18 +4169,6 @@ void CRendering3dView::SetupRenderablesList( int viewID, bool bFastEntityRenderi
 	pJob->Release();
 }
 
-#if defined(_PS3)
-void CRendering3dView::SetupRenderablesList_PS3_Epilogue( void )
-{
-	ConVarRef r_PS3_SPU_buildrenderables( "r_PS3_SPU_buildrenderables" );
-
-	if( r_PS3_SPU_buildrenderables.GetInt() )
-	{
-		ClientLeafSystem()->BuildRenderablesList_PS3_Epilogue();
-	}
-}
-#endif
-
 
 //-----------------------------------------------------------------------------
 //
@@ -4467,16 +4183,7 @@ void CRendering3dView::BuildWorldRenderLists( bool bDrawEntities, int iForceView
 	extern void UpdateClientRenderableInPVSStatus();
 	UpdateClientRenderableInPVSStatus();
 
-#if defined(_PS3)
-	int buildViewID = g_viewBuilder.GetBuildViewID();
-	Assert( !m_pWorldRenderList && !m_pWorldListInfo[ buildViewID ]);
-
-	g_viewBuilder.SetDrawFlags( m_DrawFlags );
-#else
-
 	Assert( !m_pWorldRenderList && !m_pWorldListInfo);
-
-#endif
 
 	m_pMainView->IncWorldListsNumber();
 	// Override vis data if specified this render, otherwise use default behavior with NULL
@@ -4489,34 +4196,12 @@ void CRendering3dView::BuildWorldRenderLists( bool bDrawEntities, int iForceView
 
 	ClientWorldListInfo_t **ppWorldListInfo;
 
-#if defined(_PS3)
-	ppWorldListInfo = &m_pWorldListInfo[ buildViewID ];
-#else
 	ppWorldListInfo = &m_pWorldListInfo;
-#endif
 
 
 	if ( !bUseCache || !g_WorldListCache.Find( *this, pVisData, iForceViewLeaf, &m_pWorldRenderList, ppWorldListInfo ) )
 	{
 
-#if defined(_PS3)
-		m_pWorldRenderList = render->CreateWorldList_PS3( buildViewID );
-		
-		m_pWorldListInfo[ buildViewID ] = &g_WorldListInfoPool[ buildViewID ]; 
-		m_pWorldListInfo[ buildViewID ]->Init();
-
-		//g_viewBuilder.m_pWorldRenderListCache[ buildViewID ] = m_pWorldRenderList;
-		g_viewBuilder.SetWorldRenderListElement( m_pWorldRenderList );
-
-		render->BuildWorldLists( m_pWorldRenderList, m_pWorldListInfo[ buildViewID ], 
-			iForceViewLeaf, pVisData, bShadowDepth, pReflectionWaterHeight );
-
-		if ( bUseCache )
-		{
-			g_WorldListCache.Add( *this, pVisData, iForceViewLeaf, m_pWorldRenderList, m_pWorldListInfo[ buildViewID ] );
-		}
-
-#else
 		// @MULTICORE (toml 8/18/2006): when make parallel, will have to change caching to be atomic, where follow ons receive a pointer to a list that is not yet built
 		m_pWorldRenderList = render->CreateWorldList();
 
@@ -4532,7 +4217,6 @@ void CRendering3dView::BuildWorldRenderLists( bool bDrawEntities, int iForceView
 		{
 			g_WorldListCache.Add( *this, pVisData, iForceViewLeaf, m_pWorldRenderList, m_pWorldListInfo );
 		}
-#endif
 
 	}
 	else
@@ -4546,20 +4230,6 @@ void CRendering3dView::BuildWorldRenderLists( bool bDrawEntities, int iForceView
 	}
 }
 
-#if defined(_PS3)
-void CRendering3dView::BuildWorldRenderLists_PS3_Epilogue( bool bShadowDepth ) 
-{
-	if( !m_pWorldRenderList )
-		return;
-
-	ConVarRef r_PS3_SPU_buildworldlists( "r_PS3_SPU_buildworldlists" );
-
-	if( r_PS3_SPU_buildworldlists.GetInt() )
-	{
-		render->BuildWorldLists_PS3_Epilogue( m_pWorldRenderList, m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ], bShadowDepth );
-	}
-}
-#else
 void CRendering3dView::BuildWorldRenderLists_Epilogue( bool bShadowDepth ) 
 {
 	if( !m_pWorldRenderList )
@@ -4567,7 +4237,6 @@ void CRendering3dView::BuildWorldRenderLists_Epilogue( bool bShadowDepth )
 
 	render->BuildWorldLists_Epilogue( m_pWorldRenderList, m_pWorldListInfo, bShadowDepth );
 }
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -4641,7 +4310,6 @@ JobStatus_t	PruneWorldListInfoJob::DoExecute()
 
 void CRendering3dView::PruneWorldListInfo()
 {
-#if !defined(_PS3)
 
 	// Drawing everything? Just return the world list info as-is 
 	int nWaterDrawFlags = m_DrawFlags & (DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER);
@@ -4656,74 +4324,6 @@ void CRendering3dView::PruneWorldListInfo()
 
 	SafeRelease( m_pWorldListInfo );
 
-#else
-
-	// TODO: Port To SPU or add to epilogue pass !! 
-
-	ConVarRef r_PS3_SPU_buildworldlists("r_PS3_SPU_buildworldlists");
-
-	if( !( r_PS3_SPU_buildworldlists.GetInt() && g_viewBuilder.IsSPUBuildRWJobsOn() ) )
-	{
-		// Drawing everything? Just return the world list info as-is 
-		int nWaterDrawFlags = m_DrawFlags & (DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER);
-		if ( nWaterDrawFlags == (DF_RENDER_UNDERWATER | DF_RENDER_ABOVEWATER) )
-		{
-			return;
-		}
-
-		ClientWorldListInfo_t *pWorldListInfo = m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ];
-
-		if ( nWaterDrawFlags == DF_RENDER_ABOVEWATER && !pWorldListInfo->m_bHasWater )
-			return;
-
-		// in-place copy on PS3
-		ClientWorldListInfo_t *pNewInfo = pWorldListInfo;
-
-		int worldListInfo_LeafCount = pWorldListInfo->m_LeafCount;
-
-		//pNewInfo->m_LeafCount     = 0;
-		int newLeafCount = 0;
-
-		if ( pWorldListInfo->m_LeafCount > 0 && nWaterDrawFlags )
- 		{
-		//	pNewInfo->m_pOriginalLeafIndex = (uint16*)( (byte *)( pNewInfo->m_pLeafDataList ) + pNewInfo->m_LeafCount * sizeof(pNewInfo->m_pLeafDataList[0]) );
- 		}
- 		else
- 		{
-// 			// reset
-//			pNewInfo->m_pLeafDataList = NULL;
- 		}
-
-
-		if ( nWaterDrawFlags != DF_RENDER_UNDERWATER || pWorldListInfo->m_bHasWater )
-		{
-			// Not drawing anything? Then don't bother with renderable lists
-			if ( nWaterDrawFlags != 0 )
-			{
-				// Create a sub-list based on the actual leaves being rendered
-				bool bRenderingUnderwater = (nWaterDrawFlags & DF_RENDER_UNDERWATER) != 0;
-
-				for ( int i = 0; i < worldListInfo_LeafCount; ++i )
-				{
-					bool bLeafIsUnderwater = ( pWorldListInfo->m_pLeafDataList[i].waterData != -1 );
-					if ( bRenderingUnderwater == bLeafIsUnderwater )
-					{
-						pNewInfo->m_pLeafDataList[ newLeafCount ] = pWorldListInfo->m_pLeafDataList[ i ];
-						//pNewInfo->m_pOriginalLeafIndex[ newLeafCount ] = i;
-						++newLeafCount;
-					}
-				}
-			}
-		}
-
-		pNewInfo->m_LeafCount = newLeafCount;
-
-		//	m_pWorldListInfo->Release();
-		//	m_pWorldListInfo = pNewInfo;
-
-	}
-
-#endif
 }
 
 
@@ -4745,23 +4345,13 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID, bool bFastEntityR
 	
 }
 
-#if defined(_PS3)
-void CRendering3dView::BuildRenderableRenderLists_PS3_Epilogue( void )
-{
-	SetupRenderablesList_PS3_Epilogue();
-}
-#else
 void CRendering3dView::BuildRenderableRenderLists_Epilogue( int viewID )
 {
 	if ( viewID != VIEW_SHADOW_DEPTH_TEXTURE )
 	{
 		MDLCACHE_CRITICAL_SECTION();
 
-#if defined(_PS3)
-		CClientRenderablesList *pRenderablesList = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ];
-#else
 		CClientRenderablesList *pRenderablesList = m_pRenderables;
-#endif
 
 		render->BeginUpdateLightmaps();
 
@@ -4792,7 +4382,6 @@ void CRendering3dView::BuildRenderableRenderLists_Epilogue( int viewID )
 		VPROF_INCREMENT_COUNTER( "NumRenderables", nCount );
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 //
@@ -4822,18 +4411,6 @@ void CRendering3dView::DrawWorld( IMatRenderContext *pRenderContext, float water
 //-----------------------------------------------------------------------------
 void CRendering3dView::BeginConsoleZPass()
 {
-#if defined( _GAMECONSOLE )
-	{
-		// set up command buffer-based fast z rejection for 360
-		if ( r_fastzreject.GetBool() && !( m_DrawFlags & DF_SHADOW_DEPTH_MAP ) )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			WorldListIndicesInfo_t indicesInfo; 
-			render->GetWorldListIndicesInfo( &indicesInfo, m_pWorldRenderList, BuildEngineDrawWorldListFlags( m_DrawFlags ) );
-			pRenderContext->BeginConsoleZPass( indicesInfo );
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -4842,16 +4419,6 @@ void CRendering3dView::BeginConsoleZPass()
 //-----------------------------------------------------------------------------
 void CRendering3dView::EndConsoleZPass()
 {
-#if defined( _GAMECONSOLE )
-	{
-
-		if ( r_fastzreject.GetBool() && !( m_DrawFlags & DF_SHADOW_DEPTH_MAP ) )
-		{
-			CMatRenderContextPtr pRenderContext( materials );
-			pRenderContext->EndConsoleZPass();
-		}
-	}
-#endif
 }
 
 
@@ -5370,22 +4937,6 @@ void CRendering3dView::DrawOpaqueRenderables( IMatRenderContext *pRenderContext,
 	bool bShadowDepth = ( eRenderPath > 0 );
 
 
-#if defined( _X360 )
-	// IESTYN -------- 11/5/2010 (June '09 XDK) -----------------------------------------
-	//
-	//	There is currently a codegen bug in the X360 compiler, for which the below CFmtStr initialization is a workaround.
-	//	  The problem appears to be that the stackallocs below cause 'eRenderPath' (when pushed onto the stack) to be
-	//	corrupted to some value which is less than zero. Replacing the stackallocs with regular mallocs, or adding any
-	//	additional code (e.g. this CFmtStr) which references the 'bShadowDepth' variable will cause the bug to disappear.
-	//	  The original symptom was a GPU HANG on starting a Co-op game; bShadowDepth was erroneously determined to be
-	//	FALSE during the shadow depth pass, so models were rendered using their regular (rather than NULL) pixel shaders,
-	//	at a time when the pixel shader GPR allocation is set to its minimum value of 16.
-	//
-	if ( eRenderPath == 123454321 ) { CFmtStr buf( "Hocus Pocus Alakazam: %d %d", eRenderPath, bShadowDepth ); }
-	//
-	// IESTYN -------- 11/5/2010 (June '09 XDK) -----------------------------------------
-#endif // _X360
-
 	if ( nGroup == RENDER_GROUP_TRANSLUCENT )
 	{
 		if( !r_drawtranslucentworld.GetBool() )
@@ -5409,54 +4960,20 @@ void CRendering3dView::DrawOpaqueRenderables( IMatRenderContext *pRenderContext,
 	g_pParticleSystemMgr->ResetRenderCache();
 
 	// Categorize models by type
-#if defined(_PS3)
-	int nOpaqueRenderableCount = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[nGroup];
-#else
 	int nOpaqueRenderableCount = m_pRenderables->m_RenderGroupCounts[nGroup];
-#endif
 
 	CClientRenderablesList::CEntry** pBrushModels = (CClientRenderablesList::CEntry **)stackalloc( nOpaqueRenderableCount * sizeof( CClientRenderablesList::CEntry* ) );
 	CClientRenderablesList::CEntry** pStaticProps = (CClientRenderablesList::CEntry **)stackalloc( nOpaqueRenderableCount * sizeof( CClientRenderablesList::CEntry* ) );
 	CClientRenderablesList::CEntry** pOtherRenderables = (CClientRenderablesList::CEntry **)stackalloc( nOpaqueRenderableCount * sizeof( CClientRenderablesList::CEntry* ) );
 
-#if defined(_PS3)
-	CClientRenderablesList::CEntry *pOpaqueList = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroups[nGroup];
-#else
 	CClientRenderablesList::CEntry *pOpaqueList = m_pRenderables->m_RenderGroups[nGroup];
-#endif
 
 	int nBrushCount = 0;
 	int nStaticCount = 0;
 	int nOtherCount = 0;
-#ifdef _PS3
-//	extern uint32 g_ps3_ShadowDepth_TextureCache;
-// 7LTODO
-// 	for ( int iPs3depthGeoCacheLoopCounter = 0,
-// 		iPs3depthGeoCacheLoopEnd = ( ( eRenderPath != RENDERABLES_RENDER_PATH_SHADOWDEPTH_BUILD_GEOCACHE ) ? 1 : 2 );
-// 		iPs3depthGeoCacheLoopCounter < iPs3depthGeoCacheLoopEnd; ++ iPs3depthGeoCacheLoopCounter )
-// 	{
-// 		const bool bMultipassGeoCacheLoop = ( iPs3depthGeoCacheLoopEnd > 1 );
-// 		if ( eRenderPath == RENDERABLES_RENDER_PATH_SHADOWDEPTH_USE_GEOCACHE )
-// 		{
-// 			pRenderContext->InvokeGpuDataTransferCache( g_ps3_ShadowDepth_TextureCache | PS3GPU_DATA_TRANSFER_CACHE2REAL ); // seed the rendertarget with the cached data
-// 		}
-// 		else if ( iPs3depthGeoCacheLoopCounter )
-// 		{
-// 			pRenderContext->InvokeGpuDataTransferCache( g_ps3_ShadowDepth_TextureCache | PS3GPU_DATA_TRANSFER_REAL2CACHE ); // copy off rendertarget data into cache
-// 
-// 			nBrushCount = 0;
-// 			nStaticCount = 0;
-// 			nOtherCount = 0;
-// 		}
-#endif
 
 		for ( int i = 0; i < nOpaqueRenderableCount; ++i )
 		{
-#ifdef _PS3
-			// Only render the correct cache part of opaques each loop iteration
-// 7LTODO			if ( bMultipassGeoCacheLoop && ( !iPs3depthGeoCacheLoopCounter == !!pOpaqueList[i].m_bShadowDepthNoCache) )
-//				continue;
-#endif
 			switch( pOpaqueList[i].m_nModelType )
 			{
 			case RENDERABLE_MODEL_BRUSH: pBrushModels[nBrushCount++] = &pOpaqueList[i]; break; 
@@ -5592,10 +5109,6 @@ void CRendering3dView::DrawOpaqueRenderables( IMatRenderContext *pRenderContext,
 		//
 		DrawOpaqueRenderables_NPCs( arrRenderEntsNpcsFirst.Count(), arrRenderEntsNpcsFirst.Base(), DepthMode, pDeferClippedOpaqueRenderables_Out );
 
-#ifdef _PS3
-// 7LTODO -- Took out for loop!	}
-#endif
-
 	//
 	// Ropes and particles
 	//
@@ -5655,11 +5168,7 @@ void CRendering3dView::DrawTranslucentWorldInLeaves( IMatRenderContext *pRenderC
 
 	VPROF_BUDGET( "CViewRender::DrawTranslucentWorldInLeaves", VPROF_BUDGETGROUP_WORLD_RENDERING );
 
-#if defined(_PS3)
-	const ClientWorldListInfo_t& info = *m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ];
-#else
 	const ClientWorldListInfo_t& info = *m_pWorldListInfo;
-#endif
 
 	CUtlVectorFixedGrowable<int, 32> transSortIndexList;
 	for( int iCurLeafIndex = info.m_LeafCount - 1; iCurLeafIndex >= 0; iCurLeafIndex-- )
@@ -5689,13 +5198,8 @@ void CRendering3dView::DrawTranslucentWorldAndDetailPropsInLeaves( IMatRenderCon
 
 	CUtlVectorFixedGrowable<int, 32> transSortIndexList;
 	VPROF_BUDGET( "CViewRender::DrawTranslucentWorldAndDetailPropsInLeaves", VPROF_BUDGETGROUP_WORLD_RENDERING );
-#if defined(_PS3)
-	const ClientWorldListInfo_t& info = *m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ];
-	CClientRenderablesList *pRenderablesList = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ];
-#else
 	const ClientWorldListInfo_t& info = *m_pWorldListInfo;
 	CClientRenderablesList *pRenderablesList = m_pRenderables;
-#endif
 	for( ; iCurLeafIndex >= iFinalLeafIndex; iCurLeafIndex-- )
 	{
 		if ( info.m_pLeafDataList[iCurLeafIndex].translucentSurfaceCount )
@@ -5778,13 +5282,8 @@ void CRendering3dView::DrawTranslucentRenderablesNoWorld( bool bInSkybox )
 
 	bool bShadowDepth = (m_DrawFlags & DF_SHADOW_DEPTH_MAP ) != 0;
 
-#if defined(_PS3)
-	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroups[RENDER_GROUP_TRANSLUCENT];
-	int iCurTranslucentEntity = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT] - 1;
-#else
 	CClientRenderablesList::CEntry *pEntities = m_pRenderables->m_RenderGroups[RENDER_GROUP_TRANSLUCENT];
 	int iCurTranslucentEntity = m_pRenderables->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT] - 1;
-#endif
 
 	while( iCurTranslucentEntity >= 0 )
 	{
@@ -5825,13 +5324,8 @@ void CRendering3dView::DrawNoZBufferTranslucentRenderables( void )
 
 	// FIXME: This ignores Z. We don't need to sort it at all? Not sure about refraction here...
 	// Could use fast path
-#if defined(_PS3)
-	CClientRenderablesList::CEntry *pEntities = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroups[RENDER_GROUP_TRANSLUCENT_IGNOREZ];
-	int iCurTranslucentEntity = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT_IGNOREZ] - 1;
-#else
 	CClientRenderablesList::CEntry *pEntities = m_pRenderables->m_RenderGroups[RENDER_GROUP_TRANSLUCENT_IGNOREZ];
 	int iCurTranslucentEntity = m_pRenderables->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT_IGNOREZ] - 1;
-#endif
 
 	while( iCurTranslucentEntity >= 0 )
 	{
@@ -5915,10 +5409,6 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 		switch ( g_CurrentViewID )
 		{				 
 		case VIEW_MAIN:
-#ifdef _GAMECONSOLE
-		case VIEW_INTRO_CAMERA:
-		case VIEW_INTRO_PLAYER:
-#endif
 			UpdateFullScreenDepthTexture();
 			break;
 
@@ -5931,11 +5421,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "DrawTranslucent" );
 
-#if defined(_PS3)
-	const ClientWorldListInfo_t& info = *m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ];
-#else
 	const ClientWorldListInfo_t& info = *m_pWorldListInfo;
-#endif
 
 	if ( !r_drawtranslucentworld.GetBool() || ( m_DrawFlags & ( DF_DRAW_SIMPLE_WORLD_MODEL | DF_DRAW_SIMPLE_WORLD_MODEL_WATER ) ) )
 	{
@@ -5963,13 +5449,8 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 		// Draw the particle singletons.
 		DrawParticleSingletons( bInSkybox );
 
-#if defined(_PS3)
-		int nTranslucentRenderableCount = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT];
-		CClientRenderablesList::CEntry *pEntities = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroups[RENDER_GROUP_TRANSLUCENT];
-#else
 		int nTranslucentRenderableCount = m_pRenderables->m_RenderGroupCounts[RENDER_GROUP_TRANSLUCENT];
 		CClientRenderablesList::CEntry *pEntities = m_pRenderables->m_RenderGroups[RENDER_GROUP_TRANSLUCENT];
-#endif
 
 		int iCurTranslucentEntity = nTranslucentRenderableCount - 1;
 
@@ -6010,11 +5491,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 
 		bool bRenderingWaterRenderTargets = ( m_DrawFlags & ( DF_RENDER_REFRACTION | DF_RENDER_REFLECTION ) ) ? true : false;
 
-#if defined(_PS3)
-		CClientRenderablesList *pRenderablesList = m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ];
-#else
 		CClientRenderablesList *pRenderablesList = m_pRenderables;
-#endif
 		while( iCurTranslucentEntity >= 0 )
 		{
 			// Seek the current leaf up to our current translucent-entity leaf.
@@ -6144,11 +5621,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 	DrawTranslucentWorldAndDetailPropsInLeaves( pRenderContext, iPrevLeaf, 0, nEngineDrawFlags, nDetailLeafCount, pDetailLeafList, bShadowDepth );
 
 	// Draw any queued-up detail props from previously visited leaves
-#if defined(_PS3)
-	DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
-#else
 	DetailObjectSystem()->RenderTranslucentDetailObjects( m_pRenderables->m_DetailFade, CurrentViewOrigin(), CurrentViewForward(), CurrentViewRight(), CurrentViewUp(), nDetailLeafCount, pDetailLeafList );
-#endif
 
 	// Reset the blend state.
 	render->SetBlend( 1 );
@@ -6380,10 +5853,6 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	// Store off view origin and angles
 	SetupCurrentView( origin, angles, iSkyBoxViewID );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 );
-#endif
-
 	// Invoke pre-render methods
 	if ( bInvokePreAndPostRender )
 	{
@@ -6460,9 +5929,6 @@ void CSkyboxView::DrawInternal( view_id_t iSkyBoxViewID, bool bInvokePreAndPostR
 	pRenderContext.GetFrom( materials );
 	render->PopView( pRenderContext, GetFrustum() );
 
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6527,33 +5993,6 @@ bool DrawingShadowDepthView( void ) //for easy externing
 	return (CurrentViewID() == VIEW_SHADOW_DEPTH_TEXTURE);
 }
 
-#ifdef _PS3
-struct ShadowDepthStaticGeoCacheEntry_t
-{
-	ShadowDepthStaticGeoCacheEntry_t() { V_memset( this, 0, sizeof( *this ) ); }
-	explicit ShadowDepthStaticGeoCacheEntry_t( const CViewSetup &viewSetup )
-	{
-		memset( this, 0, sizeof( *this ) );
-		fov = viewSetup.fov;				
-		origin = viewSetup.origin;
-		angles = viewSetup.angles;
-		zNear = viewSetup.zNear;
-		zFar = viewSetup.zFar;			
-	}
-
-	// The fields from CViewSetup and ViewCustomVisibility_t that would actually affect the list
-	float	fov;
-	Vector	origin;
-	QAngle	angles;
-	float	zNear;
-	float	zFar;
-};
-ConVar r_flashlight_staticgeocache( "r_flashlight_staticgeocache", "0", FCVAR_DEVELOPMENTONLY );
-static ShadowDepthStaticGeoCacheEntry_t g_flashlight_staticgeo_cache;
-static uint32 g_flashlight_staticgeo_cache_id;
-static bool g_flashlight_staticgeo_cache_valid;
-#endif
-						  
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
@@ -6569,9 +6008,6 @@ void CShadowDepthView::Draw()
 	BEGIN_2PASS_BUILD_BLOCK
 	m_pMainView->SetupVis( (*this), visFlags );  // @MULTICORE (toml 8/9/2006): Portal problem, not sending custom vis down
 
-#if defined(_PS3)
-	g_viewBuilder.SetVisFlags( visFlags );
-#endif
 	END_2PASS_BLOCK
 
 	CMatRenderContextPtr pRenderContext( materials );
@@ -6579,10 +6015,6 @@ void CShadowDepthView::Draw()
 	BEGIN_2PASS_DRAW_BLOCK
 	pRenderContext->ClearColor3ub(0xFF, 0xFF, 0xFF);
 	END_2PASS_BLOCK
-
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 112 ); //almost all work is done in vertex shaders for depth rendering, max out their threads
-#endif
 
 	if( IsPC() || IsPS3() )
 	{
@@ -6614,14 +6046,6 @@ void CShadowDepthView::Draw()
 	{
 		bRenderWorld = m_bRenderWorldAndObjects && !m_bCSMView || ( cl_csm_world_shadows.GetBool() && cl_csm_shadows.GetBool() ) && bRenderWorldAndObjects;
 	}
-
-#if defined(_PS3)
-	// turn off world rendering into all cascades for listen server
-	if( m_bCSMView && engine->IsClientLocalToActiveServer() && r_ps3_csm_disableWorldInListenServer.GetInt() )
-	{
-		bRenderWorld = false;
-	}
-#endif
 
 	BEGIN_2PASS_BUILD_BLOCK
 	PROLOGUE_PASS_DRAWLISTS
@@ -6691,13 +6115,6 @@ void CShadowDepthView::Draw()
 	if ( m_bRenderWorldAndObjects && bRenderWorldAndObjects )
 	{
 		DrawOpaqueRenderables( pRenderContext,
-			#ifdef _PS3
-			bFlashlightStaticGeoCacheEnabled
-			? ( bFlashlightStaticGeoCacheValid
-				? RENDERABLES_RENDER_PATH_SHADOWDEPTH_USE_GEOCACHE
-				: RENDERABLES_RENDER_PATH_SHADOWDEPTH_BUILD_GEOCACHE
-			) :
-			#endif
 			RENDERABLES_RENDER_PATH_SHADOWDEPTH_DEFAULT, 
 			DEPTH_MODE_SHADOW,
 			NULL
@@ -6728,57 +6145,22 @@ void CShadowDepthView::Draw()
 	}
 	else
 	{
-#ifndef _PS3
 		// Attention PaulB/Mario: We need to remove this PS3 specific thing for CS:GO CSM, so translucent renderables can cast shadows.
 		// PS3 is not supporting translucent renderables for now, will need support in static geo cache
 		if ( r_flashlightdepth_drawtranslucents.GetBool() )
 		{
 			DrawTranslucentRenderables( false, true );
 		}
-#endif
 	}
 
 	modelrender->ForcedMaterialOverride( 0 );
 
 	m_DrawFlags = 0;
 
-#if defined(_X360)
-	{
-		//Resolve() the depth texture here. Before the pop so the copy will recognize that the resolutions are the same
-
-		if( m_bCSMView )
-		{
-			// send appropriate src/dst rects for csm rendering
-			Rect_t src, dst;
-
-			src.x = 0;
-			src.y = 0;
-			src.width  = width;
-			src.height = height;
-			
-			dst.x = xCsmDstOffset;
-			dst.y = yCsmDstOffset;
-			dst.width  = width;
-			dst.height = height;
-
-			pRenderContext->CopyRenderTargetToTextureEx( m_pDepthTexture, -1, &src, &dst );
-		}
-		else
-		{
-			pRenderContext->CopyRenderTargetToTextureEx( m_pDepthTexture, -1, NULL, NULL );
-		}
-
-	}
-#endif
-
 	END_2PASS_BLOCK
 
 
 	render->PopView( pRenderContext, GetFrustum() );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 
 	pRenderContext->ClearColor3ub( 0, 0, 0 );
 }
@@ -6813,10 +6195,6 @@ void CFreezeFrameView::Draw( void )
 {
 	CMatRenderContextPtr pRenderContext( materials );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 16 ); //max out pixel shader threads
-#endif
-
 	pRenderContext->DrawScreenSpaceRectangle( m_pFreezeFrame, x, y, width, height,
 		m_nSubRect[ 0 ], m_nSubRect[ 1 ], m_nSubRect[ 0 ] + m_nSubRect[ 2 ] - 1, m_nSubRect[ 1 ] + m_nSubRect[ 3 ] - 1, m_nScreenSize[ 0 ], m_nScreenSize[ 1 ] );
 
@@ -6839,9 +6217,6 @@ void CFreezeFrameView::Draw( void )
 		pRenderContext->DrawScreenSpaceRectangle( pMaterial, x, y, width, height, m_nSubRect[ 0 ], m_nSubRect[ 1 ], m_nSubRect[ 0 ] + m_nSubRect[ 2 ] - 1, m_nSubRect[ 1 ] + m_nSubRect[ 3 ] - 1, m_nScreenSize[ 0 ], m_nScreenSize[ 1 ] );
 	}
 
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 }
 
 
@@ -7142,11 +6517,7 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 	// @MULTICORE (toml 8/16/2006): rethink how, where, and when this is done...
 	if ( !( m_DrawFlags & ( DF_DRAW_SIMPLE_WORLD_MODEL | DF_DRAW_SIMPLE_WORLD_MODEL_WATER ) ) )
 	{
-#if defined(_PS3)
-		g_pClientShadowMgr->ComputeShadowTextures( *this, m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ]->m_LeafCount, m_pWorldListInfo[ g_viewBuilder.GetBuildViewID() ]->m_pLeafDataList );
-#else
 		g_pClientShadowMgr->ComputeShadowTextures( *this, m_pWorldListInfo->m_LeafCount, m_pWorldListInfo->m_pLeafDataList );
-#endif
 	}
 
 	int savedViewID = g_CurrentViewID;
@@ -7159,10 +6530,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 	PushView( waterHeight );
 
 	CMatRenderContextPtr pRenderContext( materials );
-
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 );
-#endif
 
 	ITexture *pSaveFrameBufferCopyTexture = pRenderContext->GetFrameBufferCopyTexture( 0 );
 	pRenderContext->SetFrameBufferCopyTexture( GetPowerOfTwoFrameBufferTexture() );
@@ -7179,11 +6546,7 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 
 	SYNC_BUILDRENDERABLES_JOB( savedViewID )
 
-#if defined(_PS3)
-	CUtlVector< CClientRenderablesList::CEntry * > arrFastClippedOpaqueRenderables( (CClientRenderablesList::CEntry **)stackalloc( m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[RENDER_GROUP_OPAQUE] * sizeof( CClientRenderablesList::CEntry * ) ), m_pRenderablesList[ g_viewBuilder.GetBuildViewID() ]->m_RenderGroupCounts[RENDER_GROUP_OPAQUE] );
-#else
 	CUtlVector< CClientRenderablesList::CEntry * > arrFastClippedOpaqueRenderables( (CClientRenderablesList::CEntry **)stackalloc( m_pRenderables->m_RenderGroupCounts[RENDER_GROUP_OPAQUE] * sizeof( CClientRenderablesList::CEntry * ) ), m_pRenderables->m_RenderGroupCounts[RENDER_GROUP_OPAQUE] );
-#endif
 	CUtlVector< CClientRenderablesList::CEntry * > *pArrFastClippedOpaqueRenderables = (r_deferopaquefastclipped.GetBool() && !m_bDrawWorldNormal && r_entityclips.GetBool() && materials->UsingFastClipping()) ? &arrFastClippedOpaqueRenderables : NULL;
 
 	m_DrawFlags &= ~DF_SKIP_WORLD_DECALS_AND_OVERLAYS;
@@ -7263,10 +6626,6 @@ void CBaseWorldView::DrawExecute( float waterHeight, view_id_t viewID, float wat
 	m_DrawFlags = iDrawFlagsBackup;
 
 	g_CurrentViewID = savedViewID;
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 
 	END_2PASS_BLOCK
 }
@@ -7412,10 +6771,6 @@ void CSimpleWorldView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CSimpleWorldView::Draw" );
 
-#if defined( _X360 )
-	pRenderContext->PushVertexShaderGPRAllocation( 32 ); //lean toward pixel shader threads
-#endif
-
 	PROLOGUE_PASS_DRAWLISTS
 	DrawSetup( pRenderContext, 0, m_DrawFlags, 0 );
 
@@ -7445,10 +6800,6 @@ void CSimpleWorldView::Draw()
 
 	pRenderContext.GetFrom( materials );
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
-
-#if defined( _X360 )
-	pRenderContext->PopVertexShaderGPRAllocation();
-#endif
 
 
 }
@@ -7740,12 +7091,6 @@ void CAboveWaterView::CRefractionView::Setup()
 //-----------------------------------------------------------------------------
 void CAboveWaterView::CRefractionView::Draw()
 {
-#if defined(_PS3)
-	BEGIN_2PASS_DRAW_BLOCK
-	// don't support PruneWorldLists on SPU yet, so can't support refraction
-	bool bBuildViewSPU = g_viewBuilder.IsSPUBuildRWJobsOn();
-	g_viewBuilder.SPUBuildRWJobsOn( false );
-#endif
 
 	PS3_SPUPATH_INVALID( "CAboveWaterView::CRefractionView::Draw" );
 
@@ -7777,10 +7122,6 @@ void CAboveWaterView::CRefractionView::Draw()
 	pRenderContext->Flush();
 	END_2PASS_BLOCK
 
-#if defined(_PS3)
-	g_viewBuilder.SPUBuildRWJobsOn( bBuildViewSPU );
-	END_2PASS_BLOCK
-#endif
 }
 
 
@@ -8134,330 +7475,6 @@ void FrustumCache_t::Add( const CViewSetup *pView, int iSlot )
 	GeneratePerspectiveFrustum( pView->origin, pView->angles, pView->zNear, pView->zFar, pView->fov, pView->m_flAspectRatio, m_Frustums[iSlot] );
 }
 
-
-#if defined(_PS3)
-//-----------------------------------------------------------------------------
-// PS3 - CConcurrentViewBuilderPS3 methods
-//-----------------------------------------------------------------------------
-
-CConcurrentViewBuilderPS3::CConcurrentViewBuilderPS3()
-{ 
-	m_buildViewID		= -1; 
-	m_bSPUBuildRWJobsOn = false;
-	m_passFlags			= 0;
-
-	for( int lp = 0; lp < MAX_CONCURRENT_BUILDVIEWS; lp++ )
-	{
-		m_gAreaFrustum[lp].EnsureCapacity(16);
-		m_gAreaFrustum[lp].SetCount(0);
-	}
-}
-
-
-void CConcurrentViewBuilderPS3::Init( void ) 
-{ 
-	m_buildViewID		= -1; 
-	m_bSPUBuildRWJobsOn = false;
-	m_passFlags			= 0;
-
-	for( int lp = 0; lp < MAX_CONCURRENT_BUILDVIEWS; lp++ )
-	{
-		m_gAreaFrustum[lp].EnsureCapacity(16);
-		m_gAreaFrustum[lp].SetCount(0);
-	}
-}
-
-void CConcurrentViewBuilderPS3::Purge( void ) 
-{ 
-	for( int lp = 0; lp < MAX_CONCURRENT_BUILDVIEWS; lp++ )
-	{
-		m_gAreaFrustum[lp].Purge();
-	}
-};
-
-void CConcurrentViewBuilderPS3::ResetBuildViewID( void ) 
-{ 
-	m_buildViewID			= -1; 
-	m_nextFreeBuildViewID	= 0; 
-
-	m_pBuildViewStack		= m_buildViewStack - 1;
-	m_buildViewStack[ 0 ]   = -1;
-};
-
-
-// get current view index
-int CConcurrentViewBuilderPS3::GetBuildViewID( void )		
-{ 
-	if( m_buildViewID == -1 )
-	{
-		// bad view initialisation
-		Warning("*** BAD BUILD VIEW INITIALIZATION ***\n"); 
-		return 0;
-	}
-
-	return m_buildViewID; 
-};
-
-// call at the start of each view
-void CConcurrentViewBuilderPS3::PushBuildView( void )
-{
-	m_pBuildViewStack++;
-
-	if( m_pBuildViewStack >= &m_buildViewStack[MAX_CONCURRENT_BUILDVIEWS] )
-	{
-		Error("*** exceeded concurrent buildview push ***\n"); 
-	}
-
-	if( m_nextFreeBuildViewID >= MAX_CONCURRENT_BUILDVIEWS )
-	{
-		Error("*** exceeded max concurrent buildviews ***\n"); 
-	}
-
-
-	*m_pBuildViewStack = m_nextFreeBuildViewID;
-
-	m_buildViewID = *m_pBuildViewStack;
-
-	m_nextFreeBuildViewID++;
-}
-
-void CConcurrentViewBuilderPS3::PopBuildView( void )
-{
-	if( m_pBuildViewStack == m_buildViewStack )
-	{
-		m_buildViewID = *m_pBuildViewStack;
-		m_pBuildViewStack--;
-	}
-	else
-	{
-		m_pBuildViewStack--;
-		m_buildViewID = *m_pBuildViewStack;
-	}
-
-}
-
-void CConcurrentViewBuilderPS3::SyncViewBuilderJobs( void )
-{
-	// sync all ports, only used for debugging multipass views
-}
-
-
-
-IWorldRenderList *CConcurrentViewBuilderPS3::GetWorldRenderListElement( void )
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - Accessing WorldRenderListElement(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return m_pWorldRenderListCache[ m_buildViewID ]; 
-	}
-}
-
-void CConcurrentViewBuilderPS3::SetWorldRenderListElement( IWorldRenderList *pRenderList )
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - Setting WorldRenderListElement(-1)\n" );
-		return;
-	}
-	else
-	{
-		m_pWorldRenderListCache[ m_buildViewID ] = pRenderList; 
-	}
-}
-
-unsigned int CConcurrentViewBuilderPS3::GetVisFlags( void ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetVisFlags(-1)\n" );
-		return 0;
-	}
-	else
-	{
-		return m_visFlags[ m_buildViewID ]; 
-	}
-}
-
-void CConcurrentViewBuilderPS3::SetVisFlags( unsigned int visFlags ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - SetVisFlags(-1)\n" );
-		return;
-	}
-	else
-	{
-		m_visFlags[ m_buildViewID ] = visFlags; 
-	}
-}
-
-void* CConcurrentViewBuilderPS3::GetBuildViewVolumeCuller( void )
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetBuildViewVolumeCuller(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return &m_volumeCullerCache[ m_buildViewID ]; 
-	}
-}
-
-Frustum_t *CConcurrentViewBuilderPS3::GetBuildViewFrustum( void )	
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetBuildViewFrustum(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return &m_gFrustum[ m_buildViewID ]; 
-	}
-}
-
-
-Frustum_t *CConcurrentViewBuilderPS3::GetBuildViewAreaFrustum( void ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetBuildViewAreaFrustum(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return m_gAreaFrustum[ m_buildViewID ].Base(); 
-	}
-}
-
-
-unsigned char *CConcurrentViewBuilderPS3::GetBuildViewRenderAreaBits( void ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetBuildViewRenderAreaBits(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return m_gRenderAreaBits[ m_buildViewID ]; 
-	}
-};
-
-int CConcurrentViewBuilderPS3::GetNumAreaFrustum( void ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetNumAreaFrustum(-1)\n" );
-		return 0;
-	}
-	else
-	{
-		return m_gAreaFrustum[ m_buildViewID ].Count(); 
-	}
-};
-
-
-Frustum_t *CConcurrentViewBuilderPS3::GetBuildViewAreaFrustumID( int frustumID ) 
-{ 
-	if( m_buildViewID == -1 )
-	{
-		Warning( "PS3 ViewBuilder Begin/End Error - GetNumAreaFrustum(-1)\n" );
-		return NULL;
-	}
-	else
-	{
-		return &m_gAreaFrustum[ m_buildViewID ][ frustumID ];
-	}
-};
-
-void CConcurrentViewBuilderPS3::CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace )
-{
-	if( m_buildViewID == -1 )
-		return;
-
-	// cache g_Frustum
-	memcpy( &m_gFrustum[ m_buildViewID ], pFrustum, sizeof(Frustum_t) );
-
-	// cache g_RenderAreaBits
-	memcpy( &m_gRenderAreaBits[ m_buildViewID ], pRenderAreaBits, sizeof(m_gRenderAreaBits[ m_buildViewID ]) );
-
-	// cache viewerinSolidSpace
-	m_bViewerInSolidSpace[ m_buildViewID ] = bViewerInSolidSpace;
-
-	// cache g_AreaFrustum
-	m_gAreaFrustum[ m_buildViewID ].CopyArray( pAreaFrustum, numArea );
-
-}
-
-void CConcurrentViewBuilderPS3::CacheBuildViewVolumeCuller( void *pVC )
-{
-	if( (m_buildViewID == -1) || (pVC == NULL) )
-		return;
-
-	memcpy( &m_volumeCullerCache[ m_buildViewID ], pVC, sizeof(CVolumeCuller) );
-}
-
-
-// push all buildrenderable jobs - we have descriptors and cached data ready
-// renderable jobs can't run concurrently and must sync to the matching buildworldjob
-void CConcurrentViewBuilderPS3::PushBuildRenderableJobs( void )
-{
-	SNPROF("CConcurrentViewBuilder::PushBuildRenderableJobs");
-
-	int numViews = m_buildViewID + 1;
-	unsigned int syncTagR, syncTagW, syncMask;
-
-	syncMask = 0;
-
-	unsigned int lastSyncTagR = 0;
-
-	//Msg("PushBuildRenderables\n");
-	for( int lp = 0; lp < numViews; lp++ )
-	{
-		PS3BuildRenderablesJobData *pJobData					= g_pBuildRenderablesJob->GetJobData( lp );
-		job_buildrenderables::JobDescriptor_t *pJobDescriptor	= &pJobData->jobDescriptor;
-
-		syncTagW = (lp+1);
-
-		// alternative - none of the buildrenderable jobs will run in parallel
-		if( lp > 0 )
-			syncTagR = numViews+2; // magic no.
-		else
-			syncTagR = 0;
-		
-		// alternative 
-		//if( lp > 1 )
-		//{
-		//	syncTagR = numViews+2;
-		//}
-		//else
-		//{
-		//	syncTagR = 0;
-		//}
-
-		syncMask = (0x01 << syncTagW) | (0x01 << lastSyncTagR);
-
-		// pushsync
-		CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ lp ].pushSync( syncMask, 0 ) );
-		//Msg("PushSync %d, syncTagW %d, syncTagR %d\n", syncMask, syncTagW, syncTagR );
-
-		// testing syncTagR = numViews+2;
-
-		// pushjob
-		CELL_VERIFY( g_pBuildRenderablesJob->m_pRoot->m_queuePortBuildRenderables[ lp ].pushJob( &pJobDescriptor->header, sizeof(*pJobDescriptor), syncTagR, CELL_SPURS_JOBQUEUE_FLAG_SYNC_JOB ) );
-
-		lastSyncTagR = syncTagR;
-	}
-}
-
-
-#else // _PS3 CConcurrentViewBuilderPS3 methods
 
 //-----------------------------------------------------------------------------
 // CConcurrentViewData Methods
@@ -9094,4 +8111,3 @@ JobStatus_t CConcurrentViewBuilder::SequentialJobs::DoExecute()
 	return JOB_OK;
 }
 
-#endif

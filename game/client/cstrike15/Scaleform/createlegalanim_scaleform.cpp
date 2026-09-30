@@ -195,14 +195,7 @@ void CCreateLegalAnimScaleform::InnerDismissAnimation( void )
 void CCreateLegalAnimScaleform::GetRatingsBoardForLegals( SCALEFORM_CALLBACK_ARGS_DECL )
 {	
 	const char* szRatingBoard = NULL;
-#ifdef _X360
-	if ( xboxsystem->IsArcadeTitleUnlocked() )
-		szRatingBoard = "";
-	else
-		szRatingBoard = GetConsoleLocaleRatingsBoard();
-#else
 	szRatingBoard = "";
-#endif
 
 	if ( szRatingBoard )
 	{

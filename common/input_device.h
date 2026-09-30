@@ -12,9 +12,6 @@
 #ifdef _WIN32
 #pragma once
 #endif
-#if defined( _PS3 )
-#include <limits.h>
-#endif
 
 
 

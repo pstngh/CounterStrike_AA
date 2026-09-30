@@ -66,7 +66,6 @@ CSingleAppInstance::CSingleAppInstance( tchar* InstanceName, bool exitOnNotUniqu
 		return;
 	}
 
-#ifndef _PS3
 #ifdef WIN32
 	if ( IsPlatformWindows() )
 	{
@@ -123,14 +122,12 @@ CSingleAppInstance::CSingleAppInstance( tchar* InstanceName, bool exitOnNotUniqu
 	m_isUniqueInstance = false;		
 #endif
 
-#endif // _PS3
 }
 
 
 
 CSingleAppInstance::~CSingleAppInstance()
 {
-#ifndef _PS3
 #ifdef WIN32
 	if ( IsPlatformWindows() && m_hMutex )
 	{
@@ -146,7 +143,6 @@ CSingleAppInstance::~CSingleAppInstance()
 		unlink( m_szLockPath ); 
 	}
 #endif
-#endif // _PS3
 }
 
 
@@ -191,7 +187,6 @@ bool CSingleAppInstance::CheckForOtherRunningInstances( bool exitOnNotUnique, bo
 // ===========================================================================
 bool CSingleAppInstance::CheckForRunningInstance( tchar* InstanceName )
 {
-#ifndef _PS3
 	// validate input		
 	Assert( InstanceName != NULL && V_strlen( InstanceName ) > 0 && V_strlen( InstanceName ) < MAX_PATH );
 
@@ -242,7 +237,5 @@ bool CSingleAppInstance::CheckForRunningInstance( tchar* InstanceName )
 	return true;
 #endif
 	
-#endif // _PS3
-
 	return false;
 }

@@ -9,9 +9,7 @@
 
 //#include <stdafx.h>
 #include <stdlib.h>
-#ifndef _PS3
 #include <malloc.h>
-#endif
 #include "builddisp.h"
 #include "collisionutils.h"
 #include "tier1/strtools.h"

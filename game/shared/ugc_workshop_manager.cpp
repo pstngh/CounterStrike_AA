@@ -11,10 +11,8 @@
 #if !defined( NO_STEAM )
 
 CWorkshopManager::CWorkshopManager( IWorkshopManagerCallbackInterface *pCallbackInterface ) :
-#if !defined( _GAMECONSOLE )
 	m_callbackFileSubscribed( this, &CWorkshopManager::Steam_OnFileSubscribed ),
 	m_callbackFileUnsubscribed( this, &CWorkshopManager::Steam_OnFileUnsubscribed ),
-#endif
 	m_WorkshopFileInfoManager( pCallbackInterface )
 {
 	m_pCallbackInterface = pCallbackInterface;
@@ -125,8 +123,6 @@ const PublishedFileInfo_t *CWorkshopManager::GetPublishedFileInfoByID( Published
 }
 
 
-#if !defined( _GAMECONSOLE )
-
 //-----------------------------------------------------------------------------
 // Purpose: A file has been added to the user's queue
 //-----------------------------------------------------------------------------
@@ -144,8 +140,6 @@ void CWorkshopManager::Steam_OnFileUnsubscribed( RemoteStoragePublishedFileUnsub
 	// Emit a callback denoting our change
 	m_pCallbackInterface->OnPublishedFileUnsubscribed( pCallback->m_nPublishedFileId );
 }
-
-#endif // !_GAMECONSOLE
 
 //-----------------------------------------------------------------------------
 // Purpose: Get the current download status of a file that's downloading
@@ -256,8 +250,6 @@ bool CWorkshopManager::DeletePublishedFile( PublishedFileId_t nID )
 	return true;
 }
 
-#if !defined( _GAMECONSOLE )
-
 //-----------------------------------------------------------------------------
 // Purpose: Handle the callback when Steam has finished updating our user vote
 //-----------------------------------------------------------------------------
@@ -278,14 +270,11 @@ void CWorkshopManager::Steam_OnUpdateUserPublishedItemVote( RemoteStorageUpdateU
 	}
 }
 
-#endif // USE_BETA_STEAM_APIS && !_GAMECONSOLE
-
 //-----------------------------------------------------------------------------
 // Purpose: The base class handles book keeping we'd like all of our requests to do
 //-----------------------------------------------------------------------------
 void CWorkshopManager::UpdatePublishedItemVote( PublishedFileId_t nFileID, bool bVoteUp )
 {
-#if !defined( _GAMECONSOLE )
 	// TODO: Figure out how to track this call through the update
 	SteamAPICall_t hSteamAPICall = steamapicontext->SteamRemoteStorage()->UpdateUserPublishedItemVote( nFileID, bVoteUp );
 	if ( hSteamAPICall == k_uAPICallInvalid )
@@ -297,7 +286,6 @@ void CWorkshopManager::UpdatePublishedItemVote( PublishedFileId_t nFileID, bool 
 
 	// Setup our callback
 	m_callbackUpdateUserPublishedItemVote.Set( hSteamAPICall, this, &CWorkshopManager::Steam_OnUpdateUserPublishedItemVote );
-#endif // !_GAMECONSOLE
 }
 
 bool CWorkshopManager::IsFileInfoRequestStillPending( PublishedFileId_t nID ) const

@@ -14,10 +14,8 @@
 #include "cloak_ps20.inc"
 #include "cloak_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "cloak_vs30.inc"
 #include "cloak_ps30.inc"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -109,9 +107,7 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 
 		pShaderShadow->VertexShaderVertexFormat( flags, nTexCoordCount, NULL, userDataSize );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			bool bFlattenStaticControlFlow = !g_pHardwareConfig->SupportsStaticControlFlow();
 
@@ -135,7 +131,6 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 				SET_STATIC_PIXEL_SHADER( cloak_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			// The vertex shader uses the vertex id stream
@@ -150,7 +145,6 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 			SET_STATIC_PIXEL_SHADER_COMBO( LIGHTWARPTEXTURE, hasDiffuseWarp );
 			SET_STATIC_PIXEL_SHADER( cloak_ps30 );
 		}
-#endif
 
 		pShader->DefaultFog();
 
@@ -192,9 +186,7 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 		LightState_t lightState = {0, false, false};
 		pShaderAPI->GetDX9LightState( &lightState );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			bool bUseStaticControlFlow = g_pHardwareConfig->SupportsStaticControlFlow();
 
@@ -225,7 +217,6 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 				SET_DYNAMIC_PIXEL_SHADER( cloak_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -240,7 +231,6 @@ void DrawCloak_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynami
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITEWATERFOGTODESTALPHA,  fogType == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
 			SET_DYNAMIC_PIXEL_SHADER( cloak_ps30 );
 		}
-#endif
 
 		pShader->SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_1, info.m_nBumpTransform );
 

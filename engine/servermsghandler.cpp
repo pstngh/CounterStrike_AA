@@ -459,27 +459,6 @@ ConVar voice_debugfeedback( "voice_debugfeedback", "0" );
 
 bool CClientState::SVCMsg_VoiceData( const CSVCMsg_VoiceData &msg )
 {
-#if defined ( _GAMECONSOLE )
-
-	FOR_EACH_VALID_SPLITSCREEN_PLAYER( i )
-	{
-		if ( msg.client() == GetLocalClient( i ).m_nPlayerSlot )
-			return true;
-	}
-
-	ConVarRef voice_verbose( "voice_verbose" );
-	if ( voice_verbose.GetBool() )
-	{
-		Msg( "* CClientState::ProcessVoiceData: playing SVC_VoiceData from %s with %u bytes\n", msg.GetNetChannel()->GetAddress(), msg.voice_data_size() );
-	}
-
-	Audio_GetXVoice()->PlayIncomingVoiceData( msg.xuid(), (const byte*)&msg.voice_data[0], msg.voice_data_size(), bAudible );
-	if ( voice_debugfeedback.GetBool() )
-	{
-		Msg( "%f Received voice from: %d [%d bytes]\n", realtime, msg->m_nFromClient + 1, dwLength );
-	}
-	return true;
-#endif
 
 #if !defined( NO_VOICE )
 	if ( voice_debugfeedback.GetBool() )

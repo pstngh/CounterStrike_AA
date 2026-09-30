@@ -10,17 +10,10 @@
 #undef fopen
 #endif
 #if defined( WIN32 ) 
-#if !defined( _X360 )
 #include "winlite.h"
 #include <winsock2.h> // inaddr_any defn
 #include <shlobj.h> // isuseranadmin
-#endif
 #include <direct.h>
-#elif defined(_PS3)
-#include <sys/stat.h>
-#include <unistd.h>
-#define PS3_FS_NORMAL_PERMISSIONS S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH
-#define GetLastError() errno
 #elif defined(POSIX)
 #include <sys/stat.h>
 
@@ -96,13 +89,6 @@
 #include "vprof.h"
 #include "matchmaking/imatchframework.h"
 #include "sv_remoteaccess.h"	// used for remote bug reporting
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#include "xbox/xbox_console.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -190,7 +176,7 @@ const char *GetInternalBugReporterDLL( void )
 
 bool Plat_IsUserAnAdmin()
 {
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 	return ::IsUserAnAdmin() ? true : false;
 #else
 	return true;
@@ -2497,11 +2483,7 @@ void NonFileSystem_CreatePath (const char *path)
 		{       // create the directory
 			char old = *ofs;
 			*ofs = 0;
-#ifdef _PS3
-			mkdir( temppath, PS3_FS_NORMAL_PERMISSIONS );
-#else
 			_mkdir (temppath);
-#endif
 			*ofs = old;
 		}
 	}
@@ -2532,9 +2514,6 @@ bool CBugUIPanel::UploadFile( char const *local, char const *remote, bool bDelet
 		g_pFileSystem->Close( hLocal );
 #ifdef WIN32
 		bResult = CopyFile( local, remote, false ) ? true : false;
-#elif defined( _PS3 )
-		Warning( "PS3 is missing UploadFile implementation!\n" );
-		bResult = false;
 #elif defined( LINUX )
 		Warning( "LINUX is missing UploadFile implementation!\n" );
 		bResult = false;
@@ -3264,7 +3243,7 @@ bool CBugUIPanel::CopyInfoFromRemoteBug()
 	// Remove the bug.txt file and directory
 	_unlink( m_strRemoteBugInfoPath + "\\bug.txt" );
 
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 	rmdir( m_strRemoteBugInfoPath );
 #else
 	_rmdir( m_strRemoteBugInfoPath );
@@ -3360,11 +3339,7 @@ void CEngineBugReporter::InstallBugReportingUI( vgui::Panel *parent, IEngineBugR
 			default:
 			case IEngineBugReporter::BR_AUTOSELECT:
 			{
-	#if !defined( _X360 )
 				bUsePublic = ( k_EUniversePublic == GetSteamUniverse() );
-	#else
-				bUsePublic = false;
-	#endif
 			}
 			break;
 			case IEngineBugReporter::BR_INTERNAL:
@@ -3438,16 +3413,6 @@ void CEngineBugReporter::ClearBugSubmissionCount()
 
 CON_COMMAND_F( bug, "Show the bug reporting UI.", FCVAR_DONTRECORD )
 {
-#if defined( _X360 )
-	XBX_rBugReporter();
-	return;
-#elif defined( _PS3 )
-	if ( g_pValvePS3Console )
-	{
-		g_pValvePS3Console->BugReporter();
-	}
-	return;
-#endif
 
 	if ( !g_pBugUI )
 		return;

@@ -9,9 +9,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
-#ifdef _PS3
-#include <wctype.h>
-#endif
 
 #include <vgui/IInput.h>
 #include <vgui/ILocalize.h>

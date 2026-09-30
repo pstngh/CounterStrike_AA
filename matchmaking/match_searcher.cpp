@@ -26,11 +26,6 @@ CMatchSearcher::CMatchSearcher( KeyValues *pSettings ) :
 	m_pSearchPass( NULL ),
 	m_eState( STATE_INIT )
 {
-#ifdef _X360
-	ZeroMemory( &m_xOverlapped, sizeof( m_xOverlapped ) );
-	m_pQosResults = NULL;
-	m_pCancelOverlappedJob = NULL;
-#endif
 
 	DevMsg( "Created CMatchSearcher:\n" );
 	KeyValuesDumpAsDevMsg( m_pSettings, 1 );
@@ -82,9 +77,6 @@ void CMatchSearcher::InitializeSettings()
 		if ( numPlayers == -1 )
 		{
 			numPlayers = 1;		
-#ifdef _GAMECONSOLE
-			numPlayers = XBX_GetNumGameUsers();
-#endif
 			pMembers->SetInt( "numPlayers", numPlayers );
 		}
 
@@ -111,9 +103,6 @@ void CMatchSearcher::InitializeSettings()
 				if ( KeyValues *pPlayer = pMachine->FindKey( CFmtStr( "player%d", k ), true ) )
 				{
 					int iController = 0;
-#ifdef _GAMECONSOLE
-					iController = XBX_GetUserId( k );
-#endif
 					IPlayerLocal *player = g_pPlayerManager->GetLocalPlayer( iController );
 
 					pPlayer->SetUint64( "xuid", player->GetXUID() );
@@ -137,20 +126,7 @@ void CMatchSearcher::Destroy()
 	// Stop the search
 	if ( m_eState == STATE_SEARCHING )
 	{
-#ifdef _X360
-		m_pCancelOverlappedJob = ThreadExecute( MMX360_CancelOverlapped, &m_xOverlapped );	// UpdateDormantOperations will clean the rest
-		MMX360_RegisterDormant( this );
-		return;
-#endif
 	}
-
-#ifdef _X360
-	if ( m_eState == STATE_CHECK_QOS )
-	{
-		g_pMatchExtensions->GetIXOnline()->XNetQosRelease( m_pQosResults );
-		m_pQosResults = NULL;
-	}
-#endif
 
 #if !defined( NO_STEAM )
 	while ( m_arrOutstandingAsyncOperation.Count() > 0 )
@@ -169,20 +145,6 @@ void CMatchSearcher::OnSearchEvent( KeyValues *pNotify )
 {
 	g_pMatchEventsSubscription->BroadcastEvent( pNotify );
 }
-
-#ifdef _X360
-bool CMatchSearcher::UpdateDormantOperation()
-{
-	if ( !m_pCancelOverlappedJob->IsFinished() )
-		return true; // keep running dormant
-
-	m_pCancelOverlappedJob->Release();
-	m_pCancelOverlappedJob = NULL;
-
-	delete this;
-	return false;	// destroyed object, remove from dormant list
-}
-#endif
 
 void CMatchSearcher::Update()
 {
@@ -204,20 +166,7 @@ void CMatchSearcher::Update()
 
 	case STATE_SEARCHING:
 		// Waiting for session search to complete
-#ifdef _X360
-		if ( XHasOverlappedIoCompleted( &m_xOverlapped ) )
-			Live_OnSessionSearchCompleted();
-#endif
 		break;
-
-#ifdef _X360
-	case STATE_CHECK_QOS:
-		// Keep checking for results or until the wait time expires
-		if ( Plat_FloatTime() > m_flQosTimeout ||
-			!m_pQosResults->cxnqosPending )
-			Live_OnQosCheckCompleted();
-		break;
-#endif
 
 
 #if !defined (NO_STEAM)
@@ -421,121 +370,7 @@ void CMatchSearcher::OnSearchPassDone( KeyValues *pSearchPass )
 
 
 
-#ifdef _X360
-
-void CMatchSearcher::Live_OnSessionSearchCompleted()
-{
-	DevMsg( "Received %d search results from Xbox LIVE.\n", GetXSearchResult()->dwSearchResults );
-
-	for( unsigned int i = 0; i < GetXSearchResult()->dwSearchResults; ++ i )
-	{
-		XSESSION_SEARCHRESULT const &xsr = GetXSearchResult()->pResults[i];
-
-		SearchResult_t sr = { xsr.info, NULL };
-		m_arrSearchResults.AddToTail( sr );
-
-		DevMsg( 2, "Result #%02d: %llx\n", i + 1, ( const uint64& ) xsr.info.sessionID );
-	}
-
-	if ( !m_arrSearchResults.Count() )
-	{
-		OnSearchPassDone( m_pSearchPass );
-	}
-	else
-	{
-		DevMsg( "Checking QOS with %d search results.\n", m_arrSearchResults.Count() );
-		Live_CheckSearchResultsQos();
-	}
-}
-
-void CMatchSearcher::Live_CheckSearchResultsQos()
-{
-	m_eState = STATE_CHECK_QOS;
-
-	int nResults = m_arrSearchResults.Count();
-	CUtlVector< const void * >	memQosData;
-	memQosData.SetCount( 3 * nResults );
-
-	const void ** bufQosData[3];
-	for ( int k = 0; k < ARRAYSIZE( bufQosData ); ++ k )
-		bufQosData[k] = &memQosData[ k * nResults ];
-
-	for ( int k = 0; k < m_arrSearchResults.Count(); ++ k )
-	{
-		SearchResult_t const &sr = m_arrSearchResults[k];
-
-		bufQosData[0][k] = &sr.m_info.hostAddress;
-		bufQosData[1][k] = &sr.m_info.sessionID;
-		bufQosData[2][k] = &sr.m_info.keyExchangeKey;
-	}
-
-	//
-	// Note: XNetQosLookup requires only 2 successful probes to be received from the host.
-	// This is much less than the recommended 8 probes because on a 10% data loss profile
-	// it is impossible to find the host when requiring 8 probes to be received.
-	m_flQosTimeout = Plat_FloatTime() + mm_session_search_qos_timeout.GetFloat();
-	int res = g_pMatchExtensions->GetIXOnline()->XNetQosLookup(
-		nResults,
-		reinterpret_cast< XNADDR	const ** >( bufQosData[0] ),
-		reinterpret_cast< XNKID		const ** >( bufQosData[1] ),
-		reinterpret_cast< XNKEY		const ** >( bufQosData[2] ),
-		0,				// number of security gateways to probe
-		NULL,			// gateway ip addresses
-		NULL,			// gateway service ids
-		2,				// number of probes
-		0,				// upstream bandwith to use (0 = default)
-		0,				// flags - not supported
-		NULL,			// signal event
-		&m_pQosResults );// results
-
-	if ( res != 0 )
-	{
-		DevWarning( "OnlineSearch::Live_CheckSearchResultsQos - XNetQosLookup failed (code = 0x%08X)!\n", res );
-		m_arrSearchResults.Purge();
-		OnSearchPassDone( m_pSearchPass );
-	}
-}
-
-void CMatchSearcher::Live_OnQosCheckCompleted()
-{
-	for ( uint k = m_pQosResults->cxnqos; k --> 0; )
-	{
-		XNQOSINFO &xqi = m_pQosResults->axnqosinfo[k];
-
-		BYTE uNeedFlags = XNET_XNQOSINFO_TARGET_CONTACTED | XNET_XNQOSINFO_DATA_RECEIVED;
-		if ( ( ( xqi.bFlags & uNeedFlags ) != uNeedFlags) ||
-			( xqi.bFlags & XNET_XNQOSINFO_TARGET_DISABLED ) )
-		{
-			m_arrSearchResults.Remove( k );
-			continue;
-		}
-
-		extern ConVar mm_dedicated_search_maxping;
-		if ( mm_dedicated_search_maxping.GetInt() > 0 &&
-			 xqi.wRttMedInMsecs > mm_dedicated_search_maxping.GetInt() )
-		{
-			m_arrSearchResults.Remove( k );
-			continue;
-		}
-
-		if ( xqi.cbData && xqi.pbData )
-		{
-			MM_GameDetails_QOS_t gd = { xqi.pbData, xqi.cbData, xqi.wRttMedInMsecs };
-			Assert( !m_arrSearchResults[k].m_pGameDetails );
-			m_arrSearchResults[k].m_pGameDetails = g_pMatchFramework->GetMatchNetworkMsgController()->UnpackGameDetailsFromQOS( &gd );
-		}
-	}
-
-	g_pMatchExtensions->GetIXOnline()->XNetQosRelease( m_pQosResults );
-	m_pQosResults = NULL;
-
-	// Go ahead and start joining the results
-	DevMsg( "Qos completed with %d search results.\n", m_arrSearchResults.Count() );
-	AggregateSearchPassResults();
-	OnSearchPassDone( m_pSearchPass );
-}
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 void CMatchSearcher::Steam_OnLobbyMatchListReceived( LobbyMatchList_t *pLobbyMatchList, bool bError )
 {
@@ -605,92 +440,7 @@ void CMatchSearcher::StartSearchPass( KeyValues *pSearchPass )
 	DevMsg( "OnlineSearch::StartSearchPass:\n" );
 	KeyValuesDumpAsDevMsg( pSearchParams, 1 );
 
-#ifdef _X360
-
-	DWORD dwSearchRule = pSearchParams->GetInt( "rule" );
-
-	m_arrContexts.RemoveAll();
-	if ( KeyValues *pContexts = pSearchParams->FindKey( "Contexts" ) )
-	{
-		for ( KeyValues *val = pContexts->GetFirstValue(); val; val = val->GetNextValue() )
-		{
-			XUSER_CONTEXT ctx = { 0 };
-			ctx.dwContextId = atoi( val->GetName() );
-			
-			if ( val->GetDataType() == KeyValues::TYPE_INT )
-			{
-				ctx.dwValue = val->GetInt();
-				m_arrContexts.AddToTail( ctx );
-			}
-		}
-	}
-
-	m_arrProperties.RemoveAll();
-	if ( KeyValues *pContexts = pSearchParams->FindKey( "Properties" ) )
-	{
-		for ( KeyValues *val = pContexts->GetFirstValue(); val; val = val->GetNextValue() )
-		{
-			XUSER_PROPERTY prop = { 0 };
-			prop.dwPropertyId = atoi( val->GetName() );
-
-			if ( val->GetDataType() == KeyValues::TYPE_INT )
-			{
-				prop.value.type = XUSER_DATA_TYPE_INT32;
-				prop.value.nData = val->GetInt();
-				m_arrProperties.AddToTail( prop );
-			}
-		}
-	}
-
-	DWORD ret = ERROR_SUCCESS;
-	DWORD numBytes = 0;
-
-	DWORD dwNumSlotsRequired = pSearchParams->GetInt( "numPlayers" );
-
-	//
-	// Issue the asynchrounous session search request
-	//
-	ret = g_pMatchExtensions->GetIXOnline()->XSessionSearchEx(
-		dwSearchRule, XBX_GetPrimaryUserId(), mm_session_search_num_results.GetInt(),
-		dwNumSlotsRequired,
-		m_arrProperties.Count(), m_arrContexts.Count(),
-		m_arrProperties.Base(), m_arrContexts.Base(),
-		&numBytes, NULL, NULL
-		);
-
-	// Log the search request to read X360 queries easier
-	DevMsg( "XSessionSearchEx by rule %d for slots %d\n", dwSearchRule, dwNumSlotsRequired );
-	for ( int k = 0; k < m_arrContexts.Count(); ++ k )
-		DevMsg( "    CTX %u/0x%08X = 0x%X/%u\n", m_arrContexts[k].dwContextId, m_arrContexts[k].dwContextId, m_arrContexts[k].dwValue, m_arrContexts[k].dwValue );
-	for ( int k = 0; k < m_arrProperties.Count(); ++ k )
-		DevMsg( "    PRP %u/0x%08X = 0x%X/%u\n", m_arrProperties[k].dwPropertyId, m_arrProperties[k].dwPropertyId, m_arrProperties[k].value.nData, m_arrProperties[k].value.nData );
-	DevMsg( "will use %u bytes buffer.\n", numBytes );
-	
-	if ( ERROR_INSUFFICIENT_BUFFER == ret && numBytes > 0 )
-	{
-		m_bufSearchResultHeader.EnsureCapacity( numBytes );
-		ZeroMemory( GetXSearchResult(), numBytes );
-		ZeroMemory( &m_xOverlapped, sizeof( m_xOverlapped ) );
-
-		DevMsg( "Searching...\n" );
-		ret = g_pMatchExtensions->GetIXOnline()->XSessionSearchEx(
-			dwSearchRule, XBX_GetPrimaryUserId(), mm_session_search_num_results.GetInt(),
-			dwNumSlotsRequired,
-			m_arrProperties.Count(), m_arrContexts.Count(),
-			m_arrProperties.Base(), m_arrContexts.Base(),
-			&numBytes, GetXSearchResult(), &m_xOverlapped
-			);
-
-		if ( ret == ERROR_IO_PENDING )
-			return;
-	}
-
-	// Otherwise search failed
-	DevWarning( "XSessionSearchEx failed (code = 0x%08X)\n", ret );
-	ZeroMemory( &m_xOverlapped, sizeof( m_xOverlapped ) );
-	OnSearchPassDone( m_pSearchPass );
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	ISteamMatchmaking *mm = steamapicontext->SteamMatchmaking();
 

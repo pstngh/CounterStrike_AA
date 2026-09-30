@@ -13,12 +13,6 @@
 #include "leaderboardsdialog_scaleform.h"
 #include <vgui/ILocalize.h>
 
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#include "ixboxsystem.h"
-#include "../../common/xlast_csgo/csgo.spa.h"
-#endif
-
 
 #include "keyvalues.h"
 #include "engineinterface.h"
@@ -109,12 +103,6 @@ CCreateLeaderboardsDialogScaleform::CCreateLeaderboardsDialogScaleform( void ) :
 	if ( pProfile )
 		m_PlayerXUID = pProfile->GetXUID();
 
-#if defined (_X360)
-	m_pResultsBuffer = NULL;
-	m_pFriends = NULL;
-	ZeroMemory( m_pFriendsResult, sizeof(m_pFriendsResult[0]) * (MAX_FRIENDS+1) );
-#endif // _X360
-
 #if !defined( NO_STEAM )
 	m_currentLeaderboardHandle = (SteamLeaderboard_t)0;
 	m_currentLeaderboardName = NULL;
@@ -162,12 +150,6 @@ void CCreateLeaderboardsDialogScaleform::FlashReady( void )
 	m_iNumFriends = 0;
 	m_iNextFriend = -1;
 
-#if defined (_X360)
-	m_pResultsBuffer = NULL;
-	m_pFriends = NULL;
-	ZeroMemory( m_pFriendsResult, sizeof(m_pFriendsResult[0]) * (MAX_FRIENDS+1) );
-#endif // _X360
-
 	Show();
 }
 
@@ -178,38 +160,6 @@ bool CCreateLeaderboardsDialogScaleform::PreUnloadFlash( void )
 
 void CCreateLeaderboardsDialogScaleform::PostUnloadFlash( void )
 {
-#ifdef _X360
-	// release the async handle
-	if ( m_hAsyncQuery != 0 )
-	{
-		xboxsystem->CancelOverlappedOperation( m_hAsyncQuery );
-		xboxsystem->ReleaseAsyncHandle( m_hAsyncQuery );
-	}
-
-	// Wipe out any previous results
-	if ( m_pResultsBuffer != NULL )
-	{
-		delete [] m_pResultsBuffer;
-		m_pResultsBuffer = NULL;
-	}
-
-	if ( m_pFriends )
-	{
-		delete [] m_pFriends;
-		m_pFriends = NULL;
-
-		// Free the structures that track our friends' statistics
-		for ( int idx = 0; idx < MAX_FRIENDS+1; ++idx )
-		{
-			if ( m_pFriendsResult[idx] != NULL )
-			{
-				delete [] m_pFriendsResult[idx];
-				m_pFriendsResult[idx] = NULL;
-			}
-		}
-	}
-
-#endif // _X360
 	
 #if !defined( NO_STEAM )
 	if ( !m_pLeaderboardDescription )
@@ -266,88 +216,6 @@ void CCreateLeaderboardsDialogScaleform::Tick( void )
 //-----------------------------------------------------------------------------
 void CCreateLeaderboardsDialogScaleform::SetQuery( SCALEFORM_CALLBACK_ARGS_DECL )
 {
-#if defined (_X360)
-
-	// As soon as we change any parameters, cancel any previous queries
-	if ( m_hAsyncQuery != 0 )
-	{
-#ifdef	DIAGNOSE_ASYNCH_PROBLEMS
-		printf( "Leaderboard: SetQuery: Aborting a pending query.\n" );
-#endif
-
-		xboxsystem->CancelOverlappedOperation( m_hAsyncQuery );
-		xboxsystem->ReleaseAsyncHandle( m_hAsyncQuery );
-		m_hAsyncQuery = 0;
-	}
-	m_bCheckForQueryResults = false;
-
-	int nIdx = 0;
-
-	int filterType = (int)( pui->Params_GetArgAsNumber( obj, nIdx++ ) );
-	m_currentFilterType = (eLeaderboardFiltersType) clamp( filterType, (int)eLBFilter_Overall, (int)eLBFilter_Friends );
-
-	// if this is a new friends query, free all of the tracking structures from previous friends stat queries
-	if ( m_currentFilterType == eLBFilter_Friends )
-	{
-		for ( int idx = 0; idx < MAX_FRIENDS+1; ++idx )
-		{
-			if ( m_pFriendsResult[idx] != NULL )
-			{
-				delete [] m_pFriendsResult[idx];
-				m_pFriendsResult[idx] = NULL;
-			}
-		}
-	
-		// Do not reset m_pFriends list here! It's slow to read out, so once we've gotten it keep
-		//		it around until the dialog goes away (not when we're flicking through filters)
-		m_bEnumeratingFriends = false;
-		m_iNextFriend = -1;
-	}
-
-	m_startingRowIndex = (int)( pui->Params_GetArgAsNumber( obj, nIdx++ ) );
-	m_rowsPerPage = (int)( pui->Params_GetArgAsNumber( obj, nIdx++ ) );	
-
-	DWORD dwViewId = (DWORD)( pui->Params_GetArgAsNumber( obj, nIdx++ ) );
-	DWORD dwNumColumns = (DWORD)( pui->Params_GetArgAsNumber( obj, nIdx++ ) );
-
-	// Sanity check the column list passed in:
-	SFVALUE columnIdArray = pui->Params_GetArg( obj, nIdx++ );
-	if ( pui->Value_GetType( columnIdArray ) != IScaleformUI::VT_Array )
-	{
-		Warning( "CCreateLeaderboardsDialogScaleform::SetQuery: Invalid final argument - expected an array of columnIds!\n" );
-		dwNumColumns = 0;
-	}
-	else
-	{
-		int arrayLen = pui->Value_GetArraySize( columnIdArray );
-		if ( arrayLen != (int)dwNumColumns )
-		{
-			Warning( "CCreateLeaderboardsDialogScaleform::SetQuery: columnIds length differs from param count - using %d columns instead!\n", arrayLen );
-			dwNumColumns = arrayLen;
-		}
-	}
-	
-
-	// Wait a second before we handle this query, in case user is flicking through options
-	m_fQueryDelayTime = Plat_FloatTime() + QUERY_DELAY_TIME;
-
-	// Sanity check the board we are reading from
-	Assert( dwViewId >= STATS_VIEW_WINS_ONLINE_CASUAL && dwViewId <= STATS_VIEW_GP_ONLINE_GG_BOMB );
-
-	// Clear the query, and copy over our search settings
-	ZeroMemory( &m_statsSpec, sizeof(m_statsSpec) );
-
-	m_statsSpec.dwViewId = dwViewId;
-	m_statsSpec.dwNumColumnIds = clamp( dwNumColumns, (DWORD)0, (DWORD)XUSER_STATS_ATTRS_IN_SPEC - 1 );
-
-	for (DWORD columnIdx = 0; columnIdx < m_statsSpec.dwNumColumnIds; ++columnIdx )
-	{
-		SFVALUE element = pui->Value_GetArrayElement( columnIdArray, columnIdx );
-
-		m_statsSpec.rgwColumnIds[columnIdx] = (WORD)(pui->Value_GetNumber( element ));
-	}
-
-#endif 
 
 #if !defined( NO_STEAM )
 
@@ -381,13 +249,6 @@ void CCreateLeaderboardsDialogScaleform::Query_NumResults( SCALEFORM_CALLBACK_AR
 {
 	int numResults = 0;
 
-#if defined (_X360)
-	if ( m_fQueryDelayTime > 0.f )
-		numResults = -1; // Query is still in progress; display the "Searching..." msg
-	else
-		numResults = m_pResults.Count();
-#endif  // _X360
-
 #if !defined( NO_STEAM )
 	if ( m_fQueryDelayTime > 0.f )
 		numResults = -1; // Query is still in progress; display the "Searching..." msg
@@ -405,17 +266,6 @@ void CCreateLeaderboardsDialogScaleform::Query_NumResults( SCALEFORM_CALLBACK_AR
 void CCreateLeaderboardsDialogScaleform::Query_GetCurrentPlayerRow( SCALEFORM_CALLBACK_ARGS_DECL )
 {
 	int playerRow = 0;
-
-#if defined (_X360)
-	for ( int Idx = 0; Idx < m_pResults.Count(); Idx ++ )
-	{
-		if ( m_pResults[Idx]->xuid == m_PlayerXUID )
-		{
-			playerRow = Idx;
-			break;
-		}
-	}
-#endif  // _X360
 
 #if !defined (NO_STEAM)
 	
@@ -452,15 +302,6 @@ void CCreateLeaderboardsDialogScaleform::QueryRow_GamerTag( SCALEFORM_CALLBACK_A
 		rowNumber += m_startingRowIndex;
 
 	const char *gamerTag = NULL;
-
-#if defined( _X360 )	
-	
-	if ( rowNumber >= 0 && rowNumber < m_pResults.Count() )
-	{
-		gamerTag = m_pResults[rowNumber]->szGamertag;
-	}
-
-#endif // _X360
 
 #if !defined( NO_STEAM )
 
@@ -513,80 +354,6 @@ void CCreateLeaderboardsDialogScaleform::QueryRow_ColumnValue( SCALEFORM_CALLBAC
 
 	int columnValue = -1;	
 	char largeNumberString[64] = {0}; // if the field is a 64-bit value, we have to retrieve it as a string
-
-#if defined( _X360 )
-
-	if ( rowNumber >= 0 && rowNumber < m_pResults.Count() )
-	{
-		XUSER_STATS_ROW *pRow = m_pResults[rowNumber];
-				
-		if ( columnId == 0 )
-		{
-			// 0 retrieves just the player's Ranking (1st place player is 1, 2nd place is 2, etc)
-			columnValue = pRow->dwRank;
-		}
-		else if ( columnId == -1 )
-		{
-			// -1 gets the Rating column, used to Rank the player
-			V_snprintf( largeNumberString, sizeof(largeNumberString), "%lld", pRow->i64Rating );
-		}
-		else if ( columnId == -2 )
-		{
-			// -2 gets the row's overall board "Ranking / TotalRankedUsers"
-			DWORD totalViewRows = 0;
-
-			// Try to find the total view rows for this board
-			if ( m_pResultsBuffer && m_pResultsBuffer->dwNumViews > 0 )
-			{
-				totalViewRows = m_pResultsBuffer->pViews[0].dwTotalViewRows;
-			}
-			else if ( m_pFriendsResult[0] && m_pFriendsResult[0]->dwNumViews > 0 )
-			{
-				totalViewRows = m_pFriendsResult[0]->pViews[0].dwTotalViewRows;
-			}
-
-			if ( totalViewRows > 0 )
-			{
-				V_snprintf( largeNumberString, sizeof(largeNumberString), "%d / %d",  pRow->dwRank,  totalViewRows );
-			}
-			else
-			{
-				// Couldn't locate valid totalViewRows, so just return this row's rank
-				columnValue = pRow->dwRank;
-			}
-		}
-		else if ( columnId == -3 )
-		{
-			// -3 retrieves the total number of users ranked on this view
-			if ( m_pResultsBuffer && m_pResultsBuffer->dwNumViews > 0 )
-			{
-				columnValue = m_pResultsBuffer->pViews[0].dwTotalViewRows;
-			}
-		}
-		else
-		{
-			for ( DWORD colIdx = 0; colIdx < pRow->dwNumColumns; ++colIdx )
-			{
-				if ( pRow->pColumns[colIdx].wColumnId == columnId )
-				{
-					switch ( pRow->pColumns[colIdx].Value.type )
-					{
-					case XUSER_DATA_TYPE_INT64:
-						V_snprintf( largeNumberString, sizeof(largeNumberString), "%lld", pRow->pColumns[colIdx].Value.i64Data );
-						break;
-					case XUSER_DATA_TYPE_INT32:
-						columnValue = pRow->pColumns[colIdx].Value.nData;
-						break;
-					default:
-						Warning( "CCreateLeaderboardsDialogScaleform::QueryRow_ColumnValue - the type for columnId %d is not currently support: %d\n", columnId, pRow->pColumns[colIdx].Value.type );
-						break;
-					}
-				}
-			}
-		}
-	}	
-
-#endif // _X360
 
 #if !defined( NO_STEAM )
 
@@ -728,66 +495,6 @@ void CCreateLeaderboardsDialogScaleform::QueryRow_ColumnRatio( SCALEFORM_CALLBAC
 		bRatioSumAB = pui->Params_GetArgAsBool( obj, 5 );
 	}
 
-#if defined( _X360 )
-
-	// Our resulting ratio will be "columnA / columnB" or "column A / (columnA + columnB)"
-	LONGLONG columnValueA = 0;
-	LONGLONG columnValueB = 0;
-
-	if ( rowNumber >= 0 && rowNumber < m_pResults.Count() )
-	{
-		XUSER_STATS_ROW *pRow = m_pResults[rowNumber];
-
-		if ( columnIdA == -1 )
-		{
-			columnValueA = pRow->i64Rating;
-		}
-		if ( columnIdB == -1 )
-		{
-			columnValueB = pRow->i64Rating;
-		}
-		if ( columnIdA == -2 )
-		{
-			columnValueA = pRow->dwRank;
-		}
-		if ( columnIdB == -2 )
-		{
-			columnValueB = pRow->dwRank;
-		}
-		
-		for ( DWORD colIdx = 0; colIdx < pRow->dwNumColumns; ++colIdx )
-		{
-			bool bIsColumnA = pRow->pColumns[colIdx].wColumnId == columnIdA;
-			bool bIsColumnB = pRow->pColumns[colIdx].wColumnId == columnIdB;
-			
-			if ( bIsColumnA || bIsColumnB )
-			{
-				switch ( pRow->pColumns[colIdx].Value.type )
-				{
-					case XUSER_DATA_TYPE_INT64:
-						if ( bIsColumnA )
-							columnValueA = pRow->pColumns[colIdx].Value.i64Data;
-						if ( bIsColumnB )
-							columnValueB = pRow->pColumns[colIdx].Value.i64Data;
-						break;
-
-					case XUSER_DATA_TYPE_INT32:
-						if ( bIsColumnA )
-							columnValueA = pRow->pColumns[colIdx].Value.nData;
-						if ( bIsColumnB )
-							columnValueB = pRow->pColumns[colIdx].Value.nData;
-						break;
-
-					default:
-						Warning( "CCreateLeaderboardsDialogScaleform::QueryRow_ColumnValue - the type for columnId %d is not currently support: %d\n", pRow->pColumns[colIdx].wColumnId, pRow->pColumns[colIdx].Value.type );
-						break;
-				}
-			}
-		}
-	}
-
-#endif // _X360
-
 #if !defined( NO_STEAM )
 
 	// Our resulting ratio will be "columnA / columnB" or "column A / (columnA + columnB)"
@@ -833,7 +540,7 @@ void CCreateLeaderboardsDialogScaleform::QueryRow_ColumnRatio( SCALEFORM_CALLBAC
 
 #endif // !NO_STEAM
 
-#if !defined( NO_STEAM ) || defined( _X360 ) 
+#if !defined( NO_STEAM ) 
 	float fResult = (float)columnValueA;
 	float fDivisor = (float)columnValueB;
 
@@ -876,16 +583,8 @@ void CCreateLeaderboardsDialogScaleform::DisplayUserInfo( SCALEFORM_CALLBACK_ARG
 	if ( m_currentFilterType == eLBFilter_Friends )
 		rowNumber += m_startingRowIndex;
 
-#if defined( _X360 )
-	if ( rowNumber >= 0 && rowNumber < m_pResults.Count() )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		XShowGamerCardUI( XBX_GetActiveUserId(), m_pResults[rowNumber]->xuid );	
-	}
-#endif // _X360
-
 // Steam overlay not available on console (PS3)
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM ) 
+#if !defined( NO_STEAM ) 
 	// Show the steam user id in the overlay
 	LeaderboardEntry_t leaderboardEntry;
 	if ( m_currentLeaderboardHandle != 0 && 
@@ -910,118 +609,6 @@ void CCreateLeaderboardsDialogScaleform::QueryUpdate( void )
 	// Don't actually update the query until our delay has passed
 	if ( Plat_FloatTime() < m_fQueryDelayTime )
 		return;
-
-#if defined (_X360)
-
-	// Cancel any existing queries
-	if ( m_hAsyncQuery != 0 )
-	{
-		Warning( "Leaderboard: QueryUpdate: Triggering a new update with an AsynchHandle still in flight!\n" );
-		xboxsystem->CancelOverlappedOperation( m_hAsyncQuery );
-		xboxsystem->ReleaseAsyncHandle( m_hAsyncQuery );
-		m_hAsyncQuery = 0;
-	}
-
-#ifdef	DIAGNOSE_ASYNCH_PROBLEMS
-	printf( "Leaderboard: QueryUpdate: Starting a new network query; allocating an AsyncHandle.\n" );
-#endif
-
-	// Create a new query handle
-	m_hAsyncQuery = xboxsystem->CreateAsyncHandle();
-	m_bCheckForQueryResults = false;
-
-	// Wipe out any previous results
-	if ( m_pResultsBuffer != NULL )
-	{
-		delete [] m_pResultsBuffer;
-		m_pResultsBuffer = NULL;
-	}
-
-	if ( m_currentFilterType != eLBFilter_Friends )
-	{
-		m_pResults.RemoveAll();
-	}
-
-	// Invalidate any results
-	m_bResultsValid = false;
-
-	m_fQueryDelayTime = 0.f;
-
-	// Write any XBox API results into this value
-	int asynchResult = ERROR_SUCCESS;
-	
-	switch ( m_currentFilterType )
-	{
-	case eLBFilter_Me:
-		{
-			asynchResult = xboxsystem->EnumerateStatsByXuid( m_PlayerXUID, m_rowsPerPage, 1, &m_statsSpec, (void**)&m_pResultsBuffer, true, &m_hAsyncQuery );
-		}
-		break;
-	
-	case eLBFilter_Overall:
-		{
-			asynchResult = xboxsystem->EnumerateStatsByRank( m_startingRowIndex, m_rowsPerPage, 1, &m_statsSpec, (void**)&m_pResultsBuffer, true, &m_hAsyncQuery );
-		}
-		break;
-
-	case eLBFilter_Friends:
-		{
-			// If we haven't retrieved our friends list yet, do that first
-			if ( m_pFriends == NULL )
-			{
-				// Reset our friend tracking members
-				m_iNextFriend = -1;
-				m_bEnumeratingFriends = true;
-
-				asynchResult = xboxsystem->EnumerateFriends( m_iPlayerSlot, (void**)&m_pFriends, true, &m_hAsyncQuery );
-
-				if ( asynchResult != ERROR_SUCCESS && asynchResult != ERROR_IO_PENDING )
-				{
-					// Free the buffer, and error out now!
-					delete [] m_pFriends;
-					m_pFriends = NULL;
-
-					Warning( "LEADERBOARDS: QueryUpdate - Failed to enumerate our friends!" );
-				}
-			}
-			else
-			{
-				// Once we have a friends list, start querying each user individually
-				if ( m_iNextFriend < 0 )
-				{
-					// Reset the results list now - from here on out, we're writing to this incrementally for each friend in our list
-					m_pResults.RemoveAll();
-					m_iNextFriend = 0;
-
-					// Local user comes first, first entry in friends result list
-					asynchResult = xboxsystem->EnumerateStatsByXuid( m_PlayerXUID, 1, 1, &m_statsSpec, (void**)&(m_pFriendsResult[m_iNextFriend]), true, &m_hAsyncQuery );
-				}
-				else
-				{
-					// Now, once for each friend in the list
-					// NOTE! m_pFriends has exactly NumFriends entries, but m_pFriendsResult has an extra leading entry for the local user!
-					asynchResult = xboxsystem->EnumerateStatsByXuid( m_pFriends[m_iNextFriend - 1].xuid, 1, 1, &m_statsSpec, (void**)&(m_pFriendsResult[m_iNextFriend]), true, &m_hAsyncQuery );
-				}
-			}
-		}
-		break;
-	}
-
-	// Check return value
-	if ( asynchResult != ERROR_SUCCESS && asynchResult != ERROR_IO_PENDING )
-	{
-		// Free the buffer, and error out now!
-		delete [] m_pResultsBuffer;
-		m_pResultsBuffer = NULL;
-
-		Warning( "LEADERBOARDS: QueryUpdate - Failed to enumerate leaderboard results!" );
-		return;
-	}
-
-	// Begin waiting for results to come back
-	m_bCheckForQueryResults = true;
-
-#endif // _X360
 
 #if !defined( NO_STEAM )
 
@@ -1235,179 +822,11 @@ void CCreateLeaderboardsDialogScaleform::QueryLeaderboard( void )
 
 #endif // !NO_STEAM
 
-#if defined (_X360)
-//=============================================================================
-// Purpose: Sorts a vector of rank/indexes in to the results buffer so we can
-// sort friend lists
-//=============================================================================
-int FriendsSortFunc( XUSER_STATS_ROW *const *a, XUSER_STATS_ROW *const *b )
-{
-	if ( (*a)->dwRank < (*b)->dwRank )
-		return -1;
-
-	if ( (*a)->dwRank > (*b)->dwRank )
-		return 1;
-
-	return 0;
-}
-#endif // _X360
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CCreateLeaderboardsDialogScaleform::CheckForQueryResults( void )
 {
-#if defined (_X360)
-
-	// No new query to check on
-	if ( !m_bCheckForQueryResults )
-		return;
-
-	// Check our async handle to see if it's done
-	uint iResultCode = 0;
-	int result = xboxsystem->GetOverlappedResult( m_hAsyncQuery, &iResultCode, false );
-
-	// Abort on non-recoverable error codes
-	if ( result == ERROR_INVALID_HANDLE ||
-		 result == ERROR_FUNCTION_FAILED )
-	{
-		Warning( "LEADERBOARDS: CheckForQueryResults got error code: %s. Aborting query.", result == ERROR_INVALID_HANDLE ? "ERROR_INVALID_HANDLE" : "ERROR_FUNCTION_FAILED ");
-	
-		if ( m_hAsyncQuery != 0 )
-		{
-			xboxsystem->ReleaseAsyncHandle( m_hAsyncQuery );
-			m_hAsyncQuery = 0;
-		}
-
-		// Signal flash to terminate
-		WITH_SLOT_LOCKED
-		{
-			ScaleformUI()->Value_InvokeWithoutReturn( m_FlashAPI, "NotifyResults", 0, NULL );
-		}
-		m_bCheckForQueryResults = false;
-		
-		return;
-	}
-
-#ifdef	DIAGNOSE_ASYNCH_PROBLEMS
-	printf( "Leaderboard: CheckForQueryResults - GetOverlappedResult returns %d, (result code %d)\n", result, iResultCode );
-#endif
-
-	// If we are still retrieving friends info, check on that operation first
-	if ( m_bEnumeratingFriends )
-	{
-		if ( result == ERROR_SUCCESS )
-		{
-			m_iNumFriends = iResultCode;
-			m_bEnumeratingFriends = false;
-			m_bCheckForQueryResults = false;
-
-			// Queue up the next query
-			m_fQueryDelayTime = Plat_FloatTime() + QUERY_SHORT_DELAY_TIME;
-		}
-
-		return;
-	}
-
-	// Our query is complete, now we need to see if the query ran into any errors
-	if ( result == ERROR_SUCCESS )
-	{
-		// Filter: FRIENDS
-		// Handle friends differently, by pushing multiple queries until we've read out everyone
-		if ( m_currentFilterType == eLBFilter_Friends )
-		{
-			// Check that the friend result is valid, and add it to our vector
-			if ( m_pFriendsResult[m_iNextFriend]  &&
-				 m_pFriendsResult[m_iNextFriend]->dwNumViews > 0 &&
-				 m_pFriendsResult[m_iNextFriend]->pViews[0].dwNumRows > 0 )
-			{
-#ifdef	DIAGNOSE_ASYNCH_PROBLEMS
-				printf( "Found FRIEND result user = %s: xuid: %d columns: %d (rank: %d with rating: %lld) \n", 
-					m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].szGamertag,		m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].xuid, 
-					m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].dwNumColumns,	m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].dwRank,
-					m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].i64Rating );
-#endif
-
-				if ( m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0].dwRank > 0 )
-				{
-					m_pResults.AddToTail( &m_pFriendsResult[m_iNextFriend]->pViews[0].pRows[0] );
-				}
-			}
-
-			m_iNextFriend++;
-
-			if ( m_iNextFriend < m_iNumFriends + 1 )
-			{
-				m_bCheckForQueryResults = false;
-
-				// Queue up the next query
-				m_fQueryDelayTime = Plat_FloatTime() + QUERY_SHORT_DELAY_TIME;
-
-				return;
-			}
-			else
-			{
-				// Now sort the results list by the ranking column
-				m_pResults.Sort( FriendsSortFunc );
-
-				// we have all results, return now!
-				m_bResultsValid = true;
-			}
-		}
-
-		// Filter: Overall/Me
-		// Non-friends query - all results come back in one batch
-		else
-		{
-			// We assume the results are valid now, and push only ranked values into our m_pResults list
-			m_bResultsValid = true;
-
-			// Reset the list, fill it with current data
-			m_pResults.RemoveAll();
-
-			// Make sure to update the starting index based on the actual starting index we get back from the results
-			if ( m_pResultsBuffer )
-			{
-				if ( m_pResultsBuffer->dwNumViews > 0 &&
-					 m_pResultsBuffer->pViews[0].dwNumRows > 0 )
-				{
-					// Copy pointers to our results buffer into a vector so we can sort and handle friends properly
-					for ( uint i=0; i<m_pResultsBuffer->pViews[0].dwNumRows; i++ )
-					{
-						// Only add players that are ranked
-						if ( m_pResultsBuffer->pViews[0].pRows[i].dwRank > 0 )
-						{
-							m_pResults.AddToTail( &m_pResultsBuffer->pViews[0].pRows[i] );
-
-#ifdef	DIAGNOSE_ASYNCH_PROBLEMS
-							printf( "Found result user = %s: xuid: %d columns: %d (rank: %d with rating: %lld) \n", 
-								m_pResultsBuffer->pViews[0].pRows[i].szGamertag,	m_pResultsBuffer->pViews[0].pRows[i].xuid, 
-								m_pResultsBuffer->pViews[0].pRows[i].dwNumColumns,	m_pResultsBuffer->pViews[0].pRows[i].dwRank,
-								m_pResultsBuffer->pViews[0].pRows[i].i64Rating );
-
-							for ( DWORD col = 0; col < m_pResultsBuffer->pViews[0].pRows[i].dwNumColumns; col++ )
-							{
-								printf( "    column[%d] (type %d) = %d \n", col, 
-									m_pResultsBuffer->pViews[0].pRows[i].pColumns[col].wColumnId, 
-									m_pResultsBuffer->pViews[0].pRows[i].pColumns[col].Value.nData );
-							}
-#endif
-						}
-					}
-				}
-			}
-		}
-
-		// Signal Flash that we are ready to show results
-		WITH_SLOT_LOCKED
-		{
-			ScaleformUI()->Value_InvokeWithoutReturn( m_FlashAPI, "NotifyResults", 0, NULL );
-		}
-
-		m_bCheckForQueryResults = false;
-	}
-
-#endif // _X360
 
 #if !defined( NO_STEAM )
 	// No new query to check on

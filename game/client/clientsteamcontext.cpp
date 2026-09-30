@@ -59,10 +59,8 @@ void CClientSteamContext::Activate()
 	m_bActive = true;
 
 #if !defined( NO_STEAM )
-	#ifndef _PS3
 	SteamAPI_InitSafe(); // ignore failure, that will fall out later when they don't get a valid logon cookie
 	SteamAPI_SetTryCatchCallbacks( false ); // We don't use exceptions, so tell steam not to use try/catch in callback handlers
-	#endif
 
 	Init(); // Steam API context init
 	

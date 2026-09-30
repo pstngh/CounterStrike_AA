@@ -53,12 +53,7 @@
 #include "tier2/tier2.h"
 #include "characterset.h"
 #include "tier1/lzmaDecoder.h"
-#if !defined( _X360 )
 #include "xbox/xboxstubs.h"
-#endif
-#ifdef _PS3
-#include "tls_ps3.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -160,26 +155,6 @@ public:
 	void								SubmitPendingJobs();
 
 	void								PurgeAll( ResourcePreload_t *pDontPurgeList = NULL, int nPurgeListSize = 0 );
-#ifdef _PS3
-	// hack to prevent PS/3 deadlock on queued loader render mutex when quitting during loading a map
-	// PLEASE REMOVE THIS (AND THE MUTEX) AFTER WE SHIP
-	virtual uint UnlockProgressBarMutex()
-	{
-		uint nCount = m_nRendererMutexProgressBarUnlockCount;
-		for( uint i = 0; i < nCount ;  ++i )
-		{
-			m_sRendererMutex.Unlock();
-		}
-		return nCount;
-	}
-	virtual void LockProgressBarMutex( uint nLockCount )
-	{
-		for( uint i = 0; i < nLockCount ;  ++i )
-		{
-			m_sRendererMutex.Lock();
-		}
-	}
-#endif
 private:
 
 	class CFileJobsLessFunc
@@ -236,27 +211,7 @@ private:
 	float								m_LoaderTimes[RESOURCEPRELOAD_COUNT];
 	ILoaderProgress						*m_pProgress;
 	CThreadFastMutex					m_Mutex;
-#if defined( _PS3 )
-	// PLEASE REMOVE THIS MUTEX AFTER WE SHIP, IT IS NOT NEEDED. But leaving it here because it's too close to ship date.
-	static CThreadFastMutex				m_sRendererMutex;
-	// this is the counter of locks we lock the renderer mutex for the ProgressBar call
-	// it's used to unlock the mutex when going into Host_Error state to prevent deadlocks (it's a hack)
-	static CInterlockedInt              m_nRendererMutexProgressBarUnlockCount;
-#endif
 };
-
-#if defined( _PS3 )
-CThreadFastMutex CQueuedLoader::m_sRendererMutex;
-CInterlockedInt CQueuedLoader::m_nRendererMutexProgressBarUnlockCount;
-class CInterlockedIntAutoIncrementer
-{
-protected:
-	CInterlockedInt &m_refInt;
-public:
-	CInterlockedIntAutoIncrementer(CInterlockedInt &refInt): m_refInt( refInt ){ m_refInt ++; }
-	~CInterlockedIntAutoIncrementer(){ m_refInt --;}
-};
-#endif
 
 static CQueuedLoader g_QueuedLoader;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CQueuedLoader, IQueuedLoader, QUEUEDLOADER_INTERFACE_VERSION, g_QueuedLoader );
@@ -279,9 +234,6 @@ class CResourcePreloadAnonymous : public IResourcePreload
 	virtual void PurgeUnreferencedResources() {}
 	virtual void OnEndMapLoading( bool bAbort ) {}
 	virtual void PurgeAll() {}
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock() { return true; }	// do we know that anonymous resource loads won't hit the renderer?
-#endif // _PS3
 };
 static CResourcePreloadAnonymous s_ResourcePreloadAnonymous;
 
@@ -378,16 +330,6 @@ void CQueuedLoader::BuildResources( IResourcePreload *pLoader, ResourceList_t *p
 				}
 
 				bool bResourceCreated = false;
-#if defined( _PS3 )
-				// PSGL does not allow us to update its memory from two threads simultaneously,
-				// even for unrelated textures, so we need to throttle these down to one at a time
-				if( pLoader->RequiresRendererLock() )
-				{
-					AUTO_LOCK_FM( m_sRendererMutex );
-					bResourceCreated = pLoader->CreateResource( szFilename );
-				}
-				else
-#endif
 				{
 					bResourceCreated = pLoader->CreateResource( szFilename );
 				}
@@ -1612,10 +1554,6 @@ void CQueuedLoader::GetJobRequests()
 		float newt = Plat_FloatTime();
 		if ( newt - flLastUpdateT > .03 )
 		{
-#if defined( _PS3 )
-			AUTO_LOCK_FM( m_sRendererMutex );
-			CInterlockedIntAutoIncrementer autoIncrementRendererMutex( m_nRendererMutexProgressBarUnlockCount );
-#endif
 			m_pProgress->UpdateProgress( flProgress );
 			flProgress = clamp( flProgress + flDelta, PROGRESS_PARSEDRESLIST, PROGRESS_CREATEDRESOURCES );
 
@@ -1986,9 +1924,6 @@ void CQueuedLoader::EndMapLoading( bool bAbort )
 	bAbort = false;
 
 	bool bShutdownAppRequest = false;
-#ifdef _PS3
-	bShutdownAppRequest = GetTLSGlobals()->bNormalQuitRequested;
-#endif
 
 	// To satisfy system shutdown request, purge all pending jobs
 	// that haven't been submitted yet

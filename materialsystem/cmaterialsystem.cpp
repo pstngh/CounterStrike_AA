@@ -6,9 +6,7 @@
 	
 #include "pch_materialsystem.h"
 
-#ifndef _PS3
 #define MATSYS_INTERNAL
-#endif
 
 #include "cmaterialsystem.h"
 
@@ -32,14 +30,6 @@
 #include "shaderapidx9/imeshdx8.h"
 #include "tier0/perfstats.h"
 
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#include "xbox/xbox_win32stubs.h"
-#elif defined(_PS3)
-#include "ps3/ps3_helpers.h"
-#include "ps3/ps3_console.h"
-#endif
-
 // NOTE: This must be the last file included!!!
 #include "tier0/memdbgon.h"
 
@@ -58,7 +48,7 @@ static ConVar mat_forcehardwaresync( "mat_forcehardwaresync", /* IsPC() ? "1" : 
 
 // Make sure this convar gets created before videocfg.lib is initialized, so it can be driven by dxsupport.cfg
 static ConVar mat_tonemapping_occlusion_use_stencil( "mat_tonemapping_occlusion_use_stencil", "0", FCVAR_DEVELOPMENTONLY );
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _PS3 )
+#if defined( DX_TO_GL_ABSTRACTION )
     static ConVar mat_dxlevel( "mat_dxlevel", "100", FCVAR_DEVELOPMENTONLY, "", true, 90, true, 100, NULL );
     //static ConVar mat_dxlevel( "mat_dxlevel", "95", FCVAR_DEVELOPMENTONLY, "", true, 95, true, 95, NULL );
     //static ConVar mat_dxlevel( "mat_dxlevel", "92", FCVAR_DEVELOPMENTONLY, "", true, 92, true, 92, NULL );
@@ -110,19 +100,7 @@ extern IRocketUI* g_pRocketUI;
 
 CreateInterfaceFn g_fnMatSystemConnectCreateInterface = NULL;  
 
-#ifdef _PS3
-#define m_pRenderContext Ps3TlsMaterialSystemRenderContext
-#elif defined(_X360)
-IMatRenderContextInternal *CMaterialSystem::m_pRenderContexts[2];
-#define m_pRenderContext CMaterialSystem::m_pRenderContexts[(int)ThreadInMainThread()]
-#else
 CTHREADLOCALPTR(IMatRenderContextInternal) CMaterialSystem::m_pRenderContext;
-#endif
-
-#if defined( _X360 )
-static const unsigned int g_GamerpicSize = 64;
-static const ImageFormat g_GamerpicFormat = IMAGE_FORMAT_LINEAR_BGRA8888; // note that this format is intentionally BGRA instead of ARBB
-#endif // _X360
 
 //#define PERF_TESTING 1
 
@@ -158,13 +136,11 @@ CThreadFastMutex g_MatSysMutex;
 //-----------------------------------------------------------------------------
 // Purpose: additional materialsystem information, internal use only
 //-----------------------------------------------------------------------------
-#ifndef _GAMECONSOLE
 struct MaterialSystem_Config_Internal_t
 {
 	int gpu_level;
 };
 MaterialSystem_Config_Internal_t g_config_internal;
-#endif
 
 //-----------------------------------------------------------------------------
 // Necessary to allow the shader DLLs to get ahold of IMaterialSystemHardwareConfig
@@ -195,9 +171,7 @@ EXPOSE_INTERFACE_FN( GetICVar, ICVar, CVAR_INTERFACE_VERSION );
 // Accessor to get at the material system
 //-----------------------------------------------------------------------------
 IMaterialSystemInternal *g_pInternalMaterialSystem = &g_MaterialSystem;
-#ifndef _PS3
 IShaderUtil *g_pShaderUtil = &g_MaterialSystem;
-#endif
 IVJobs * g_pVJobs = NULL;
 
 #if defined( USE_SDL ) || defined( OSX )
@@ -225,11 +199,6 @@ void *ShaderFactory( const char *pName, int *pReturnCode )
 
 	if ( !Q_stricmp( pName, VJOBS_INTERFACE_VERSION ) )
 		return g_pVJobs;
-
-#if defined( _X360 )
-	if ( !Q_stricmp( pName, XBOXINSTALLER_INTERFACE_VERSION ))
-		return g_pXboxInstaller;
-#endif
 
 	if ( !Q_stricmp( pName, SHADER_UTIL_INTERFACE_VERSION ))
 		return g_pShaderUtil;
@@ -385,12 +354,6 @@ class CResourcePreloadMaterial : public CResourcePreload
 		CompactMaterialVarHeap();
 	}
 
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock()
-	{
-		return true;
-	}
-#endif // _PS3
 };
 
 static CResourcePreloadMaterial s_ResourcePreloadMaterial;
@@ -447,12 +410,6 @@ class CResourcePreloadCubemap : public CResourcePreload
 		}	
 	}
 
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock()
-	{
-		return true;
-	}
-#endif // _PS3
 };
 static CResourcePreloadCubemap s_ResourcePreloadCubemap;
 
@@ -669,11 +626,7 @@ CMaterialSystem::CMaterialSystem()
 
 	m_pActiveAsyncTextureLoad = NULL;
 
-#ifndef _PS3
 	m_pActiveAsyncJob = NULL;
-#else
-	m_bQMSJobSubmitted = false;
-#endif
 	m_IdealThreadMode = m_ThreadMode = MATERIAL_SINGLE_THREADED;
 	m_nServiceThread = 0;
 
@@ -747,9 +700,6 @@ void CMaterialSystem::DestroyShaderAPI()
 //-----------------------------------------------------------------------------
 void CMaterialSystem::SetShaderAPI( char const *pShaderAPIDLL )
 {
-#if defined( _PS3 )
-	return;
-#endif
 
 	if ( m_ShaderAPIFactory )
 	{
@@ -797,14 +747,12 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 
 	// Get at the interfaces exported by the shader DLL
 
-#ifndef _PS3
 	g_pShaderDeviceMgr = (IShaderDeviceMgr*)m_ShaderAPIFactory( SHADER_DEVICE_MGR_INTERFACE_VERSION, 0 );
 	if ( !g_pShaderDeviceMgr )
 		return false;
 	g_pHWConfig = (IHardwareConfigInternal*)m_ShaderAPIFactory( MATERIALSYSTEM_HARDWARECONFIG_INTERFACE_VERSION, 0 );
 	if ( !g_pHWConfig )
 		return false;
-#endif
 
 #ifndef DEDICATED
 
@@ -817,8 +765,6 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 	if ( !g_pLauncherMgr )
 		return false;
 
-#elif defined( _PS3 )
-	g_pHWConfig = g_pHardwareConfig;
 #elif defined( _OSX )
 	g_pHWConfig = g_pHardwareConfig;
 
@@ -842,7 +788,6 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 
 #endif // !DEDICATED
 
-#ifndef _PS3
 	// FIXME: ShaderAPI, ShaderDevice, and ShaderShadow should only come in after setting mode
 	g_pShaderAPI = (IShaderAPI*)m_ShaderAPIFactory( SHADERAPI_INTERFACE_VERSION, 0 );
 	if ( !g_pShaderAPI )
@@ -853,7 +798,6 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 	g_pShaderShadow = (IShaderShadow*)m_ShaderAPIFactory( SHADERSHADOW_INTERFACE_VERSION, 0 );
 	if ( !g_pShaderShadow )
 		return false;
-#endif
 
 	// Remember the factory for connect
 	g_fnMatSystemConnectCreateInterface = factory;
@@ -880,12 +824,10 @@ void CMaterialSystem::Disconnect()
 		// Unload the DLL
 		DestroyShaderAPI();
 	}
-#if !defined( _PS3 )
 	g_pShaderAPI = NULL;
 	g_pHWConfig = NULL;
 	g_pShaderShadow = NULL;
 	g_pShaderDevice = NULL;
-#endif
 
 #if defined( INCLUDE_SCALEFORM )
 	g_pScaleformUI = NULL;
@@ -963,11 +905,9 @@ void CMaterialSystem::InitColorCorrection( )
 	}
 }
 
-#ifndef _PS3 // make some empty stubs so we can use IsPS3() instead of ifdefs
 static inline void PS3InitFontLibrary( unsigned fontFileCacheSizeInBytes, unsigned maxNumFonts ) {};
 static inline void PS3DumpFontLibrary(){}
 #define kPS3_DEFAULT_MAX_USER_FONTS 0
-#endif
 
 //-----------------------------------------------------------------------------
 // Initialization + shutdown of the material system
@@ -1000,7 +940,7 @@ InitReturnVal_t CMaterialSystem::Init()
 	// Shader system!
 	ShaderSystem()->Init();
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 	// HACKHACK: <sigh> This horrible hack is possibly the only way to reliably detect an old
 	// version of hammer initializing the material system. We need to know this so that we set
 	// up the editor materials properly. If we don't do this, we never allocate the white lightmap,
@@ -1168,10 +1108,6 @@ void CMaterialSystem::Shutdown( )
 	{
 		g_pShaderDeviceMgr->Shutdown();
 	}
-#if defined( _PS3 )
-	// this would have been called in g_pShaderDeviceMgr->Shutdown(), but since g_pShaderDeviceMgr is sometimes NULL, we'll clean up mesh manager once more, just in case
-	MeshMgr()->Shutdown();
-#endif
 
 	if ( IsPS3() ) 
 		PS3DumpFontLibrary();
@@ -1391,19 +1327,14 @@ IClientMaterialSystem *CMaterialSystem::GetClientMaterialSystemInterface()
 void CMaterialSystem::RefreshFrontBufferNonInteractive()
 {
 
-#ifdef _PS3
-	extern bool IsItSafeToRefreshFrontBufferNonInteractivePs3();
-	if ( !IsItSafeToRefreshFrontBufferNonInteractivePs3() )
-#else
 	if ( !ThreadInMainThread() )
-#endif
 		return;
 
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->RefreshFrontBufferNonInteractive();
 }
 
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 static CThreadFastMutex s_mtFrameTimestamps;
 static double s_flMstThreadBeginTimestamp = 0.0f;
 static double s_flTotalFrameBeginTimestamp = 0.0f;
@@ -1440,36 +1371,13 @@ void OnFrameTimestampAvailableTotal( float ms )
 	s_apci.msTotal = ms;
 }
 
-#ifdef _X360
-static LARGE_INTEGER s_gpuStartTime;
-static LARGE_INTEGER s_gpuTime;
-
-void OnGpuStartFrame(uint32 context)
-{
-	QueryPerformanceCounter( &s_gpuStartTime );
-}
-
-void OnGpuEndFrame(uint32 context)
-{
-	LARGE_INTEGER current_time;
-	QueryPerformanceCounter( &current_time );
-	s_gpuTime.QuadPart = current_time.QuadPart - s_gpuStartTime.QuadPart;
-}
-
-#endif
-
 #endif
 
 uint32 CMaterialSystem::GetFrameTimestamps( ApplicationPerformanceCountersInfo_t &apci, ApplicationInstantCountersInfo_t & aici )
 {
-#if defined (_X360) &&  X360_ALLOW_TIMESTAMPS
-	LARGE_INTEGER freq;
-	QueryPerformanceFrequency(&freq);
-	s_apci.msGPU = 1000.0f * ((double)s_gpuTime.QuadPart / (double)(freq.QuadPart));
-#endif
 
 
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 	AUTO_LOCK( s_mtFrameTimestamps );
 	V_memcpy( &apci, &s_apci, sizeof( s_apci ) );
 	return 1000;
@@ -1584,20 +1492,12 @@ void CMaterialSystem::ForceSingleThreaded()
 	}
 	if ( GetThreadMode() != MATERIAL_SINGLE_THREADED )
 	{
-#ifndef _PS3
 
 		if ( m_pActiveAsyncJob && !m_pActiveAsyncJob->IsFinished() )
 		{
 			m_pActiveAsyncJob->WaitForFinish();
 		}
 		SafeRelease( m_pActiveAsyncJob ); 
-#else
-		if (m_bQMSJobSubmitted)
-		{
-			g_pGcmSharedData->WaitForQMS();
-			m_bQMSJobSubmitted = 0;
-		}
-#endif
 
 #ifdef MAT_QUEUED_OWN_THREADPOOL
 		ThreadRelease();
@@ -1875,14 +1775,12 @@ void CMaterialSystem::ReleaseShaderObjects( int nChangeFlags )
 
 void CMaterialSystem::RestoreShaderObjects( CreateInterfaceFn shaderFactory, int nChangeFlags )
 {
-#if !defined( _PS3 )
 	if ( shaderFactory )
 	{
 		g_pShaderAPI = (IShaderAPI*)shaderFactory( SHADERAPI_INTERFACE_VERSION, NULL );
 		g_pShaderDevice = (IShaderDevice*)shaderFactory( SHADER_DEVICE_INTERFACE_VERSION, NULL );
 		g_pShaderShadow = (IShaderShadow*)shaderFactory( SHADERSHADOW_INTERFACE_VERSION, NULL );
 	}
-#endif
 
 	for( MaterialHandle_t i = m_MaterialDict.FirstMaterial(); i != m_MaterialDict.InvalidMaterial(); i = m_MaterialDict.NextMaterial( i ) )
 	{
@@ -2056,27 +1954,6 @@ void CMaterialSystem::GenerateConfigFromConfigKeyValues( MaterialSystem_Config_t
 	pConfig->m_VideoMode.m_Width = width;
 	pConfig->m_VideoMode.m_Height = height;
 
-#elif defined( _X360 )
-	pConfig->m_VideoMode.m_Width = GetSystemMetrics( SM_CXSCREEN );
-	pConfig->m_VideoMode.m_Height = GetSystemMetrics( SM_CYSCREEN );
-	// We can afford better aniso in standard def
-	if ( pConfig->m_VideoMode.m_Width == 640 )
-	{
-		static ConVarRef mat_forceaniso( "mat_forceaniso" );
-		mat_forceaniso.SetValue( 8 );
-	}
-#elif defined( _PS3 )
-	// Shader API does the dirty work of querying cellVideo libraries for screen res, so just piggy back on it
-	ShaderDisplayMode_t info;
-	g_pShaderDeviceMgr->GetModeInfo( &info, 0, 0 );
-	pConfig->m_VideoMode.m_Width = info.m_nWidth;
-	pConfig->m_VideoMode.m_Height = info.m_nHeight;
-	// We can afford better aniso in standard def
-	if ( pConfig->m_VideoMode.m_Width == 640 )
-	{
-		static ConVarRef mat_forceaniso( "mat_forceaniso" );
-		mat_forceaniso.SetValue( 8 );
-	}
 #endif
 
 	// Destroy the keys.
@@ -2147,7 +2024,7 @@ static ConVar mat_normalmaps(		"mat_normalmaps", "0", FCVAR_CHEAT );
 static ConVar mat_measurefillrate(	"mat_measurefillrate", "0", FCVAR_CHEAT );
 static ConVar mat_fillrate(			"mat_fillrate", "0", FCVAR_CHEAT );
 static ConVar mat_reversedepth(		"mat_reversedepth", "0", FCVAR_CHEAT );
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 static ConVar mat_bufferprimitives( "mat_bufferprimitives", "0" );	// I'm not seeing any benefit speed wise for buffered primitives on GLM/POSIX (checked via TF2 timedemo) - default to zero
 #else
 static ConVar mat_bufferprimitives( "mat_bufferprimitives", "1" );
@@ -2163,11 +2040,7 @@ static ConVar mat_drawgray(			"mat_drawgray","0", FCVAR_CHEAT );
 
 // These are not controlled by the material system, but are limited by settings in the material system
 static ConVar r_shadowrendertotexture(		"r_shadowrendertotexture", "0" );
-#if ( defined( CSTRIKE15 ) && defined( _PS3) )
 static ConVar r_flashlightdepthtexture(		"r_flashlightdepthtexture", "1" );
-#else
-static ConVar r_flashlightdepthtexture(		"r_flashlightdepthtexture", "1" );
-#endif
 // On non-gameconsoles mat_motion_blur_enabled now comes from video.txt/videodefaults.txt
 static ConVar mat_motion_blur_enabled( "mat_motion_blur_enabled", IsGameConsole() ? "1" : "0" );
 
@@ -2313,16 +2186,12 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 	Assert( m_bGeneratedConfig );
 	// internal config settings
 
-#ifndef _GAMECONSOLE
 	MaterialSystem_Config_Internal_t config_internal;
 	config_internal.gpu_level = gpu_level.GetInt();
-#endif
 
 	if ( 
 		!memcmp( &_config, &g_config, sizeof(_config) ) 
-#ifndef _GAMECONSOLE
 		&& !memcmp( &config_internal, &g_config_internal, sizeof(config_internal) ) 
-#endif
 		)
 		return false;
 
@@ -2351,9 +2220,7 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 	{
 		g_config = config;
 
-#ifndef _GAMECONSOLE
 		g_config_internal = config_internal;
-#endif
 
 		// Shouldn't call this more than once.
 		ColorSpace::SetGamma( 2.2f, 2.2f, OVERBRIGHT, g_config.bAllowCheats, false );
@@ -2541,7 +2408,6 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 		bReloadMaterials = true;
 	}
 
-#ifndef _GAMECONSOLE
 	if ( config_internal.gpu_level != g_config_internal.gpu_level )
 	{
 		if ( mat_debugalttab.GetBool() )
@@ -2551,8 +2417,6 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 		}
 		bReloadMaterials = true;
 	}
-
-#endif
 
 	// generic things that cause us to redownload lightmaps
 	if ( config.bAllowCheats != g_config.bAllowCheats )
@@ -2639,7 +2503,6 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 	// toggle wait for vsync
 	if ( (IsGameConsole() || !config.Windowed()) && (config.WaitForVSync() != g_config.WaitForVSync()) )
 	{
-#		if ( !defined( _X360 ) )
 		{
 			if ( mat_debugalttab.GetBool() )
 			{
@@ -2647,18 +2510,11 @@ bool CMaterialSystem::OverrideConfig( const MaterialSystem_Config_t &_config, bo
 			}
 			bVideoModeChange = true;
 		}
-#		else
-		{
-			g_pShaderAPI->EnableVSync_360( config.WaitForVSync() );
-		}
-#		endif
 	}
 
 
 	g_config = config;
-#ifndef _GAMECONSOLE
 	g_config_internal = config_internal;
-#endif
 
 	if ( bRedownloadTextures || bRedownloadLightmaps )
 	{
@@ -2872,107 +2728,6 @@ ITexture *CMaterialSystem::CreateProceduralTexture(
 	ITextureInternal* pTex = TextureManager()->CreateProceduralTexture( pTextureName, pTextureGroupName, w, h, 1, fmt, nFlags );
 	return pTex;
 }
-#if defined( _X360 )
-
-//-----------------------------------------------------------------------------
-// Create a texture for displaying gamerpics.
-// This function allocates the texture in the correct gamerpic format, but it does not fill in the gamerpic data.
-//-----------------------------------------------------------------------------
-ITexture *CMaterialSystem::CreateGamerpicTexture(
-	const char			*pTextureName,
-	const char			*pTextureGroupName,
-	int					nFlags )
-{
-	return CreateProceduralTexture( pTextureName, pTextureGroupName, g_GamerpicSize, g_GamerpicSize, g_GamerpicFormat, nFlags );
-}
-
-//-----------------------------------------------------------------------------
-// Update the given texture with the player gamerpic for the local player at the given index.
-// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-//-----------------------------------------------------------------------------
-bool CMaterialSystem::UpdateLocalGamerpicTexture(
-	ITexture			*pTexture, 
-	DWORD				userIndex )
-{
-	Assert( pTexture != NULL );
-	Assert( pTexture->GetActualWidth() == g_GamerpicSize && pTexture->GetActualHeight() == g_GamerpicSize );
-	Assert( pTexture->GetImageFormat() == g_GamerpicFormat );
-	Assert( userIndex >= 0 && userIndex < 4 );
-
-	// lock
-	CPixelWriter writer;
-	g_pShaderAPI->ModifyTexture( ((ITextureInternal*)pTexture)->GetTextureHandle( 0 ) );
-	g_pShaderAPI->TexLock( 0, 0, 0, 0, g_GamerpicSize, g_GamerpicSize, writer );
-
-	// Write the gamerpic to the texture.
-	BYTE *pBuf = (BYTE*)writer.GetPixelMemory();
-	DWORD retVal = XUserReadGamerPicture( userIndex, FALSE, pBuf, g_GamerpicSize * writer.GetPixelSize(), g_GamerpicSize * writer.GetPixelSize(), NULL );
-
-	// unlock
-	g_pShaderAPI->TexUnlock();
-
-	return (retVal == ERROR_SUCCESS);
-}
-
-//-----------------------------------------------------------------------------
-// Update the given texture with a remote player's gamerpic.
-// Note: this texture must be the correct size and format. Use CreateGamerpicTexture.
-//-----------------------------------------------------------------------------
-bool CMaterialSystem::UpdateRemoteGamerpicTexture(
-	ITexture			*pTexture,
-	XUID				xuid )
-{
-	Assert( pTexture != NULL );
-	Assert( pTexture->GetActualWidth() == g_GamerpicSize && pTexture->GetActualHeight() == g_GamerpicSize );
-	Assert( pTexture->GetImageFormat() == g_GamerpicFormat );
-
-	//
-	// Read the remote player's profile.
-	//
-
-	const DWORD xuidCount = 1;
-	XUID xuids[xuidCount];
-	xuids[0] = xuid;
-
-	const DWORD settingIdCount = 1;
-	DWORD settingIds[settingIdCount];
-	settingIds[0] = XPROFILE_GAMERCARD_PICTURE_KEY;
-
-	// Get the size of the results.
-	DWORD resultsSize = 0;
-	DWORD retVal = XUserReadProfileSettingsByXuid( 0, XBX_GetPrimaryUserId(), xuidCount, xuids, settingIdCount, settingIds, &resultsSize, 0, 0 );
-	if ( retVal != ERROR_INSUFFICIENT_BUFFER )
-	{
-		return false;
-	}
-
-	Assert( resultsSize > 0 );
-
-	// Get the profile with the correct results size.
-	CArrayAutoPtr<unsigned char> spResultsBuffer( new unsigned char[resultsSize] );
-	XUSER_READ_PROFILE_SETTING_RESULT *pResults = (XUSER_READ_PROFILE_SETTING_RESULT*)spResultsBuffer.Get();
-	retVal = XUserReadProfileSettingsByXuid( 0, 0, xuidCount, xuids, settingIdCount, settingIds, &resultsSize, pResults, 0 );
-	if ( retVal != ERROR_SUCCESS || pResults->dwSettingsLen == 0 )
-	{
-		return false;
-	}
-
-	// lock
-	CPixelWriter writer;
-	g_pShaderAPI->ModifyTexture( ((ITextureInternal*)pTexture)->GetTextureHandle( 0 ) );
-	g_pShaderAPI->TexLock( 0, 0, 0, 0, g_GamerpicSize, g_GamerpicSize, writer );
-
-	// Write the gamerpic to the texture.
-	BYTE *pBuf = (BYTE*)writer.GetPixelMemory();
-	retVal = XUserReadGamerPictureByKey( &(pResults->pSettings[0].data), FALSE, pBuf, g_GamerpicSize * writer.GetPixelSize(), g_GamerpicSize * writer.GetPixelSize(), NULL );
-
-	// unlock
-	g_pShaderAPI->TexUnlock();
-
-	return (retVal == ERROR_SUCCESS);
-}
-
-#endif // _X360
 
 	
 //-----------------------------------------------------------------------------
@@ -3992,17 +3747,8 @@ bool CMaterialSystem::IsInFrame( ) const
 
 void CMaterialSystem::ThreadExecuteQueuedContext( CMatQueuedRenderContext *pContext )
 {
-	#ifdef _PS3
-		#if GCM_ALLOW_NULL_FLIPS
-		extern void Ps3NullFlipsStartSceneTime();
-		Ps3NullFlipsStartSceneTime();
-		#endif
-	// This function takes up a lot of global thread pool time in GPU-bound levels, and it's convenient
-	// to have it as a bar in snTuner profiler. Making it PS3-only to avoid polluting X360 bars
-	VPROF_BUDGET( "ThreadExecuteQueuedContext", "All Threaded Rendering" );
-	#endif
 
-	#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+	#if GCM_ALLOW_TIMESTAMPS
 	OnFrameTimestampAvailableMST( 0.0f ); // signals frame start
 	#endif
 
@@ -4056,7 +3802,7 @@ void CMaterialSystem::DestroyMatQueueThreadPool()
 	}
 }
 
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 static double s_flMainThreadBeginTimestampSec = 0.0f;
 #endif
 
@@ -4131,7 +3877,7 @@ void CMaterialSystem::EndFrame( void )
 	CheckOsxForcedNextThreadMode(&nextThreadMode, &m_bForcedSingleThreaded );
 #endif
 
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 	{
 		// This is called on the main thread and here the main thread is finished
 		double flMainThreadEndTimestampSec = Plat_FloatTime();
@@ -4143,7 +3889,7 @@ void CMaterialSystem::EndFrame( void )
 	switch ( m_ThreadMode )
 	{
 	case MATERIAL_SINGLE_THREADED:
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 		{
 			double flCurrentTime = Plat_FloatTime();
 			OnFrameTimestampAvailableTotal( (flCurrentTime-s_flTotalFrameBeginTimestamp)*1000.0f );
@@ -4154,8 +3900,6 @@ void CMaterialSystem::EndFrame( void )
 		ServiceEndFramePriorToNextContext();
 		g_pfnSwapBufferMarker();
 		break;
-
-#ifndef _PS3
 
 	case MATERIAL_QUEUED_THREADED:
 		{
@@ -4199,7 +3943,7 @@ void CMaterialSystem::EndFrame( void )
 			SafeRelease( m_pActiveAsyncJob );
 
 
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 			{
 				double flCurrentTime = Plat_FloatTime();
 				OnFrameTimestampAvailableTotal( (flCurrentTime-s_flTotalFrameBeginTimestamp)*1000.0f );
@@ -4253,60 +3997,13 @@ void CMaterialSystem::EndFrame( void )
 		}
 
 
-#else // #ifndef _PS3
-
-
-	case MATERIAL_QUEUED_THREADED:
-		{
-			// Wait for previous submitted QMS run
-			if (m_bQMSJobSubmitted)
-			{
-				g_pGcmSharedData->WaitForQMS();
-				m_bQMSJobSubmitted = 0;
-
-				if ( !IsPC() && mat_forcehardwaresync.GetBool() )
-				{
-					g_pShaderAPI->ForceHardwareSync();
-				}
-			}
-
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
-			{
-				double flCurrentTime = Plat_FloatTime();
-				OnFrameTimestampAvailableTotal( (flCurrentTime-s_flTotalFrameBeginTimestamp)*1000.0f );
-				s_flTotalFrameBeginTimestamp = flCurrentTime;
-			}
-#endif
-			ServiceEndFramePriorToNextContext();
-			g_pfnSwapBufferMarker();
-
-			// Switch Render Contexts
-
-			CMatQueuedRenderContext *pPrevContext = &m_QueuedRenderContexts[m_iCurQueuedContext];
-
-			m_QueuedRenderContexts[m_iCurQueuedContext].GetCallQueueInternal()->QueueCall( g_pShaderAPI, &IShaderAPI::ReleaseThreadOwnership );
-			m_iCurQueuedContext = ( ( m_iCurQueuedContext + 1 ) % ARRAYSIZE( m_QueuedRenderContexts) );
-			m_QueuedRenderContexts[m_iCurQueuedContext].BeginQueue( pPrevContext );
-			m_QueuedRenderContexts[m_iCurQueuedContext].GetCallQueueInternal()->QueueCall( g_pShaderAPI, &IShaderAPI::AcquireThreadOwnership );
-			m_pRenderContext =  &m_QueuedRenderContexts[m_iCurQueuedContext];
-		
-			// Run QMS on prevContext
-
-			g_pGcmSharedData->RunQMS(&RunQMS, (void*)this, (void*)pPrevContext);
-			m_bQMSJobSubmitted = 1;
-
-			break;
-		}
-
-#endif
-
 	case MATERIAL_QUEUED_SINGLE_THREADED:
 		{
 			VPROF_BUDGET( "Mat_ThreadedEndframe", "Mat_QueuedEndframe" );
 
 			g_pShaderAPI->SetDisallowAccess( false );
 			m_pRenderContext = &m_HardwareRenderContext;
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 			OnFrameTimestampAvailableMST( 0.0f ); // signals frame start
 #endif
 			m_QueuedRenderContexts[m_iCurQueuedContext].CallQueued();
@@ -4315,7 +4012,7 @@ void CMaterialSystem::EndFrame( void )
 			m_QueuedRenderContexts[m_iCurQueuedContext].CycleDynamicBuffers();
 			m_pRenderContext =  &m_QueuedRenderContexts[m_iCurQueuedContext];
 			g_pShaderAPI->SetDisallowAccess( true );
-#if GCM_ALLOW_TIMESTAMPS || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 			double flCurrentTime = Plat_FloatTime();
 			OnFrameTimestampAvailableTotal( (flCurrentTime-s_flTotalFrameBeginTimestamp)*1000.0f );
 			s_flTotalFrameBeginTimestamp = flCurrentTime;
@@ -4330,7 +4027,7 @@ void CMaterialSystem::EndFrame( void )
 	// for the render thread.
 	g_PerfStats.Tick();
 
-#if GCM_ALLOW_TIMESTAMPS  || X360_ALLOW_TIMESTAMPS
+#if GCM_ALLOW_TIMESTAMPS
 	s_flMainThreadBeginTimestampSec = Plat_FloatTime();
 #endif
 
@@ -4364,19 +4061,11 @@ void CMaterialSystem::EndFrame( void )
 
 		case MATERIAL_QUEUED_THREADED:
 			{
-#ifndef _PS3
 				if ( m_pActiveAsyncJob )
 				{
 					m_pActiveAsyncJob->WaitForFinish();
 					SafeRelease( m_pActiveAsyncJob );
 				}
-#else
-				if (m_bQMSJobSubmitted)
-				{
-					g_pGcmSharedData->WaitForQMS();
-					m_bQMSJobSubmitted = 0;
-				}
-#endif
 				// We have a queued context set here, need hardware to flush the queue if the job isn't active
 				m_pRenderContext = &m_HardwareRenderContext;
 
@@ -4666,26 +4355,6 @@ void CMaterialSystem::DebugPrintUsedTextures( void )
 	TextureManager()->DebugPrintUsedTextures();
 }
 
-#if defined( _X360 ) || defined( _PS3 )
-void CMaterialSystem::ListUsedMaterials( void )
-{	
-	int numMaterials = GetNumMaterials();
-	xMaterialList_t* pMaterialList = (xMaterialList_t *)stackalloc( numMaterials * sizeof( xMaterialList_t ) );
-
-	numMaterials = 0;
-	for ( MaterialHandle_t hMaterial = FirstMaterial(); hMaterial != InvalidMaterial(); hMaterial = NextMaterial( hMaterial ) )
-	{
-		IMaterialInternal *pMaterial = GetMaterialInternal( hMaterial );
-		pMaterialList[numMaterials].pName = pMaterial->GetName();
-		pMaterialList[numMaterials].pShaderName = pMaterial->GetShader() ? pMaterial->GetShader()->GetName() : "???";
-		pMaterialList[numMaterials].refCount = pMaterial->GetReferenceCount();
-		numMaterials++;
-	}
-
-	XBX_rMaterialList( numMaterials, pMaterialList );
-}
-#endif
-
 void CMaterialSystem::ToggleSuppressMaterial( char const* pMaterialName )
 {
 	/*
@@ -4810,7 +4479,7 @@ void CMaterialSystem::GetShaderFallback( const char *pShaderName, char *pFallbac
 //-----------------------------------------------------------------------------
 // Triggers OpenGL shader preloading at game startup
 //-----------------------------------------------------------------------------
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 void	CMaterialSystem::DoStartupShaderPreloading( void )
 {
 	GetRenderContextInternal()->DoStartupShaderPreloading();
@@ -5052,14 +4721,6 @@ ITexture* CMaterialSystem::CreateNamedRenderTargetTextureEx(
 	ITextureInternal* pTex = TextureManager()->CreateRenderTargetTexture( pRTName, w, h, sizeMode, format, rtType, textureFlags, renderTargetFlags, false );
 	pTex->IncrementReferenceCount();
 
-#if defined( _X360 )
-	if ( !( renderTargetFlags & CREATERENDERTARGETFLAGS_NOEDRAM ) )
-	{
-		// create the EDRAM surface that is bound to the RT Texture
-		pTex->CreateRenderTargetSurface( 0, 0, IMAGE_FORMAT_UNKNOWN, true );
-	}
-#endif
-
 	return pTex;
 }
 
@@ -5111,14 +4772,6 @@ ITexture *CMaterialSystem::CreateNamedMultiRenderTargetTexture(
 	RenderTargetType_t rtType = DepthTypeToRenderTargetType( depth );
 
 	ITextureInternal* pTex =TextureManager()->CreateRenderTargetTexture( pRTName, w, h, sizeMode, format, rtType, textureFlags, renderTargetFlags, true );	
-
-#if defined( _X360 )
-	if ( !( renderTargetFlags & CREATERENDERTARGETFLAGS_NOEDRAM ) )
-	{
-		// create the EDRAM surface that is bound to the RT Texture
-		pTex->CreateRenderTargetSurface( 0, 0, IMAGE_FORMAT_UNKNOWN, true );
-	}
-#endif
 
 
 	return pTex; //ref count is 0
@@ -5234,130 +4887,11 @@ bool CMaterialSystem::IsStereoActiveThisFrame() const
 //-----------------------------------------------------------------------------------------------------
 // 360 TTF Font Support
 //-----------------------------------------------------------------------------------------------------
-#if defined( _X360 )
-HXUIFONT CMaterialSystem::OpenTrueTypeFont( const char *pFontname, int tall, int style )
-{
-	MaterialLock_t hLock = Lock();
-	HXUIFONT result = g_pShaderAPI->OpenTrueTypeFont( pFontname, tall, style );
-	Unlock( hLock );
-	return result;
-}
-void CMaterialSystem::CloseTrueTypeFont( HXUIFONT hFont )
-{
-	MaterialLock_t hLock = Lock();
-	g_pShaderAPI->CloseTrueTypeFont( hFont );
-	Unlock( hLock );
-}
-bool CMaterialSystem::GetTrueTypeFontMetrics( HXUIFONT hFont, wchar_t wchFirst, wchar_t wchLast, XUIFontMetrics *pFontMetrics, XUICharMetrics *pCharMetrics )
-{
-	MaterialLock_t hLock = Lock();
-	bool result = g_pShaderAPI->GetTrueTypeFontMetrics( hFont, wchFirst, wchLast, pFontMetrics, pCharMetrics );
-	Unlock( hLock );
-	return result;
-}
-bool CMaterialSystem::GetTrueTypeGlyphs( HXUIFONT hFont, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset )
-{
-	MaterialLock_t hLock = Lock();
-	bool result = g_pShaderAPI->GetTrueTypeGlyphs( hFont, numChars, pWch, pOffsetX, pOffsetY, pWidth, pHeight, pRGBA, pRGBAOffset );
-	Unlock( hLock );
-	return result;
-}
-#endif
 
 //-----------------------------------------------------------------------------------------------------
 // 360 Back Buffer access. Due to hardware, RT data must be blitted from EDRAM
 // and converted.
 //-----------------------------------------------------------------------------------------------------
-#if defined( _X360 )
-void CMaterialSystem::ReadBackBuffer( Rect_t *pSrcRect, Rect_t *pDstRect, unsigned char *pDstData, ImageFormat dstFormat, int dstStride ) 
-{
-	Assert( pSrcRect && pDstRect && pDstData );
-
-	int fbWidth, fbHeight;
-	g_pShaderAPI->GetBackBufferDimensions( fbWidth, fbHeight ); 
-
-	if ( pDstRect->width > fbWidth || pDstRect->height > fbHeight )
-	{
-		Assert( 0 );
-		return;
-	}
-
-	// intermediate results will be placed at (0,0)
-	Rect_t	rect;
-	rect.x = 0;
-	rect.y = 0;
-	rect.width = pDstRect->width;
-	rect.height = pDstRect->height;
-
-	ITexture *pTempRT;
-	bool bStretch = ( pSrcRect->width != pDstRect->width || pSrcRect->height != pDstRect->height );
-	if ( !bStretch )
-	{
-		// hijack an unused RT (no surface required) for 1:1 resolve work, fastest path
-		pTempRT = FindTexture( "_rt_FullFrameFB", TEXTURE_GROUP_RENDER_TARGET );
-	}
-	else
-	{
-		// hijack an unused RT (with surface abilities) for stretch work, slower path
-		pTempRT = FindTexture( "_rt_WaterReflection", TEXTURE_GROUP_RENDER_TARGET );
-	}
-
-	Assert( !pTempRT->IsError() && pDstRect->width <= pTempRT->GetActualWidth() && pDstRect->height <= pTempRT->GetActualHeight() );
-	GetRenderContextInternal()->CopyRenderTargetToTextureEx( pTempRT, 0, pSrcRect, &rect );
-
-	// access the RT bits
-	CPixelWriter writer;
-	g_pShaderAPI->ModifyTexture( ((ITextureInternal*)pTempRT)->GetTextureHandle( 0 ) );
-	if ( !g_pShaderAPI->TexLock( 0, 0, 0, 0, pTempRT->GetActualWidth(), pTempRT->GetActualHeight(), writer ) )
-		return;
-
-	// this will be adequate for non-block formats
-	int srcStride = pTempRT->GetActualWidth() * ImageLoader::SizeInBytes( pTempRT->GetImageFormat() );
-
-	// untile intermediate RT in place to achieve linear access
-	XGUntileTextureLevel(
-		pTempRT->GetActualWidth(),
-		pTempRT->GetActualHeight(),
-		0,
-		XGGetGpuFormat( ImageLoader::ImageFormatToD3DFormat( pTempRT->GetImageFormat() ) ),
-		0,
-		(char*)writer.GetPixelMemory(),
-		srcStride,
-		NULL,
-		writer.GetPixelMemory(),
-		NULL );
-
-	// swap back to x86 order as expected by image conversion
-	ImageLoader::ByteSwapImageData( (unsigned char*)writer.GetPixelMemory(), srcStride*pTempRT->GetActualHeight(), pTempRT->GetImageFormat() );
-
-	// convert to callers format
-	Assert( dstFormat == IMAGE_FORMAT_RGB888 );
-	ImageLoader::ConvertImageFormat( (unsigned char*)writer.GetPixelMemory(), pTempRT->GetImageFormat(), pDstData, dstFormat, pDstRect->width, pDstRect->height, srcStride, dstStride );
-
-	g_pShaderAPI->TexUnlock();
-}
-#endif
-
-#if defined( _X360 )
-void CMaterialSystem::PersistDisplay() 
-{
-	g_pShaderAPI->PersistDisplay();
-}
-#endif
-
-#if defined( _X360 )
-void *CMaterialSystem::GetD3DDevice() 
-{
-	return g_pShaderAPI->GetD3DDevice();
-}
-#endif
-
-#if defined( _X360 )
-bool CMaterialSystem::OwnGPUResources( bool bEnable ) 
-{
-	return g_pShaderAPI->OwnGPUResources( bEnable );
-}
-#endif
 
 //-----------------------------------------------------------------------------------------------------
 //
@@ -5465,25 +4999,11 @@ MaterialLock_t CMaterialSystem::Lock()
 {
 	IMatRenderContextInternal *pCurContext = GetRenderContextInternal();
 
-#ifdef _X360
-	// use this to help catch synchronization blocks in PIX timing captures
-	PIXEVENT( pCurContext, "CMaterialSystem::Lock" );
-#endif
-
-#ifndef _PS3
-
 	if ( pCurContext != &m_HardwareRenderContext && m_pActiveAsyncJob )
 	{
 		m_pActiveAsyncJob->WaitForFinishAndRelease();
 		m_pActiveAsyncJob = NULL;
 	}
-#else
-	if ( pCurContext != &m_HardwareRenderContext && m_bQMSJobSubmitted )
-	{
-		g_pGcmSharedData->WaitForQMS();
-		m_bQMSJobSubmitted = 0;
-	}
-#endif
 
 	g_MatSysMutex.Lock();
 
@@ -5611,13 +5131,6 @@ void CMaterialSystem::DebugPrintUsedTextures( const CCommand &args )
 	DebugPrintUsedTextures();
 }
 
-#if defined( _X360 ) || defined( _PS3 )
-void CMaterialSystem::ListUsedMaterials( const CCommand &args )
-{
-	ListUsedMaterials();
-}
-#endif // !_X360
-
 void CMaterialSystem::ReloadAllMaterials( const CCommand &args )
 {
 	ReloadMaterials( NULL );
@@ -5638,35 +5151,6 @@ void CMaterialSystem::ReloadTextures( const CCommand &args )
 {
 	ReloadTextures();
 }
-
-#ifdef _PS3
-//void CMaterialSystem::GetVRAMScreenShotInfo( char **pointerToRawImageData, uint32 *uWidth, uint32 *uHeight, uint32 *uPitch, VRAMScreenShotInfoColor_t *colour )
-void CMaterialSystem::TransmitScreenshotToVX()
-{
-	extern char *GetScreenShotInfoForVX( IDirect3DDevice9 *pDevice, uint32 *uWidth, uint32 *uHeight, uint32 *uPitch, uint32 *colour );
-	
-	uint32 uWidth, uHeight, uPitch, uColor;
-	char *pFrameBuffer = GetScreenShotInfoForVX( Dx9Device(), &uWidth, &uHeight, &uPitch, &uColor );
-	if ( pFrameBuffer )
-	{
-		g_pValvePS3Console->TransmitScreenshot( pFrameBuffer, uWidth, uHeight, uPitch, uColor );
-	}
-	
-	//return GetVRAMScreenShotInfoGCM( pointerToRawImageData, Dx9Device(), uWidth, uHeight, uPitch, colour);
-}
-
-void CMaterialSystem::CompactRsxLocalMemory( char const *szReason )
-{
-	extern void Ps3gcmLocalMemoryAllocator_CompactWithReason( char const *szReason );
-	Ps3gcmLocalMemoryAllocator_CompactWithReason( szReason );
-}
-
-void CMaterialSystem::SetFlipPresentFrequency( int nNumVBlanks )
-{
-	extern void Ps3gcmFlip_SetFlipPresentFrequency( int nNumVBlanks );
-	// 7ltodo Ps3gcmFlip_SetFlipPresentFrequency( nNumVBlanks );
-}
-#endif
 
 
 void CMaterialSystem::SpinPresent( uint nFrames )
@@ -5694,6 +5178,3 @@ CON_COMMAND( mat_hdr_enabled, "Report if HDR is enabled for debugging" )
 	}
 }
 
-#ifdef _PS3
-#include "shaderutil_ps3nonvirt.inl"
-#endif

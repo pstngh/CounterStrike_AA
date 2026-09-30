@@ -808,7 +808,7 @@ void SFHudFreezePanel::PopulateDominationInfo( DominationIconType iconType, cons
 
 			V_snwprintf( wszCombined,
 				ARRAYSIZE( wszCombined ),
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 				L"%ls %ls %ls",
 #else
 				L"%s %s %s",

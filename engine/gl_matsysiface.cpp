@@ -761,28 +761,16 @@ void CMSurfaceSortList::Init( int maxSortIDs, int minMaterialLists )
 	m_maxSortIDs = maxSortIDs;
 	int groupMax = maxSortIDs*MAX_MAT_SORT_GROUPS;
 
-#ifndef _PS3
 	m_groups.RemoveAll();
 	m_groups.EnsureCount(groupMax);
 	int groupBytes = (groupMax+7)>>3;
 	m_groupUsed.EnsureCount(groupBytes);
 	Q_memset(m_groupUsed.Base(), 0, groupBytes);
-#else
-	m_groupsShared.RemoveAll();
-	m_groupsShared.EnsureCapacity(maxSortIDs * 2);			// 7LTODO Tune this
-	m_groupIndices.RemoveAll();
-	m_groupIndices.EnsureCount(groupMax);
-	Q_memset(m_groupIndices.Base(), 0xFF, groupMax*2);
-#endif
 
 	for ( int i = 0; i < MAX_MAT_SORT_GROUPS; i++ )
 	{
 		m_sortGroupLists[i].RemoveAll();
-#if defined(_PS3)
-		int cap = (i==0) ? 256 : 64;
-#else
 		int cap = (i==0) ? 128 : 16;
-#endif
 		m_sortGroupLists[i].EnsureCapacity(cap);
 		groupOffset[i] = m_maxSortIDs * i;
 	}
@@ -811,26 +799,7 @@ void CMSurfaceSortList::Reset()
 }
 
 
-#if defined(_PS3)
-void CMSurfaceSortList::EnsureCapacityForSPU( int maxSortIDs, int minMaterialLists )
-{
-	m_list.EnsureCapacity(minMaterialLists);
-	m_groupsShared.EnsureCapacity(maxSortIDs * 2);			// 7LTODO Tune this
-	int groupMax = maxSortIDs*MAX_MAT_SORT_GROUPS;
-	m_groupIndices.EnsureCount(groupMax);
-
-	for ( int i = 0; i < MAX_MAT_SORT_GROUPS; i++ )
-	{
-		int cap = (i==0) ? 256 : 64;
-		m_sortGroupLists[i].EnsureCapacity(cap);
-		groupOffset[i] = m_maxSortIDs * i;
-	}
-	//	InitGroup(&m_emptyGroup);
-}
-#endif
-
 // this resizes the groups and groupUsed arrays
-#if !defined(_PS3)
 void CMSurfaceSortList::EnsureMaxSortIDs( int newMaxSortIDs )
 {
 	if ( newMaxSortIDs > m_maxSortIDs )
@@ -880,33 +849,18 @@ void CMSurfaceSortList::EnsureMaxSortIDs( int newMaxSortIDs )
 		m_maxSortIDs = newMaxSortIDs;
 	}
 }
-#endif
 
 void CMSurfaceSortList::AddSurfaceToTail( msurface2_t *pSurface, int sortGroup, int sortID )
 {
 	Assert(sortGroup<MAX_MAT_SORT_GROUPS);
 	int index = groupOffset[sortGroup] + sortID;
 
-#ifndef _PS3
 	surfacesortgroup_t * RESTRICT pGroup = &m_groups[index];
 	if ( !IsGroupUsed(index) )
 	{
 		MarkGroupUsed(index);
 		InitGroup(pGroup);
 	}
-#else
-	surfacesortgroup_t * RESTRICT pGroup;
-	if ( !IsGroupUsed(index) )
-	{
-		MarkGroupUsed(index);
-		pGroup = &m_groupsShared[m_groupIndices[index]];
-		InitGroup(pGroup);
-	}
-	else
-	{
-		pGroup = &m_groupsShared[m_groupIndices[index]];
-	}
-#endif
 
 	materiallist_t *pList = NULL;
 	short prevIndex = -1;

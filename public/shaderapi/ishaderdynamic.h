@@ -9,8 +9,6 @@
 #ifndef ISHADERDYNAMIC_H
 #define ISHADERDYNAMIC_H
 
-#ifndef SPU
-
 #ifdef _WIN32
 #pragma once
 #endif
@@ -54,8 +52,6 @@ struct ShaderColorCorrectionInfo_t
 	float m_flDefaultWeight;
 	float m_pLookupWeights[4];
 };
-
-#endif // SPU
 
 //-----------------------------------------------------------------------------
 // the 3D shader API interface
@@ -128,8 +124,6 @@ enum StandardTextureId_t
 	
 	TEXTURE_MAX_STD_TEXTURES
 };
-
-#ifndef SPU
 
 enum TextureFilterMode_t
 {
@@ -299,14 +293,6 @@ public:
 
 	virtual float GetSubDHeight() = 0;
 
-#if defined( _GAMECONSOLE )
-	// Enables console-specific command predication.
-	// Set values to 'true' if batches should be rendered in the z-pass and/or the render pass.
-	// Disabling predication returns to default values, which allows D3D to control predication
-	virtual void EnablePredication( bool bZPass, bool bRenderPass ) = 0;
-	virtual void DisablePredication() = 0;
-#endif // _GAMECONSOLE
-
 	virtual bool IsRenderingPaint() const = 0;
 
 	virtual bool IsStereoActiveThisFrame() const = 0;
@@ -315,7 +301,5 @@ public:
 };
 
 // end class IShaderDynamicAPI
-
-#endif //SPU
 
 #endif // ISHADERDYNAMIC_H

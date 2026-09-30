@@ -365,21 +365,7 @@ public:
 	int						GetClientIndex()	{ return ENTINDEX( edict() ) - 1; }
 
 	// returns the player name
-#ifdef _PS3
-	const char *			GetPlayerName() const 
-							{ 
-								if (!strcmp(m_szNetname, ""))
-								{
-									return "empty";
-								}
-								else
-								{
-									return m_szNetname; 
-								}
-							}
-#else
 	const char *			GetPlayerName() const { return m_szNetname; }
-#endif
 		
 	void					SetPlayerName( const char *name );
 

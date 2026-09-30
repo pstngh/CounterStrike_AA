@@ -296,10 +296,8 @@ void CTransitionTable::Reset()
 
 static inline void SetTextureStageState( int stage, D3DTEXTURESTAGESTATETYPE state, DWORD val )
 {
-#if !defined( _X360 )
 	Assert( !g_pShaderDeviceDx8->IsDeactivated() );
 	Dx9Device()->SetTextureStageState( stage, state, val );
-#endif
 }
 
 //Moved to a #define so every instance of this skips unsupported render states at compile time
@@ -450,9 +448,6 @@ APPLY_RENDER_STATE_FUNC_ALPHATEST_AND_MISC( D3DRS_FILLMODE,				FillMode )
 void ApplyZWriteEnable( const ShadowState_t& shaderState, int arg )
 {
 	SetRenderState( D3DRS_ZWRITEENABLE, shaderState.m_DepthTestState.m_ZWriteEnable );
-#if defined( _X360 )
-	//SetRenderState( D3DRS_HIZWRITEENABLE, shaderState.m_ZWriteEnable ? D3DHIZ_AUTOMATIC : D3DHIZ_DISABLE );
-#endif
 #ifdef DEBUG_BOARD_STATE
 	BoardState().m_DepthTestState.m_ZWriteEnable = shaderState.m_DepthTestState.m_ZWriteEnable;
 #endif
@@ -551,9 +546,6 @@ void ApplyDepthTest( const ShadowState_t& state, int stage )
 void CTransitionTable::SetZEnable( D3DZBUFFERTYPE nEnable )
 {
 	SetRenderState( D3DRS_ZENABLE, nEnable );
-#if defined( _X360 )
-		//SetRenderState( D3DRS_HIZENABLE, nEnable ? D3DHIZ_AUTOMATIC : D3DHIZ_DISABLE );
-#endif
 }
 
 void CTransitionTable::SetZFunc( D3DCMPFUNC nCmpFunc )
@@ -1157,9 +1149,6 @@ void CTransitionTable::OverrideDepthEnable( bool bEnable, bool bDepthWriteEnable
 			{
 				SetRenderState( D3DRS_ZFUNC, D3DCMP_ALWAYS );
 			}
-#if defined( _X360 )
-			//SetRenderState( D3DRS_HIZWRITEENABLE, m_CurrentState.m_OverrideZWriteEnable ? D3DHIZ_AUTOMATIC : D3DHIZ_DISABLE );
-#endif
 		}
 		else
 		{
@@ -1168,9 +1157,6 @@ void CTransitionTable::OverrideDepthEnable( bool bEnable, bool bDepthWriteEnable
 				SetZEnable( (D3DZBUFFERTYPE ) CurrentShadowState()->m_DepthTestState.m_ZEnable );
 				SetRenderState( D3DRS_ZWRITEENABLE, CurrentShadowState()->m_DepthTestState.m_ZWriteEnable );
 				SetRenderState( D3DRS_ZFUNC, CurrentShadowState()->m_DepthTestState.m_ZFunc );
-#if defined( _X360 )
-				//SetRenderState( D3DRS_HIZWRITEENABLE, CurrentShadowState()->m_ZWriteEnable ? D3DHIZ_AUTOMATIC : D3DHIZ_DISABLE );
-#endif
 			}
 		}
 	}
@@ -1280,9 +1266,6 @@ void CTransitionTable::PerformShadowStateOverrides( )
 		{
 			SetRenderState( D3DRS_ZFUNC, D3DCMP_ALWAYS );
 		}
-#if defined( _X360 )
-		//SetRenderState( D3DRS_HIZWRITEENABLE, m_CurrentState.m_OverrideZWriteEnable ? D3DHIZ_AUTOMATIC : D3DHIZ_DISABLE );
-#endif
 	}
 
 	if ( m_CurrentState.m_bOverrideAlphaWriteEnable )

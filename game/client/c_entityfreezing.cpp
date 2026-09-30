@@ -85,9 +85,7 @@ void C_EntityFreezing::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 void C_EntityFreezing::ClientThink( void )
 {
-#ifdef _PS3
-	__nop();
-#elif defined(LINUX)
+#if defined(LINUX)
 #elif defined( __clang__ )
 	asm("nop");
 #elif defined( _WIN32 ) && !defined( WIN64 )

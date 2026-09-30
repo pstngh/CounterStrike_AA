@@ -31,7 +31,7 @@
 #endif
 
 // recheck the settings for various computers
-#if !defined(IVP_NO_DOUBLE) && (defined(PSXII) || defined(GEKKO) || defined(_XBOX))
+#if !defined(IVP_NO_DOUBLE) && (defined(PSXII) || defined(GEKKO))
 #define IVP_NO_DOUBLE
 #endif
 

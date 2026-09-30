@@ -15,7 +15,7 @@
 #include "utlpriorityqueue.h"
 #include "utlmap.h"
 
-#if !defined( NO_STEAM ) && !defined ( _PS3 )
+#if !defined( NO_STEAM )
 
 class CUGCFileRequestManager;
 

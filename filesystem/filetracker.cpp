@@ -897,7 +897,6 @@ void TrackedFile_t::ProcessFileRead( void *dest, size_t nBytesRead )
 #ifdef SUPPORT_VPK
 void CFileTracker2::NotePackFileAccess( const char *pFilename, const char *pPathID, CPackedStoreFileHandle &VPKHandle )
 {
-#if !defined( _GAMECONSOLE )
 	AUTO_LOCK( m_Mutex );
 	int idxFileVPK = VPKHandle.m_pOwner->m_PackFileID - 1;
 
@@ -947,7 +946,6 @@ void CFileTracker2::NotePackFileAccess( const char *pFilename, const char *pPath
 		}
 		trackedVPKFileFind.m_nFileFraction += k_nFileFractionSize;
 	}
-#endif
 }
 #endif
 
@@ -1027,7 +1025,6 @@ int CFileTracker2::IdxFileFromName( const char *pFilename, const char *pPathID, 
 #ifdef SUPPORT_VPK
 int CFileTracker2::NotePackFileOpened( const char *pRawFileName, const char *pFilename, const char *pPathID, int64 nLength )
 {
-#if !defined( _GAMECONSOLE )
 	AUTO_LOCK( m_Mutex );
 	TrackedFile_t trackedfileToFind;
 	trackedfileToFind.RebuildFileName( pRawFileName, NULL );
@@ -1046,25 +1043,19 @@ int CFileTracker2::NotePackFileOpened( const char *pRawFileName, const char *pFi
 		m_treeAllOpenedFiles.Reinsert( idxFile );
 	}
 	return idxFile + 1;
-#else
-	return 0;
-#endif
 }
 #endif
 
 void CFileTracker2::NoteFileLoadedFromDisk( const char *pFilename, const char *pPathID, FILE *fp, int64 nLength )
 {
-#if !defined( _GAMECONSOLE )
 	AUTO_LOCK( m_Mutex );
 
 	int idxFile = IdxFileFromName( pFilename, pPathID, 0, nLength, false, true );
 	m_mapAllOpenFiles.Insert( fp, idxFile );
-#endif
 }
 
 void CFileTracker2::RecordFileClose( FILE *fp )
 {
-#if !defined( _GAMECONSOLE )
 	//VPROF_BUDGET("CFileTracker2::RecordFileClose", "PureFileTracker2");
 	AUTO_LOCK( m_Mutex );
 
@@ -1081,12 +1072,10 @@ void CFileTracker2::RecordFileClose( FILE *fp )
 
 		m_mapAllOpenFiles.RemoveAt( idx );
 	}
-#endif
 }
 
 void CFileTracker2::RecordFileSeek( FILE *fp, int64 pos, int seekType )
 {
-#if !defined( _GAMECONSOLE )
 	AUTO_LOCK( m_Mutex );
 	int idx = m_mapAllOpenFiles.Find( fp );
 	if ( idx != m_mapAllOpenFiles.InvalidIndex() )
@@ -1110,13 +1099,11 @@ void CFileTracker2::RecordFileSeek( FILE *fp, int64 pos, int seekType )
 			}
 		}
 	}
-#endif
 }
 
 
 void CFileTracker2::RecordFileRead( void *dest, size_t nBytesRead, size_t nBytesRequested, FILE *fp )
 {
-#if !defined( _GAMECONSOLE )
 
 	//VPROF_BUDGET("CFileTracker2::RecordFileRead", "PureFileTracker2");
 	AUTO_LOCK( m_Mutex );
@@ -1135,7 +1122,6 @@ void CFileTracker2::RecordFileRead( void *dest, size_t nBytesRead, size_t nBytes
 	{
 		m_cMissedReads++;
 	}
-#endif
 }
 
 int CFileTracker2::ListOpenedFiles( bool bListAll, const char *pchFilenameFind, bool bRecentFileList )

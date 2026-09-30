@@ -65,10 +65,6 @@ namespace BaseModUI
 
 		void SafeNavigateTo( Panel *pExpectedFrom, Panel *pDesiredTo, bool bAllowStealFocus );
 
-#if defined( _GAMECONSOLE ) && defined( _DEMO )
-		void OnDemoTimeout();
-#endif
-
 	protected:
 		CBaseModPanel(const CBaseModPanel&);
 		CBaseModPanel& operator=(const CBaseModPanel&);

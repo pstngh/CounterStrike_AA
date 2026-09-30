@@ -13,9 +13,6 @@
 #endif
 
 #include "convar.h"
-#ifdef _PS3
-#include "tls_ps3.h"
-#endif
 
 
 #define SCRIPT_DIR			"scripts/"
@@ -208,12 +205,8 @@ extern EUniverse GetSteamUniverse();
 //
 inline bool IsPS3QuitRequested()
 {
-#ifdef _PS3
-	return GetTLSGlobals()->bNormalQuitRequested;
-#else
 	// if not on PS3, do not disturb the old logic of host_state which has a lot of dependencies, because other platforms do not require the game to quit cleanly
 	return false; 
-#endif
 }
 
 

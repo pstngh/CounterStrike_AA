@@ -41,27 +41,12 @@ ConVar cl_particles_show_bbox( "cl_particles_show_bbox", "0", FCVAR_CHEAT );
 ConVar cl_particle_fallback_multiplier( "cl_particle_fallback_multiplier", "1", FCVAR_NONE, "Multiplier for falling back to cheaper effects under load." ); 
 ConVar cl_particle_fallback_base( "cl_particle_fallback_base", "0", FCVAR_NONE, "Base for falling back to cheaper effects under load." ); 
 
-#ifdef _GAMECONSOLE 
-
-// This is how long simulation has to take before we start going to fallback particle definitions
-static ConVar cl_particle_sim_fallback_threshold_ms( "cl_particle_sim_fallback_threshold_ms", "4.0", FCVAR_NONE, "Amount of simulation time that can elapse before new systems start falling back to cheaper versions" );
-
-// This is the rate at which we go to fallback particle definitions.  We multiply this by the number of milliseconds
-// over sim time and add it to the fallback base.  Higher numbers cause the fallbacks to occur more frequently once
-// you've gone past the threshold.
-// 50 is a very agressive fallback, but it gains up to a couple of ms of performance back on the 360.
-static ConVar cl_particle_sim_fallback_base_multiplier( "cl_particle_sim_fallback_base_multiplier", "50", FCVAR_NONE, "How aggressive the switch to fallbacks will be depending on how far over the cl_particle_sim_fallback_threshold_ms the sim time is.  Higher numbers are more aggressive." );
-
-#else
-
 // Don't fallback as fast ont he PC since the rest of the frame doesn't take as long and we can afford to have more high
 // quality systems.
 static ConVar cl_particle_sim_fallback_threshold_ms( "cl_particle_sim_fallback_threshold_ms", "6.0", FCVAR_NONE, "Amount of simulation time that can elapse before new systems start falling back to cheaper versions" );
 
 // Don't fallback as fast on the PC since the rest of the frame doesn't take as long
 static ConVar cl_particle_sim_fallback_base_multiplier( "cl_particle_sim_fallback_base_multiplier", "5", FCVAR_NONE, "How aggressive the switch to fallbacks will be depending on how far over the cl_particle_sim_fallback_threshold_ms the sim time is.  Higher numbers are more aggressive." );
-
-#endif
 
 #define BUCKET_SORT_EVERY_N		8			// It does a bucket sort for each material approximately every N times.
 #define BBOX_UPDATE_EVERY_N		8			// It does a full bbox update (checks all particles instead of every eighth one).

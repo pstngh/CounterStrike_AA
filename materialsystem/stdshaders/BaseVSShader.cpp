@@ -19,10 +19,8 @@
 #include "vertexlit_and_unlit_generic_hdr_ps20b.inc"
 #endif
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "lightmappedgeneric_flashlight_vs30.inc"
 #include "flashlight_ps30.inc"
-#endif
 
 #include "lightmappedgeneric_flashlight_vs20.inc"
 #include "flashlight_ps20.inc"
@@ -35,11 +33,7 @@
 #include "tier0/memdbgon.h"
 
 // NOTE: This is externed in BaseVSShader.h so it needs to be here
-#if defined( _PS3 )
-extern ConVar r_flashlightbrightness;
-#else
 ConVar r_flashlightbrightness( "r_flashlightbrightness", "0.25", FCVAR_CHEAT );
-#endif
 
 // These functions are to be called from the shaders.
 
@@ -445,12 +439,7 @@ void CBaseVSShader::SetVertexShaderMatrix4x4( int vertexReg, int matrixVar )
 	IMaterialVar* pTranslationVar = s_ppParams[matrixVar];
 	if (pTranslationVar)
 	{
-#ifdef _PS3
-		VMatrix transpose = pTranslationVar->GetMatrixValue().Transpose();
-		s_pShaderAPI->SetVertexShaderConstant( vertexReg, &transpose[0][0], 4 ); 
-#else // _PS3
 		s_pShaderAPI->SetVertexShaderConstant( vertexReg, &pTranslationVar->GetMatrixValue( )[0][0], 4 ); 
-#endif // !_PS3
 	}
 	else
 	{
@@ -469,11 +458,7 @@ void CBaseVSShader::LoadViewMatrixIntoVertexShaderConstant( int vertexReg )
 	VMatrix mat, transpose;
 	s_pShaderAPI->GetMatrix( MATERIAL_VIEW, mat.m[0] );
 
-#ifdef _PS3
-	transpose = mat;
-#else // _PS3
 	MatrixTranspose( mat, transpose );
-#endif // !_PS3
 	s_pShaderAPI->SetVertexShaderConstant( vertexReg, transpose.m[0], 3 );
 }
 
@@ -486,11 +471,7 @@ void CBaseVSShader::LoadProjectionMatrixIntoVertexShaderConstant( int vertexReg 
 	VMatrix mat, transpose;
 	s_pShaderAPI->GetActualProjectionMatrix( mat.m[0] );
 
-#ifdef _PS3
-	transpose = mat;
-#else // _PS3
 	MatrixTranspose( mat, transpose );
-#endif // !_PS3
 	s_pShaderAPI->SetVertexShaderConstant( vertexReg, transpose.m[0], 4 );
 }
 
@@ -671,7 +652,6 @@ void CBaseVSShader::SetEnvMapTintPixelShaderDynamicState( int pixelReg, int tint
 //-----------------------------------------------------------------------------
 void CBaseVSShader::SetHWMorphVertexShaderState( int nDimConst, int nSubrectConst, VertexTextureSampler_t morphSampler )
 {
-#if !defined( _X360 ) && !defined( _PS3 )
 	if ( !s_pShaderAPI->IsHWMorphingEnabled() )
 		return;
 
@@ -690,7 +670,6 @@ void CBaseVSShader::SetHWMorphVertexShaderState( int nDimConst, int nSubrectCons
 	s_pShaderAPI->SetVertexShaderConstant( nSubrectConst, pMorphAccumSubrect );
 
 	s_pShaderAPI->BindStandardVertexTexture( morphSampler, TEXTURE_MORPH_ACCUMULATOR );
-#endif
 }
 
 
@@ -852,7 +831,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 
 		if( vars.m_bLightmappedGeneric )
 		{
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 			{
 				DECLARE_STATIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs30 );
@@ -863,7 +841,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 				SET_STATIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs30 );
 			}
 			else
-#endif
 			{
 				DECLARE_STATIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs20 );
 				SET_STATIC_VERTEX_SHADER_COMBO( WORLDVERTEXTRANSITION, vars.m_bWorldVertexTransition );
@@ -906,7 +883,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 			nBumpMapVariant = ( vars.m_bSSBump ) ? 2 : 1;
 		}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 		{
 			ShadowFilterMode_t nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode( false /* bForceLowQuality */, true /* bPS30 */ );
@@ -923,7 +899,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 			SET_STATIC_PIXEL_SHADER( flashlight_ps30 );
 		}
 		else
-#endif
 		if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 		{
 			ShadowFilterMode_t nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode( false /* bForceLowQuality */, false /* bPS30 */ );
@@ -1037,14 +1012,12 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 
 		if( vars.m_bLightmappedGeneric )
 		{
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs30 );
 				SET_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs30 );
 			}
 			else
-#endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs20 );
 				SET_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_flashlight_vs20 );
@@ -1097,7 +1070,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 		vEyePos_SpecExponent[3] = 0.0f;
 		ShaderApiFast( pShaderAPI )->SetPixelShaderConstant( PSREG_EYEPOS_SPEC_EXPONENT, vEyePos_SpecExponent, 1 );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( flashlight_ps30 );
@@ -1108,7 +1080,6 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 			SetupUberlightFromState( pShaderAPI, flashlightState );
 		}
 		else
-#endif
 		if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( flashlight_ps20b );
@@ -1194,11 +1165,9 @@ void CBaseVSShader::DrawEqualDepthToDestAlpha( void )
 }
 
 
-#if !defined( _PS3 )
 //-----------------------------------------------------------------------------
 bool ToolsEnabled()
 {
 	static bool bToolsMode = ( CommandLine()->CheckParm( "-tools" ) != NULL );
 	return bToolsMode;
 }
-#endif

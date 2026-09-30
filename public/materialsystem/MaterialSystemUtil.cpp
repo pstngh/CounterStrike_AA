@@ -223,37 +223,9 @@ void CTextureReference::Shutdown( bool bDeleteIfUnReferenced )
 // Builds ONLY the system ram render target. Used when caller is explicitly managing.
 // The paired EDRAM surface can be built in an alternate format.
 //-----------------------------------------------------------------------------
-#if defined( _X360 )
-void CTextureReference::InitRenderTargetTexture( int w, int h, RenderTargetSizeMode_t sizeMode, ImageFormat fmt, MaterialRenderTargetDepth_t depth, bool bHDR, char *pStrOptionalName, int nRenderTargetFlags )
-{
-	// other variants not implemented yet
-	Assert( depth == MATERIAL_RT_DEPTH_NONE || depth == MATERIAL_RT_DEPTH_SHARED );
-	Assert( !bHDR );
-
-	m_pTexture = materials->CreateNamedRenderTargetTextureEx( 
-		pStrOptionalName, 
-		w, 
-		h, 
-		sizeMode, 
-		fmt, 
-		depth, 
-		TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, 
-		CREATERENDERTARGETFLAGS_NOEDRAM | nRenderTargetFlags );
-	Assert( m_pTexture );
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Builds ONLY the EDRAM render target surface. Used when caller is explicitly managing.
 // The paired system memory texture can be built in an alternate format.
 //-----------------------------------------------------------------------------
-#if defined( _X360 )
-void CTextureReference::InitRenderTargetSurface( int width, int height, ImageFormat fmt, bool bSameAsTexture, RTMultiSampleCount360_t multiSampleCount )
-{
-	// texture has to be created first
-	Assert( m_pTexture && m_pTexture->IsRenderTarget() );
-
-	m_pTexture->CreateRenderTargetSurface( width, height, fmt, bSameAsTexture, multiSampleCount );
-}
-#endif
 

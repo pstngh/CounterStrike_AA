@@ -44,9 +44,6 @@ void DrawLightmappedPaint_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 		bool bFullyOpaque = false;
 		bool bNeedRegenStaticCmds = (! pContextData ) || pShaderShadow;
 		bool bThickPaint = ( nGPULevel > 1 );
-		#ifdef _GAMECONSOLE
-			bThickPaint = TRUE;
-		#endif
 
 		if ( ! pContextData )								// make sure allocated
 		{
@@ -107,9 +104,7 @@ void DrawLightmappedPaint_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 						params[info.m_nSeamlessMappingScale]->GetFloatValue(),0,0,0 );
 				}
 				staticCmdsBuf.StoreEyePosInPixelShaderConstant( 10 );
-#ifndef _PS3
 				staticCmdsBuf.SetPixelShaderFogParams( 11 );
-#endif
 				staticCmdsBuf.End();
 				// now, copy buf
 				pContextData->m_pStaticCmds = new uint8[staticCmdsBuf.Size()];
@@ -178,9 +173,6 @@ void DrawLightmappedPaint_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 				SET_STATIC_VERTEX_SHADER_COMBO( SELFILLUM,  hasSelfIllum );
 				SET_STATIC_VERTEX_SHADER_COMBO( PAINT, 1 );
 				SET_STATIC_VERTEX_SHADER_COMBO( ADDBUMPMAPS, 0 );
-#if defined( _X360 ) || defined( _PS3 )
-				SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT, 0);
-#endif
 				SET_STATIC_VERTEX_SHADER( lightmappedgeneric_vs20 );
 
 #define TCOMBINE_NONE 12									// there is no detail texture
@@ -370,15 +362,9 @@ void DrawLightmappedPaint_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 	DYNAMIC_STATE
 	{
 		ShaderApiFast( pShaderAPI )->SetDefaultState();
-#ifdef _PS3
-		CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_pStaticCmds );
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_SemiStaticCmdsOut.Base() );
-#else
 		CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
 		DynamicCmdsOut.Call( pContextData->m_pStaticCmds );
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
-#endif
 
 		bool hasEnvmap = params[info.m_nPaintEnvmap]->IsTexture();
 
@@ -481,9 +467,6 @@ void DrawLightmappedPaint_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 		}
 
 		DynamicCmdsOut.End();
-#ifdef _PS3
-		ShaderApiFast( pShaderAPI )->SetPixelShaderFogParams( 11 );
-#endif
 		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( DynamicCmdsOut.Base() );
 	}
 	pShader->Draw();

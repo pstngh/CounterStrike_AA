@@ -18,9 +18,6 @@ class CSysSessionClient;
 #include "x360_netmgr.h"
 
 class CSysSessionBase
-#ifdef _X360
-	: public IX360NetworkEvents
-#endif
 {
 	friend class CSysSessionHost;
 	friend class CSysSessionClient;
@@ -64,34 +61,7 @@ protected:
 
 	void PrintValue( KeyValues *val, char *chBuffer, int numBytesBuffer );
 
-#ifdef _X360
-
-	CX360LobbyObject m_lobby;
-	CX360NetworkMgr *m_pNetworkMgr;
-	IX360LobbyAsyncOperation *m_pAsyncOperation;
-
-	CX360LobbyMigrateHandle_t m_hLobbyMigrateCall;
-	CX360LobbyMigrateOperation_t m_MigrateCallState;
-
-	INetSupport::NetworkSocket_t GetX360NetSocket();
-
-	virtual void OnAsyncOperationFinished() = 0;
-	void ReleaseAsyncOperation();
-
-	// IX360NetworkEvents
-	virtual void OnX360NetPacket( KeyValues *msg );
-	virtual void OnX360NetDisconnected( XUID xuidRemote );
-
-	// Members management code
-	void OnX360AllSessionMembersJoinLeave( KeyValues *kv );
-
-	// Check whether host migration should be allowed
-	// on the session
-	virtual bool ShouldAllowX360HostMigration();
-
-	virtual bool UpdateMigrationCall();
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 public:
 	STEAM_CALLBACK_MANUAL( CSysSessionBase, Steam_OnLobbyChatMsg, LobbyChatMsg_t, m_CallbackOnLobbyChatMsg );
 	STEAM_CALLBACK_MANUAL( CSysSessionBase, Steam_OnLobbyChatUpdate, LobbyChatUpdate_t, m_CallbackOnLobbyChatUpdate );
@@ -158,11 +128,6 @@ public:
 
 	void KickPlayer( KeyValues *pCommand );
 
-#ifdef _X360
-	void GetHostSessionInfo( char chBuffer[ XSESSION_INFO_STRING_LENGTH ] );
-	uint64 GetHostSessionId();
-#endif
-
 	void UpdateMembersInfo();
 	void OnUpdateSessionSettings( KeyValues *kv );
 	void OnPlayerUpdated( KeyValues *pPlayer );
@@ -200,17 +165,7 @@ protected:
 	int  m_numRemainingTeamPlayers;
 	float m_flTeamResStartTime;
 
-#ifdef _X360
-
-	virtual void OnAsyncOperationFinished();
-
-	// IX360NetworkEvents
-	virtual void OnX360NetDisconnected( XUID xuidRemote );
-	virtual bool OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg );
-
-	void DestroyAfterMigrationFinished();
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	CCallResult< CSysSessionHost, LobbyCreated_t > m_CallbackOnLobbyCreated;
 	void Steam_OnLobbyCreated( LobbyCreated_t *p, bool bError );
@@ -230,10 +185,6 @@ protected:
 		STATE_IDLE,
 		STATE_FAIL,
 		STATE_MIGRATE,
-#ifdef _X360
-		STATE_ALLOWING_MIGRATE,
-		STATE_DELETE,
-#endif
 		STATE_UNDEFINED
 	};
 
@@ -256,10 +207,6 @@ public:
 	virtual void Destroy();
 
 	virtual XUID GetHostXuid( XUID xuidValidResult = 0ull );
-
-#ifdef _X360
-	char const * GetHostNetworkAddress( XSESSION_INFO &xsi );
-#endif
 
 	void Migrate( KeyValues *pCommand );
 
@@ -285,18 +232,7 @@ protected:
 	void InitSessionProperties( KeyValues *pSettings );
 	void UpdateSessionProperties( KeyValues *kv );
 
-#ifdef _X360
-
-	virtual void OnAsyncOperationFinished();
-	virtual void XP2P_Interconnect();
-
-	// IX360NetworkEvents
-	virtual void OnX360NetDisconnected( XUID xuidRemote );
-	virtual bool OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg );
-
-	XNADDR m_xnaddrLocal;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	STEAM_CALLBACK_MANUAL( CSysSessionClient, Steam_OnLobbyEntered, LobbyEnter_t, m_CallbackOnLobbyEntered );
 
@@ -319,9 +255,6 @@ protected:
 		STATE_IDLE,
 		STATE_FAIL,
 		STATE_MIGRATE,
-#ifdef _X360
-		STATE_DELETE,
-#endif
 		STATE_UNDEFINED
 	};
 
@@ -367,24 +300,12 @@ protected:
 	
 public:
 
-#ifdef _X360
-
-	XSESSION_INFO m_sessionInfo;
-
-	virtual bool OnX360NetConnectionlessPacket( netpacket_t *pkt, KeyValues *msg );
-	virtual void OnAsyncOperationFinished();
-	IN_ADDR m_inaddr;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	STEAM_CALLBACK_MANUAL( CSysSessionConTeamHost, Steam_OnLobbyEntered, LobbyEnter_t, m_CallbackOnLobbyEntered );
 
 #endif
 };
 
-
-#ifdef _X360
-void SysSession360_UpdatePending();
-#endif
 
 #endif

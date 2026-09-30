@@ -378,11 +378,7 @@ CBrushBatchRender::brushrender_t *CBrushBatchRender::FindOrCreateRenderBatch( mo
 		if ( MSurf_Flags(surfID) & SURFDRAW_TRANS )
 			continue;
 
-#ifndef _PS3
 		cplane_t *plane = surfID->plane;
-#else
-		cplane_t *plane = &surfID->m_plane;
-#endif
 
 		int planeIndex = planeList.Find(plane);
 		if ( planeIndex == -1 )

@@ -39,19 +39,6 @@
 #include "../RocketUI/rkhud_pausemenu.h"
 #endif
 
-#if defined ( _PS3 )
-
-#include "ps3/saverestore_ps3_api_ui.h"
-#include "sysutil/sysutil_savedata.h"
-#include "sysutil/sysutil_gamecontent.h"
-#include "cell/sysmodule.h"
-static int s_nPs3SaveStorageSizeKB = 5*1024;
-static int s_nPs3TrophyStorageSizeKB = 0;
-
-#include "steamoverlay/isteamoverlaymgr.h"
-
-#endif
-
 
 #include "cdll_util.h"
 #include "c_baseplayer.h"
@@ -59,11 +46,6 @@ static int s_nPs3TrophyStorageSizeKB = 0;
 #include "inputsystem/iinputsystem.h"
 
 #include "cstrike15_gcmessages.pb.h"
-
-#if defined( _X360 )
-#include "xparty.h" // For displaying the Party Voice -> Game Voice notification, per requirements
-#include "xbox/xbox_launch.h"
-#endif
 
 #include "cs_gamerules.h"
 #include "clientmode_csnormal.h"
@@ -89,19 +71,6 @@ ConVar ui_steam_overlay_notification_position( "ui_steam_overlay_notification_po
 float g_flReadyToCheckForPCBootInvite = 0;
 static ConVar connect_lobby( "connect_lobby", "", FCVAR_HIDDEN, "Sets the lobby ID to connect to on start." );
 
-
-#ifdef _PS3
-
-static CPS3SaveRestoreAsyncStatus s_PS3SaveAsyncStatus;
-enum SaveInitializeState_t
-{
-	SIS_DEFAULT,
-	SIS_INIT_REQUESTED,
-	SIS_FINISHED
-};
-static SaveInitializeState_t s_ePS3SaveInitState;
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: singleton accessor
@@ -141,10 +110,6 @@ CCStrike15BasePanel::CCStrike15BasePanel() :
 {
 	g_pMatchFramework->GetEventsSubscription()->Subscribe( this );
 
-#if defined ( _X360 )
-	if ( xboxsystem )
-		xboxsystem->UpdateArcadeTitleUnlockStatus();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -162,82 +127,9 @@ CCStrike15BasePanel::~CCStrike15BasePanel()
 #endif
 }
 
-#if defined( _X360 )
-void CCStrike15BasePanel::Xbox_PromptSwitchToGameVoiceChannel( void )
-{
-	// Clear this flag by default - only enable it if we actually raise the UI
-	m_bShowRequiredGameVoiceChannelUI = false;
-
-	// We must be in an Online game in order to proceed
-	bool bOnline = g_pMatchFramework && g_pMatchFramework->IsOnlineGame();
-
-	if ( bOnline && Xbox_IsPartyChatEnabled() )
-	{
-		if ( BaseModUI::CUIGameData::Get()->IsXUIOpen() )
-		{
-			// Wait for the XUI to go away before prompting for this
-			m_GameVoiceChannelRecheckTimer.Start( 1.f );
-		}
-		else
-		{
-			m_bShowRequiredGameVoiceChannelUI = true;
-			XShowRequiredGameVoiceChannelUI();	
-		}
-	}
-}
-
-bool CCStrike15BasePanel::Xbox_IsPartyChatEnabled( void )
-{
-	XPARTY_USER_LIST xpUserList;
-	if  ( XPartyGetUserList( &xpUserList ) != XPARTY_E_NOT_IN_PARTY )
-	{
-		for ( DWORD idx = 0; idx < xpUserList.dwUserCount; ++idx )
-		{
-			// Detect if the local user is in the Party, and is using Party Voice channel
-			if ( xpUserList.Users[idx].dwFlags & ( XPARTY_USER_ISLOCAL | XPARTY_USER_ISINPARTYVOICE ) )
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-}
-#endif
-
 void CCStrike15BasePanel::OnEvent( KeyValues *pEvent )
 {
 	const char *pEventName = pEvent->GetName();
-
-#if defined( _X360 )
-	//
-	// Handler for switching the Xbox LIVE voice channel (Game vs Party chat channels)
-	if ( !Q_strcmp( pEventName, "OnLiveVoicechatAway" ) )
-	{
-		bool bNotTitleChat = ( pEvent->GetInt( "NotTitleChat", 0 ) != 0 );
-
-		// If we switched to non-Game Chat, then prompt the user to switch back if he's in an Online game
-		if ( bNotTitleChat )
-		{
-			Xbox_PromptSwitchToGameVoiceChannel();
-		}
-		else
-		{
-			m_bShowRequiredGameVoiceChannelUI = false;
-			m_GameVoiceChannelRecheckTimer.Invalidate();
-		}
-	}
-
-	// Detect the next system XUI closed event
-	if ( !Q_stricmp( pEventName, "OnSysXUIEvent" ) 	&&
-		 !Q_stricmp( "closed", pEvent->GetString( "action", "" ) ) )
-	{
-		if ( m_bShowRequiredGameVoiceChannelUI )
-		{
-			// If it was the game voice channel UI that closed, wait a few ticks to see if Game Chat is re-enabled
-			m_GameVoiceChannelRecheckTimer.Start( 1.0f );
-		}		
-	}
-#endif
 
 	if ( !Q_strcmp( pEventName, "OnSysSigninChange" ) )
 	{
@@ -263,45 +155,10 @@ void CCStrike15BasePanel::OnEvent( KeyValues *pEvent )
 		}
 		if ( !Q_stricmp( "signin", pEvent->GetString( "action", "" ) ) )
 		{
-#if defined ( _X360 )
-			xboxsystem->UpdateArcadeTitleUnlockStatus();
-#endif
 		}
 
 		UpdateRichPresenceInfo();
 	}
-#if defined( _X360 )
-	else if ( !Q_stricmp( pEventName, "OnEngineDisconnectReason" ) )
-	{
-		if ( char const *szDisconnectHdlr = pEvent->GetString( "disconnecthdlr", NULL ) )
-		{
-			if ( !Q_stricmp( szDisconnectHdlr, "lobby" ) )
-			{
-				// Make sure the main menu is hidden
-				CCreateMainMenuScreenScaleform::ShowPanel( false, true );
-
-				// Flag the main menu to stay hidden during migration, unless we cancel
-				m_bMigratingActive = true;
-
-				OnOpenMessageBox( "#SFUI_MainMenu_MigrateHost_Title", "#SFUI_MainMenu_MigrateHost_Message", "#SFUI_MainMenu_MigrateHost_Navigation", (MESSAGEBOX_FLAG_CANCEL | MESSAGEBOX_FLAG_BOX_CLOSED), this );
-			}
-		}
-		else
-		{
-			// Clear the migrating flag in all other disconnect cases
-			m_bMigratingActive = false;
-
-			// Clear the flags governing game voice channel for Xbox when we disconnect as well
-			m_bShowRequiredGameVoiceChannelUI = false;
-			m_GameVoiceChannelRecheckTimer.Invalidate();
-		}
-	}
-	else if ( !Q_stricmp( pEventName, "OnEngineLevelLoadingStarted" ) || !V_stricmp( pEventName, "LoadingScreenOpened" ) )
-	{
-		// Clear the migrating flag once level loading starts
-		m_bMigratingActive = false;
-	}
-#endif // _X360
 	else if ( !Q_stricmp( pEventName, "OnDemoFileEndReached" ) )
 	{
 		if ( CDemoPlaybackParameters_t const *pParameters = engine->GetDemoPlaybackParameters() )
@@ -413,9 +270,6 @@ void CCStrike15BasePanel::OnOpenCreateStartScreen( void )
 	m_bStartLogoIsShowing = false;
 
 	// If the player has already signed in, start loading the player stats stuff here.
-#if !defined(NO_STEAM) && defined(_PS3)
-	PerformPS3GameBootWork();
-#endif
 
 }
 
@@ -577,7 +431,6 @@ void CCStrike15BasePanel::DoCommunityQuickPlay( void )
 
 void CCStrike15BasePanel::OnOpenServerBrowser()
 {
-#if !defined(_GAMECONSOLE)
 	if ( !m_bCommunityServerWarningIssued && player_nevershow_communityservermessage.GetBool() == 0 )
 	{
 		OnOpenMessageBoxThreeway( "#SFUI_MainMenu_ServerBrowserWarning_Title", "#SFUI_MainMenu_ServerBrowserWarning_Text2", "#SFUI_MainMenu_ServerBrowserWarning_Legend", "#SFUI_MainMenu_ServerBrowserWarning_NeverShow", ( MESSAGEBOX_FLAG_OK  |  MESSAGEBOX_FLAG_CANCEL | MESSAGEBOX_FLAG_TERTIARY ), this );
@@ -587,7 +440,6 @@ void CCStrike15BasePanel::OnOpenServerBrowser()
 	{
 		g_VModuleLoader.ActivateModule("Servers");
 	}
-#endif
 }
 
 void CCStrike15BasePanel::OnOpenCreateLobbyScreen( bool bIsHost )
@@ -651,9 +503,6 @@ extern ConVar devCheatSkipInputLocking;
 
 bool CCStrike15BasePanel::ShowLockInput( void )
 {
-#if defined ( _X360 )
-	return false;
-#endif
 	if ( devCheatSkipInputLocking.GetBool() )
 		return false;
 
@@ -671,29 +520,9 @@ bool CCStrike15BasePanel::ShowLockInput( void )
 		// skip the message box and just lock input if theres only one control type enabled
 		InputDevice_t singleDeviceConnected = g_pInputSystem->IsOnlySingleDeviceConnected( );
 
-#if defined( _PS3 )
-
-		// under PS3, if no devices are connected, assume gamepad
-		if ( !singleDeviceConnected && g_pInputSystem->GetConnectedInputDevices( ) == INPUT_DEVICE_NONE )
-		{
-			singleDeviceConnected = INPUT_DEVICE_GAMEPAD;
-		}
-
-#endif
-
 		if ( singleDeviceConnected != INPUT_DEVICE_NONE )
 		{
 			g_pInputSystem->SetCurrentInputDevice( singleDeviceConnected );
-
-#if defined( _PS3 )
-
-			// Loads the correct bindings based on which device is active.
-			for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-			{
-				engine->ExecuteClientCmd( VarArgs( "cl_read_ps3_bindings %d %d", i, (int)singleDeviceConnected ) );
-			}
-
-#endif // _PS3
 
 #if defined( WIN32 )
 			if( singleDeviceConnected != INPUT_DEVICE_GAMEPAD )
@@ -1059,14 +888,6 @@ bool CCStrike15BasePanel::OnMessageBoxEvent( MessageBoxFlags_t buttonPressed )
         {
             case ON_CLOSED_DISCONNECT:
             {
-#if defined( _X360 )
-                for ( int i=0; i<XUSER_MAX_COUNT; ++i )
-					{
-						char cmdLine[80];
-						Q_snprintf( cmdLine, 80, "host_writeconfig_ss %d", i );
-						engine->ClientCmd_Unrestricted( cmdLine );
-					}
-#endif
                 // Dismiss the pause menu first, so it doesn't restore itself when this dialog goes away
                 DismissPauseMenu();
                 engine->ClientCmd_Unrestricted( "disconnect" );
@@ -1076,12 +897,6 @@ bool CCStrike15BasePanel::OnMessageBoxEvent( MessageBoxFlags_t buttonPressed )
             {
                 ConVarRef xbox_arcade_title_unlocked( "xbox_arcade_title_unlocked" );
                 bool bResult = xbox_arcade_title_unlocked.GetBool();
-
-#if defined( _X360 )
-                bResult = xboxsystem && xboxsystem->IsArcadeTitleUnlocked();
-#elif defined ( _PS3 )
-                //$TODO: Hook up PS3 trial mode check
-#endif
 
                 if ( bResult )
                 {
@@ -1164,10 +979,6 @@ void CCStrike15BasePanel::OnOpenCallVoteDialog( )
 
 void CCStrike15BasePanel::OnOpenMarketplace( )
 {
-#ifdef _X360
-    // $TODO Replace placeholder offer ID with real one
-	engine->ClientCmd( VarArgs("x360_marketplace_offer %d 0x1111111 dl", XSHOWMARKETPLACEDOWNLOADITEMS_ENTRYPOINT_PAIDITEMS ) );
-#endif  // _X360
 
 }
 
@@ -1205,50 +1016,6 @@ void CCStrike15BasePanel::StartExitingProcess( void )
 
 void CCStrike15BasePanel::RunFrame( void )
 {
-#if defined( _X360 )
-
-    // We have a pending game voice channel check to perform - either prompt user to switch back, or if they failed to
-	//	OK switching back to game voice then quit the game - so run that here:
-	if ( !IsLevelLoading() && m_GameVoiceChannelRecheckTimer.HasStarted() && m_GameVoiceChannelRecheckTimer.IsElapsed() )
-	{
-		m_GameVoiceChannelRecheckTimer.Invalidate();
-
-		if ( BaseModUI::CUIGameData::Get()->IsXUIOpen() )
-		{
-			// If the Xbox guide is still open, set a timer to wait for it to go away
-			m_GameVoiceChannelRecheckTimer.Start( 1.f );
-		}
-		else
-		{
-			if ( m_bShowRequiredGameVoiceChannelUI && Xbox_IsPartyChatEnabled() )
-			{
-				// If we've already prompted the user to switch to Game Chat, but they haven't approved it, disconnect now
-				engine->ClientCmd_Unrestricted( "disconnect" );
-			}
-			else
-			{
-				// Most likely, we tried to prompt to switch to Game Chat while the guide was open
-				// It's closed now, so prompt the user to switch again
-				Xbox_PromptSwitchToGameVoiceChannel();
-			}
-		}
-	}
-
-#endif
-
-#ifdef _PS3
-
-    #ifndef NO_STEAM
-
-	if ( ( s_ePS3SaveInitState == SIS_INIT_REQUESTED ) && s_PS3SaveAsyncStatus.JobDone() )
-	{
-		s_PS3SaveAsyncStatus.m_bDone = false;
-		OnGameBootSaveContainerReady();
-	}
-
-#endif
-
-#endif
 
     if ( m_pSplitScreenSignon )
     {
@@ -1388,15 +1155,6 @@ void CCStrike15BasePanel::CheckIntroMovieStaticDependencies( void )
 {
     m_bTestedStaticIntroMovieDependencies = true;
 
-#if defined( _X360 )
-    if ( ( XboxLaunch()->GetLaunchFlags() & LF_WARMRESTART ) )
-	{
-		// xbox does not play intro startup videos if it restarted itself
-        m_bNeedToStartIntroMovie = false;
-		return;
-	}
-#endif
-
     if ( Plat_IsInBenchmarkMode() )
     {
         m_bNeedToStartIntroMovie = false;
@@ -1487,152 +1245,6 @@ void CCStrike15BasePanel::OnPlayCreditsVideo( void )
 
 
 
-#if !defined(NO_STEAM) && defined(_PS3)
-
-void CCStrike15BasePanel::ShowFatalError( uint32 unSize )
-{
-	if ( unSize > 0 )
-	{
-		int nKbRequired = int( (unSize + 1023) / 1024 );
-		int nMbRequired = AlignValue( nKbRequired, 1024 )/1024;
-		wchar_t const *szNoSpacePart1 = g_pVGuiLocalize->Find( "#SFUI_Boot_Error_NOSPACE1" );
-		wchar_t const *szNoSpacePart2 = g_pVGuiLocalize->Find( "#SFUI_Boot_Error_NOSPACE2" );
-		if ( szNoSpacePart1 && szNoSpacePart2 )
-		{
-			wchar_t wszBuffer[MAX_SCALEFORM_MESSAGE_BOX_LENGTH];
-			int nLen1 = Q_wcslen( szNoSpacePart1 );
-			int nLen2 = Q_wcslen( szNoSpacePart2 );
-			AssertMsg( nLen1 + nLen2 + 100 < MAX_SCALEFORM_MESSAGE_BOX_LENGTH, "Message is too large for the buffer and the message box.");
-			Q_wcsncpy( wszBuffer, szNoSpacePart1, 2 * ( nLen1 + nLen2 + 100 ) );
-			Q_snwprintf( wszBuffer + Q_wcslen( wszBuffer ), 2*100, L"%u", nMbRequired );
-			Q_wcsncpy( wszBuffer + Q_wcslen( wszBuffer ), szNoSpacePart2, 2*( nLen2 + 1 ) );
-
-			// Set the body of the message to be the same as the title until we actually set the message.
-			OnOpenMessageBox( "#SFUI_MsgBx_AttractDeviceFullC", "#SFUI_Boot_ErrorFatal", " ", MESSAGEBOX_FLAG_INVALID, this, NULL, wszBuffer );
-
-			return;
-		}
-	}
-
-	OnOpenMessageBox( "#SFUI_Boot_Error_Title", "#SFUI_Boot_ErrorFatal", " ", MESSAGEBOX_FLAG_INVALID, this);
-}
-
-void CCStrike15BasePanel::OnGameBootSaveContainerReady()
-{
-	s_ePS3SaveInitState = SIS_FINISHED;
-	if ( s_PS3SaveAsyncStatus.GetSonyReturnValue() < 0 )
-	{
-		// We've got an error!
-		Warning( "OnGameBootSaveContainerReady error: 0x%X\n", s_PS3SaveAsyncStatus.GetSonyReturnValue() );
-		char const *szFmt = "#SFUI_Boot_Error_SAVE_GENERAL";
-		switch ( s_PS3SaveAsyncStatus.GetSonyReturnValue() )
-		{
-		case CELL_SAVEDATA_ERROR_NOSPACE:
-		case CELL_SAVEDATA_CBRESULT_ERR_NOSPACE:
-		case CELL_SAVEDATA_ERROR_SIZEOVER:
-			ShowFatalError( (s_PS3SaveAsyncStatus.m_uiAdditionalDetails ? s_PS3SaveAsyncStatus.m_uiAdditionalDetails : s_nPs3SaveStorageSizeKB ) * 1024 );
-			return;
-		case CELL_SAVEDATA_ERROR_BROKEN:
-		case CELL_SAVEDATA_CBRESULT_ERR_BROKEN:
-			szFmt = "#SFUI_Boot_Error_BROKEN";
-			break;
-		case CPS3SaveRestoreAsyncStatus::CELL_SAVEDATA_ERROR_WRONG_USER:
-			szFmt = "#SFUI_Boot_Error_WRONG_USER";
-			break;
-		}
-
-		// Set the body of the message to be the same as the title until we actually set the message.
-		OnOpenMessageBox( "#SFUI_Boot_Save_Error_Title", szFmt, " ", MESSAGEBOX_FLAG_INVALID, this );
-
-		return;
-	}
-	if ( s_PS3SaveAsyncStatus.m_nCurrentOperationTag != kSAVE_TAG_INITIALIZE )
-	{
-		ShowFatalError( s_nPs3TrophyStorageSizeKB );
-		return;
-	}
-
-	CUtlBuffer *pInitialDataBuffer = GetPs3SaveSteamInfoProvider()->GetInitialLoadBuffer();
-
-#ifndef NO_STEAM
-	CMessageBoxScaleform::UnloadAllDialogs( true );
-	OnOpenMessageBox("#SFUI_PS3_LOADING_TITLE", "#SFUI_PS3_LOADING_PROFILE_DATA", "", MESSAGEBOX_FLAG_INVALID, this );
-
-
-	m_CallbackOnUserStatsReceived.Register( this, &CCStrike15BasePanel::Steam_OnUserStatsReceived );
-	steamapicontext->SteamUserStats()->SetUserStatsData( pInitialDataBuffer->Base(), pInitialDataBuffer->TellPut() );
-	steamapicontext->SteamUserStats()->RequestCurrentStats();
-#endif
-
-
-	pInitialDataBuffer->Purge();
-}
-
-
-void CCStrike15BasePanel::PerformPS3GameBootWork()
-{
-	static bool s_bBootOnce = false;
-	if ( s_bBootOnce )
-	{
-		return;
-	}
-	s_bBootOnce = true;
-
-	CMessageBoxScaleform::UnloadAllDialogs( true );
-	OnOpenMessageBox("#SFUI_PS3_LOADING_TITLE", "#SFUI_PS3_LOADING_INSTALLING_TROPHIES", "", MESSAGEBOX_FLAG_INVALID, this );
-
-	// Install PS3 trophies
-	m_CallbackOnPS3TrophiesInstalled.Register( this, &CCStrike15BasePanel::Steam_OnPS3TrophiesInstalled );
-	steamapicontext->SteamUserStats()->InstallPS3Trophies();
-}
-
-void CCStrike15BasePanel::Steam_OnPS3TrophiesInstalled( PS3TrophiesInstalled_t *pParam )
-{
-	m_CallbackOnPS3TrophiesInstalled.Unregister();
-
-	s_PS3SaveAsyncStatus.m_nCurrentOperationTag = kSAVE_TAG_INITIALIZE;
-	EResult eResult = pParam->m_eResult;
-	if ( eResult == k_EResultDiskFull )
-	{
-		s_PS3SaveAsyncStatus.m_nCurrentOperationTag = kSAVE_TAG_UNKNOWN;
-		s_nPs3TrophyStorageSizeKB += ( pParam->m_ulRequiredDiskSpace + 1023 )/ 1024;
-		s_nPs3SaveStorageSizeKB += s_nPs3TrophyStorageSizeKB;
-		eResult = k_EResultOK; // report cumulative space required after save container gets created
-	}
-
-	if ( eResult == k_EResultOK )
-	{
-
-		CMessageBoxScaleform::UnloadAllDialogs( true );
-		OnOpenMessageBox("#SFUI_PS3_LOADING_TITLE", "#SFUI_PS3_LOADING_INIT_SAVE_UTILITY", "", MESSAGEBOX_FLAG_INVALID, this );
-
-		ps3saveuiapi->Initialize( &s_PS3SaveAsyncStatus, GetPs3SaveSteamInfoProvider(), true, s_nPs3SaveStorageSizeKB );
-		s_ePS3SaveInitState = SIS_INIT_REQUESTED;
-	}
-	else
-	{
-		ShowFatalError( 0 );
-	}
-
-	// Let the overlay finally activate
-	if ( g_pISteamOverlayMgr )
-		g_pISteamOverlayMgr->GameBootReady();
-}
-
-void CCStrike15BasePanel::Steam_OnUserStatsReceived( UserStatsReceived_t *pParam )
-{
-	CMessageBoxScaleform::UnloadAllDialogs( true );
-
-
-	m_CallbackOnUserStatsReceived.Unregister();
-
-	// We've finally finished loading all the stats and such so we can tell the start screen to finish
-	// "signing in".
-	CBaseModPanel::SetStatsLoaded( true );
-}
-
-
-#endif	// !NO_STEAM && _PS3
 #elif defined(INCLUDE_ROCKETUI)
 void CCStrike15BasePanel::OnOpenCreateStartScreen( void )
 {
@@ -1723,9 +1335,7 @@ void CCStrike15BasePanel::DoCommunityQuickPlay( void )
 
 void CCStrike15BasePanel::OnOpenServerBrowser()
 {
-#if !defined(_GAMECONSOLE)
     g_VModuleLoader.ActivateModule("Servers");
-#endif
 }
 
 void CCStrike15BasePanel::OnOpenCreateLobbyScreen( bool bIsHost )

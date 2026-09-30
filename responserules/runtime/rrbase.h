@@ -47,9 +47,6 @@
 #include "edict.h"
 
 // app
-#if defined(_GAMECONSOLE)
-#define DISABLE_DEBUG_HISTORY 1
-#endif
 
 #include "responserules/response_types.h"
 #include "responserules/response_types_internal.h"

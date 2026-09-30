@@ -7,10 +7,8 @@
 //===========================================================================//
 
 
-#if !defined( _X360 )
 #define OEMRESOURCE //for OCR_* cursor junk
 #include "winlite.h"
-#endif
 
 #include "tier0/dbg.h"
 #include "tier1/utldict.h"
@@ -398,7 +396,6 @@ void CursorSelect( InputContextHandle_t hContext, HCursor hCursor )
 	};
 	
 	g_pInputSystem->SetMouseCursorVisible( s_bCursorVisible );
-#elif defined( _PS3 )
 #elif defined( LINUX )
 #error
 #else

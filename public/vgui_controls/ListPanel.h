@@ -220,10 +220,6 @@ public:
 
 	MESSAGE_FUNC_INT( ResizeColumnToContents, "ResizeColumnToContents", column );
 
-#ifdef _GAMECONSOLE
-	virtual void NavigateTo();
-#endif
-
 protected:
 	// PAINTING
 	virtual Panel *GetCellRenderer(int row, int column);
@@ -237,9 +233,6 @@ protected:
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual void OnMousePressed( MouseCode code );
 	virtual void OnMouseDoublePressed( MouseCode code );
-#ifdef _GAMECONSOLE
-	virtual void OnKeyCodePressed(KeyCode code);
-#endif
 	virtual void OnKeyCodeTyped( KeyCode code );
 	MESSAGE_FUNC( OnSliderMoved, "ScrollBarSliderMoved" );
 	MESSAGE_FUNC_INT_INT( OnColumnResized, "ColumnResized", column, delta );

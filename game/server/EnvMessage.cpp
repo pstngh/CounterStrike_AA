@@ -249,9 +249,7 @@ void CCredits::InputRollOutroCredits( inputdata_t &inputdata )
 	// In case we save restore
 	m_bRolledOutroCredits = true;
 
-	#ifndef _GAMECONSOLE
 	gamestats->Event_Credits();
-	#endif
 }
 
 void CCredits::InputShowLogo( inputdata_t &inputdata )

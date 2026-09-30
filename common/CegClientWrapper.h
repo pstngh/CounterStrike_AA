@@ -55,7 +55,7 @@ typedef	uint64	DWORD64;
 
 #else // CEG is enabled
 
-#if defined( _GAMECONSOLE ) || defined( POSIX ) || defined( NO_STEAM )
+#if defined( POSIX ) || defined( NO_STEAM )
 #error
 #endif
 

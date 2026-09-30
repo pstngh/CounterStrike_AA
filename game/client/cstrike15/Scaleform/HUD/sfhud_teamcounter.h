@@ -11,11 +11,9 @@
 #include "cs_gamerules.h"
 #include "c_cs_player.h"
 
-#if !defined( _X360 )
 #include "xbox/xboxstubs.h"
-#endif
 
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 #define TEAM_COUNT_IMG_STRING	L"<img src='icon-%ls.png' height='16'/>"
 #define TEAM_COUNT_FONT_STRING	L"<font color=\"%ls\">%ls</font>"
 #define TEAM_COUNT_FINAL_STRING L"%ls %ls"

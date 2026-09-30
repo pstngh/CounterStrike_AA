@@ -510,12 +510,6 @@ void CL_MarkEntitiesOutOfPVS( CBitVec<MAX_EDICTS> *pvs_flags )
 	bool bReport = cl_entityreport.GetBool();
 	for ( int i = 0; i < entityMax; i++ )
 	{
-#if defined( _X360 ) || defined( _PS3 )
-		if ( !(i & 0xF) )
-		{
-			PREFETCH360(&pInfo[i], 128);
-		}
-#endif
 		if ( !pInfo[i].m_pNetworkable )
 			continue;
 

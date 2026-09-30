@@ -18,7 +18,7 @@
 const char *g_pszModule = "tier0";
 bool g_bInitMemory = true;
 
-#if defined(PLATFORM_POSIX) || defined( PLATFORM_PS3)
+#if defined(PLATFORM_POSIX)
 void DoApplyMemoryInitializations( void *pMem, size_t nSize )
 {
 }
@@ -152,9 +152,6 @@ void DoApplyMemoryInitializations( void *pMem, size_t nSize )
 
 size_t CalcHeapUsed()
 {
-#if defined( _X360 )
-	return 0;
-#else
 	_HEAPINFO	hinfo;
 	int			heapstatus;
 	intp			nTotal;
@@ -179,7 +176,6 @@ size_t CalcHeapUsed()
 	}
 
 	return nTotal;
-#endif
 }
 
 #endif // not PLATFORM_POSIX

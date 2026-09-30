@@ -1858,9 +1858,7 @@ const char *CBaseClient::GetNetworkIDString() const
 		return "BOT";
 	}
 
-#if defined( _X360 )
-	if ( m_ConVars )
-#elif defined( SERVER_XLSP )
+#if defined( SERVER_XLSP )
 	if ( NET_IsDedicatedForXbox() && m_ConVars )
 #else
 	if ( 0 )
@@ -1879,9 +1877,7 @@ uint64 CBaseClient::GetClientXuid() const
 	// For 2nd SS player IsFakeClient() == true, so need to short-circuit it straight into forced network_id -- Vitaliy
 	const char * value = NULL;
 
-#if defined( _X360 )
-	if ( m_ConVars )
-#elif defined( SERVER_XLSP )
+#if defined( SERVER_XLSP )
 	if ( NET_IsDedicatedForXbox() && m_ConVars )
 #else
 	if ( 0 )

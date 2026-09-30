@@ -20,11 +20,6 @@
 #include "shaderlib/BaseShader.h"
 #include "tier1/convar.h"
 
-#ifdef _PS3
-#include "ps3gcm\gcmdrawstate.h"
-#include "ps3gcm\gcmtexture.h"
-#endif
-
 #ifdef DBGFLAG_ASSERT
 #define TRACK_STORAGE 1
 #else
@@ -117,104 +112,13 @@ public:
 
 };
 
-#ifdef _PS3
-
-class CDynamicCommandStorageBuffer
-{
-public:
-	uint8 *m_Data;
-	uint8 *m_pDataOut;
-#if TRACK_STORAGE_PS3
-	size_t m_nNumBytesRemaining;
-#endif
-
-	FORCEINLINE CDynamicCommandStorageBuffer()
-	{
-		m_Data = gpGcmDrawState->OpenDynECB();
-		m_pDataOut = m_Data;
-#if TRACK_STORAGE_PS3
-		m_nNumBytesRemaining = 0x1000;
-#endif
-	}
-
-	FORCEINLINE void EnsureCapacity( size_t sz )
-	{
-#if TRACK_STORAGE_PS3
-		if ( m_nNumBytesRemaining < sz + 32 )
-			Error( "getting scary\n" );
-		Assert( m_nNumBytesRemaining >= sz );
-#endif
-	}
-
-	template<class T> FORCEINLINE void Put( T const &nValue )
-	{
-		EnsureCapacity( sizeof( T ) );
-		*( reinterpret_cast<T *>( m_pDataOut ) ) = nValue;
-		m_pDataOut += sizeof( nValue );
-#if TRACK_STORAGE_PS3
-		m_nNumBytesRemaining -= sizeof( nValue );
-#endif
-	}
-
-	FORCEINLINE void PutInt( int nValue )
-	{
-		Put( nValue );
-	}
-
-	FORCEINLINE void PutFloat( float nValue )
-	{
-		Put( nValue );
-	}
-
-	FORCEINLINE void PutPtr( void * pPtr )
-	{
-		Put( pPtr );
-	}
-
-	FORCEINLINE void PutMemory( const void *pMemory, size_t nBytes )
-	{
-		EnsureCapacity( nBytes );
-		memcpy( m_pDataOut, pMemory, nBytes );
-		m_pDataOut += nBytes;
-#if TRACK_STORAGE_PS3
-		m_nNumBytesRemaining -= nBytes;
-#endif
-	}
-
-	FORCEINLINE uint8 *Base( void )
-	{
-		return m_Data;
-	}
-
-	FORCEINLINE void Reset( void )
-	{
-		m_pDataOut = m_Data;
-#if TRACK_STORAGE_PS3
-		m_nNumBytesRemaining = N;
-#endif
-	}
-
-	FORCEINLINE size_t Size( void ) const
-	{
-		return m_pDataOut - m_Data;
-	}
-
-};
-
-
-#endif
-
 //-----------------------------------------------------------------------------
 // Base class used to build up command buffers
 //-----------------------------------------------------------------------------
 template<class S> class CBaseCommandBufferBuilder
 {
 public:
-#ifdef _PS3
-	ALIGN16 S m_Storage ALIGN16_POST;
-#else
     S m_Storage;
-#endif
 
 	FORCEINLINE void End( void )
 	{
@@ -285,63 +189,12 @@ template<class S> class CCommandBufferBuilder : public CBaseCommandBufferBuilder
 {
 	typedef CBaseCommandBufferBuilder<S> PARENT;
 
-#ifdef _PS3
-	uint32 m_numPs3Tex;
-#endif
-
 public:
-
-#ifdef _PS3
-	FORCEINLINE CCommandBufferBuilder()
-	{
-		// For PS3, command buffers begin with up to four Std textures
-
-		m_numPs3Tex = 0;
-
- 		this->m_Storage.PutInt(CBCMD_LENGTH);
- 		this->m_Storage.PutInt(0);
-
-		this->m_Storage.PutInt(CBCMD_PS3TEX);
-		for(int i = 0; i < CBCMD_MAX_PS3TEX; i++) this->m_Storage.PutInt(0);
-	
-	}
-
-	FORCEINLINE void Reset()
-	{
-		this->m_Storage.Reset();
-
-		m_numPs3Tex = 0;
-
-		this->m_Storage.PutInt(CBCMD_LENGTH);
-		this->m_Storage.PutInt(0);
-
-		this->m_Storage.PutInt(CBCMD_PS3TEX);
-		for(int i = 0; i < CBCMD_MAX_PS3TEX; i++) this->m_Storage.PutInt(0);
-	}
-
-	FORCEINLINE int* GetPs3Textures()
-	{
-		return (int*) (this->m_Storage.Base() + sizeof(int) + 2*sizeof(int));
-	}
-
-#endif
 
 	FORCEINLINE void End( void )
 	{
 		this->m_Storage.PutInt( CBCMD_END );
 
-#ifdef _PS3
-		uint32 len = this->m_Storage.Size();
-
-		if ( (this->m_Storage.m_Data >= g_aDynECB) && (this->m_Storage.m_Data < &g_aDynECB[sizeof(g_aDynECB)]) )
-		{
-			gpGcmDrawState->CloseDynECB(len);
-		}
-
- 		uint32* pLength = (uint32*)(this->m_Storage.m_Data + 4);
- 		if (pLength[-1] != CBCMD_LENGTH) Error("Length missing\n");
- 		*pLength = len;
-#endif
 	}
 
 	FORCEINLINE void SetPixelShaderConstants( int nFirstConstant, int nConstants )
@@ -597,8 +450,6 @@ public:
 		this->m_Storage.PutInt( nReg );
 	}
 
-#ifndef _PS3
-
 	FORCEINLINE void BindStandardTexture( Sampler_t nSampler, TextureBindFlags_t nBindFlags, StandardTextureId_t nTextureId )
 	{
 		this->m_Storage.PutInt( CBCMD_BIND_STANDARD_TEXTURE );
@@ -623,71 +474,6 @@ FORCEINLINE void BindTexture( Sampler_t nSampler, TextureBindFlags_t nBindFlags,
 		this->m_Storage.Put( hTexture );
 	}
 
-
-#else
-
-	FORCEINLINE void BindTexture( Sampler_t nSampler, TextureBindFlags_t nBindFlags, ShaderAPITextureHandle_t hTexture )
-	{	
-		Assert( hTexture != INVALID_SHADERAPI_TEXTURE_HANDLE );
-
-		if (m_numPs3Tex >= CBCMD_MAX_PS3TEX)
-		{
-			Error("Too many textures in single draw ECB\n");
-		}
-
-		int* pOffset = GetPs3Textures() + m_numPs3Tex;
-
-		CPs3BindParams_t tex;
-		tex.m_sampler = nSampler;
-		tex.m_nBindFlags = nBindFlags >> 24;			// Top byte only
-		tex.m_hTexture = hTexture;
-
-		tex.m_boundStd = -1;
-
-        tex.m_nBindTexIndex = m_numPs3Tex;
-
-		this->m_Storage.PutInt( CBCMD_BIND_PS3_TEXTURE );
-		*pOffset = (this->m_Storage.m_pDataOut - this->m_Storage.m_Data);	
-		this->m_Storage.PutMemory(&tex, sizeof(tex)) ;
-
-		m_numPs3Tex++;
-
-
-	}
-
-	FORCEINLINE void BindStandardTexture( Sampler_t nSampler, TextureBindFlags_t nBindFlags, StandardTextureId_t nTextureId )
-	{
-		if (m_numPs3Tex >= CBCMD_MAX_PS3TEX)
-		{
-			Error("Too many textures in single draw ECB\n");
-		}
-
-		int* pOffset = GetPs3Textures() + m_numPs3Tex;
-		
-		CPs3BindParams_t tex;
-		tex.m_sampler = nSampler;
-		tex.m_nBindFlags = nBindFlags >> 24;
-		tex.m_boundStd = nTextureId;
-
-		tex.m_hTexture = -1;
-
-        tex.m_nBindTexIndex = m_numPs3Tex;
-
-
-		this->m_Storage.PutInt( CBCMD_BIND_PS3_STANDARD_TEXTURE );
-		*pOffset = (this->m_Storage.m_pDataOut - this->m_Storage.m_Data);
-		this->m_Storage.PutMemory(&tex, sizeof(tex)) ;
-		
-		m_numPs3Tex++;
-	}
-
-	FORCEINLINE void BindTexture( CBaseShader *pShader, Sampler_t nSampler, TextureBindFlags_t nBindFlags, ITexture *pTexture, int nFrame )
-	{
-		ShaderAPITextureHandle_t hTexture = pShader->GetShaderAPITextureBindHandle( pTexture, nFrame );
-		BindTexture(nSampler, nBindFlags, hTexture);
-	}
-
-#endif
 
 	FORCEINLINE void BindTexture( CBaseShader *pShader, Sampler_t nSampler, TextureBindFlags_t nBindFlags, int nTextureVar, int nFrameVar = -1 )
 	{
@@ -784,12 +570,10 @@ FORCEINLINE void BindTexture( Sampler_t nSampler, TextureBindFlags_t nBindFlags,
 		this->m_Storage.PutPtr( pCmdBuf );
 	}
 
-#ifndef _PS3
 	FORCEINLINE void Reset( void )
 	{
 		this->m_Storage.Reset();
 	}
-#endif
 
 	FORCEINLINE size_t Size( void ) const
 	{

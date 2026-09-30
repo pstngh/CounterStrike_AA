@@ -2435,18 +2435,8 @@ bool CShadowMgr::ProjectVerticesIntoShadowSpace( const VMatrix * RESTRICT modelT
 		Vector3DMultiplyPositionNoAlias( modelToShadow, pPos, pShadowSpacePos );
 
 		// Update AABB for polygon
-#ifdef _X360
-		// This should be a little better for the 360 than VectorMin()/Max()
-		mins.x = fsel( pShadowSpacePos->x - mins.x, mins.x, pShadowSpacePos->x );
-		mins.y = fsel( pShadowSpacePos->y - mins.y, mins.x, pShadowSpacePos->y );
-		mins.z = fsel( pShadowSpacePos->z - mins.z, mins.x, pShadowSpacePos->z );
-		maxs.x = fsel( pShadowSpacePos->x - maxs.x, pShadowSpacePos->x, maxs.x );
-		maxs.y = fsel( pShadowSpacePos->y - maxs.y, pShadowSpacePos->y, maxs.y );
-		maxs.z = fsel( pShadowSpacePos->z - maxs.z, pShadowSpacePos->z, maxs.z );
-#else
 		VectorMin( mins, *pShadowSpacePos, mins );
 		VectorMax( maxs, *pShadowSpacePos, maxs );
-#endif
 		// Set up clipping coords...
 		clip.m_ppClipVertices[0][i] = &clip.m_pTempVertices[i];
 	}

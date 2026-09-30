@@ -15,11 +15,7 @@
 #include "tier1/keyvalues.h"
 #include "toolframework_client.h"
 
-#if defined( _GAMECONSOLE )
 extern ConVar r_flashlightdepthres;
-#else
-extern ConVar r_flashlightdepthres;
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

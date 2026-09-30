@@ -6955,7 +6955,6 @@ void CCSPlayer::PreThink()
 		m_hDominateEffectPlayer = NULL;
 	}
 
-#ifndef _XBOX
 	++ m_nTicksSinceLastPlaceUpdate;
 	// No reason to update this every tick! Once per second is good enough
 	if ( m_nTicksSinceLastPlaceUpdate > 30 )
@@ -6980,7 +6979,6 @@ void CCSPlayer::PreThink()
 			}
 		}
 	}
-#endif
 }
 
 void CCSPlayer::MoveToNextIntroCamera()

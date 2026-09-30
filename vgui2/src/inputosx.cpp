@@ -2322,7 +2322,6 @@ void CInputOSX::SurfaceSetCursorPos(int x, int y)
 
 void CInputOSX::SurfaceGetCursorPos( int &x, int &y )
 {
-#ifndef _GAMECONSOLE // X360TBD
 	if ( g_pSurface->HasCursorPosFunctions() ) // does the surface export cursor functions for us to use?
 	{
 		g_pSurface->SurfaceGetCursorPos( x,y );
@@ -2341,10 +2340,6 @@ void CInputOSX::SurfaceGetCursorPos( int &x, int &y )
 		x -= px;
 		y -= py;
 	}
-#else
-	x = 0;
-	y = 0;
-#endif
 }
 
 

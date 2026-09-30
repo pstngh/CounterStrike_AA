@@ -16,9 +16,6 @@
 #include "iviewrender.h"
 #include "view_shared.h"
 
-#if defined(_PS3)
-#include "buildrenderables_ps3.h"
-#endif
 #include "mathlib/volumeculler.h"
 #include "vstdlib/jobthread.h"
 
@@ -82,13 +79,8 @@ enum view_id_t
 };
 view_id_t CurrentViewID();
 
-#if defined(_PS3)
-#define PASS_BUILDLISTS_PS3 (1<<0)
-#define PASS_DRAWLISTS_PS3  (1<<1)
-#else
 #define PASS_BUILDLISTS (1<<0)
 #define PASS_DRAWLISTS  (1<<1)
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Stored pitch drifting variables
@@ -235,15 +227,8 @@ protected:
 	// the first portal we're looking out of is a water portal, so our view effectively originates under the water.
 	void			BuildWorldRenderLists( bool bDrawEntities, int iForceViewLeaf = -1, bool bUseCacheIfEnabled = true, bool bShadowDepth = false, float *pReflectionWaterHeight = NULL );
 
-#if defined(_PS3)
-	void			SetupRenderablesList_PS3_Epilogue( void );
-
-	void			BuildWorldRenderLists_PS3_Epilogue( bool bShadowDepth );
-	void			BuildRenderableRenderLists_PS3_Epilogue( void );
-#else
 	void			BuildWorldRenderLists_Epilogue( bool bShadowDepth );
 	void			BuildRenderableRenderLists_Epilogue( int viewID );
-#endif
 
 	// Purpose: Builds render lists for renderables. Called once for refraction, once for over water
 	void			BuildRenderableRenderLists( int viewID, bool bFastEntityRendering = false, bool bDrawDepthViewNonCachedObjectsOnly = false );
@@ -295,13 +280,8 @@ protected:
 
 	IWorldRenderList *m_pWorldRenderList;
 
-#if defined( CSTRIKE15 ) && defined(_PS3)
-	CClientRenderablesList *m_pRenderablesList[ MAX_CONCURRENT_BUILDVIEWS ];
-	ClientWorldListInfo_t *m_pWorldListInfo[ MAX_CONCURRENT_BUILDVIEWS ];
-#else
 	CClientRenderablesList *m_pRenderables;
 	ClientWorldListInfo_t *m_pWorldListInfo;
-#endif
 	
 	ViewCustomVisibility_t *m_pCustomVisibility;
 };
@@ -340,91 +320,6 @@ public:
 	void Execute() {}
 };
 
-
-#if defined(_PS3)
-//-----------------------------------------------------------------------------
-// For the support of parallel view building jobs (BuildWorldLists, BuildRenderables, etc)
-// only current true implementation on PS3 to support SPU BuildWorld/BuildRenderables jobs
-//-----------------------------------------------------------------------------
-class CConcurrentViewBuilderPS3
-{
-public:
-
-	CConcurrentViewBuilderPS3();
-	~CConcurrentViewBuilderPS3() { Purge(); };
-
-	void Init( void );
-	void Purge( void );
-
-	// for supporting concurrent view building (BuildWorldLists, BuildRenderables, etc)
-	void ResetBuildViewID( void );
-
-	// get current view index
-	int	GetBuildViewID( void );
-
-	// call at the start of each view
-	void PushBuildView( void );
-	void PopBuildView( void );
-
-	void SyncViewBuilderJobs( void );
-
-	void SPUBuildRWJobsOn( bool jobOn )	{ m_bSPUBuildRWJobsOn = jobOn; };
-	bool IsSPUBuildRWJobsOn( void ) { return m_bSPUBuildRWJobsOn; };
-
-	int GetPassFlags( void ) { return m_passFlags; };
-	void SetPassFlags( int flags ) { m_passFlags = flags; };
-
-	IWorldRenderList *GetWorldRenderListElement( void );
-	void SetWorldRenderListElement( IWorldRenderList *pRenderList );
-
-	int GetDrawFlags( void ) { return m_drawFlags; };
-	void SetDrawFlags( int drawFlags ) { m_drawFlags = drawFlags; };
-
-	unsigned int GetVisFlags( void );
-	void SetVisFlags( unsigned int visFlags );
-
-	void CacheFrustumData( Frustum_t *pFrustum, Frustum_t *pAreaFrustum, void *pRenderAreaBits, int numArea, bool bViewerInSolidSpace );
-	void CacheBuildViewVolumeCuller( void *pVC );
-	void* GetBuildViewVolumeCuller( void );
-	Frustum_t *GetBuildViewFrustum( void );
-	Frustum_t *GetBuildViewAreaFrustum( void );
-	unsigned char *GetBuildViewRenderAreaBits( void );
-
-	int GetNumAreaFrustum( void );
-	Frustum_t *GetBuildViewAreaFrustumID( int frustumID );
-
-
-	void PushBuildRenderableJobs( void );
-
-private:
-
-	int						m_buildViewID;
-	int						m_nextFreeBuildViewID;
-
-	int*					m_pBuildViewStack;
-	int						m_buildViewStack[ MAX_CONCURRENT_BUILDVIEWS ];
-
-	int						m_passFlags;
-	int						m_drawFlags;
-	unsigned int			m_visFlags[ MAX_CONCURRENT_BUILDVIEWS ];
-
-
-	IWorldRenderList		*m_pWorldRenderListCache[ MAX_CONCURRENT_BUILDVIEWS ] ALIGN16;
-
-	// Frustum cache for Jobs
-	Frustum_t				m_gFrustum[MAX_CONCURRENT_BUILDVIEWS] ALIGN16;
-	CUtlVector<Frustum_t>	m_gAreaFrustum[MAX_CONCURRENT_BUILDVIEWS] ALIGN16;
-	unsigned char			m_gRenderAreaBits[MAX_CONCURRENT_BUILDVIEWS][32] ALIGN16;
-	bool					m_bViewerInSolidSpace[ MAX_CONCURRENT_BUILDVIEWS ] ALIGN16;
-
-	CVolumeCuller			m_volumeCullerCache[MAX_CONCURRENT_BUILDVIEWS] ALIGN16;
-
-	bool					m_bSPUBuildRWJobsOn;
-};
-
-extern CConcurrentViewBuilderPS3 g_viewBuilder;
-
-#else
 
 //-----------------------------------------------------------------------------
 // Cache all the data needed for a single view so that "BuildWorldList" and 
@@ -579,8 +474,6 @@ private:
 };
 
 extern CConcurrentViewBuilder g_viewBuilder;
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Implements the interface to view rendering for the client .dll
@@ -773,10 +666,6 @@ protected:
 	void			DrawLetterBoxRectangles( int nSlot, const CUtlVector< vrect_t >& vecLetterBoxRectangles );
 
 	void			EnableWaterDepthFeathing( IMaterial *pWaterMaterial, bool bEnable );
-
-#if defined(_PS3)
-	void			InitSPUBuildRenderingJobs( void );
-#endif
 
 	// This stores the current view
  	CViewSetup		m_CurrentView;

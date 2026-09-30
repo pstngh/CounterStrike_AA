@@ -842,18 +842,6 @@ int CSave::WriteFields( const char *pname, const void *pBaseData, datamap_t *pRo
 
 	count = 0;
 
-#ifdef _GAMECONSOLE
-	PREFETCH360( pBaseData, 0 );
-	PREFETCH360( pBaseData, 128 );
-	PREFETCH360( pBaseData, 256 );
-	PREFETCH360( pBaseData, 512 );
-	void *pDest = m_pData->AccessCurPos();	
-	PREFETCH360( pDest, 0 );
-	PREFETCH360( pDest, 128 );
-	PREFETCH360( pDest, 256 );
-	PREFETCH360( pDest, 512 );
-#endif
-
 	for ( int i = 0; i < fieldCount; i++ )
 	{
 		pTest = &pFields[ i ];
@@ -3089,13 +3077,7 @@ int CEntitySaveRestoreBlockHandler::RestoreGlobalEntity( CBaseEntity *pEntity, C
 CSaveRestoreData *SaveInit( int size )
 {
 	CSaveRestoreData	*pSaveData;
-#if defined( _PS3 )
-	if ( size <= 0 )
-		size = 1024*1024*1.65f; // (iestyn 12/22/2010) Max size determined empirically for Portal2 (worst map: sp_a3_00)
-#elif defined( _X360 )
-	if ( size <= 0 )
-		size = 1024*1024*2.0f;  // (iestyn 12/22/2010) Max size determined empirically for Portal2 (worst map: mp_coop_start)
-#elif ( defined( CLIENT_DLL ) || defined( DISABLE_DEBUG_HISTORY ) )
+#if ( defined( CLIENT_DLL ) || defined( DISABLE_DEBUG_HISTORY ) )
 	if ( size <= 0 )
 		size = 2*1024*1024;
 #else

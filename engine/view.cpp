@@ -40,10 +40,6 @@
 #include "filesystem/IQueuedLoader.h"
 #include "r_decal.h"
 
-#ifdef _PS3
-#include "tls_ps3.h"
-#endif
-
 #if defined( INCLUDE_SCALEFORM )
 #include "scaleformui/scaleformui.h"
 #endif
@@ -194,25 +190,6 @@ void V_RenderVGuiOnly( void )
 
 	Shader_SwapBuffers();
 
-#ifdef _PS3
-	if ( GetTLSGlobals()->bNormalQuitRequested )
-	{
-		// hack to prevent PS/3 deadlock on queued loader render mutex when quitting during loading a map
-		uint nUnlockedQueuedRenderer = g_pQueuedLoader ? g_pQueuedLoader->UnlockProgressBarMutex() : 0;
-		
-		if ( !s_bTriggeredHostError )
-		{
-			Assert( ThreadInMainThread() );
-			s_bTriggeredHostError = true;
-			Host_Error( "SystemQuitRequest" );
-		}
-		// hack to prevent PS/3 deadlock on queued loader render mutex when quitting during loading a map
-		if( g_pQueuedLoader )
-		{
-			g_pQueuedLoader->LockProgressBarMutex( nUnlockedQueuedRenderer );
-		}
-	}
-#endif
 }
 
 
@@ -421,22 +398,10 @@ public:
 		return g_EngineRenderer->CreateWorldList();
 	}
 
-#if defined(_PS3)
-	IWorldRenderList * CreateWorldList_PS3( int viewID )
-	{
-		return g_EngineRenderer->CreateWorldList_PS3( viewID );
-	}
-
-	void BuildWorldLists_PS3_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth )
-	{
-		g_EngineRenderer->BuildWorldLists_PS3_Epilogue( pList, pInfo, bShadowDepth );
-	}
-#else
 	void BuildWorldLists_Epilogue( IWorldRenderList *pList, WorldListInfo_t* pInfo, bool bShadowDepth )
 	{
 		g_EngineRenderer->BuildWorldLists_Epilogue( pList, pInfo, bShadowDepth );
 	}
-#endif
 
 	void BuildWorldLists( IWorldRenderList *pList, WorldListInfo_t* pInfo, int iForceFViewLeaf, const VisOverrideData_t* pVisData, bool bShadowDepth, float *pReflectionWaterHeight )
 	{

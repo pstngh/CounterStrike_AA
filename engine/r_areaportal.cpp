@@ -36,11 +36,7 @@ bool g_bViewerInSolidSpace = false;
 // ------------------------------------------------------------------------------------ //
 
 // Visible areas from the client DLL + occluded areas using area portals.
-#if defined(_PS3)
-unsigned char g_RenderAreaBits[32] ALIGN16;
-#else
 unsigned char g_RenderAreaBits[32];
-#endif
 
 // Used to prevent it from coming back into portals while flowing through them.
 static unsigned char g_AreaStack[32];

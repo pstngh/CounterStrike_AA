@@ -7,7 +7,7 @@
 
 #include "uigamedata.h"
 
-#if defined( _WIN32 ) && !defined( _GAMECONSOLE )
+#if defined( _WIN32 )
 #include "winlite.h"
 #endif
 
@@ -67,9 +67,6 @@ using namespace vgui;
 #include "inputsystem/iinputsystem.h"
 #include "ixboxsystem.h"
 #include "optionssubaudio.h"
-#if defined( _X360 )
-#include "../common/xlast_csgo/csgo.spa.h"
-#endif
 #include "iachievementmgr.h"
 #include "customtabexplanationdialog.h"
 #if defined( INCLUDE_SCALEFORM )
@@ -80,15 +77,7 @@ using namespace vgui;
 #endif
 // dgoodenough - limit this to X360 only
 // PS3_BUILDFIX
-#if defined( _X360 )
-#include "xbox/xbox_launch.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
-
-#if defined( _PS3)
-#include <sysutil/sysutil_userinfo.h>
-#endif
 
 #include "matchmaking/imatchframework.h"
 #include "matchmaking/mm_helpers.h"
@@ -127,10 +116,6 @@ static float		g_flAnimationPadding = 0.01f;
 extern const char *COM_GetModDirectory( void );
 
 extern bool bSteamCommunityFriendsVersion;
-
-#ifdef _PS3
-static CellUserInfoUserStat s_userStat;
-#endif
 
 CGameMenuItem::CGameMenuItem(vgui::Menu *parent, const char *name)  : BaseClass(parent, name, "GameMenuItem") 
 {
@@ -223,19 +208,6 @@ public:
 
 // dgoodenough - limit this to X360 only
 // PS3_BUILDFIX
-#if defined( _X360 )
-			// In low def we need a smaller highlight
-			XVIDEO_MODE videoMode;
-			XGetVideoMode( &videoMode );
-			if ( !videoMode.fIsHiDef )
-			{
-				iFixedWidth = 240;
-			}
-			else
-			{
-				iFixedWidth = 350;
-			}
-#endif
 
 			SetFixedWidth( iFixedWidth );
 		}
@@ -558,15 +530,7 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 	m_bReturnToMPGameMenuOnDisconnect = false;
 	m_bForceQuitToDesktopOnDisconnect = false;
 
-#if !defined(NO_STEAM) && defined(_PS3)
-
-	m_bStatsLoaded = false;
-
-#else
-
 	m_bStatsLoaded = true;
-
-#endif
 
 	m_bWaitingForStorageDeviceHandle = false;
 	m_bNeedStorageDeviceHandle = false;
@@ -1423,10 +1387,6 @@ void CBaseModPanel::CreateGameLogo()
 
 void CBaseModPanel::CheckBonusBlinkState()
 {
-#ifdef _GAMECONSOLE
-	// On 360 if we have a storage device at this point and try to read the bonus data it can't find the bonus file!
-	return;
-#endif
 
 	if ( BonusMapsDatabase()->GetBlink() )
 	{
@@ -1486,12 +1446,6 @@ void CBaseModPanel::UnlockInput( void )
 {
 	m_primaryUserId = -1;
 
-#if defined( _GAMECONSOLE )
-	XBX_ResetUserIdSlots();
-	XBX_SetPrimaryUserId( XBX_INVALID_USER_ID );
-	XBX_SetPrimaryUserIsGuest( 0 );	
-	XBX_SetNumGameUsers( 0 ); // users not selected yet
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1499,20 +1453,6 @@ void CBaseModPanel::UnlockInput( void )
 //-----------------------------------------------------------------------------
 void CBaseModPanel::LockInput( void )
 {
-#if defined( _GAMECONSOLE )
-	// Turn off all controllers
-	XBX_ClearUserIdSlots();
-
-	// Configure the game type and controller assignments
-	XBX_SetPrimaryUserId( m_primaryUserId );
-	XBX_SetPrimaryUserIsGuest( 0 );
-
-	// $TODO: handle guest account, and multiple user sign-in
-	XBX_SetUserId( 0, m_primaryUserId );
-	XBX_SetUserIsGuest( 0, 0 );
-
-	XBX_SetNumGameUsers( 1 );
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1532,46 +1472,6 @@ void CBaseModPanel::CompleteStartScreenSignIn( void )
 
 	m_bShowStartScreen = false;
 
-#if defined( _GAMECONSOLE )
-	// Set the local player's name in the game.
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-	int userID = XBX_GetActiveUserId();
-	bool bValidUserName = false;
-	char* pUserName = NULL;
-
-#if defined ( _X360 )
-	char szGamertag[MAX_PLAYER_NAME_LENGTH];
-	if (( userID != INVALID_USER_ID ) && 
-		( XUserGetSigninState( userID ) != eXUserSigninState_NotSignedIn ))
-	{
-		if(XUserGetName( userID, szGamertag, MAX_PLAYER_NAME_LENGTH ) != ERROR_SUCCESS)
-		{
-			Error( "CompleteStartScreenSignIn: error getting Xbox 360 user name.\n" );
-			V_strncpy( szGamertag, "unknown", sizeof( szGamertag ) );
-		}
-		bValidUserName = true;
-		pUserName = szGamertag;
-	}
-#elif defined ( _PS3 )
-	if ( userID != INVALID_USER_ID )
-	{
-		s_userStat.id = CELL_SYSUTIL_USERID_CURRENT;
-		if(cellUserInfoGetStat(CELL_SYSUTIL_USERID_CURRENT,&s_userStat) != CELL_USERINFO_RET_OK)
-		{
-			Error( "CompleteStartScreenSignIn: error getting PS3 user name.\n" );
-			V_strncpy( s_userStat.name, "unknown", CELL_USERINFO_USERNAME_SIZE );
-		}
-		bValidUserName = true;
-		pUserName = s_userStat.name;
-	}
-#endif
-	if(bValidUserName)
-	{
-		ConVarRef cl_name( "name" );
-		cl_name.SetValue( pUserName );
-	}
-#endif // _GAMECONSOLE
-
 	if ( IsScaleformMainMenuEnabled() || IsRocketMainMenuEnabled() )
 	{
 		// Display the scaleform main menu now
@@ -1583,12 +1483,6 @@ void CBaseModPanel::CompleteStartScreenSignIn( void )
 		ShowMainMenu( true );
 	}
 	
-#if defined( _GAMECONSOLE )
-	// OnProfilesChanged triggers g_pPlayerManager->OnGameUsersChanged() which creates local players in matchmaking; this is called from CMatchFramework::Connect on PC only
-	//  so we dont want to call  g_pPlayerManager->OnGameUsersChanged() twice on PC but needs to be called once on GAMECONSOLE so we BroadcastEvent here only if defined _GAMECONSOLE
-	g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues( "OnProfilesChanged", "numProfiles", (int) XBX_GetNumGameUsers() ) );
-#endif
-
 	UpdateRichPresenceInfo();
 }
 
@@ -1722,21 +1616,6 @@ void CBaseModPanel::RunFrame()
 					 g_pInputSystem->IsButtonDown( ButtonCodeToJoystickButtonCode( KEY_XBUTTON_A, i ) ) )
 				{
 
-#if defined( _X360 )
-					// If this user isn't signed in, we need to prompt them for it
-					uint state = XUserGetSigninState( i );
-					if ( state != eXUserSigninState_NotSignedIn )
-					{
-						m_primaryUserId = i;
-					}
-					else
-					{
-						bSignedIn = false;
-					}
-#elif defined( _PS3 )
-					m_primaryUserId = i;
-#endif
-
 					UserIdPressedStart = i;
 					bStartPressed = true;
 				}
@@ -1748,10 +1627,6 @@ void CBaseModPanel::RunFrame()
 				bStartPressed = (	g_pInputSystem->IsButtonDown( KEY_LBRACKET ) || 
 									g_pInputSystem->IsButtonDown( KEY_SPACE ) || 
 									g_pInputSystem->IsButtonDown( KEY_ENTER ) );
-#ifdef _PS3	
-				m_primaryUserId = 0;
-				UserIdPressedStart = 0;
-#endif
 			}
 			
 #if !defined( _CERT )
@@ -1844,86 +1719,11 @@ void CBaseModPanel::RunFrame()
 	}
 }
 
-#if defined( PLATFORM_X360 )
-static inline XUSER_CONTEXT CreateContextStruct( DWORD dwContextId, DWORD dwValue )
-{
-	XUSER_CONTEXT xUserContext = { dwContextId, dwValue };
-	return xUserContext;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: Tells XBox Live our user is in the current game's menu
 //-----------------------------------------------------------------------------
 void CBaseModPanel::UpdateRichPresenceInfo()
 {
-#if defined( _X360 )
-	// For all other users logged into this console (not primary), set to idle to satisfy cert
-	for( int i = 0; i < XUSER_MAX_COUNT; ++i )
-	{
-		XUSER_SIGNIN_STATE State = XUserGetSigninState( i );
-
-		if ( State != eXUserSigninState_NotSignedIn )
-		{
-			// Check if they are one of our active users
-			bool isActive = false;
-			for ( unsigned int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-			{
-				if ( XBX_GetUserId( k ) == i )
-				{
-					isActive = true;
-					break;
-				}
-			}
-
-			if ( !isActive )
-			{
-				// Set rich presence as 'idle' for users logged in that can't participate.
-				//DevMsg( "Set presence to %d for user %d\n", CONTEXT_PRESENCE_IDLE, i );
-				if ( !xboxsystem->UserSetContext( i, CreateContextStruct( X_CONTEXT_PRESENCE, CONTEXT_PRESENCE_IDLE ), true ) )
-				{
-					Warning( "BasePanel: UserSetContext failed.\n" );
-				}
-			}
-		}
-	}
-
-	// If we're not in the level we set the presence to main menu
-	if ( !GameUI().IsInLevel() )
-	{
-		for ( unsigned int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-		{
-			if ( XBX_GetUserIsGuest( k ) )
-				continue;
-			int iCtrlr = XBX_GetUserId( k );
-
-			// [jmh] When user is not in a level, they're either in main menu or in a team lobby
-			DWORD rpContext = InTeamLobby() ? CONTEXT_PRESENCE_LOBBY : CONTEXT_PRESENCE_MAINMENU;
-
-			//DevMsg( "Set presence to %d for user %d\n", rpContext, iCtrlr );
-			if ( !xboxsystem->UserSetContext( iCtrlr, CreateContextStruct( X_CONTEXT_PRESENCE, rpContext ), true ) )
-			{
-				Warning( "BasePanel: UserSetContext failed.\n" );
-			}
-		}
-	}
-	else if ( m_bSinglePlayer )
-	{
-		// We're in a single player so set the presence to single player for all active users
-		for ( unsigned int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-		{
-			if ( XBX_GetUserIsGuest( k ) )
-				continue;
-			int iCtrlr = XBX_GetUserId( k );
-
-			//DevMsg( "Set presence to %d for user %d\n", CONTEXT_PRESENCE_SINGLEPLAYER, iCtrlr );
-			if ( !xboxsystem->UserSetContext( iCtrlr, CreateContextStruct( X_CONTEXT_PRESENCE, CONTEXT_PRESENCE_SINGLEPLAYER ), true ) )
-			{
-				Warning( "BasePanel: UserSetContext failed.\n" );
-			}
-		}
-	}
-#endif // _X360
 }
 
 //-----------------------------------------------------------------------------
@@ -2153,30 +1953,6 @@ void CBaseModPanel::OnGameUIActivated()
 		// Layout the first time to avoid focus issues (setting menus visible will grab focus)
 		UpdateGameMenus();
 		m_bEverActivated = true;
-
-#if defined( _GAMECONSOLE )
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Slamming controller for xbox storage id to 0" )
-		
-		// Open all active containers if we have a valid storage device
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		if ( XBX_GetActiveUserId() != XBX_INVALID_USER_ID && 
-			 XBX_GetStorageDeviceId( 0 ) != XBX_INVALID_STORAGE_ID && 
-			 XBX_GetStorageDeviceId( 0 ) != XBX_STORAGE_DECLINED )
-		{
-			// Open user settings and save game container here
-			uint nRet = engine->OnStorageDeviceAttached( 0 );
-			if ( nRet != ERROR_SUCCESS )
-			{
-				// Invalidate the device
-				XBX_SetStorageDeviceId( XBX_GetActiveUserId(), XBX_INVALID_STORAGE_ID );
-
-				// FIXME: We don't know which device failed!
-				// Pop a dialog explaining that the user's data is corrupt
-				BasePanel()->ShowMessageDialog( MD_STORAGE_DEVICES_CORRUPT );
-			}
-		}
-
-#endif
 
 		// Brute force check to open tf matchmaking ui.
 		if ( GameUI().IsConsoleUI() )
@@ -2438,46 +2214,9 @@ void CBaseModPanel::RunMenuCommand(const char *command)
     {
         CreateStartScreenIfNeeded();
     }
-#if defined( _X360 )	
-	else if ( !Q_stricmp( command, "ShowInvitePartyUI" ) )
-	{		
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );		
-		if ( XShowPartyUI( XBX_GetActiveUserId() ) != ERROR_SUCCESS )
-		{
-			AssertMsg( false, "XBX_GetActiveUserId failed" );
-		}
-	}
-	else if ( !Q_stricmp( command, "ShowJoinPartyUI" ) )
-	{
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );		
-		if ( XShowCommunitySessionsUI( XBX_GetActiveUserId(), XSHOWCOMMUNITYSESSION_SHOWPARTY ) != ERROR_SUCCESS )
-		{
-			AssertMsg( false, "XShowCommunitySessionsUI failed" );
-		}
-	}
-	else if ( !Q_stricmp( command, "ShowInviteFriendsUI" ) )
-	{		
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		if ( XShowFriendsUI( XBX_GetActiveUserId() ) != ERROR_SUCCESS )
-		{
-			AssertMsg( false, "XBX_GetActiveUserId failed" );
-		}	
-	}
-	else if ( !Q_stricmp( command, "ShowLobbyUI" ) )
-	{
-		// Create the lobby UI, in this case we are launching it so we create it as the Host view
-		OnOpenCreateLobbyScreen( true );
-	}
-
-	else if ( !Q_stricmp( command, "ShowLobbyBrowser" ) )
-	{
-		OnOpenLobbyBrowserScreen( true );
-	}
-
-#else // _X360
 	else if ( !Q_stricmp( command, "ShowInviteFriendsUI" ) )
 	{
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM ) // Steam overlay not available on console (PS3)
+#if !defined( NO_STEAM ) // Steam overlay not available on console (PS3)
 		steamapicontext->SteamFriends()->ActivateGameOverlay( "LobbyInvite" );
 #endif
 	}
@@ -2490,7 +2229,6 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 		// Create the lobby UI, in this case we are launching it so we create it as the Host view
 		OnOpenCreateLobbyScreen( true );
 	}
-#endif // !_X360          					   
 	else if ( !Q_stricmp( command, "OpenCreateSinglePlayerGameDialog" ) || !Q_stricmp( command, "OpenCreateSinglePlayerGameDialog_AcceptNotConnectedToLive" ) )
 	{
 		if ( IsX360() )
@@ -2613,11 +2351,6 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 	}
 	else if ( !Q_stricmp( command, "OpenAchievementsBlade" ) )
 	{
-#if defined( _X360 )
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		int userID = XBX_GetActiveUserId();
-		XShowAchievementsUI( userID );
-#endif
 	}
 	else if ( !Q_stricmp( command, "Quit" ) )
 	{
@@ -2766,7 +2499,7 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 // dgoodenough - use Q_snprintf on PS3
 // PS3_BUILDFIX
 // @wge Fix for OSX too.
-#if defined( _PS3 ) || defined( _OSX ) || defined (LINUX)
+#if defined( _OSX ) || defined (LINUX)
 			Q_snprintf( szAppId, 50, "%d", engine->GetAppID() );
 			szAppId[49] = 0;
 #else
@@ -2778,7 +2511,7 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 
 			// Set Steam URL for re-launch in registry. Launcher will check this registry key and exec it in order to re-load the game in the proper language
 			// @wge HACK FIXME - Windows specific registry code.
-#if !defined( _GAMECONSOLE ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 			HKEY hKey;
 
 			if ( IsPC() && RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Valve\\Source", NULL, KEY_WRITE, &hKey) == ERROR_SUCCESS )
@@ -2905,10 +2638,6 @@ void CBaseModPanel::ExecuteAsync( CAsyncJobContext *pAsync )
 	ThreadHandle_t hHandle = CreateSimpleThread( PanelJobWrapperFn, reinterpret_cast< void * >( pAsync ) );
 	pAsync->m_hThreadHandle = hHandle;
 
-#ifdef _GAMECONSOLE
-	ThreadSetAffinity( hHandle, XBOX_PROCESSOR_3 );
-#endif
-
 #else
 	pAsync->ExecuteAsync();
 #endif
@@ -3010,11 +2739,6 @@ void CAsyncCtxOnDeviceAttached::ExecuteAsync()
 	// Make the QOS system initialized for multiplayer games
 	if ( !ModInfo().IsSinglePlayerOnly() )
 	{
-#if defined( _GAMECONSOLE )
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: This is just a best guess at the right replacement to get rotted code compiling" )
-		//( void ) matchmaking->GetQosWithLIVE();
-		g_pMatchFramework->GetMatchNetworkMsgController()->GetQOS();		
-#endif
 	}
 }
 
@@ -3075,28 +2799,6 @@ bool CBaseModPanel::ValidateStorageDevice( void )
 {
 	if ( m_bUserRefusedStorageDevice == false )
 	{
-#if defined( _GAMECONSOLE )
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Slamming controller for xbox storage id to 0" )
-		if ( XBX_GetStorageDeviceId( 0 ) == XBX_INVALID_STORAGE_ID )
-		{
-			// Try to discover content on the user's storage devices
-			ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-			DWORD nFoundDevice = xboxsystem->DiscoverUserData( XBX_GetActiveUserId(), COM_GetModDirectory() );
-			if ( nFoundDevice == XBX_INVALID_STORAGE_ID )
-			{
-				// They don't have a device, so ask for one
-				ShowMessageDialog( MD_PROMPT_STORAGE_DEVICE );
-				return false;
-			}
-			else
-			{
-				// Take this device
-				XBX_SetStorageDeviceId( XBX_GetActiveUserId(), nFoundDevice );
-				OnDeviceAttached();
-			}
-			// Fall through
-		}
-#endif
 	}
 	return true;
 }
@@ -3137,53 +2839,6 @@ bool CBaseModPanel::HandleSignInRequest( const char *command )
 // dgoodenough - limit this to X360
 // PS3_BUILDFIX
 // FIXME - do we want to have somehting here for PS3?
-#if defined( _X360 )
-	// If we have a post-prompt command, we're coming back into the call from that prompt
-	bool bQueuedCall = ( m_strPostPromptCommand.IsEmpty() == false );
-
-	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-	XUSER_SIGNIN_INFO info;
-	bool bValidUser = ( XUserGetSigninInfo( XBX_GetActiveUserId(), 0, &info ) == ERROR_SUCCESS );
-
-	if ( bValidUser )
-		return true;
-
-	// Queued command means we're returning from a prompt or blade
-	if ( bQueuedCall )
-	{
-		// Blade has returned with nothing
-		if ( m_bUserRefusedSignIn )
-			return true;
-		
-		// User has not denied the storage device, so ask
-		ShowMessageDialog( MD_PROMPT_SIGNIN );
-		m_strPostPromptCommand = command;
-		
-		// Do not run command
-		return false;
-	}
-	else
-	{
-		// If the user refused the sign-in and we respect that on this command, we're done
-		if ( m_bUserRefusedSignIn && CommandRespectsSignInDenied( command ) )
-			return true;
-
-		// If the message is required first, then do that instead
-		if ( CommandRequiresSignIn( command ) )
-		{
-			ShowMessageDialog( MD_PROMPT_SIGNIN_REQUIRED );
-			m_strPostPromptCommand = command;
-			return false;
-		}
-
-		// Pop a blade out
-		xboxsystem->ShowSigninUI( 1, 0 );
-		m_strPostPromptCommand = command;
-		m_bWaitingForUserSignIn = true;
-		m_bUserRefusedSignIn = false;
-		return false;	
-	}
-#endif // _GAMECONSOLE
 	return true;
 }
 
@@ -3278,25 +2933,6 @@ void CBaseModPanel::OnCommand( const char *command )
 {
 	if ( GameUI().IsConsoleUI() )
 	{
-#if defined( _GAMECONSOLE )
-
-		// See if this is a command we need to intercept
-		if ( IsPromptableCommand( command ) )
-		{
-			// Handle the sign in case
-			if ( HandleSignInRequest( command ) == false )
-				return;
-			
-			// Handle storage
-			if ( HandleStorageDeviceRequest( command ) == false )
-				return;
-
-			// If we fall through, we'll need to track this again
-			m_bStorageBladeShown = false;
-
-			// Fall through
-		}
-#endif // _GAMECONSOLE
 
 		RunAnimationWithCallback( this, command, new KeyValues( "RunMenuCommand", "command", command ) );
 	
@@ -3730,11 +3366,9 @@ void CBaseModPanel::OnOpenBenchmarkDialog()
 
 void CBaseModPanel::OnCloseServerBrowser()
 {
-#if !defined(_GAMECONSOLE)
 	// HACK: Server browser is module index = 0, which may change if the list is reordered in the res file
 	if ( g_VModuleLoader.GetModuleCount() > 0 && g_VModuleLoader.IsModuleVisible(0) )
 		g_VModuleLoader.PostMessageToModule("Servers", new KeyValues( "RunModuleCommand", "command", "Close" ) );
-#endif
 }
 
 
@@ -4241,7 +3875,7 @@ void CBaseModPanel::OnOpenCSAchievementsDialog()
 			if ( friends )
 			{
 				// Steam overlay not available on console (PS3)
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 				friends->ActivateGameOverlay( "Achievements" );
 #endif
 			}
@@ -4307,50 +3941,12 @@ void CBaseModPanel::SystemNotification( const int notification )
 // dgoodenough - limit this to X360
 // PS3_BUILDFIX
 // FIXME - do we want to have somehting here for PS3?
-#if defined( _X360 )
-		// See if it was the active user who signed in
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		uint state = XUserGetSigninState( XBX_GetActiveUserId() );
-		if ( state != eXUserSigninState_NotSignedIn )
-		{
-			// Reset a bunch of state
-			m_bUserRefusedSignIn = false;
-			m_bUserRefusedStorageDevice = false;
-			m_bStorageBladeShown = false;
-		}	
-		UpdateRichPresenceInfo();
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Best guess at a fix for the two lines below to get rotted code compiling" )
-		//engine->GetAchievementMgr()->DownloadUserData();
-		//engine->GetAchievementMgr()->EnsureGlobalStateLoaded();
-		engine->GetAchievementMgr()->InitializeAchievements();
-#endif
 	}
 	else if ( notification == SYSTEMNOTIFY_USER_SIGNEDOUT  )
 	{
 // dgoodenough - limit this to X360
 // PS3_BUILDFIX
 // FIXME - do we want to have somehting here for PS3?
-#if defined( _X360 )
-		UpdateRichPresenceInfo();
-
-		// See if it was the active user who signed out
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		uint state = XUserGetSigninState( XBX_GetActiveUserId() );
-		if ( state != eXUserSigninState_NotSignedIn )
-		{
-			return;
-		}
-
-		// Invalidate their storage ID
-#pragma message( __FILE__ "(" __LINE__AS_STRING ") : warning custom: Slamming controller for xbox storage id to 0" )
-		engine->OnStorageDeviceDetached( 0 );
-		m_bUserRefusedStorageDevice = false;
-		m_bUserRefusedSignIn = false;
-		m_iStorageID = XBX_INVALID_STORAGE_ID;
-		engine->GetAchievementMgr()->InitializeAchievements();
-		m_MessageDialogHandler.CloseAllMessageDialogs();
-
-#endif
 		if ( GameUI().IsInLevel() )
 		{
 			if ( m_pGameLogo )
@@ -5150,17 +4746,6 @@ void CFooterPanel::Paint( void )
 
 DECLARE_BUILD_FACTORY( CFooterPanel );
 */
-
-#ifdef _GAMECONSOLE
-//-----------------------------------------------------------------------------
-// Purpose: Reload the resource files on the Xbox 360
-//-----------------------------------------------------------------------------
-void CBaseModPanel::Reload_Resources( const CCommand &args )
-{
-	m_pConsoleControlSettings->Clear();
-	m_pConsoleControlSettings->LoadFromFile( g_pFullFileSystem, "resource/UI/XboxDialogs.res" );
-}
-#endif
 
 
 // X360TBD: Move into a separate module when completed

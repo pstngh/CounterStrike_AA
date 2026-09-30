@@ -85,9 +85,6 @@ public:
 
 	virtual void PurgeAll() = 0;
 
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock() = 0;
-#endif // _PS3
 };
 
 // Default implementation
@@ -97,9 +94,6 @@ class CResourcePreload : public IResourcePreload
 	void PurgeUnreferencedResources()	{}
 	void OnEndMapLoading( bool bAbort )	{}
 	void PurgeAll() {}
-#if defined( _PS3 )
-	virtual bool RequiresRendererLock() { return false; }
-#endif // _PS3
 };
 
 // UI can install progress notification
@@ -152,11 +146,6 @@ public:
 	virtual int					GetSpewDetail() const = 0;
 
 	virtual void				PurgeAll( ResourcePreload_t *pDontPurgeList = NULL, int nPurgeListSize = 0 ) = 0;
-#ifdef _PS3
-	// hack to prevent PS/3 deadlock on queued loader render mutex when quitting during loading a map
-	virtual uint                UnlockProgressBarMutex() = 0;
-	virtual void                LockProgressBarMutex( uint nLockCount ) = 0;
-#endif
 };
 
 DECLARE_TIER2_INTERFACE( IQueuedLoader, g_pQueuedLoader );

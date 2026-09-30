@@ -35,7 +35,7 @@ template< int nBitCount > FORCEINLINE int ConvertTo10Bit( int x )
 	case 4:
 		return ( x << 6 ) | ( x << 2 ) | ( x >> 2 );
 	default:
-#if defined(POSIX) || defined(_PS3)
+#if defined(POSIX)
 		return ( x << ( 10 - nBitCount ) ) | ( x >> MAX( 0, MIN( 32, ( nBitCount - ( 10 - nBitCount ) ) ) ) );
 #else // !_PS3
 		return ( x << ( 10 - nBitCount ) ) | ( x >> ( nBitCount - ( 10 - nBitCount ) ) );
@@ -249,12 +249,6 @@ struct BGRX8888_t
 
 
 // 360 uses this structure for x86 dxt decoding
-#if defined( _X360 )
-#pragma bitfield_order( push, lsb_to_msb )
-#elif defined( _PS3 )
-#pragma ms_struct on
-#pragma reverse_bitfields on
-#endif
 struct BGR565_t
 {
 	uint16 b : 5;		// order of names changes
@@ -281,12 +275,6 @@ struct BGR565_t
 	inline void GFrom10Bit( int g10 ) { g = ConvertFrom10Bit<6>( g10 ); }
 	inline void BFrom10Bit( int b10 ) { b = ConvertFrom10Bit<5>( b10 ); }
 };
-#if defined( _X360 )
-#pragma bitfield_order( pop )
-#elif defined( _PS3 )
-#pragma ms_struct off
-#pragma reverse_bitfields off
-#endif
 
 struct BGRA5551_t
 {

@@ -1651,26 +1651,6 @@ public:
 									  hDestWindowOverride, pDirtyRegion );
 	}
 
-#ifdef _PS3
-	void GetGPUMemoryStats( GPUMemoryStats &stats )
-	{
-		m_pD3DDevice->GetGPUMemoryStats( stats );
-	}
-	
-	void BeginZPass( DWORD Flags )
-	{
-		m_pD3DDevice->BeginZPass();
-	}
-	void SetPredication( DWORD PredicationMask )
-	{
-		m_pD3DDevice->SetPredication( PredicationMask );
-	}
-	HRESULT EndZPass()
-	{
-		return m_pD3DDevice->EndZPass();
-	}
-#endif // _PS3
-
 #ifdef DX_TO_GL_ABSTRACTION
 	FORCEINLINE void AcquireThreadOwnership( void )
 	{

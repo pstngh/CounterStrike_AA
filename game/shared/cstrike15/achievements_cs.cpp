@@ -83,11 +83,6 @@ CCSBaseAchievement::CCSBaseAchievement()
 //-----------------------------------------------------------------------------
 void CCSBaseAchievement::OnAchieved()
 {
-#if defined( _X360 )
- 	__time32_t unlockTime;
- 	_time32(&unlockTime);
- 	SetUnlockTime(unlockTime);
-#endif
 }
 
 
@@ -98,7 +93,7 @@ bool CCSBaseAchievement::GetAwardTime( int& year, int& month, int& day, int& hou
 {
 	if ( GetUnlockTime() )
 	{
-#if defined( _PS3 ) || defined( _OSX ) || defined (LINUX)
+#if defined( _OSX ) || defined (LINUX)
 		time_t timeOfDay = (time_t) GetUnlockTime( );
 
 		// [dkorus] note, structuredTime is a pointer to a static structure that will last until another time structure function is called.
@@ -802,12 +797,7 @@ class CAchievementCS_FriendsSameUniform : public CCSBaseAchievement
 							if (pPlayer->GetTeamNumber() == localPlayerTeam)
 							{
 								++numPlayersOnTeam;
-#if defined (_X360)
-								ACTIVE_SPLITSCREEN_PLAYER_GUARD( pLocalPlayer->GetSplitScreenPlayerSlot() );
-								if ( IsXboxFriends( XBX_GetActiveUserId(), pPlayer->entindex() ) )
-#else
 								if ( pLocalPlayer->HasPlayerAsFriend( pPlayer ) )
-#endif
 								{
 									++numFriendsOnTeam;
 									if ( pPlayer->PlayerClass() == localPlayerClass )
@@ -915,104 +905,6 @@ class CAchievementCS_Medalist : public CCSBaseAchievement
 	}
 };
 DECLARE_ACHIEVEMENT( CAchievementCS_Medalist, CSMedalist, "MEDALIST", 5 );
-
-#if defined ( _X360 )
-static CAchievementListener g_AchievementListener;
-
-//-----------------------------------------------------------------------------
-// Purpose: Constructor
-//-----------------------------------------------------------------------------
-CAchievementListener::CAchievementListener() :
-CAutoGameSystem( "CAchievementListener" )
-{
-
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Listen for earned achievements
-//-----------------------------------------------------------------------------
-bool CAchievementListener::Init()
-{
-	ListenForGameEvent( "achievement_earned_local" );
-	ListenForGameEvent( "repost_xbox_achievements" );
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Listens for game events.  Send off XBLA achievements for CS
-//-----------------------------------------------------------------------------
-void CAchievementListener::FireGameEvent( IGameEvent *event )
-{
-	const char *eventname = event->GetName();
-
-	XNotifyPositionUI( XNOTIFYUI_POS_TOPCENTER );
-
-	if ( Q_strcmp( "achievement_earned_local", eventname ) == 0 )
-	{
-		// is this one of our XBox achievements?
-		int achievementID = event->GetInt( "achievement" );
-		int splitScreenPlayer = event->GetInt( "splitscreenplayer" );
-		for ( int i=0; i<NumXboxMappedAchievements; ++i )
-		{
-			if ( MedalToXBox[i][0] == achievementID )
-			{
-				// award the Xbox achievement; pass CSInvalidAchievement in case the overlappedresult from the xbox achievement award is invalid we don't
-				// unaward a medal in achievementmgr::Update loop where the overlapped results are processed
-				g_AchievementMgrCS.AwardXBoxAchievement( CSInvalidAchievement, MedalToXBox[i][1], splitScreenPlayer );
-			}
-		}
-
-		// have we earned the required # of Medals to trigger the MEDALIST xBox achievement?
-		int totalEarnedAchievements = 0;
-		FOR_EACH_MAP( g_AchievementMgrCS.GetAchievements(splitScreenPlayer), i )
-		{
-			CBaseAchievement *pAchievement = g_AchievementMgrCS.GetAchievements( splitScreenPlayer )[i];
-			if ( pAchievement && pAchievement->IsAchieved() )
-				totalEarnedAchievements++;
-		}
-		if ( totalEarnedAchievements >= AchievementConsts::Num_Medalist_Required_Medals )
-		{
-			// award the Xbox achievement; pass CSInvalidAchievement in case the overlappedresult from the xbox achievement award is invalid we don't
-			// unaward a medal in achievementmgr::Update loop where the overlapped results are processed
-			g_AchievementMgrCS.AwardXBoxAchievement( CSInvalidAchievement, ACHIEVEMENT_MEDALIST, splitScreenPlayer );
-		}
-
-	}
-	else if ( Q_strcmp( "repost_xbox_achievements", eventname ) == 0 )
-	{
-		// check to see if any medals have already been earned that would award an xBox achievement; it is ok to try to award an already awarded xbox achievement
-		// and this makes sure we award during a profile read any achievements the player earned that did not properly get awarded for some reason
-		int splitScreenPlayer = event->GetInt( "splitscreenplayer" );
-		
-		for ( int i=0; i<NumXboxMappedAchievements; ++i) 
-		{
-			CBaseAchievement *pAchievement = g_AchievementMgrCS.GetAchievementByID( MedalToXBox[i][0], splitScreenPlayer );
-			if ( pAchievement && pAchievement->IsAchieved() )
-			{
-				// award the Xbox achievement; pass CSInvalidAchievement in case the overlappedresult from the xbox achievement award is invalid we don't
-				// unaward a medal in achievementmgr::Update loop where the overlapped results are processed
-				g_AchievementMgrCS.AwardXBoxAchievement( CSInvalidAchievement, MedalToXBox[i][1], splitScreenPlayer );
-			}
-		}
-
-		// have we earned the required # of Medals to trigger the MEDALIST xBox achievement?
-		int totalEarnedAchievements = 0;
-		FOR_EACH_MAP( g_AchievementMgrCS.GetAchievements(splitScreenPlayer), i )
-		{
-			CBaseAchievement *pAchievement = g_AchievementMgrCS.GetAchievements( splitScreenPlayer )[i];
-			if ( pAchievement && pAchievement->IsAchieved() )
-				totalEarnedAchievements++;
-		}
-		if ( totalEarnedAchievements >= AchievementConsts::Num_Medalist_Required_Medals )
-		{
-			// award the Xbox achievement; pass CSInvalidAchievement in case the overlappedresult from the xbox achievement award is invalid we don't
-			// unaward a medal in achievementmgr::Update loop where the overlapped results are processed
-			g_AchievementMgrCS.AwardXBoxAchievement( CSInvalidAchievement, ACHIEVEMENT_MEDALIST, splitScreenPlayer );
-		}
-	}
-}
-
-#endif // (_X360)
 
 
 #endif // CLIENT_DLL

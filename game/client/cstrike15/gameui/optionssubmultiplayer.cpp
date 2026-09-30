@@ -7,11 +7,11 @@
 
 #undef fopen
 
-#if !defined( _GAMECONSOLE ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 #include <windows.h> // SRC only!!
 #endif
 
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
 #ifdef OSX
 #include <copyfile.h>
 #endif
@@ -66,18 +66,12 @@
 #include "ivtex.h"
 // dgoodenough - io.h doesn't exist on the PS3
 // PS3_BUILDFIX
-#if !defined( _PS3 ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 #include <io.h>
 #endif
 
 // dgoodenough - select the correct stubs header based on current console
 // PS3_BUILDFIX
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -658,12 +652,10 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 		// dgoodenough - remove this section on PS3 since we don't have a filesystem _access(...) function yet
 		// PS3_BUILDFIX
 		// FIXME FIXME FIXME
-#if !defined( _PS3 )
 		do {
 			Q_snprintf(tgaPath, sizeof(tgaPath), "%stemp%d.tga", origpath, index);
 			++index;
 		} while (_access(tgaPath, 0) != -1);
-#endif
 
 		if (!stricmp(extension, "jpg") || !stricmp(extension, "jpeg"))
 		{
@@ -894,7 +886,7 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 			CopyFile(vtfPath, finalPath, true);
 #elif defined( OSX )
 			copyfile( vtfPath, finalPath, 0, 0 );
-#elif !defined( _PS3 )
+#else
 			engine->CopyLocalFile( vtfPath, finalPath );
 #endif
 
@@ -918,9 +910,7 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 // dgoodenough - DeleteFile is Win32 specific, remove it for PS3 build
 // PS3_BUILDFIX
 // FIXME - How will this be handled on PS3?
-#if !defined( _PS3 )
 		DeleteFile(vtfPath);
-#endif
 		// the TGA->VTF conversion process generates a .txt file if one wasn't already there.
 		// in this case, delete the .txt file.
 		c = vtfPath + strlen(vtfPath);
@@ -932,9 +922,7 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 // dgoodenough - DeleteFile is Win32 specific, remove it for PS3 build
 // PS3_BUILDFIX
 // FIXME - How will this be handled on PS3?
-#if !defined( _PS3 )
 		DeleteFile(vtfPath);
-#endif
 	}
 
 	// delete the intermediate TGA file if one was made.
@@ -943,9 +931,7 @@ void COptionsSubMultiplayer::OnFileSelected(const char *fullpath)
 // dgoodenough - DeleteFile is Win32 specific, remove it for PS3 build
 // PS3_BUILDFIX
 // FIXME - How will this be handled on PS3?
-#if !defined( _PS3 )
 		DeleteFile(tgaPath);
-#endif
 	}
 
 	// change the cursor back to normal
@@ -981,7 +967,6 @@ static void ValveJpegErrorHandler( j_common_ptr cinfo )
 // convert the JPEG file given to a TGA file at the given output path.
 ConversionErrorType COptionsSubMultiplayer::ConvertJPEGToTGA(const char *jpegpath, const char *tgaPath)
 {
-#if !defined( _GAMECONSOLE )
 	struct jpeg_decompress_struct jpegInfo;
 	struct ValveJpegErrorHandler_t jerr;
 	JSAMPROW row_pointer[1];
@@ -1096,9 +1081,6 @@ ConversionErrorType COptionsSubMultiplayer::ConvertJPEGToTGA(const char *jpegpat
 	free(buf);
 	return bRetVal ? CE_SUCCESS : CE_ERROR_WRITING_OUTPUT_FILE;
 
-#else
-	return CE_SOURCE_FILE_FORMAT_NOT_SUPPORTED;
-#endif
 }
 
 // convert the bmp file given to a TGA file at the given destination path.
@@ -2472,7 +2454,7 @@ static void PaletteHueReplace( RGBQUAD *palSrc, int newHue, int Start, int end )
 //-----------------------------------------------------------------------------
 void COptionsSubMultiplayer::RemapPalette( char *filename, int topcolor, int bottomcolor )
 {
-#if !defined( _OSX ) && !defined( _PS3 ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 	char infile[ 256 ];
 	char outfile[ 256 ];
 

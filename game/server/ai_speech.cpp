@@ -31,10 +31,6 @@ inline void SpeechMsg( ... ) {}
 #define DebuggingSpeech() (false)
 #endif
 
-#ifdef _PS3
-#define strtok_s strtok_r
-#endif
-
 extern ConVar rr_debugresponses;
 
 //-----------------------------------------------------------------------------

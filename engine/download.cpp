@@ -20,7 +20,7 @@
 #undef PROTECT_FILEIO_FUNCTIONS
 #undef fopen
 
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 #include "winlite.h"
 #include <WinInet.h>
 #endif
@@ -45,14 +45,6 @@
 #include "vgui/ILocalize.h"
 
 #include "../utils/bzip2/bzlib.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

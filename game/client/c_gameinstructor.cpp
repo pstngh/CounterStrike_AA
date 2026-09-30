@@ -199,15 +199,7 @@ void CGameInstructorUserNotificationsListener::OnGameUsersChanged()
 
 void CGameInstructorUserNotificationsListener::OnStorageDeviceAvailable( int iCtrlr )
 {
-#ifdef _GAMECONSOLE
-	if ( iCtrlr < 0 || iCtrlr >= XUSER_MAX_COUNT )
-		return;
-
-	int iSlot = XBX_GetSlotByUserId( iCtrlr );
-
-	if ( iSlot < 0 || iSlot >= MAX_SPLITSCREEN_PLAYERS )
-		return;
-#elif !defined( SPLIT_SCREEN_STUBS )
+#if !defined( SPLIT_SCREEN_STUBS )
 	int iSlot = iCtrlr;
 #endif
 
@@ -303,12 +295,6 @@ bool C_GameInstructor::Init( void )
 	ListenForGameEvent( "player_disconnect" );
 	ListenForGameEvent( "map_transition" );
 	ListenForGameEvent( "game_newmap" );
-
-#if defined( _X360 )
-	ListenForGameEvent( "reset_game_titledata" );
-	ListenForGameEvent( "read_game_titledata" );
-	ListenForGameEvent( "write_game_titledata" );
-#endif
 
 	ListenForGameEvent( "set_instructor_group_enabled" );
 
@@ -647,21 +633,6 @@ void C_GameInstructor::FireGameEvent( IGameEvent *event )
 			SetLessonGroupEnabled( pszGroup, bEnabled );
 		}
 	}
-#if defined( _X360 )
-	else if ( Q_strcmp( name, "read_game_titledata" ) == 0 )
-	{
-		ReadSaveData();
-	}
-	else if ( Q_strcmp( name, "write_game_titledata" ) == 0 )
-	{
-		KeyValueSaver().MarkKeyValuesDirty( GAMEINSTRUCTOR_SAVE_FILE );
-		WriteSaveData();
-	}
-	else if ( Q_strcmp( name, "reset_game_titledata" ) == 0 )
-	{
-		ResetDisplaysAndSuccesses();
-	}
-#endif
 }
 
 void C_GameInstructor::DefineLesson( CBaseLesson *pLesson )
@@ -796,24 +767,6 @@ bool C_GameInstructor::ReadSaveData( void )
 		return true;
 
 	TitleDataFieldsDescription_t const *fields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-#if defined( _X360 )
-	// check version number is valid to ensure there is good data before reading
-	ConVarRef cl_titledataversionblock3 ( "cl_titledataversionblock3" );
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( fields, "TITLEDATA.BLOCK3.VERSION" );
-	if ( !versionField || versionField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16 )
-	{
-		Warning( "C_GameInstructor::ReadSaveData TITLEDATA.BLOCK3.VERSION is expected to be defined as DT_uint16\n" );
-		return true;
-	}
-
-	int versionNumber = TitleDataFieldsDescriptionGetValue<uint16>( versionField, pPlayer );
-	if ( versionNumber != cl_titledataversionblock3.GetInt() )
-	{
-		Warning ( "C_GameInstructor::ReadSaveData wrong version # for TITLEDATA.BLOCK3.VERSION; expected %d, got %d\n", cl_titledataversionblock3.GetInt(), versionNumber );
-		return true;
-	}
-#endif
 
 	m_bHasLoadedSaveData = true;
 

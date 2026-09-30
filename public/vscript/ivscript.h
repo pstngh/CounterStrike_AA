@@ -260,11 +260,7 @@ enum ScriptFuncBindingFlags_t
 	SF_MEMBER_FUNC	= 0x01,
 };
 
-#ifdef _PS3
-typedef void* ScriptFunctionBindingStorageType_t; // Function descriptor is actually 64-bit
-#else
 typedef void* ScriptFunctionBindingStorageType_t;
-#endif
 
 typedef bool (*ScriptBindingFunc_t)( ScriptFunctionBindingStorageType_t pFunction, void *pContext, ScriptVariant_t *pArguments, int nArguments, ScriptVariant_t *pReturn );
 
@@ -615,9 +611,6 @@ inline IScriptInstanceHelper *GetScriptInstanceHelper_ScriptNoBase_t()
 template <typename T> ScriptClassDesc_t *GetScriptDesc(T *);
 
 template <>
-#ifdef _PS3
-static
-#endif
 inline ScriptClassDesc_t *GetScriptDesc<ScriptNoBase_t>( ScriptNoBase_t *) { return NULL; }
 
 #define GetScriptDescForClass( className ) GetScriptDesc( ( className *)NULL )

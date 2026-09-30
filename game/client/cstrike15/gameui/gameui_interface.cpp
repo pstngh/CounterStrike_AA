@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //===========================================================================//
 
-#if !defined( _GAMECONSOLE ) && !defined( _OSX ) & !defined (LINUX)
+#if !defined( _OSX ) & !defined (LINUX)
 #include <windows.h>
 #endif
 #include "cbase.h"
@@ -15,12 +15,12 @@
 // dgoodenough - io.h and direct.h don't exist on PS3
 // PS3_BUILDFIX
 // @wge Fix for OSX too.
-#if !defined( _PS3 ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 #include <io.h>
 #endif
 #include <tier0/dbg.h>
 // @wge Fix for OSX too.
-#if !defined( _PS3 ) && !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX ) && !defined (LINUX)
 #include <direct.h>
 #endif
 
@@ -122,13 +122,6 @@ inline UI_BASEMOD_PANEL_CLASS & ConstructUiBaseModPanelClass() { return *BasePan
 
 // dgoodenough - select correct stub header based on current console
 // PS3_BUILDFIX
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#include <cell/sysmodule.h>
-#endif
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 #include "tier0/dbg.h"
 #include "engine/IEngineSound.h"
@@ -142,11 +135,6 @@ IEngineVGui *enginevguifuncs = NULL;
 // protection changed like this one
 // PS3_BUILDFIX
 // FIXME we will have to put in something for Playstation Home.
-#if defined( _X360 )
-IXOnline  *xonline = NULL;			// 360 only
-#elif defined( _PS3 )
-IPS3SaveRestoreToUI *ps3saveuiapi = NULL;
-#endif
 vgui::ISurface *enginesurfacefuncs = NULL;
 IAchievementMgr *achievementmgr = NULL;
 
@@ -252,15 +240,9 @@ void CGameUI::Initialize( CreateInterfaceFn factory )
 #if defined( BINK_VIDEO )
 	bik = (IBik*)factory( BIK_INTERFACE_VERSION, NULL );
 #endif
-#ifdef _PS3
-	ps3saveuiapi = (IPS3SaveRestoreToUI*)factory( IPS3SAVEUIAPI_VERSION_STRING, NULL );
-	cellSysmoduleLoadModule( CELL_SYSMODULE_SYSUTIL_USERINFO );
-#endif
 
-#ifndef _GAMECONSOLE
 	SteamAPI_InitSafe();
 	steamapicontext->Init();
-#endif
 
 	CGameUIConVarRef var( "gameui_xbox" );
 	m_bIsConsoleUI = var.IsValid() && var.GetBool();
@@ -286,16 +268,10 @@ void CGameUI::Initialize( CreateInterfaceFn factory )
 	xboxsystem = (IXboxSystem *)factory( XBOXSYSTEM_INTERFACE_VERSION, NULL );
 // dgoodenough - xonline only exists on the 360.
 // PS3_BUILDFIX
-#ifdef _X360
-	xonline = (IXOnline *)factory( XONLINE_INTERFACE_VERSION, NULL );
-#endif
 	bFailed = !enginesurfacefuncs || !gameuifuncs || !enginevguifuncs ||
 		!xboxsystem ||
 // dgoodenough - xonline only exists on the 360.
 // PS3_BUILDFIX
-#ifdef _X360
-		!xonline ||
-#endif
 		!g_pMatchFramework;
 
 #ifdef PANORAMA_ENABLE
@@ -457,7 +433,7 @@ void CGameUI::PlayGameStartupSound()
 // PS3_BUILDFIX
 // FIXME - we need to find some sort of entropy here and select based on that.
 // @wge Fix for OSX too.
-#if defined( _PS3 ) || defined( _OSX ) || defined (LINUX)
+#if defined( _OSX ) || defined (LINUX)
 		int index = 0;
 #else
 		SYSTEMTIME SystemTime;
@@ -517,9 +493,7 @@ void CGameUI::Start()
 	// throw a link time error, when the other does not?  Probably a GCC quirk, since MSVC has no
 	// problem with it.  In any case, Sys_SetLastError(...) does nothing on PS3, so removing the
 	// call to it here is harmless.
-#if !defined( _PS3 )
 	Sys_SetLastError( SYS_NO_ERROR );
-#endif
 
 	// ********************************************************************
 	// The following is commented out to keep intro music from playing
@@ -599,9 +573,6 @@ bool CGameUI::FindPlatformDirectory(char *platformDir, int bufferSize)
 //-----------------------------------------------------------------------------
 void CGameUI::Shutdown()
 {
-#ifdef _PS3
-	cellSysmoduleUnloadModule( CELL_SYSMODULE_SYSUTIL_USERINFO );
-#endif
 
 	// notify all the modules of Shutdown
 	g_VModuleLoader.ShutdownPlatformModules();
@@ -612,9 +583,7 @@ void CGameUI::Shutdown()
 	ModInfo().FreeModInfo();
 	
 	steamapicontext->Clear();
-#ifndef _GAMECONSOLE
 	// SteamAPI_Shutdown(); << Steam shutdown is controlled by engine
-#endif
 	
 	ConVar_Unregister();
 	DisconnectTier3Libraries();
@@ -1236,13 +1205,6 @@ void CGameUI::SetProgressOnStart()
 	m_bOpenProgressOnStart = true;
 }
 
-#if defined( _GAMECONSOLE ) && defined( _DEMO )
-void CGameUI::OnDemoTimeout()
-{
-	GetUiBaseModPanelClass().OnDemoTimeout();
-}
-#endif
-
 bool CGameUI::IsPlayingFullScreenVideo()
 {
 	return false;
@@ -1284,15 +1246,6 @@ void CGameUI::ReleaseBackgroundMusic( void )
 		return;
 	
 	enginesound->StopSoundByGuid( m_nBackgroundMusicGUID, true );
-
- #if defined( _GAMECONSOLE )
-
-	char nMusicKit[128];
-	V_snprintf( nMusicKit, 128, "music/%03i/%s", m_nBackgroundMusicVersion, BACKGROUND_MUSIC_FILENAME );
-
-	//release this to save on memory
- 	enginesound->UnloadSound( nMusicKit );
- #endif
 
 	m_nBackgroundMusicGUID = 0;
 }

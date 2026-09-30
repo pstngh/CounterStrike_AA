@@ -268,9 +268,6 @@ public:
 
 	// Put renderables into their appropriate lists.
 	virtual void BuildRenderablesList( const SetupRenderInfo_t &info ) = 0;
-#if defined(_PS3)
-	virtual void BuildRenderablesList_PS3_Epilogue( void ) = 0;
-#endif
 
 	// Put renderables in the leaf into their appropriate lists.
 	virtual void CollateViewModelRenderables( CViewModelRenderablesList *pList ) = 0;
@@ -355,9 +352,6 @@ public:
 
 	virtual void ComputeAllBounds( void ) = 0;
 
-#if defined(_PS3)
-	virtual void PrepRenderablesListForSPU( void ) = 0;
-#endif
 };
 
 

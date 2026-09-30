@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#if !defined ( _GAMECONSOLE ) && !defined ( NO_STEAM )
+#if !defined ( NO_STEAM )
 
 #include "ugc_request_manager.h"
 #include "ugc_file_info_manager.h"

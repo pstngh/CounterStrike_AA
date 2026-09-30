@@ -31,14 +31,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
-#ifdef _PS3
-//!!BUG!! "wcsicmp is unsupported on PS3"
-#ifdef wcsicmp
-#undef wcsicmp
-#endif
-#define wcsicmp wcscmp
-#endif
-
 using namespace vgui;
 
 namespace vgui

@@ -2967,40 +2967,6 @@ CWaveDataStreamAsync::CWaveDataStreamAsync
 			// In this case, we may stream some memory for nothing or in some extreme cases, have the streamed buffers not ready in time.
 			// This would happen only for the first loop.
 			// The XMA format fixes that by approximating loopStart with loopBlock (because compressed samples are fortunately aligned on 2048 bytes).
-#if defined( _GAMECONSOLE )
-			switch ( source.Format() )
-			{
-#if IsX360()
-			case WAVE_FORMAT_XMA:
-				// xma works in blocks, mixer handles inter-block accurate loop positioning
-				// block streaming will cycle from the block where the loop occurs
-				loopStart = loopBlock * XMA_BLOCK_SIZE;
-				break;
-#endif
-#if IsPS3()
-			case WAVE_FORMAT_MP3:
-				loopStart /= 10;		// We assume that we have a compression factor of 10.
-										// With the streamed buffer, it is better to start before than after (as the current impl. reads several buffers forward).
-				if ( loopStart > fileSize )
-				{
-					// Make sure we are in a reasonable range
-					loopStart = fileSize - transferSize;
-					if ( loopStart < 0 )
-					{
-						loopStart = 0;
-					}
-				}
-				break;
-
-			case WAVE_FORMAT_TEMP:
-				// Uncompressed, so keep it roughly the same
-				break;
-#endif
-			default:
-				// Nothing to fix up
-				break;
-			}
-#endif
 
 		}
 		else

@@ -14,10 +14,6 @@
 #include "tier1/memstack.h"
 #include "tier1/convar.h"
 
-#ifdef _PS3
-#include "ps3/ps3_core.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
@@ -552,20 +548,12 @@ bool CKeyValuesSystem::GetKeyValuesExpressionSymbol( const char *name )
 
 	if ( !V_stricmp( name, "GAMECONSOLESPLITSCREEN" ) )
 	{
-#if defined( _GAMECONSOLE )
-		return ( XBX_GetNumGameUsers() > 1 );
-#else
 		return false;
-#endif
 	}
 
 	if ( !V_stricmp( name, "GAMECONSOLEGUEST" ) )
 	{
-#if defined( _GAMECONSOLE )
-		return ( XBX_GetPrimaryUserIsGuest() != 0 );
-#else
 		return false;
-#endif
 	}
 
 	if ( !V_stricmp( name, "ENGLISH" ) ||
@@ -585,12 +573,8 @@ bool CKeyValuesSystem::GetKeyValuesExpressionSymbol( const char *name )
 		// the language symbols are true if we are in that language
 		// english is assumed when no language is present
 		const char *pLanguageString;
-#ifdef _GAMECONSOLE
-		pLanguageString = XBX_GetLanguageString();
-#else
 		static ConVarRef cl_language( "cl_language" );
 		pLanguageString = cl_language.GetString();
-#endif
 		if ( !pLanguageString || !pLanguageString[0] )
 		{
 			pLanguageString = "english";

@@ -1115,11 +1115,7 @@ void UTIL_BoundToWorldSize( Vector *pVecPos )
 	}
 }
 
-#ifdef _GAMECONSOLE
-#define MAP_KEY_FILE_DIR	"cfg"
-#else
 #define MAP_KEY_FILE_DIR	"media"
-#endif
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -1188,38 +1184,8 @@ bool UTIL_GetMapLoadCountFileName( int iController, const char *pszFilePrependNa
 {
 	if ( IsX360() )
 	{
-#ifdef _X360
-		if ( iController < 0 || iController >= XUSER_MAX_COUNT )
-			return false;
-
-		int iSlot = -1;
-		for ( unsigned int k = 0; k < XBX_GetNumGameUsers(); ++ k )
-		{
-			if ( XBX_GetUserId( k ) == iController )
-			{
-				iSlot = k;
-				if ( XBX_GetUserIsGuest( k ) )
-					return false;
-			}
-		}
-		if ( iSlot < 0 )
-			return false;
-
-		DWORD nStorageDevice = XBX_GetStorageDeviceId( iController );
-		if ( !XBX_DescribeStorageDevice( nStorageDevice ) )
-			return false;
-#endif
 	}
 
-#ifdef _X360
-	if ( IsX360() )
-	{
-		XBX_MakeStorageContainerRoot( iController, XBX_USER_SETTINGS_CONTAINER_DRIVE, pszBuffer, iBuflen );
-		int nLen = strlen( pszBuffer );
-		Q_snprintf( pszBuffer + nLen, iBuflen - nLen, ":/%s", pszFilePrependName );
-	}
-	else
-#endif
 	{
 		Q_snprintf( pszBuffer, iBuflen, "%s/%s", MAP_KEY_FILE_DIR, pszFilePrependName );
 	}
@@ -1231,10 +1197,6 @@ bool UTIL_GetMapLoadCountFileName( int iController, const char *pszFilePrependNa
 
 void UTIL_IncrementMapKey( const char *pszCustomKey )
 {
-#ifdef _X360
-	// TODO: controller-specific code required
-	return;
-#endif
 	int iController = -1;
 
 	if ( !pszCustomKey )
@@ -1284,20 +1246,10 @@ void UTIL_IncrementMapKey( const char *pszCustomKey )
 		kvMapLoadFile->deleteThis();
 	}
 
-#ifdef _X360
-	if ( xboxsystem )
-	{
-		xboxsystem->FinishContainerWrites( iController );
-	}
-#endif
 }
 
 int UTIL_GetMapKeyCount( const char *pszCustomKey )
 {
-#ifdef _X360
-	// TODO: controller-specific code required
-	return 0;
-#endif
 	int iController = -1;
 
 	if ( !pszCustomKey )
@@ -1342,10 +1294,6 @@ int UTIL_GetMapKeyCount( const char *pszCustomKey )
 
 bool UTIL_HasLoadedAnyMap()
 {
-#ifdef _X360
-	// TODO: controller-specific code required
-	return 0;
-#endif
 	int iController = -1;
 
 	char szFilename[ _MAX_PATH ];

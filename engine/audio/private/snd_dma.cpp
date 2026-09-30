@@ -55,19 +55,6 @@
 #include <vgui/ISurface.h>
 
 
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#include "xmp.h"
-#include "avi/ibik.h"
-extern IBik *bik;
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#include "snd_ps3_mp3dec.h"
-void HandleRemainingFrameInfos( int nMp3DecoderSlot, bool bBlocking );
-#include "avi/ibik.h"
-extern IBik *bik;
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -965,33 +952,9 @@ void VAudioInit()
 S_Init
 ================
 */
-#ifdef _PS3
-// On PS3 sound can only initialize once
-enum Ps3SoundState_t
-{
-	PS3_SOUND_NOT_INITIALIZED,
-	PS3_SOUND_INITIALIZED,
-	PS3_SOUND_SHUTDOWN
-};
-static Ps3SoundState_t s_ePs3SoundState = PS3_SOUND_NOT_INITIALIZED;
-#endif
 
 void S_Init( void )
 {
-#ifdef _PS3
-	if ( s_ePs3SoundState == PS3_SOUND_NOT_INITIALIZED )
-	{
-		s_ePs3SoundState = PS3_SOUND_INITIALIZED;
-	}
-	else
-	{
-		if ( s_ePs3SoundState != PS3_SOUND_INITIALIZED )
-		{
-			Warning( "ERROR: PS3 sound system cannot be initialized again (state %d)!\n", s_ePs3SoundState );
-		}
-		return;
-	}
-#endif
 
 	if ( sv.IsDedicated() )
 	{
@@ -1008,14 +971,6 @@ void S_Init( void )
 	{
 		VAudioInit();
 	}
-
-#ifdef _PS3
-	// even if we do have sound, do we still have to Init mp3dec ? E.g. because it's logically a decoder, not a sound service. It's not clear.
-	for ( int i = 0 ; i < NUMBER_OF_MP3_DECODER_SLOTS ; ++i )
-	{
-		g_mp3dec[i].Init();
-	}
-#endif
 
 	if ( CommandLine()->CheckParm( "-nosound" ) )
 	{
@@ -1049,22 +1004,6 @@ void S_Init( void )
 
 	DevMsg( "Sound Initialization: Finish, Sampling Rate: %i\n", g_AudioDevice->SampleRate() );
 
-#ifdef _X360
-	BOOL bPlaybackControl;
-	// get initial state of the x360 media player
-	if ( XMPTitleHasPlaybackControl( &bPlaybackControl ) == ERROR_SUCCESS )
-	{
-		S_EnableMusic(bPlaybackControl!=0);
-	}
-#if defined( BINK_ENABLED_FOR_CONSOLE ) && defined(BINK_VIDEO)
-	bik->HookXAudio();
-#endif
-#endif
-
-#if defined( _PS3 ) && defined( BINK_ENABLED_FOR_CONSOLE )
-	bik->SetPS3SoundDevice( g_AudioDevice->DeviceChannels() );
-#endif  // _PS3 && BINK_ENABLED_FOR_CONSOLE
-
 }
 
 void DumpFilePaths(const char *filename);
@@ -1076,31 +1015,16 @@ void ShutdownPhononThread();
 // =======================================================================
 void S_Shutdown(void)
 {
-#ifdef _PS3
-	if ( s_ePs3SoundState == PS3_SOUND_INITIALIZED )
-	{
-		s_ePs3SoundState = PS3_SOUND_SHUTDOWN;
-		Msg( "PS3 sound system is shutting down...\n" );
-	}
-	else
-	{
-		Warning( "ERROR: PS3 sound system cannot shutdown again (state %d)!\n", s_ePs3SoundState );
-		return;
-	}
-#endif
 
 	if ( !sv.IsDedicated() )
 	{
 
-#if !defined( _X360 )
 		if ( VoiceTweak_IsStillTweaking() )
 		{
 			VoiceTweak_EndVoiceTweakMode();
 		}
-#endif
 
 		// dump a complete list of audio files played during this game
-#ifndef _PS3
 		if ( IsPC() && snd_store_filepaths.GetString()[ 0 ])
 		{
 			/*time_t ltime;
@@ -1122,7 +1046,6 @@ void S_Shutdown(void)
 #endif
 			DumpFilePaths(filename);
 		}
-#endif
 
 		S_StopAllSounds( true );
 		S_ShutdownMixThread();
@@ -1176,19 +1099,10 @@ void S_Shutdown(void)
 		s_buffers = 0;
 		s_oldsampleOutCount = 0;
 		s_lastsoundtime = 0.0f;
-#if !defined( _X360 )
 		Voice_Deinit();
-#endif
 	}
 
 	TRACESHUTDOWN( audiosourcecache->Shutdown() );
-#ifdef _PS3
-	for ( int i = 0 ; i < NUMBER_OF_MP3_DECODER_SLOTS ; ++i )
-	{
-		HandleRemainingFrameInfos( i, true );
-		g_mp3dec[i].Shutdown();
-	}
-#endif
 }
 
 bool S_IsInitted()
@@ -1418,17 +1332,6 @@ CAudioSource *S_LoadSound( CSfxTable *pSfx, channel_t *ch, SoundError &soundErro
 				}
 			}
 
-#if defined( _X360 )
-			// shutdown streaming sounds ONLY during the main menu while the installer might go active or is active
-			if ( bStream && V_stristr( cleanName, "music/mainmenu" ) &&
-				g_pXboxInstaller->IsInstallEnabled() && !g_pXboxInstaller->IsFullyInstalled() )
-			{
-				// installer only runs during main menu UI
-				// cannot stream at all during installer
-				// force this background ui music to not stream
-				bStream = false;
-			}
-#endif
 		}
 
 		if ( bStream )
@@ -5253,7 +5156,6 @@ void SND_ExecuteUpdateOperators( channel_t *ch )
 	// setup scratchpad
 	g_scratchpad.SetPerExecution( ch, NULL );
 
-#if !defined( _X360 )
 	// Currently we don't process voice channels via operators
 	if ( ch->sfx && 
 	ch->sfx->pSource && 
@@ -5262,7 +5164,6 @@ void SND_ExecuteUpdateOperators( channel_t *ch )
 		Log_Warning( LOG_SOUND_OPERATOR_SYSTEM, "Voice channel attempting to be processed by operators" );
 		// Voice_Spatialize( ch );
 	}
-#endif
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -5401,14 +5302,12 @@ void SND_Spatialize(channel_t *ch)
 	ch->dspmix = 0;					// default mix 0% dsp_room fx
 	ch->distmix = 0;				// default 100% left (near) wav
 
-#if !defined( _X360 )
 	if ( ch->sfx && 
 		ch->sfx->pSource && 
 		ch->sfx->pSource->GetType() == CAudioSource::AUDIO_SOURCE_VOICE )
 	{
 		Voice_Spatialize( ch );
 	}
-#endif
 
 	// For Splitscreen this is the average position, a total hack!!!
 	Vector blended_listener_origin( 0, 0, 0 );
@@ -5673,14 +5572,12 @@ void SND_Spatialize(channel_t *ch)
 		gain = gain * snd_menumusic_volume.GetFloat();
 
 
-#if !defined( _X360 )
 	if ( ch->sfx && 
 		ch->sfx->pSource && 
 		ch->sfx->pSource->GetType() == CAudioSource::AUDIO_SOURCE_VOICE )
 	{
 		gain = MAX(gain, voice_minimum_gain.GetFloat());
 	}
-#endif
 
 	// map gain through global mixer by soundtype
 //	int last_mixgroupid;
@@ -6496,8 +6393,6 @@ void DumpFilePaths(const char *filename)
 	{
 		Q_strncpy( computername, "???", sizeof( computername )  );
 	}
-#elif defined( _PS3 )
-	Q_strncpy( computername, "PS3", sizeof( computername ) );
 #else
 	if ( gethostname( computername, sizeof(computername) ) == -1 )
 	{
@@ -6621,19 +6516,6 @@ static int S_StartSound_Immediate( StartSoundParams_t& params )
 			}
 		}
 	}
-
-#if defined( _X360 )
-	if ( !engineClient->IsConnected() && g_pXboxInstaller->IsInstallEnabled() && !g_pXboxInstaller->IsFullyInstalled() )
-	{
-		// prevent ANY audio streaming during main menu while the install might go active or is occurring
-		// static memory sounds are fine
-		if ( params.pSfx->pSource && params.pSfx->pSource->IsStreaming() )
-		{
-			DevWarning( "Ignoring streaming sound '%s' while installer may become active.\n", sndname );
-			return 0;
-		}
-	}
-#endif
 
 	// Override the entchannel to CHAN_STREAM if this is a non-voice stream sound.
 	if ( !params.staticsound &&
@@ -8983,11 +8865,7 @@ void S_Update_Guts( float mixAheadTime )
 
 }
 
-#if !defined( _X360 )
 #define THREADED_MIX_TIME 33
-#else
-#define THREADED_MIX_TIME XMA_POLL_RATE
-#endif
 
 ConVar snd_ShowThreadFrameTime( "snd_ShowThreadFrameTime", "0" );
 
@@ -9297,19 +9175,6 @@ static void S_PlayDelay( const CCommand &args )
 static ConCommand sndplaydelay( "sndplaydelay", S_PlayDelay );
 
 
-#if defined( _GAMECONSOLE )
-void S_UnloadSound( const char *pName )
-{
-	CSfxTable *pSfx = S_FindName( pName, NULL );
-	if ( pSfx && pSfx->pSource )
-	{
-		pSfx->pSource->CacheUnload();
-		delete pSfx->pSource;
-		pSfx->pSource = NULL;
-	}
-}
-#endif
-
 void S_PurgeSoundsDueToLanguageChange()
 {
 	DevMsg( "S_PurgeSoundsDueToLanguageChange()\n" );
@@ -9383,94 +9248,6 @@ void S_SoundList(void)
 
 	Msg( "Total: %.2f MB\n", (float)total/(1024.0f * 1024.0f) );
 }
-
-#if defined( _X360 ) || defined( _PS3 )
-CON_COMMAND( vx_soundlist, "Dump sounds to VXConsole" )
-{
-	CSfxTable		*sfx;
-	CAudioSource	*pSource;
-	int				dataSize;
-	char			*pFormatStr;
-	int				sampleRate;
-	int				sampleBits;
-	int				streamed;
-	int				looped;
-	int				channels;
-	int				numSamples;
-	int				quality;
-
-	int numSounds = s_Sounds.Count();
-	xSoundList_t* pSoundList = new xSoundList_t[numSounds];
-
-	int i = 0;
-	char nameBuf[MAX_PATH];
-	for ( int iSrcSound=s_Sounds.FirstInorder(); iSrcSound != s_Sounds.InvalidIndex(); iSrcSound = s_Sounds.NextInorder( iSrcSound ) )
-	{
-		dataSize = -1;
-		sampleRate = -1;
-		sampleBits = -1;
-		pFormatStr = "???";
-		streamed = -1;
-		looped = -1;
-		channels = -1;
-		numSamples = -1;
-		quality = -1;
-
-		sfx = s_Sounds[iSrcSound].pSfx;
-		pSource = sfx->pSource;
-		if ( pSource && pSource->IsCached() )
-		{
-			numSamples = pSource->SampleCount();
-			dataSize = pSource->DataSize();
-			sampleRate = pSource->SampleRate();
-			streamed = pSource->IsStreaming();
-			looped = pSource->IsLooped();
-			channels = pSource->IsStereoWav() ? 2 : 1;
-			quality = pSource->GetQuality();
-
-			switch ( pSource->Format() )
-			{
-			case WAVE_FORMAT_ADPCM:
-				pFormatStr = "ADPCM";
-				sampleBits = 16;
-				break;
-			case WAVE_FORMAT_PCM:
-				pFormatStr = "PCM";
-				sampleBits = (pSource->SampleSize() * 8)/channels;
-				break;
-			case WAVE_FORMAT_XMA:
-				pFormatStr = "XMA";
-				sampleBits = 16;
-				break;
-			case WAVE_FORMAT_MP3:
-			case WAVE_FORMAT_TEMP:
-				pFormatStr = "MP3";
-				sampleBits = 16;
-				break;
-			default:
-				pFormatStr = "Unknown";
-				sampleBits = 16;
-				break;
-			}
-		}
-
-		V_strncpy( pSoundList[i].name, sfx->getname(nameBuf, sizeof(nameBuf)), sizeof( pSoundList[i].name ) );
-		V_strncpy( pSoundList[i].formatName, pFormatStr, sizeof( pSoundList[i].formatName ) );
-		pSoundList[i].rate = sampleRate;
-		pSoundList[i].bits = sampleBits;
-		pSoundList[i].channels = channels;
-		pSoundList[i].looped = looped;
-		pSoundList[i].dataSize = dataSize;
-		pSoundList[i].numSamples = numSamples;
-		pSoundList[i].streamed = streamed;
-		pSoundList[i].quality = quality;
-		++i;
-	}
-
-	XBX_rSoundList( numSounds, pSoundList );
-	delete [] pSoundList;
-}
-#endif
 
 extern unsigned g_snd_time_debug;
 extern unsigned g_snd_call_time_debug;

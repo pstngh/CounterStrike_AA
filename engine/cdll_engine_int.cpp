@@ -97,10 +97,6 @@
 #include "dbginput.h"
 #include "cl_broadcast.h"
 
-#if defined( _PS3 )
-#include "engine_helper_ps3.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -398,9 +394,6 @@ public:
 	int		IsBoxInViewCluster( const Vector& mins, const Vector& maxs );
 
 	void Sound_ExtraUpdate( void );
-#if defined(_PS3)
-	void Sound_ServerUpdateSoundsPS3( void );
-#endif
 
 	bool CullBox ( const Vector& mins, const Vector& maxs );
 	const char *GetGameDirectory( void );
@@ -701,19 +694,6 @@ public:
 
 	virtual bool SOSSetOpvarFloat( const char *pOpVarName, float flValue );
 	virtual bool SOSGetOpvarFloat( const char *pOpVarName, float &flValue );
-
-#if defined(_PS3)
-	virtual void* GetHostStateWorldBrush( void );
-	virtual bool PS3_IsUserRestrictedFromChat( void );
-	virtual bool PS3_IsUserRestrictedFromOnline( void );
-	virtual bool PS3_PendingInvitesFound( void );
-	virtual void PS3_ShowInviteOverlay( void );
-
-	virtual bool  bOverrideCSMConvars( void ); 
-	virtual bool  bDrawWorldIntoCSM( void );
-	virtual bool  bDrawStaticPropsIntoCSM( void ); 
-	virtual float GetCSMMaxDist( void );
-#endif
 
 	virtual bool IsSubscribedMap( const char *pchMapName, bool bOnlyOnDisk );
 	virtual bool IsFeaturedMap( const char *pchMapName, bool bOnlyOnDisk );
@@ -1201,18 +1181,6 @@ void CEngineClient::Sound_ExtraUpdate( void )
 
 	S_ExtraUpdate();
 }
-
-#if defined(_PS3)
-extern void Host_UpdateSounds( void );
-
-void CEngineClient::Sound_ServerUpdateSoundsPS3( void )
-{
-	if (sv.IsActive())
-	{
-		Host_UpdateSounds();
-	}
-}
-#endif
 
 bool CEngineClient::CullBox ( const Vector& mins, const Vector& maxs )
 {
@@ -2451,14 +2419,6 @@ int CEngineClient::GetGenericMemoryStats( GenericMemoryStat_t **ppMemoryStats )
 
 	AddGenericMemoryStat( "Hunk", Hunk_Size() );
 
-#ifdef _GAMECONSOLE
-	if ( host_state.worldbrush )
-	{
-		AddGenericMemoryStat( "BSP",     host_state.worldbrush->m_nBSPFileSize );
-		AddGenericMemoryStat( "LM_lump", host_state.worldbrush->m_nLightingDataSize );
-	}
-#endif // _GAMECONSOLE
-
 	*ppMemoryStats = &g_EngineMemStats[0];
 	return g_nEngineMemStats;
 }
@@ -2477,13 +2437,6 @@ void CEngineClient::StartLoadingScreenForKeyValues( KeyValues* keyValues )
 {
 	EngineVGui()->StartLoadingScreenForKeyValues( keyValues );
 }
-
-#if defined(_PS3)
-void* CEngineClient::GetHostStateWorldBrush( void )
-{
-	return host_state.worldbrush;
-}
-#endif
 
 int	CEngineClient::GetClientVersion() const
 {
@@ -2936,14 +2889,6 @@ void ClientDLL_ProcessInput( void )
 		g_ClientDLL->HudProcessInput( GetLocalClient().IsConnected() );
 	}
 	
-#ifdef _PS3
-	if( g_pDebugInputThread && !g_pDebugInputThread->m_inputString.IsEmpty() )
-	{
-		AUTO_LOCK( g_pDebugInputThread->m_mx );
-		Cbuf_AddText( Cbuf_GetCurrentPlayer(), g_pDebugInputThread->m_inputString.Get(), kCommandSrcConsoleBuffer );
-		g_pDebugInputThread->m_inputString.Purge();
-	}
-#endif
 }
 
 
@@ -3024,30 +2969,4 @@ vgui::VPANEL ClientDLL_GetFullscreenClientDLLVPanel( void )
 	}
 	return false;
 }
-
-#if defined ( _PS3 )
-
-// note:  We assume if we aren't connected or initialized, that the chat is NOT restricted
-bool CEngineClient::PS3_IsUserRestrictedFromChat( void )
-{
-	return EngineHelperPS3::PS3_IsUserRestrictedFromChat();
-}
-
-// NOTE:  If we're not signed in yet, or not initialized, we consider this as not restricted from online
-bool CEngineClient::PS3_IsUserRestrictedFromOnline( void )
-{
-	return EngineHelperPS3::PS3_IsUserRestrictedFromOnline();
-}
-
-bool CEngineClient::PS3_PendingInvitesFound( void )
-{
-	return EngineHelperPS3::PS3_PendingInvitesFound();
-}
-
-void CEngineClient::PS3_ShowInviteOverlay( void )
-{
-	EngineHelperPS3::PS3_ShowInviteOverlay();
-}
-
-#endif // _PS3
 

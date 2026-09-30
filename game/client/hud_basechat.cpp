@@ -33,10 +33,6 @@
 #include "steam/steam_api.h"
 #endif
 
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1825,10 +1821,6 @@ void CBaseHudChat::LevelShutdown( void )
 
 void	CBaseHudChat::ChatPrintfW( int iPlayerIndex, int iFilter, const wchar_t *wszNotice )
 {
-#if defined( _PS3 ) && !defined( NO_STEAM )
-	if ( !steamapicontext->SteamFriends() || steamapicontext->SteamFriends()->GetUserRestrictions() )
-		return; // user not eligible to chat
-#endif
 
 	if ( CDemoPlaybackParameters_t const *pParameters = engine->GetDemoPlaybackParameters() )
 	{
@@ -1860,10 +1852,6 @@ void	CBaseHudChat::ChatPrintfW( int iPlayerIndex, int iFilter, const wchar_t *ws
 //-----------------------------------------------------------------------------
 void CBaseHudChat::ChatPrintf( int iPlayerIndex, int iFilter, const char *fmt, ... )
 {
-#if defined( _PS3 ) && !defined( NO_STEAM )
-	if ( !steamapicontext->SteamFriends() || steamapicontext->SteamFriends()->GetUserRestrictions() )
-		return; // user not eligible to chat
-#endif
 
 	if ( CDemoPlaybackParameters_t const *pParameters = engine->GetDemoPlaybackParameters() )
 	{

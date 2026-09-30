@@ -58,12 +58,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#ifdef _GAMECONSOLE
-// Disable demos on consoles by default, to avoid unwanted memory allocations, file I/O and computation
-#define ENABLE_DEMOS_BY_DEFAULT false
-#else
 #define ENABLE_DEMOS_BY_DEFAULT true
-#endif
 
 static ConVar demo_recordcommands( "demo_recordcommands", "1", FCVAR_CHEAT, "Record commands typed at console into .dem files." );
 static ConVar demo_quitafterplayback( "demo_quitafterplayback", "0", 

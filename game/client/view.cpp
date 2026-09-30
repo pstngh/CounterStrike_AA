@@ -1156,10 +1156,8 @@ void CViewRender::Render( vrect_t *rect )
 
 	engine->EngineStats_EndFrame();
 
-#if !defined( _GAMECONSOLE )
 	// Stop stubbing the material system so we can see the budget panel
 	matStub.End();
-#endif
 
 	// Render the new-style embedded UI
 	// TODO: when embedded UI will be used for HUD, we will need it to maintain

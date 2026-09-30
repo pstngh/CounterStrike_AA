@@ -7,12 +7,9 @@
 
 
 #pragma warning( disable: 4018 ) // '==' : signed/unsigned mismatch in rbtree
-#if defined( WIN32 ) && !defined( _X360 )
+#if defined( WIN32 )
 #include <windows.h>
 #include <vadefs.h>
-#elif defined( _PS3 )
-
-
 #elif defined( POSIX )
 #include <iconv.h>
 #endif
@@ -34,10 +31,6 @@
 #include <vstdlib/vstrtools.h>
 #include "vgui/ISystem.h"
 #include "vgui_controls/Controls.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -154,7 +147,7 @@ private:
 	void InvokeChangeCallbacks( );
 	virtual int ConvertANSIToUCS2(const char *ansi, OUT_Z_BYTECAP(unicodeBufferSizeInBytes) ucs2 *unicode, int unicodeBufferSizeInBytes);
 	virtual int ConvertUCS2ToANSI(const ucs2 *unicode, OUT_Z_BYTECAP(ansiBufferSize) char *ansi, int ansiBufferSize);
-#if defined ( POSIX ) && !defined( _PS3 )
+#if defined ( POSIX )
 	virtual void AddString(const char *tokenName, ucs2 *unicodeString, const char *fileName);
 #endif
 	char m_szLanguage[64];
@@ -552,9 +545,6 @@ bool CLocalize::AddFile( const char *szFileName, const char *pPathID, bool bIncl
 		}
 		else
 		{
-#ifdef _GAMECONSOLE
-			Q_strncpy( language, XBX_GetLanguageString(), sizeof( language ) );
-#endif
 		}
 
 		// LOAD THE LOCALIZED FILE IF IT'S NOT ENGLISH
@@ -621,26 +611,6 @@ bool CLocalize::AddAllLanguageFiles( const char *baseFileName )
 
 	if ( IsX360() )
 	{
-#ifdef _X360
-		// xbox cannot support FindFirst/FindNext due to zips
-		const char *pLanguageString = NULL;
-		while ( 1 )
-		{
-			pLanguageString = XBX_GetNextSupportedLanguage( pLanguageString, NULL );
-			if ( !pLanguageString )
-			{
-				// end of list
-				break;
-			}
-
-			// re-add in the search path
-			char szFile[MAX_PATH];
-			V_snprintf( szFile, sizeof( szFile ), "%s%s.txt", baseFileName, pLanguageString );
-
-			// add the file
-			bSuccess &= AddFile( szFile, NULL, true );
-		}
-#endif
 	}
 	else
 	{
@@ -863,7 +833,7 @@ LocalizeStringIndex_t CLocalize::FindIndex(const char *pName)
 	return m_Lookup.Find( invalidItem );
 }
 
-#if defined( POSIX ) && !defined( _PS3 )
+#if defined( POSIX )
 void CLocalize::AddString(const char *pString, ucs2 *pUCS2Value, const char *fileName)
 {
 	if (!pString || !pUCS2Value ) 
@@ -1421,13 +1391,11 @@ void ConstructStringVArgsInternal_Impl(T *unicodeOutput, int unicodeBufferSizeIn
 				T *param = NULL;
 				if ( IsPC() )
 				{
-#if !defined( _PS3 )
 #ifdef PLATFORM_64BITS
 					param = arguments[ argindex ];
 #else
 					param = va_argByIndex( argList, T *, argindex );
 #endif
-#endif // !_PS3
 				}
 				else
 				{

@@ -123,20 +123,6 @@ bool CLoadingScreenScaleform::PreUnloadFlash( void )
 	return ScaleformFlashInterface::PreUnloadFlash();
 }
 
-#ifdef _PS3
-IMatchSession *g_pMatchSessionChatRestrictionsAck = NULL;
-IMatchSession *g_pMatchSessionChatRestrictionsPending = NULL;
-CON_COMMAND_F( confirm_chat_restrictions, "Confirm that we have chat restrictions", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_HIDDEN )
-{
-	IMatchSession *pSession = g_pMatchFramework->GetMatchSession();
-	if ( pSession == g_pMatchSessionChatRestrictionsPending )
-	{
-		g_pMatchSessionChatRestrictionsAck = g_pMatchSessionChatRestrictionsPending;
-		g_pMatchSessionChatRestrictionsPending = NULL;
-	}
-}
-#endif
-
 void CLoadingScreenScaleform::PostUnloadFlash( void )
 {
 	StopListeningForAllEvents();
@@ -146,32 +132,6 @@ void CLoadingScreenScaleform::PostUnloadFlash( void )
 	m_pInstance = NULL;
 	delete this;
 
-#ifdef _PS3
-	if( IsQuitting() )
-		return;
-
-	void ConfigurePSNPresenceStatusBasedOnCurrentSessionState( bool bCanUseSession = true );
-	ConfigurePSNPresenceStatusBasedOnCurrentSessionState();
-
-	IMatchSession *pSession = g_pMatchFramework->GetMatchSession();
-	if ( pSession && ( g_pMatchSessionChatRestrictionsAck != pSession ) &&
-		engine->IsConnected() &&
-		!V_stricmp( pSession->GetSessionSettings()->GetString( "system/network" ), "LIVE" ) &&
-		steamapicontext->SteamFriends()->GetUserRestrictions() )
-	{
-		g_pMatchSessionChatRestrictionsPending = pSession;
-		GameUI().CreateCommandMsgBoxInSlot(
-			CMB_SLOT_FULL_SCREEN, 
-			"#SFUI_GameUI_ChatRestrictionPS3_Title", 
-			"#SFUI_GameUI_ChatRestrictionPS3_Message", 
-			true, 
-			false, 
-			"confirm_chat_restrictions\n", 
-			NULL, 
-			NULL, 
-			NULL );
-	}
-#endif
 }
 
 void CLoadingScreenScaleform::LoadDialog( void )

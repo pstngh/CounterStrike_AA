@@ -4,14 +4,12 @@
 //
 //=====================================================================================//
 
-#ifndef _X360
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "mm_framework.h"
 #include "match_searcher.h"
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 #include "steam/matchmakingtypes.h"
 #endif
 

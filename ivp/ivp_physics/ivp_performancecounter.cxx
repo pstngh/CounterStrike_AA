@@ -161,23 +161,10 @@ void IVP_PerformanceCounter_Simple::pcount( IVP_PERFORMANCE_ELEMENT el){
 }
 
 #elif defined(WIN32) 
-#	ifndef _XBOX
 #		ifndef WIN32_LEAN_AND_MEAN
 #			define	WIN32_LEAN_AND_MEAN
 #		endif
 #		include	<windows.h>
-#	else
-#		ifndef WINVER
-#			define WINVER 0x0500
-#		endif
-#		ifndef _X86_
-#			define _X86_
-#		endif  /* _X86_ */
-#		include <excpt.h>
-#		include <stdarg.h>
-#		include <windef.h>
-#		include <winbase.h>
-#	endif
 
 void IVP_PerformanceCounter_Simple::pcount( IVP_PERFORMANCE_ELEMENT el){
     __int64	Profile_Counter;

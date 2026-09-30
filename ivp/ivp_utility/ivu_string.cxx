@@ -12,23 +12,10 @@
 #include <malloc.h>
 #endif
 #ifdef WIN32
-#	ifndef _XBOX
 #		ifndef WIN32_LEAN_AND_MEAN
 #			define WIN32_LEAN_AND_MEAN
 #		endif
 #		include <windows.h>
-#	else
-#		ifndef WINVER
-#			define WINVER 0x0500
-#		endif
-#		ifndef _X86_
-#			define _X86_
-#		endif  /* _X86_ */
-#		include <excpt.h>
-#		include <stdarg.h>
-#		include <windef.h>
-#		include <winbase.h>
-#	endif
 #endif
 
 void P_String::uppercase(char *str)

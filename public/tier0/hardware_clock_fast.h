@@ -20,27 +20,6 @@ inline int GetHardwareClockFast( void )
 
 #else
 
-#ifdef _X360
-inline /*__declspec(naked)*/ int GetHardwareClockFast()
-{
-	/*__asm
-	{
-		lis		r3,08FFFh
-		ld		r3,011E0h(r3)
-		rldicl	r3,r3,32,32
-		blr
-	}  */
-	return __mftb32() << 6;
-}
-#elif defined( _PS3 )
-inline int GetHardwareClockFast()
-{
-	// The timebase frequency on PS/3 is 79.8 MHz, see sys_time_get_timebase_frequency()
-	// this works out to 40.10025 clock ticks per timebase tick
-	return __mftb() * 40;
-}
-#else
-
 #ifdef __e2k__
 #include <x86intrin.h>
 #else
@@ -51,7 +30,6 @@ inline int GetHardwareClockFast()
 {
 	return __rdtsc();
 }
-#endif // ifdef _X360
 
 #endif // defined GNUC && !defined __e2k__
 

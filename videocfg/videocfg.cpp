@@ -118,7 +118,6 @@ static RatioToAspectMode_t g_pRatioToAspectModes[] =
 
 
 //--------------------------------------------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 static AspectRatioMode_t GetScreenAspectMode( int width, int height )
 {
 	for (int i = 0; i < ARRAYSIZE(g_pRatioToAspectModes); i++)
@@ -130,12 +129,10 @@ static AspectRatioMode_t GetScreenAspectMode( int width, int height )
 
 	return ASPECT_RATIO_OTHER;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 static inline int ReadHexValue( KeyValues *pVal, const char *pName )
 {
 	const char *pString = pVal->GetString( pName, NULL );
@@ -148,12 +145,10 @@ static inline int ReadHexValue( KeyValues *pVal, const char *pName )
 	int nVal = strtol( pString, &pTemp, 16 );
 	return (pTemp != pString) ? nVal : -1;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void AddNewKeysUsingVideoWhitelist( KeyValues *pModKeys, KeyValues *pConfigKeys )
 {
 	for( KeyValues *pSubKey = pModKeys->GetFirstSubKey(); pSubKey; pSubKey = pSubKey->GetNextKey() )
@@ -187,12 +182,10 @@ void AddNewKeysUsingVideoWhitelist( KeyValues *pModKeys, KeyValues *pConfigKeys 
 		pConfigKeys->SetString( pSubKeyName, pValue );
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void CopySettingKeysUsingVideoWhitelist( KeyValues *pModKeys, KeyValues *pConfigKeys )
 {
 	for( KeyValues *pSubKey = pModKeys->GetFirstSubKey(); pSubKey; pSubKey = pSubKey->GetNextKey() )
@@ -238,12 +231,10 @@ void CopySettingKeysUsingVideoWhitelist( KeyValues *pModKeys, KeyValues *pConfig
 		pConfigKeys->SetString( pSubKeyName, pValue );
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Match the CPU data and add all the "setting" data to the Video Config Keys.
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void AddCPULevelKeys( KeyValues *pModKeys, KeyValues *pVideoConfigKeys )
 {
 	// Get the number of physical processors in the machine.
@@ -268,12 +259,10 @@ void AddCPULevelKeys( KeyValues *pModKeys, KeyValues *pVideoConfigKeys )
 		}
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void AddMemoryKeys( KeyValues *pModKeys, int nMemory, KeyValues *pVideoConfigKeys )
 {
 	for( KeyValues *pModKey = pModKeys->GetFirstSubKey(); pModKey; pModKey = pModKey->GetNextKey() )
@@ -293,12 +282,10 @@ void AddMemoryKeys( KeyValues *pModKeys, int nMemory, KeyValues *pVideoConfigKey
 		}
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void AddVideoMemoryKeys( KeyValues *pModKeys, int nVidMemory, KeyValues *pVideoConfigKeys )
 {
 	for( KeyValues *pModKey = pModKeys->GetFirstSubKey(); pModKey; pModKey = pModKey->GetNextKey() )
@@ -318,13 +305,11 @@ void AddVideoMemoryKeys( KeyValues *pModKeys, int nVidMemory, KeyValues *pVideoC
 		}
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Match the device and vendor id and add all the "setting" data to
 //	the Video Config Keys.
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool AddVideoCardKeys( KeyValues *pModKeys, int nVendorID, int nDeviceID, KeyValues *pVideoConfigKeys )
 {
 	bool bFoundDevice = false;
@@ -362,13 +347,11 @@ bool AddVideoCardKeys( KeyValues *pModKeys, int nVendorID, int nDeviceID, KeyVal
 
 	return bFoundDevice;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Match the device and vendor id and add all the "setting" data to
 //	the Video Config Keys.
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 void AddDXLevelKeys( KeyValues *pModKeys, int nDXLevel, KeyValues *pVideoConfigKeys )
 {
 	// Test all video card blocks to determine the correct blocks to copy data from.
@@ -384,12 +367,10 @@ void AddDXLevelKeys( KeyValues *pModKeys, int nDXLevel, KeyValues *pVideoConfigK
 		}			
 	}
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool ParseConfigKeys( VidMatConfigData_t &configData )
 {
 	// Does the file exist?
@@ -455,12 +436,10 @@ bool ParseConfigKeys( VidMatConfigData_t &configData )
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 static bool GetNearestFullscreenResolution( int& nWidth, int& nHeight, VidMatConfigData_t &configData )
 {
 	float flDesiredArea = nWidth * nHeight;
@@ -510,13 +489,11 @@ static bool GetNearestFullscreenResolution( int& nWidth, int& nHeight, VidMatCon
 	nHeight = nBestHeight;
 	return true;
 }
-#endif
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Create the video config file and fill it in with default data.
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool CreateDefaultVideoKeyValues( VidMatConfigData_t &configData )
 {
 	// Sets the highest CSM quality level and enabled FXAA, then let the csm_quality_level settings in moddefaults override these settings with lower values.
@@ -592,12 +569,10 @@ bool CreateDefaultVideoKeyValues( VidMatConfigData_t &configData )
 	
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 static bool VerifyVideoConfigSettingRequired( char const *szSetting )
 {
 	static char const * arrIgnoredSettings[] = { "setting.mem_level" };
@@ -755,12 +730,10 @@ bool VerifyDefaultVideoConfig( VidMatConfigData_t &configData )
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool CopyDefaultVideoToCurrentVideoConfig( const char *pszDefaultFileName, const char *pszCurrentFileName )
 {
 	bool bFileExists = g_pFullFileSystem->FileExists( pszDefaultFileName, VIDEOCONFIG_PATHID );
@@ -788,12 +761,10 @@ bool CopyDefaultVideoToCurrentVideoConfig( const char *pszDefaultFileName, const
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool CreateDefaultVideoConfig( VidMatConfigData_t &configData )
 {
 	// Create the default video keys.
@@ -830,13 +801,11 @@ bool CreateDefaultVideoConfig( VidMatConfigData_t &configData )
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Look for a video config file to setup the system defaults.  Create the
 //   file if one doesn't already exist.
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool BLoadUserVideoConfigFileFromDisk( KeyValues *pConfigKeys )
 {
 	// Parse current video file, note that some settings will be on AUTO with setauto
@@ -892,12 +861,10 @@ bool RecommendedVideoConfig( VidMatConfigData_t &configData )
 
 	return BLoadUserVideoConfigFileFromDisk( configData.pConfigKeys );
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool RecommendedConfig( VidMatConfigData_t &configData )
 {
 	// Verify that the file system has been created.
@@ -912,12 +879,10 @@ bool RecommendedConfig( VidMatConfigData_t &configData )
 	// Parse the configuration keys.
 	return ParseConfigKeys( configData );
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool ResetVideoConfigToDefaults( KeyValues *pConfigKeys )
 {
 	// Copy the defaults settings into the current = Reset.
@@ -932,12 +897,10 @@ bool ResetVideoConfigToDefaults( KeyValues *pConfigKeys )
 	
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool UpdateCurrentVideoConfig( int nWidth, int nHeight, int nAspectRatioMode, bool bFullscreen, bool bNoWindow, bool bUseRestartConvars )
 {
 	// Create and Init the video config block.
@@ -1021,12 +984,10 @@ bool UpdateCurrentVideoConfig( int nWidth, int nHeight, int nAspectRatioMode, bo
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool UpdateVideoConfigConVars( KeyValues *pConfigKeys )
 {
 	bool bAllocConfig = false;
@@ -1131,12 +1092,10 @@ bool UpdateVideoConfigConVars( KeyValues *pConfigKeys )
 
 	return true;
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-#if !defined( _GAMECONSOLE )
 bool ReadCurrentVideoConfig( KeyValues *pConfigKeys, bool bDefault )
 {
 	if ( !pConfigKeys )
@@ -1161,7 +1120,6 @@ bool ReadCurrentVideoConfig( KeyValues *pConfigKeys, bool bDefault )
 		return pConfigKeys->LoadFromFile( g_pFullFileSystem, VIDEOCONFIG_DEFAULT_FILENAME, VIDEOCONFIG_PATHID );
 	}
 }
-#endif
 
 const unsigned char *GetModEncryptionKey( const char *pModName )
 {
@@ -1235,9 +1193,7 @@ SystemLevelConvar_t s_pConVarsAllowedInSystemLevel[] =
 	{ "cl_detaildist",					true, true },
 	{ "cl_detailfade",					true, true },
 	{ "r_drawmodeldecals",				true, false },		// force consistency across all levels
-#ifndef _PS3
 	{ "r_decalstaticprops",				true, false },		// force consistency across all levels
-#endif
 	{ "ragdoll_sleepaftertime",			true, true },
 	{ "cl_phys_maxticks",				true, true },
 	{ "r_worldlightmin",				true, true },

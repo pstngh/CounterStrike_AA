@@ -36,9 +36,7 @@ public:
 		bool m_bDedicated;
 
 		char m_szConnectionString[256];
-#ifdef _X360
-		char m_szInsecureSendableServerAddress[256];
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		char m_szPublicConnectionString[256];
 		char m_szPrivateConnectionString[256];
 #endif
@@ -58,26 +56,7 @@ protected:
 	IMatchAsyncOperation *m_pAsyncOperation;
 
 protected:
-#ifdef _X360
-
-	CXlspTitleServers *m_pTitleServers;
-	
-	void Xlsp_EnumerateDcs();
-	void Xlsp_OnEnumerateDcsCompleted();
-
-	CUtlVector< CXlspDatacenter > m_arrDatacenters;
-	char m_chDatacenterQuery[ MAX_PATH ];
-
-	void Xlsp_PrepareDatacenterQuery();
-	void Xlsp_StartNextDc();
-	
-	CXlspDatacenter m_dc;
-
-	void Xlsp_OnDcServerBatch( void const *pData, int numBytes );
-
-	CUtlVector< uint16 > m_arrServerPorts;
-
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	int m_nSearchPass;
 	void Steam_SearchPass();
@@ -141,11 +120,7 @@ protected:
 	{
 		STATE_INIT,
 		STATE_WAITING,
-#ifdef _X360
-		STATE_XLSP_ENUMERATE_DCS,
-		STATE_XLSP_NEXT_DC,
-		STATE_XLSP_REQUESTING_SERVERS,
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		STATE_STEAM_REQUESTING_SERVERS,
 		STATE_STEAM_NEXT_SEARCH_PASS,
 #endif

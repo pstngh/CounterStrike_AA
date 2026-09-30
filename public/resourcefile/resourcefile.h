@@ -81,11 +81,7 @@ struct ResourceFileHeader_t
 // Resource block IDs
 //-----------------------------------------------------------------------------
 #define RSRC_BYTE_POS( byteVal, shft )	ResourceBlockId_t( uint32(uint8(byteVal)) << uint8(shft * 8) )
-#if !defined( PLATFORM_X360 )
 #define MK_RSRC_BLOCK_ID(a, b, c, d)	ResourceBlockId_t( RSRC_BYTE_POS(a, 0) | RSRC_BYTE_POS(b, 1) | RSRC_BYTE_POS(c, 2) | RSRC_BYTE_POS(d, 3) )
-#else
-#define MK_RSRC_BLOCK_ID(a, b, c, d)	ResourceBlockId_t( RSRC_BYTE_POS(a, 3) | RSRC_BYTE_POS(b, 2) | RSRC_BYTE_POS(c, 1) | RSRC_BYTE_POS(d, 0) )
-#endif
 
 #define RESOURCE_BLOCK_ID_INVALID 0xFFFFFFFF
 

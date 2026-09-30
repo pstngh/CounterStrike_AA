@@ -12,17 +12,7 @@
 #pragma once
 #endif
 
-#if defined ( _PS3 )
-
-#define TITLE_DATA_PREFIX "PS3."
-#define TITLE_DATA_DEVICE_MOVE_PREFIX "MOVE."
-#define TITLE_DATA_DEVICE_SHARP_SHOOTER_PREFIX "SHARP_SHOOTER."
-
-#else
-
 #define TITLE_DATA_PREFIX ""
-
-#endif
 
 struct TitleDataFieldsDescription_t
 {

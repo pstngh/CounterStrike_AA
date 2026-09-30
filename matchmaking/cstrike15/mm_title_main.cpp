@@ -37,14 +37,3 @@ void MM_Title_Shutdown()
 		g_pMatchTitle->Shutdown();
 }
 
-#if defined( _X360 ) && defined( _DEBUG )
-CON_COMMAND( x_dbg_xgi, "Set X360 XGI debug output level" )
-{
-	int iLevel = args.FindArgInt( "-level", -1 );
-	if ( iLevel >= 0 )
-	{
-		XDebugSetSystemOutputLevel( HXAMAPP_XGI, iLevel );
-	}
-}
-#endif
-

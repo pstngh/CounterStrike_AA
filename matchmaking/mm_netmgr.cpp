@@ -105,12 +105,6 @@ bool CConnectionlessLanMgr::ProcessConnectionlessPacket( netpacket_t *packet )
 
 void CConnectionlessLanMgr::Update()
 {
-#ifdef _X360
-	if ( !net_allow_syslink.GetBool() )
-		return;
-
-	g_pMatchExtensions->GetINetSupport()->ProcessSocket( INetSupport::NS_SOCK_SYSTEMLINK, this );
-#endif
 }
 
 void CConnectionlessLanMgr::SendPacket( KeyValues *pMsg, char const *szAddress /*= NULL*/, INetSupport::NetworkSocket_t eSock )

@@ -34,9 +34,6 @@
 #ifndef DEDICATED
 #include "vgui_baseui_interface.h"
 #endif
-#ifdef _PS3
-#include <sysutil/sysutil_sysparam.h>
-#endif
 #include "tier0/etwprof.h"
 
 #include "steam/steam_api.h"
@@ -173,9 +170,6 @@ private:
 	double			m_flPreviousTime;
 	float			m_flFilteredTime;
 	float			m_flMinFrameTime; // Expected duration of a frame, or zero if it is unlimited.
-#ifdef _GAMECONSOLE
-	float           m_flTimeSinceLastXBXProcessEventsCall;
-#endif
 
 #if WITH_OVERLAY_CURSOR_VISIBILITY_WORKAROUND
 	STEAM_CALLBACK( CEngine, OnGameOverlayActivated, GameOverlayActivated_t, m_CallbackGameOverlayActivated );
@@ -205,9 +199,6 @@ CEngine::CEngine( void )
 	m_flPreviousTime	= 0.0;
 	m_flFilteredTime	= 0.0f;
 	m_flMinFrameTime	= 0.0f;
-#ifdef _GAMECONSOLE
-	m_flTimeSinceLastXBXProcessEventsCall = 1.0e19;			// make ti call on first frame
-#endif
 
 	m_nQuitting			= QUIT_NOTQUITTING;
 }
@@ -286,85 +277,6 @@ bool CEngine::FilterTime( float dt )
 	}
 
 	float fps = fps_max.GetFloat();
-#ifdef _GAMECONSOLE
-	static bool bInitializedFpsMax;
-	static float flRefreshRate = 0;
-	if ( !bInitializedFpsMax )
-	{
-		bInitializedFpsMax = true;
-		{
-		#ifdef _X360
-			XVIDEO_MODE videoMode;
-			XGetVideoMode( &videoMode );
-			flRefreshRate = videoMode.RefreshRate;
-		#elif defined( _PS3 )
-			CellVideoOutState videoOutState;
-			if ( cellVideoOutGetState( CELL_VIDEO_OUT_PRIMARY, 0, &videoOutState) >= CELL_OK )
-			{
-				struct { int rrFlag; float flRate; }
-				arrRefreshRates[] = {
-					{ CELL_VIDEO_OUT_REFRESH_RATE_59_94HZ, 59.94f },
-					{ CELL_VIDEO_OUT_REFRESH_RATE_60HZ, 60.00f },
-					{ CELL_VIDEO_OUT_REFRESH_RATE_50HZ, 50.00f },
-					{ CELL_VIDEO_OUT_REFRESH_RATE_30HZ, 30.00f },
-				};
-				for ( int jj = 0; jj < ARRAYSIZE( arrRefreshRates ); ++ jj )
-				{
-					if ( arrRefreshRates[jj].rrFlag & videoOutState.displayMode.refreshRates )
-					{
-						flRefreshRate = arrRefreshRates[jj].flRate;
-						break;
-					}
-				}
-				if ( !flRefreshRate )
-				{
-					Warning( "Failed to determine PS3 video out refresh rate, assuming 59.94 Hz\n" );
-					flRefreshRate = 59.94f;
-				}
-			}
-			else
-			{
-				bInitializedFpsMax = false;
-			}
-		#else
-			#error
-		#endif
-		}
-
-// Taken fps_max out since we'll use the presentation interval to force max 30fps
-// This gives us a much smoother frametime and ensure we don't drop a frame
-// due to the inaccuracy of fps_max
-//
-//		if ( flRefreshRate > 49 )
-//		{	
-//			float fpsMax = flRefreshRate / 2.0f, fpsSplitscreenMax = flRefreshRate / 2.0f;
-//			DevMsg( "Setting fps_max to %f and fps_splitscreen_max to %f (from defaults of %f/%f ) to match refresh rate of %f\n", fpsMax, fpsSplitscreenMax, fps_max.GetFloat(), fps_max_splitscreen.GetFloat(), flRefreshRate );
-//			fps_max.SetValue( fpsMax );
-//			fps_max_splitscreen.SetValue( fpsSplitscreenMax );
-//		}
-
-	}
-
-	bool bSplitscreen = false;
-	// Need a smarter way of doing this
-	for ( int i = 1; i < splitscreen->GetNumSplitScreenPlayers(); i++ )
-	{
-		if ( splitscreen->IsValidSplitScreenSlot( i ) )
-		{
-			bSplitscreen = true;
-			break;
-		}
-	}
-
-	if ( !bSplitscreen )
-	{
-		fps = fps_max.GetFloat();
-	}
-	else
-	{
-		fps = fps_max_splitscreen.GetFloat();
-	}
-#endif
 
 #if !defined( DEDICATED )
 	extern IVEngineClient *engineClient;
@@ -374,17 +286,6 @@ bool CEngine::FilterTime( float dt )
 	}
 #endif
 
-#ifdef _PS3
-	{
-		int nPresentFrequency = 1;
-		if ( fps > 1.0f )
-		{
-			nPresentFrequency = int( (flRefreshRate + 1.0) / fps );
-			nPresentFrequency = MAX( 1, nPresentFrequency );
-		}
-		g_pMaterialSystem->SetFlipPresentFrequency( nPresentFrequency );
-	}
-#endif
 	if ( fps > 0.0f )
 	{
 		// Limit fps to withing tolerable range
@@ -451,19 +352,6 @@ void CEngine::Frame( void )
 		// catch up to the next scheduled server tick.
 		dt = host_nexttick;
 	}
-
-#ifdef _GAMECONSOLE
-#define XBOX_PROCESS_EVENTS_MAXINTERVAL  0.2 				// 1/5 sec
-		// handle Xbox system messages process xbox events occasionally. every frame is too often -
-		// makes this code add up to something
-		m_flTimeSinceLastXBXProcessEventsCall += MAX( 0, dt );
-		if ( m_flTimeSinceLastXBXProcessEventsCall > XBOX_PROCESS_EVENTS_MAXINTERVAL || vx_do_not_throttle_events.GetBool() )
-		{
-			XBX_ProcessEvents();
-			XBX_DispatchEventsQueue();
-			m_flTimeSinceLastXBXProcessEventsCall = 0.;
-		}
-#endif
 
 	// Remember old time
 	m_flPreviousTime = m_flCurrentTime;
@@ -603,9 +491,6 @@ void CEngine::Frame( void )
 	// Reset for next frame
 	m_flFrameTime = 0.0f;
 
-#if defined( VPROF_ENABLED ) && defined( VPROF_VXCONSOLE_EXISTS )
-	UpdateVXConsoleProfile();
-#endif
 	// reload dlls that are marked for reload; currently for debug purposes only
 #ifdef ENGINE_MANAGES_VJOBS
 	extern void ReloadDlls();

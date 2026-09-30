@@ -24,10 +24,6 @@
 #include "filesystem.h"
 #include "matsys_controls/matsyscontrols.h"
 
-#ifdef _PS3
-#include "ps3/ps3_core.h"
-#endif
-
 using namespace vgui;
 
 #include <vgui/IInputInternal.h>

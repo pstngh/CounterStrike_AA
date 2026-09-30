@@ -3964,19 +3964,6 @@ void C_CSPlayer::AddDecal( const Vector& rayStart, const Vector& rayEnd, const V
 float g_flFattenAmt = 4;
 void C_CSPlayer::GetShadowRenderBounds( Vector &mins, Vector &maxs, ShadowType_t shadowType )
 {
-#if defined( _PS3 ) && defined( CSTRIKE15 )
-
-	// eurogamer PS3 temp fix - prevents the shadow resolution yo-yo (due to render bound changes - comments below) and frees some perf up
-
-	mins = CollisionProp()->OBBMins();
-	maxs = CollisionProp()->OBBMaxs();
-	// Thus, we give it some padding here.
-	mins -= Vector( g_flFattenAmt, g_flFattenAmt, 0 );
-	maxs += Vector( g_flFattenAmt, g_flFattenAmt, 0 );
-
-	return;
-
-#else
 
 
 
@@ -3999,8 +3986,6 @@ void C_CSPlayer::GetShadowRenderBounds( Vector &mins, Vector &maxs, ShadowType_t
 		mins -= Vector( g_flFattenAmt, g_flFattenAmt, 0 );
 		maxs += Vector( g_flFattenAmt, g_flFattenAmt, 0 );
 	}
-
-#endif
 
 }
 
@@ -6910,23 +6895,6 @@ void C_CSPlayer::TeamChange( int iNewTeam )
 		if ( CSGameRules() && CSGameRules()->IsPlayingGunGameDeathmatch())
 			m_bShouldAutobuyDMWeapons = true;
 	}
-
-#if defined( _X360 )
-	if ( C_BasePlayer::IsLocalPlayer( this ) )
-	{
-		DWORD dwValue = CONTEXT_CSS_TEAM_SPECTATOR;
-		if ( iNewTeam == TEAM_TERRORIST ) 
-			dwValue = CONTEXT_CSS_TEAM_T;
-		else if ( iNewTeam == TEAM_CT ) 
-			dwValue = CONTEXT_CSS_TEAM_CT;
-
-		DevMsg( "Setting rich presence for team to %d\n", dwValue );
-		
-		XUSER_CONTEXT xUserContext = { CONTEXT_CSS_TEAM, dwValue };
-		ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
-		xboxsystem->UserSetContext( XBX_GetActiveUserId(), xUserContext, true );
-	}
-#endif 
 
 	SplitScreenConVarRef varOption( "cl_clanid" );
 	const char *pClanID = varOption.GetString( 0 );

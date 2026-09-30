@@ -54,52 +54,9 @@ namespace CPS3FrontPanelLED
 	};
 };
 
-#if !defined(_PS3)
 inline bool CPS3FrontPanelLED::SetLEDs( uint64 lights ) {return false;}
 inline bool CPS3FrontPanelLED::SetLEDsMasked( uint64 mask, uint64 lights ) {return false;}
 inline uint64 CPS3FrontPanelLED::GetLEDs() {return 0;}
 inline uint64 CPS3FrontPanelLED::GetSwitches() {return 0;}
-#else
-
-#include <sys/gpio.h>
-
-inline bool CPS3FrontPanelLED::SetLEDs( uint64 lights )
-{
-	return sys_gpio_set( SYS_GPIO_LED_DEVICE_ID, SYS_GPIO_LED_USER_AVAILABLE_BITS, lights ) == CELL_OK;
-}
-
-inline bool CPS3FrontPanelLED::SetLEDsMasked( uint64 mask, uint64 lights ) 
-{
-	return sys_gpio_set( SYS_GPIO_LED_DEVICE_ID, SYS_GPIO_LED_USER_AVAILABLE_BITS & mask, SYS_GPIO_LED_USER_AVAILABLE_BITS & lights ) == CELL_OK;
-}
-
-inline uint64 CPS3FrontPanelLED::GetLEDs() 
-{
-	uint64 val;
-	if ( sys_gpio_get( SYS_GPIO_LED_DEVICE_ID, &val ) == CELL_OK )
-	{
-		return val & SYS_GPIO_LED_USER_AVAILABLE_BITS;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-inline uint64 CPS3FrontPanelLED::GetSwitches() 
-{
-	uint64 val;
-	if ( sys_gpio_get( SYS_GPIO_DIP_SWITCH_DEVICE_ID, &val ) == CELL_OK )
-	{
-		return val & SYS_GPIO_DIP_SWITCH_USER_AVAILABLE_BITS;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-
-#endif
 
 #endif // PS3_FRONTPANELLED_H

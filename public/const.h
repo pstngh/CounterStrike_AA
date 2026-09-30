@@ -29,13 +29,7 @@
 #define DEFAULT_TICK_INTERVAL_PC	(1.0 / 64.0)
 
 // This is the default, see shareddefs.h for mod-specific value, which can override this
-#if defined( _X360 )
-#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_X360
-#elif defined( _PS3 )
-#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PS3
-#else
 #define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PC
-#endif
 #define MINIMUM_TICK_INTERVAL   (4.0f / 512.0f)		// 128 fps
 #define MAXIMUM_TICK_INTERVAL	(25.0f / 512.0f)	// 20.48 fps
 
@@ -54,11 +48,7 @@
 // the 360 only allows 15 char + 0, but stick with the larger PC size for cross-platform communication
 #define MAX_PLAYER_NAME_LENGTH		128
 
-#ifdef _X360
-#define MAX_PLAYERS_PER_CLIENT		XUSER_MAX_COUNT	// Xbox 360 supports 4 players per console
-#else
 #define MAX_PLAYERS_PER_CLIENT		1	// One player per PC
-#endif
 
 #define MAX_MAP_NAME				64	
 #define	MAX_NETWORKID_LENGTH		64  // num chars for a network (i.e steam) ID

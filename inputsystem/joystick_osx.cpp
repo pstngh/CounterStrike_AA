@@ -882,45 +882,7 @@ void CInputSystem::PostXKeyEvent( int userId, xKey_t xKey, int nSample )
 	float			value	= 0.f;
 
 	// Map the physical controller slot to the split screen slot
-#if defined( _GAMECONSOLE )
-	int nMsgSlot = XBX_GetSlotByUserId( userId );
-	#ifdef _PS3
-	if ( ( XBX_GetNumGameUsers() <= 1 ) && !ps3_joy_ss.GetBool() )
-	{
-		// In PS3 START button identification mode START key notification
-		// is replaced with INACTIVE_START notification that can identify
-		// controller that pressed the button
-		if ( ( xKey == XK_BUTTON_START ) && ( nMsgSlot < 0 )
-			&& ( ( Plat_FloatTime() - g_ps3_flTimeStartButtonIdentificationMode ) < 0.5f ) )
-		{
-			xKey = XK_BUTTON_INACTIVE_START;
-			nMsgSlot = userId;
-		}
-		else
-		{
-			// When we don't have splitscreen then any controller can
-			// play and will be visible as controller #0
-			nMsgSlot = 0;
-		}
-	}
-	#endif
-	if ( nMsgSlot < 0 )
-	{
-		// special case, that if you press start on a controller we've marked inactive, switch it to an
-		// XK_BUTTON_INACTIVE_START which you can handle joins from inactive controllers
-		if ( xKey == XK_BUTTON_START )
-		{
-			xKey = XK_BUTTON_INACTIVE_START;
-			nMsgSlot = userId;
-		}
-		else
-		{
-			return; // We are not listening to this controller (not signed in and assigned)
-		}
-	}
-#else //defined( _GAMECONSOLE )
 	int nMsgSlot = userId;
-#endif //defined( _GAMECONSOLE )
 
 	int nSampleThreshold = 0;
 

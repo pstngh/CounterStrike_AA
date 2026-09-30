@@ -44,9 +44,6 @@ public:
 	virtual MorphFormat_t GetBoundMorphFormat() = 0;
 	virtual ITexture *GetRenderTargetEx( int ) = 0;
 	virtual void DrawClearBufferQuad( unsigned char, unsigned char, unsigned char, unsigned char, bool, bool, bool ) = 0;
-#ifdef _PS3
-	virtual void DrawReloadZcullQuad() = 0;
-#endif // _PS3
 
 	virtual bool OnDrawMesh( IMesh *pMesh, int firstIndex, int numIndices ) = 0;
 	virtual bool OnDrawMesh( IMesh *pMesh, CPrimList *pLists, int nLists ) = 0;
@@ -73,7 +70,7 @@ public:
 	virtual bool IsRenderingPaint() const = 0;
 	virtual ShaderAPITextureHandle_t GetPaintmapTexture( int nLightmapPage ) = 0;
 	
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	virtual void DoStartupShaderPreloading( void ) = 0;
 #endif
 };

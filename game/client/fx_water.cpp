@@ -83,26 +83,6 @@ void UTIL_GetNormalizedColorTintAndLuminosity( const Vector &color, Vector *tint
 void FX_WaterRipple( const Vector &origin, float scale, Vector *pColor, float flLifetime, float flAlpha )
 {
 
-#if defined( _GAMECONSOLE )
-	
-		// We don't want to generate ripples too close together on the console because it kills perf.
-		static float sNextRippleTime = 0.0f;
-		static float MIN_TIME_BETWEEN_RIPPLES = 0.05f;
-
-		float curTime = gpGlobals->curtime;
-		float nextRipple = curTime + MIN_TIME_BETWEEN_RIPPLES;
-
-		bool movedBackInTime = nextRipple < sNextRippleTime;
-		// If we've "moved back in time" then curtime propably got reset because we're in a new game.
-		// Since sNextRippleTime is static, we need to make sure to reset when curtime gets reset for the game.
-		if ( curTime < sNextRippleTime && !movedBackInTime )
-		{
-			return;
-		}
-		sNextRippleTime = nextRipple;
-
-#endif
-
 
 	VPROF_BUDGET( "FX_WaterRipple", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
 	trace_t	tr;

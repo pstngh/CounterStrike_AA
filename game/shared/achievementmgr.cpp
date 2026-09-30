@@ -34,21 +34,6 @@
 
 #include "matchmaking/mm_helpers.h"
 
-#ifdef _X360
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#ifdef _PS3
-#include "ps3/ps3_core.h"
-#include "ps3/ps3_win32stubs.h"
-#endif
-
-#ifdef _GAMECONSOLE
-#include "gameui/igameui.h"
-#include "ixboxsystem.h"
-#include "ienginevgui.h"
-#endif  // _GAMECONSOLE
-
 #include "matchmaking/imatchframework.h"
 #include "tier0/vprof.h"
 #include "cs_weapon_parse.h"
@@ -96,29 +81,6 @@ static int AchievementOrderCompare( CBaseAchievement * const *ach1, CBaseAchieve
 	return (*ach1)->GetDisplayOrder() - (*ach2)->GetDisplayOrder();
 }
 
-#ifdef _X360
-static TitleAchievementsDescription_t const * FindTitleAchievementByName( TitleAchievementsDescription_t const *pMap, char const *szName )
-{
-	while ( pMap && pMap->m_szAchievementName )
-		if ( !Q_stricmp( pMap->m_szAchievementName, szName ) )
-			return pMap;
-		else
-			++ pMap;
-
-	return NULL;
-}
-static TitleAchievementsDescription_t const * FindTitleAchievementById( TitleAchievementsDescription_t const *pMap, int id )
-{
-	while ( pMap && pMap->m_szAchievementName )
-		if ( pMap->m_idAchievement == id )
-			return pMap;
-		else
-			++ pMap;
-
-	return NULL;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -147,10 +109,6 @@ CAchievementMgr::CAchievementMgr() : CAutoGameSystemPerFrame( "CAchievementMgr" 
 	m_bCheckSigninState = true;
 	m_bReadingFromTitleData = false;
 
-#ifdef _X360
-	// Mark that we're not waiting for an async call to finish
-	m_pendingAchievementState.Purge();
-#endif // _X360
 }
 
 //#if defined (_X360)
@@ -589,101 +547,12 @@ void CAchievementMgr::UserConnected( int nUserSlot )
 #ifdef CLIENT_DLL
 	if ( IsPC() || IsPS3() )
 	{
-#ifdef _PS3
-		if ( XBX_GetUserIsGuest( nUserSlot ) )
-			return;
-
-		const int iController = XBX_GetUserId( nUserSlot );
-
-		if ( iController == XBX_INVALID_USER_ID )
-			return;
-#endif
 		// ASSERT( STEAM_PLAYER_SLOT == nUserSlot )
 
 		m_bUserSlotActive[STEAM_PLAYER_SLOT] = true;
 	}
 	else if ( IsX360() )
 	{
-#if defined( _X360 )
-
-		if ( XBX_GetUserIsGuest( nUserSlot ) )
-			return;
-
-		const int iController = XBX_GetUserId( nUserSlot );
-
-		if ( iController == XBX_INVALID_USER_ID )
-			return;
-
-		if ( XUserGetSigninState( iController ) == eXUserSigninState_NotSignedIn )
-			return;
-
-		m_bUserSlotActive[nUserSlot] = true;
-
-		// Download achievements from XBox Live
-		const DWORD nTotalAchievements = GetAchievementCount();
-		DWORD nTotalX360AchsEnumerated = 0;
-		HANDLE hEnumerator = NULL;
-		DWORD bytes;
-		DWORD ret = XUserCreateAchievementEnumerator( 0, iController, INVALID_XUID, XACHIEVEMENT_DETAILS_ALL, 0, nTotalAchievements, &bytes, &hEnumerator );
-		if ( ret != ERROR_SUCCESS )
-		{
-			Warning( "Enumerate Achievements for controller %d failed! Failed to create enumerator with code %d.\n", iController, ret );
-			return;
-		}
-
-		// Allocate the buffer
-		CUtlVector< char > vBuffer;
-		vBuffer.SetCount( bytes );
-
-		// Enumerate the achievements from Live
-		ret = XEnumerate( hEnumerator, vBuffer.Base(), bytes, &nTotalX360AchsEnumerated, NULL );
-		CloseHandle( hEnumerator );
-		hEnumerator = NULL;
-
-		if ( ret != ERROR_SUCCESS )
-		{
-			Warning( "Enumerate Achievements for controller %d failed! Failed to enumerate with code %d.\n", iController, ret );
-			return;
-		}
-
-		if ( nTotalX360AchsEnumerated != nTotalAchievements )
-		{
-			Warning( "Enumerate achievements returned %d achievements != %d total registered achievements!\n",
-				nTotalX360AchsEnumerated, nTotalAchievements );
-		}
-
-#if !defined ( CSTRIKE15 )
-		// Give live a chance to mark achievements as unlocked, in case the achievement manager
-		// wasn't able to get that data (storage device missing, read failure, etc)
-		XACHIEVEMENT_DETAILS const *pXboxAchievements = ( XACHIEVEMENT_DETAILS const * ) vBuffer.Base();
-		TitleAchievementsDescription_t const *pTitleAchMap = g_pMatchFramework->GetMatchTitle()->DescribeTitleAchievements();
-		for ( DWORD i = 0; i < nTotalX360AchsEnumerated; ++i )
-		{
-			TitleAchievementsDescription_t const *pAchEntry = FindTitleAchievementById( pTitleAchMap, pXboxAchievements[i].dwId );
-			if ( !pAchEntry )
-			{
-				Warning( "X360 downloaded title achievement ID=%d is not in title achievement map, skipping!\n", pXboxAchievements[i].dwId );
-				continue;
-			}
-			
-			CBaseAchievement *pAchievement = GetAchievementByName( pAchEntry->m_szAchievementName, nUserSlot );
-			if ( !pAchievement )
-				continue;
-
-			// Give Live a chance to claim the achievement as unlocked
-			if ( AchievementEarned( pXboxAchievements[i].dwFlags ) )
-			{
-				pAchievement->SetAchieved( true );
-				pAchievement->CheckAssetAwards( nUserSlot );
-			}
-			else
-			{
-				pAchievement->SetAchieved( false );
-			}
-		}
-#endif
-
-#endif // X360
 	}
 #endif // CLIENT_DLL
 }
@@ -732,25 +601,13 @@ void CAchievementMgr::SaveGlobalState( )
 {
 	int iController = 0;
 
-#ifdef _X360
-	for ( int j = 0; j < MAX_SPLITSCREEN_PLAYERS; ++ j )
-	{
-		if ( !IsUserConnected( j ) )
-			continue;
-		iController = XBX_GetUserId( j );
-#else
 	int j = STEAM_PLAYER_SLOT;
 	VPROF_BUDGET( "CAchievementMgr::SaveGlobalState", "Achievements" );
 	{
-#endif
 
 		IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
 		if ( !pPlayer )
-#ifdef _X360
-			continue;
-#else
 			return;
-#endif
 
 		for ( int i = 0; i < m_vecAchievement[j].Count(); ++i )
 		{
@@ -895,16 +752,6 @@ void CAchievementMgr::AwardAchievement( int iAchievementID, int nUserSlot )
 	if ( !pAchievement )
 		return;
 
-#if defined ( _X360 ) && !defined ( CSTRIKE15 )
-	TitleAchievementsDescription_t const *pAchEntryMap = g_pMatchFramework->GetMatchTitle()->DescribeTitleAchievements();
-	TitleAchievementsDescription_t const *pAchEntry = FindTitleAchievementByName( pAchEntryMap, pAchievement->GetName() );
-	if ( !pAchEntry && !pAchievement->IsAssetAward() )
-	{
-		Warning( "X360 cannot award title achievement '%s' ID=%d because it is not in title achievement map, skipping!\n", pAchievement->GetName(), iAchievementID );
-		return;
-	}
-#endif
-
 	if ( !CheckAchievementsEnabled() )
 	{
 		Msg( "Achievements disabled, ignoring achievement unlock for %s\n", pAchievement->GetName() );
@@ -965,27 +812,6 @@ void CAchievementMgr::AwardAchievement( int iAchievementID, int nUserSlot )
 	}
 	else if ( IsX360() )
 	{
-#ifdef _X360
-#if !defined ( CSTRIKE15 )
-		if ( xboxsystem )
-		{
-			if ( pAchievement->IsAssetAward() )
-			{
-				// Fire off the asynchronous asset award operation.
-				PendingAchievementInfo_t pendingAssetAwardState = { iAchievementID, nUserSlot, NULL };
-				xboxsystem->AwardAvatarAsset( XBX_GetUserId( nUserSlot ), pAchievement->GetAssetAwardID(), &pendingAssetAwardState.pOverlappedResult );
-				m_pendingAchievementState.AddToTail( pendingAssetAwardState );
-			}
-			else
-			{
-				// Fire off the asynchronous achievement award operation.
-				PendingAchievementInfo_t pendingAchievementState = { iAchievementID, nUserSlot, NULL };
-				xboxsystem->AwardAchievement( XBX_GetUserId( nUserSlot ), pAchEntry->m_idAchievement, &pendingAchievementState.pOverlappedResult );
-				m_pendingAchievementState.AddToTail( pendingAchievementState );
-			}
-		}
-#endif
-#endif
 	}
 
 	SaveGlobalStateIfDirty();
@@ -994,19 +820,6 @@ void CAchievementMgr::AwardAchievement( int iAchievementID, int nUserSlot )
 	m_AchievementsAwardedDuringCurrentGame[nUserSlot].AddToTail( iAchievementID );
 #endif // CLIENT_DLL
 }
-
-#if defined ( _X360 )
-void CAchievementMgr::AwardXBoxAchievement( int iAchievementID, int iXBoxAchievementID, int nUserSlot )
-{
-	if ( xboxsystem->IsArcadeTitleUnlocked() )
-	{
-		PendingAchievementInfo_t pendingAchievementState = { iAchievementID, nUserSlot, NULL };
-		xboxsystem->AwardAchievement( XBX_GetUserId( nUserSlot ), iXBoxAchievementID, &pendingAchievementState.pOverlappedResult );
-		// Save off the results for checking later
-		m_pendingAchievementState.AddToTail( pendingAchievementState );
-	}
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: updates specified achievement
@@ -1040,7 +853,6 @@ void CAchievementMgr::UpdateAchievement( int iAchievementID, int nData, int nUse
 
 void CAchievementMgr::UpdateStateFromSteam_Internal( int nUserSlot )
 {
-#if !defined ( _X360 )
 	Assert( steamapicontext->SteamUserStats() );
 	if ( !steamapicontext->SteamUserStats() )
 		return;
@@ -1093,7 +905,6 @@ void CAchievementMgr::UpdateStateFromSteam_Internal( int nUserSlot )
 		gameeventmanager->FireEventClientSide( event );
 	}
 
-#endif
 }
 #endif
 
@@ -1149,18 +960,6 @@ bool CAchievementMgr::CheckAchievementsEnabled( )
 	return false;
 #endif
 
-#if defined( _X360 ) && defined( CLIENT_DLL )
-	if ( m_bCheckSigninState )
-	{
-		uint state = XUserGetSigninState( XBX_GetActiveUserId() );
-		if ( state == eXUserSigninState_NotSignedIn )
-		{
-			Msg( "Achievements disabled: not signed in to XBox user account.\n" );
-			return false;
-		}
-	}
-#endif
-
 	// can't be in commentary mode, user is invincible
 	if ( IsInCommentaryMode() )
 	{
@@ -1207,29 +1006,6 @@ bool CAchievementMgr::CheckAchievementsEnabled( )
 //-----------------------------------------------------------------------------
 // Purpose: Determine friendness on xbox
 //-----------------------------------------------------------------------------
-#if defined ( _X360 )
-bool IsXboxFriends( int userID, int entityIndex )
-{
-	// $TODO(hpe) connect the matchmaking bits
-	return false;
-	//if ( !matchmaking )
-	//	return false;
-
-	//XUID XUid[1];
-	//XUid[0] = matchmaking->PlayerIdToXuid( entityIndex );
-	//BOOL bFriend = false;
-
-	//// If we don't have a XUID, we don't even need to bother asking...
-	//if ( XUid[0] == 0 )
-	//{
-	//	return false;
-	//}
-
-	//XUserAreUsersFriends( userID, XUid, 1, &bFriend, NULL );
-
-	//return bFriend;
-}
-#endif
 
 
 #ifdef CLIENT_DLL
@@ -1289,13 +1065,7 @@ bool CalcPlayersOnFriendsList( int iMinFriends )
 			if ( !pi.xuid )
 				continue;
 
-#ifdef _X360
-			// check and see if they're on the local player's friends list
-			BOOL bFriend = FALSE;
-			XUserAreUsersFriends( XPlayerUid, &pi.xuid, 1, &bFriend, NULL );
-			if ( !bFriend )
-				continue;
-#elif !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 			// check and see if they're on the local player's friends list
 			if ( !steamapicontext->SteamFriends()->HasFriend( pi.xuid, /*k_EFriendFlagImmediate*/ 0x04 ) )
 				continue;
@@ -1667,18 +1437,6 @@ void CAchievementMgr::FireGameEvent( IGameEvent *event )
 	else if ( 0 == Q_strcmp( name, "read_game_titledata" ) )
 	{
 		SyncAchievementsToTitleData( event->GetInt( "controllerId" ), ACHIEVEMENT_READ_ACHIEVEMENT );
-#if defined ( _X360 )
-		IGameEvent * repostEvent = gameeventmanager->CreateEvent( "repost_xbox_achievements" );
-		if ( repostEvent )
-		{
-			int userSlot = XBX_GetSlotByUserId( event->GetInt( "controllerId" ) );
-			if ( userSlot != -1 )
-			{
-				repostEvent->SetInt( "splitscreenplayer", userSlot );
-				gameeventmanager->FireEventClientSide( repostEvent );
-			}
-		}
-#endif
 	}
 	else if ( 0 == Q_strcmp( name, "write_game_titledata" ) )
 	{
@@ -1699,11 +1457,6 @@ void CAchievementMgr::FireGameEvent( IGameEvent *event )
 	}
 	else if ( 0 == Q_strcmp( name, "achievement_write_failed" ) )
 	{
-#ifdef _GAMECONSOLE
-		// We didn't succeed and we're not waiting, so we failed
-		g_pMatchFramework->GetEventsSubscription()->BroadcastEvent( new KeyValues(
-			"OnProfileUnavailable", "iController", XBX_GetUserId( nSplitScreenPlayer ) ) );
-#endif
 	}
 	else if ( 0 == Q_strcmp( name, "user_data_downloaded" ) )
 	{
@@ -1917,11 +1670,7 @@ void CAchievementMgr::OnEvent( KeyValues *pEvent )
 	{
 		// This event is sent when the title data blocks have been loaded.
 		int iController = pEvent->GetInt( "iController" );
-#ifdef _GAMECONSOLE
-		int nSlot = XBX_GetSlotByUserId( iController );
-#else
 		int nSlot = STEAM_PLAYER_SLOT;
-#endif
 		ReadAchievementsFromTitleData( iController, nSlot );
 	}
 	else if ( FStrEq( szEvent, "sv_cheats_changed" ) )
@@ -1929,22 +1678,6 @@ void CAchievementMgr::OnEvent( KeyValues *pEvent )
 		if ( pEvent->GetInt( "value" ) )
 			m_bCheatsEverOn = true;
 	}
-#ifdef _GAMECONSOLE
-	else if ( FStrEq( szEvent, "OnProfilesChanged" ) )
-	{
-		// This is essentially a RESET
-		for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-		{
-			UserDisconnected( i );
-		}
-
-		// Mark the valid users as connected and try to download achievement data from LIVE
-		for ( unsigned int i = 0; i < XBX_GetNumGameUsers(); ++i )
-		{
-			UserConnected( i );  
-		}
-	}
-#endif
 }
 
 #if !defined(NO_STEAM)
@@ -2011,104 +1744,6 @@ void CAchievementMgr::Steam_OnUserStatsStored( UserStatsStored_t *pUserStatsStor
 
 bool CAchievementMgr::SyncAchievementsToTitleData( int iController, SyncAchievementValueDirection_t eOp )
 {
-#if defined (_X360)
-
-	// get the local player
-	IPlayerLocal *pPlayerLocal = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iController );
-	if ( !pPlayerLocal )
-		return false;
-
-	TitleDataFieldsDescription_t const *pFields = g_pMatchFramework->GetMatchTitle()->DescribeTitleDataStorage();
-
-	
-	// check version number
-	TitleDataFieldsDescription_t const *versionField = TitleDataFieldsDescriptionFindByString( pFields, "TITLEDATA.BLOCK2.VERSION" );
-	if ( !versionField || versionField->m_eDataType != TitleDataFieldsDescription_t::DT_uint16 )
-	{
-		Warning( "TITLEDATA.BLOCK2.VERSION is expected to be defined as DT_uint16\n" );
-		return false;
-	}
-
-	ConVarRef cl_titledataversionblock2( "cl_titledataversionblock2" );
-	if ( eOp == ACHIEVEMENT_READ_ACHIEVEMENT )
-	{
-		int versionNumber = TitleDataFieldsDescriptionGetValue<uint16>( versionField, pPlayerLocal );
-		if ( versionNumber != cl_titledataversionblock2.GetInt() )
-		{
-			Warning( "SyncAchievementsToTitleData incorrect verion #; got %d, expected %d\n", versionNumber, cl_titledataversionblock2.GetInt() );
-			return false;
-		}
-	}
-	else
-	{
-		TitleDataFieldsDescriptionSetValue<uint16>( versionField, pPlayerLocal,cl_titledataversionblock2.GetInt() );
-	}
-
-	bool bIsAchieved;
-	uint8 iochar;
-	char achName[ 256 ];
-	uint32 ioint;
-
-	int userSlot = XBX_GetSlotByUserId( iController );
-
-	Assert(userSlot < MAX_SPLITSCREEN_PLAYERS);
-
-	FOR_EACH_MAP( m_mapAchievement[userSlot], i )
-	{
-		CBaseAchievement *pAchievement = m_mapAchievement[userSlot][i];
-		Q_snprintf( achName, 255, "MEDALS.AWARDED%.3d", i );
-		TitleDataFieldsDescription_t const *pFieldAwarded = TitleDataFieldsDescriptionFindByString( pFields, achName );
-		Q_snprintf( achName, 255, "MEDALS.MEDALINFO%.3d", i );
-		TitleDataFieldsDescription_t const *pFieldMedalInfo = TitleDataFieldsDescriptionFindByString( pFields, achName );
-
-		if ( !pFieldAwarded || !pFieldMedalInfo )
-		{
-			continue;
-		}
-
-		if ( eOp == ACHIEVEMENT_WRITE_ACHIEVEMENT )
-		{
-			bIsAchieved = pAchievement->IsAchieved();
-
-			iochar = 0;
-			ioint = pAchievement->GetCount();
-
-			if ( bIsAchieved )
-			{
-				iochar = 2;
-				ioint = pAchievement->GetUnlockTime();
-			}
-
-			TitleDataFieldsDescriptionSetValue<uint8>( pFieldAwarded, pPlayerLocal, iochar );
-			TitleDataFieldsDescriptionSetValue<uint32>( pFieldMedalInfo, pPlayerLocal, ioint );
-		}
-		else
-		{
-			bIsAchieved = static_cast< bool >( TitleDataFieldsDescriptionGetValue<uint8>( pFieldAwarded, pPlayerLocal ) != 0 );
-			ioint = TitleDataFieldsDescriptionGetValue<uint32>( pFieldMedalInfo, pPlayerLocal );
-			if ( bIsAchieved )
-			{
-				pAchievement->SetUnlockTime( ioint );
-				pAchievement->SetAchieved( true );
-			}
-			else
-			{
-				pAchievement->SetAchieved( false );
-				pAchievement->SetCount( ioint );
-			}
-		}
-	}
-
-	if ( eOp == ACHIEVEMENT_READ_ACHIEVEMENT )
-	{
-		IGameEvent * event = gameeventmanager->CreateEvent( "achievement_info_loaded" );
-		if ( event )
-		{
-			gameeventmanager->FireEventClientSide( event );
-		}
-	}
-
-#endif
 	return true;
 }
 
@@ -2156,21 +1791,7 @@ bool MsgFunc_AchievementEvent( const CCSUsrMsg_AchievementEvent &msg )
 
 	int userSlot = STEAM_PLAYER_SLOT;
 
-#if defined ( _X360 )
-	for ( int i = 0; i < MAX_SPLITSCREEN_PLAYERS; ++i )
-	{
-		C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer(i);
-		if ( pLocalPlayer && !pLocalPlayer->IsNPC() )
-		{
-			if ( pLocalPlayer->GetUserID() == userID )
-			{
-				userSlot = i;
-			}
-		}
-	}
-#else
 	NOTE_UNUSED(userID);
-#endif // _X360
 
 	pAchievementMgr->OnAchievementEvent( iAchievementID, userSlot );
 
@@ -2460,47 +2081,6 @@ void CAchievementMgr::Update( float frametime )
 		}
 	}
 
-#ifdef _X360
-	bool bWarningShown = false;
-	for ( int i = m_pendingAchievementState.Count()-1; i >= 0; i-- )	// Iterate backwards to make deletion safe
-	{
-		// Check for a pending achievement write
-		uint nResultCode;
-		int nReturn = xboxsystem->GetOverlappedResult( m_pendingAchievementState[i].pOverlappedResult, &nResultCode, false );
-		if ( nReturn == ERROR_IO_PENDING || nReturn == ERROR_IO_INCOMPLETE )
-			continue;
-
-		// We are attempting to grant an achievement.
-		if ( nReturn != ERROR_SUCCESS )
-		{
-			// The achievement write has failed.
-			if ( bWarningShown == false )
-			{
-				// Create a game message to pop up a warning to the user
-				IGameEvent *event = gameeventmanager->CreateEvent( "achievement_write_failed" );
-				if ( event )
-				{
-					gameeventmanager->FireEvent( event );
-					bWarningShown = true;
-				}
-			}
-
-			// We need to unaward the achievement in this case!
-			CBaseAchievement *pAchievement = GetAchievementByID( m_pendingAchievementState[i].nAchievementID, m_pendingAchievementState[i].nUserSlot );
-			if ( pAchievement != NULL )
-			{
-				pAchievement->SetAchieved( false );
-				m_bDirty[m_pendingAchievementState[i].nUserSlot] = true;
-				m_AchievementsAwardedDuringCurrentGame->FindAndRemove( m_pendingAchievementState[i].nAchievementID );
-				// FIXME: This doesn't account for incremental progress, but if *will* re-achieve these if you get them again
-			}
-		}
-
-		// We've either succeeded or failed at this point, in both cases we don't care anymore!
-		xboxsystem->ReleaseAsyncHandle( m_pendingAchievementState[i].pOverlappedResult );
-		m_pendingAchievementState.FastRemove( i );
-	}
-#endif // _X360
 }
 
 

@@ -6,9 +6,6 @@
 
 #include "pch_tier0.h"
 #include "tier0/tslist.h"
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 
 #include <stdlib.h>
 #include "tier0/threadtools.h"											// for rand()
@@ -457,27 +454,8 @@ void SeqPushMTPop( bool bDistribute )
 }
 
 
-#ifdef _PS3
-void TestThreadProc( uint64_t id )
-{
-	printf( "(TS)Hello from PPU thread %lld @%p\n", id, &id );
-	sys_ppu_thread_exit( id );
-}
-uintp TestThreadProc2( void *p )
-{
-	printf( "(TS)Hello from PPU thread %lld @%p\n", (int64)p, &p );
-	return (uintp)p;
-}
-#endif
-
 void TestThreads()
 {
-#ifdef _PS3
-	printf("(TS)testing threads\n");
-	const int numThreads = 40;
-	ThreadHandle_t * arrTests = CreateTestThreads( TestThreadProc2, numThreads, false );
-	JoinTestThreads( arrTests );
-#endif
 }
 
 

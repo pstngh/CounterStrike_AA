@@ -21,9 +21,6 @@
 // dgoodenough - select correct stub header based on console
 // PS3_BUILDFIX
 // FIXME - this is part of a bigger __min / __max problem.  How do we want to handle these?
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#endif
 
 using namespace vgui;
 static char token[ 1024 ];

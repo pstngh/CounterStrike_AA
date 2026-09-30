@@ -11,7 +11,7 @@
 
 
 
-#if defined(_WIN32) && !defined(_X360)
+#if defined(_WIN32)
 #include "winlite.h"		// FILETIME
 #elif defined(OSX) || defined(CYGWIN)
 #include <time.h>                  
@@ -23,8 +23,6 @@
 #include <sys/sysinfo.h>          
 #include <asm/param.h> // for HZ
 #include <netinet/in.h>
-#elif defined(_X360)
-#elif defined(_PS3)
 #else
 #error "Includes for CPU usage calcs here"
 #endif
@@ -61,9 +59,6 @@
 #include "sv_ipratelimit.h"
 #include "cl_steamauth.h"
 #include "fmtstr.h"
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
 #include "mathlib/IceKey.H"
 #include "matchmaking/imatchframework.h"
 #include "tier2/tier2.h"
@@ -2425,9 +2420,6 @@ void CBaseServer::CalculateCPUUsage( void )
 			memcpy(&lastTotalTime,&totalTime,sizeof(__int64));
 			lastAvg=m_fLastCPUCheckTime;
 		}
-#elif defined ( _PS3 )
-		// FAKE
-		m_fCPUPercent = 0.1;
 #elif defined ( LINUX )
 		// FAKE
 		m_fCPUPercent = 0.1;
@@ -3509,7 +3501,7 @@ void CBaseServer::Shutdown( void )
 	// Let drop messages go out
 	Sys_Sleep( 100 );
 
-#if !defined( _X360 ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	if ( !IsHLTV() )
 	{
 		if ( m_flFlagForSteamIDReuseAfterShutdownTime && ( Plat_FloatTime() - m_flFlagForSteamIDReuseAfterShutdownTime < 1.0 ) )
@@ -4300,7 +4292,7 @@ void CBaseServer::UpdateGameType()
 	}
 
 	// Is this server "secure"?
-#if !defined( NO_STEAM ) && !defined( _GAMECONSOLE )
+#if !defined( NO_STEAM )
 	{
 		AddTagString( m_GameType, Steam3Server().BSecure() ? "secure" : "insecure" );
 	}

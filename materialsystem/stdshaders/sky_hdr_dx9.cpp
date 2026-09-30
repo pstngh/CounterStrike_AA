@@ -192,13 +192,6 @@ BEGIN_VS_SHADER( Sky_HDR_DX9, "Help for Sky_HDR_DX9 shader" )
 
 			pShaderShadow->EnableAlphaWrites( true );
 
-#if defined(_PS3)
-			// only way to change order in which skybox can be rendered (or to appropriately defer skybox rendering on PS3 in the absence of z pre-pass) if the skybox material is set to ignorez 1.
-			// kind of obviates the need for ignorez flags/ignorez in the material. Note that not all skybox materials use this shader.
-			// TODO - agree on a more common way of handling z with skyboxes (material vs shader).
- 			pShaderShadow->EnableDepthWrites( false );
- 			pShaderShadow->EnableDepthTest( true );
-#endif
 		}
 
 		DYNAMIC_STATE

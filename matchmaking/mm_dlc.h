@@ -50,16 +50,6 @@ public:
 protected:
 	KeyValues *m_pDataInfo;
 
-#ifdef _X360
-	HANDLE m_hEnumerator;
-	XOVERLAPPED m_xOverlapped;
-	int32 m_dwNumItems;
-	DWORD m_dwLicenseMask;
-	CUtlVector< XCONTENT_DATA > m_arrContentData;
-	void CreateNextContent();
-	void ProcessNextContent();
-#endif
-
 #if !defined( NO_STEAM ) && !defined( SWDS )
 	STEAM_CALLBACK_MANUAL( CDlcManager, Steam_OnDLCInstalled, DlcInstalled_t, m_CallbackOnDLCInstalled );
 #endif
@@ -67,10 +57,6 @@ protected:
 	enum State_t
 	{
 		STATE_IDLE,
-#ifdef _X360
-		STATE_XENUMERATE,
-		STATE_XCONTENT_CREATE
-#endif
 	};
 	State_t m_eState;
 	bool m_bNeedToDiscoverAllDlcs;

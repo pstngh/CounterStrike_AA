@@ -87,10 +87,6 @@
 #include <syscall.h>
 #endif
 
-#ifdef _PS3
-#include <sys/memory.h>
-#endif
-
 extern CNetworkStringTableContainer *networkStringTableContainerServer;
 extern CNetworkStringTableContainer *networkStringTableContainerClient;
 extern void Host_EnsureHostNameSet();
@@ -331,93 +327,6 @@ void SV_FlushMemoryOnNextServer()
 //-----------------------------------------------------------------------------
 void SV_CheckForFlushMemory( const char *pCurrentMapName, const char *pDestMapName )
 {
-#ifdef _GAMECONSOLE
-    if ( host_flush_threshold.GetInt() == 0 )
-        return;
-
-    // There are three cases in which we flush memory
-    //   Case 1: changing from one map to another
-    //          -> flush temp data caches
-    //   Case 2: loading any map (inc. A to A) and free memory is below host_flush_threshold MB
-    //          -> flush everything
-    //   Case 3: loading a 'blacklisted' map (the known biggest memory users, or where texture sets change)
-    //          -> flush everything
-    static const char *mapBlackList[] = 
-    {
-        ""
-    };
-
-    char szCurrentMapName[MAX_PATH];
-    char szDestMapName[MAX_PATH];
-    if ( pCurrentMapName )
-    {
-        V_FileBase( pCurrentMapName, szCurrentMapName, sizeof( szCurrentMapName ) );
-    }
-    else
-    {
-        szCurrentMapName[0] = '\0';
-    }
-    pCurrentMapName = szCurrentMapName;
-
-    if ( pDestMapName )
-    {
-        V_FileBase( pDestMapName, szDestMapName, sizeof( szDestMapName ) );
-    }
-    else
-    {
-        szDestMapName[0] = '\0';
-    }
-    pDestMapName = szDestMapName;
-
-    bool bIsMapChanging = pCurrentMapName[0] && V_stricmp( pCurrentMapName, pDestMapName );
-
-    bool bIsDestMapBlacklisted = false;
-    for ( int i = 0; i < ARRAYSIZE( mapBlackList ); i++ )
-    {
-        if ( pDestMapName && !V_stricmp( pDestMapName, mapBlackList[i] ) )
-        {
-            bIsDestMapBlacklisted = true;
-        }
-    }
-    
-    size_t dwSizePhysical = 0xffffffff;
-#ifdef _WIN32
-    {
-        MEMORYSTATUS stat;
-        GlobalMemoryStatus( &stat );
-        dwSizePhysical = stat.dwAvailPhys;
-    }
-#elif defined( _PS3 )
-    {
-        sys_memory_info_t smi = {0,0};
-        sys_memory_get_user_memory_size( &smi );
-        dwSizePhysical = smi.available_user_memory;
-    }
-#endif
-
-    // console csgo wants a full flush always for fragmentation concerns
-    bool bFullFlush = ( ( dwSizePhysical < host_flush_threshold.GetInt() * 1024 * 1024 ) || ( bIsDestMapBlacklisted && bIsMapChanging ) ) || ( IsGameConsole() && !V_stricmp( COM_GetModDirectory(), "csgo" ) );
-    bool bPartialFlush = !bFullFlush && bIsMapChanging;
-
-    const char *pReason = "No Flush";
-    if ( bFullFlush )
-    {
-        // Flush everything; all map data should get reloaded
-        SV_FlushMemoryOnNextServer();
-        g_pDataCache->Flush();
-        wavedatacache->Flush();
-        pReason = "Full Flush";
-    }
-    else if ( bPartialFlush )
-    {
-        // Flush temporary data (async anim, non-locked async audio)
-        g_pMDLCache->Flush( MDLCACHE_FLUSH_ANIMBLOCK );
-        wavedatacache->Flush();
-        pReason = "Partial Flush";
-    }
-
-    Msg( "Current Map: (%s), Next Map: (%s), %s\n", (pCurrentMapName[0] ? pCurrentMapName : ""), (pDestMapName[0] ? pDestMapName : ""), pReason );
-#endif	// console
 }
 
 //-----------------------------------------------------------------------------
@@ -1028,7 +937,7 @@ void SV_InitGameDLL( void )
         return;
     }
 
-#if !defined(DEDICATED) && !defined( _GAMECONSOLE )
+#if !defined(DEDICATED)
     bool CL_IsHL2Demo();
     if ( CL_IsHL2Demo() && !sv.IsDedicated() && Q_stricmp( COM_GetModDirectory(), "hl2" ) )
     {
@@ -2788,16 +2697,6 @@ void CGameServer::ExecGameTypeCfg( const char *mapname )
 
     int numSlots = pGameSettings->GetInt( "members/numSlots", -1 );
 
-#if defined (_GAMECONSOLE) && defined ( CSTRIKE15 )
-    // FIXME(hpe) sb: temp: quick hack for splitscreen; NOTE: SetMaxClients required since integration (taken from PORTAL2 below)
-    ConVarRef ss_enable( "ss_enable" );
-    if ( ss_enable.GetInt() > 0 )
-    {
-        numSlots = 9;
-        SetMaxClients( numSlots );
-    }
-#endif
-
     if ( numSlots >= 0 )
     {
         m_numGameSlots = numSlots;
@@ -3171,8 +3070,6 @@ bool CGameServer::SpawnServer( char *mapname, char * mapGroupName, char *startsp
         event->SetString( "os", "LINUX" );
 #elif defined ( OSX )
         event->SetString( "os", "OSX" );
-#elif defined ( _PS3 )
-        event->SetString( "os", "PS3" );
 #else
 #error
 #endif

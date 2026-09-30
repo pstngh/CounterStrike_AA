@@ -111,7 +111,7 @@ public:
 };
 
 
-#if defined(POSIX) && !defined(_PS3)
+#if defined(POSIX)
 #define MAX_LINUX_CMDLINE 2048
 static char linuxCmdline[ MAX_LINUX_CMDLINE +7 ]; // room for -steam
 

@@ -296,117 +296,11 @@ void CMatchTitleGameSettingsMgr::ExtendGameSettingsForLobbyTransition( KeyValues
 // into host sys session data
 void CMatchTitleGameSettingsMgr::MigrateSysSessionData( IMatchSession *pNewMatchSession, KeyValues *pSysSessionData )
 {
-#ifdef _PS3
-	KeyValues *kvSystemData = pNewMatchSession->GetSessionSystemData();
-	if ( !kvSystemData )
-		return;
-
-	if ( KeyValues *kvTimeout = pSysSessionData->FindKey( "timeout", false ) )
-	{
-		int avgRank = kvTimeout->GetInt();
-		kvSystemData->SetInt( "timeout", avgRank );
-
-		DevMsg( "Session timeout value=%d (%s)\n", avgRank, "migrated" );
-		steamapicontext->SteamMatchmaking()->SetLobbyData( kvSystemData->GetUint64( "xuidReserve", 0ull ), "game:timeout", CFmtStr( "%u", avgRank ) );
-	}
-
-	if ( KeyValues *kvNumOpenSlots = pSysSessionData->FindKey( "numOpenSlots", false ) )
-	{
-		int numOpenSlots = kvNumOpenSlots->GetInt();
-		kvSystemData->SetInt( "numOpenSlots", numOpenSlots );
-
-		DevMsg( "Session numOpenSlots=%d (%s)\n", numOpenSlots, "migrated" );
-		steamapicontext->SteamMatchmaking()->SetLobbyData( kvSystemData->GetUint64( "xuidReserve", 0ull ), "game:numOpenSlots", CFmtStr( "%u", numOpenSlots ) );
-	}
-#endif
 }
 
 // Adds data for datacenter reporting
 void CMatchTitleGameSettingsMgr::ExtendDatacenterReport( KeyValues *cmd, char const *szReason )
 {
-#ifdef _X360
-	//if ( XBX_GetPrimaryUserId() == XBX_INVALID_USER_ID )
-	//	return;
-	//if ( !XBX_GetNumGameUsers() || XBX_GetPrimaryUserIsGuest() )
-	//	return;
-
-	//IPlayerLocal *pLocalPlayer = g_pPlayerManager->GetLocalPlayer( XBX_GetPrimaryUserId() );
-	//if ( !pLocalPlayer )
-	//	return;
-
-	//// Achievements info
-	//uint64 uiAchMask1 = 0;	// 100 bits for achievements
-	//uint64 uiAchMask2 = 0;	// 27 bits for asset awards
-	//{
-	//	KeyValues *kvAchInfo = new KeyValues( "", "@achievements", 0, "@awards", 0 );
-	//	KeyValues::AutoDelete autodelete_kvAchInfo( kvAchInfo );
-	//	pLocalPlayer->GetAwardsData( kvAchInfo );
-	//	for ( KeyValues *val = kvAchInfo->FindKey( "@achievements" )->GetFirstValue(); val; val = val->GetNextValue() )
-	//	{
-	//		int iVal = val->GetInt( "", 0 );
-	//		if ( iVal <= 0 )
-	//			continue;
-	//		else if ( iVal < 64 )
-	//			uiAchMask1 |= ( 1ull << iVal );
-	//		else if ( iVal <= 100 )
-	//			uiAchMask2 |= ( 1ull << ( iVal - 64 ) );
-	//	}
-	//	for ( KeyValues *val = kvAchInfo->FindKey( "@awards" )->GetFirstValue(); val; val = val->GetNextValue() )
-	//	{
-	//		int iVal = val->GetInt( "", 0 );
-	//		if ( iVal <= 0 )
-	//			continue;
-	//		else if ( iVal < ( 128 - 100 ) )
-	//			uiAchMask2 |= ( 1ull << ( iVal + 100 - 64 ) );
-	//	}
-	//}
-	//cmd->SetUint64( "ach1", uiAchMask1 );
-	//cmd->SetUint64( "ach2", uiAchMask2 );
-
-	//if ( !V_stricmp( szReason, "datarequest" ) )
-	//{
-	//	// Add game information
-	//	TitleData1 * td1 = ( TitleData1 * ) pLocalPlayer->GetPlayerTitleData( TitleDataFieldsDescription_t::DB_TD1 );
-	//	TitleData3 * td3 = ( TitleData3 * ) pLocalPlayer->GetPlayerTitleData( TitleDataFieldsDescription_t::DB_TD3 );
-
-	//	// sp progress
-	//	cmd->SetInt( "map_s", td1->uiSinglePlayerProgressChapter );
-
-	//	// coop completion
-	//	int numMapBitsFields = sizeof( td1->coop.mapbits ) / sizeof( uint64 );
-	//	for ( int imap = 0; imap < numMapBitsFields; ++ imap )
-	//	{
-	//		cmd->SetUint64( CFmtStr( "map_%d", imap ), ( reinterpret_cast< uint64 * >( td1->coop.mapbits ) )[imap] );
-	//	}
-
-	//	if ( td3->cvUser.version )
-	//	{
-	//		// profile settings
-	//		cmd->SetFloat( "cfg_pitch", td3->cvUser.joy_pitchsensitivity );
-	//		cmd->SetFloat( "cfg_yaw", td3->cvUser.joy_yawsensitivity );
-	//		cmd->SetInt( "cfg_joy", td3->cvUser.joy_cfg_preset );
-	//		cmd->SetInt( "cfg_bit", td3->cvUser.bitfields[0] );
-	//	}
-
-	//	if ( td3->cvSystem.version )
-	//	{
-	//		// audio/video
-	//		cmd->SetFloat( "sys_vol", td3->cvSystem.volume );
-	//		cmd->SetFloat( "sys_mus", td3->cvSystem.snd_musicvolume );
-	//		cmd->SetFloat( "sys_gam", td3->cvSystem.mat_monitorgamma );
-	//		cmd->SetInt( "sys_ssm", td3->cvSystem.ss_splitmode );
-	//		cmd->SetInt( "sys_bit", td3->cvSystem.bitfields[0] );
-	//	}
-
-	//	if ( g_pXboxInstaller )
-	//	{
-	//		cmd->SetInt( "inst",
-	//			( g_pXboxInstaller->IsFullyInstalled() ? 1 : 0 ) |
-	//			( g_pXboxInstaller->IsInstallEnabled() ? 2 : 0 )
-	//			);
-	//	}
-	//}
-#endif
 }
 
 // Rolls up game details for matches grouping
@@ -419,11 +313,6 @@ KeyValues * CMatchTitleGameSettingsMgr::RollupGameDetails( KeyValues *pDetails, 
 // Defines dedicated server search key
 KeyValues * CMatchTitleGameSettingsMgr::DefineDedicatedSearchKeys( KeyValues *pSettings, bool bNeedOfficialServer, int nSearchPass )
 {
-#if defined ( _X360 )
-
-	return NULL;
-
-#else
 
 	static ConVarRef sv_search_key( "sv_search_key" );
 
@@ -477,114 +366,11 @@ KeyValues * CMatchTitleGameSettingsMgr::DefineDedicatedSearchKeys( KeyValues *pS
 
 	return pKeys;
 
-#endif
 }
 
 
 static void DescribeX360QueryDefineSessionSearchKeys( KeyValues *pkv )
 {
-#ifdef _X360
-	DevMsg( "======== DescribeX360QueryDefineSessionSearchKeys ==============\n" );
-	DevMsg( "  numPlayers = %d\n", pkv->GetInt( "numPlayers" ) );
-	DevMsg( "  rule       = %s\n", ( pkv->GetInt( "rule" ) == SESSION_MATCH_QUERY_PLAYER_MATCH ) ? "playermatch" : "UNKNOWN" );
-	
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Contexts/%d", CONTEXT_CSS_GAME_TYPE ) ) )
-	{
-		char const *szVal = "UNKNOWN";
-		switch ( val->GetInt() )
-		{
-		case CONTEXT_CSS_GAME_TYPE_CLASSIC: szVal = "classic"; break;
-		case CONTEXT_CSS_GAME_TYPE_GUNGAME: szVal = "gungame"; break;
-		default: Assert( false ); break;
-		}
-		DevMsg( "  CONTEXT_CSS_GAME_TYPE = %s (%d)\n", szVal, val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Contexts/%d", CONTEXT_CSS_GAME_MODE ) ) )
-	{
-		char const *szVal = "UNKNOWN";
-		switch ( val->GetInt() )
-		{
-		case CONTEXT_CSS_GAME_MODE_CASUAL: szVal = "casual"; break;
-		case CONTEXT_CSS_GAME_MODE_COMPETITIVE: szVal = "competitive"; break;
-		case CONTEXT_CSS_GAME_MODE_FREESTYLE: szVal = "freestyle"; break;
-		case CONTEXT_CSS_GAME_MODE_GUNGAMEPROGRESSIVE: szVal = "gungameprogressive"; break;
-		case CONTEXT_CSS_GAME_MODE_GUNGAMEBOMB: szVal = "gungamebomb"; break;
-		default: Assert( false ); break;
-		}
-		DevMsg( "  CONTEXT_CSS_GAME_MODE = %s (%d)\n", szVal, val->GetInt() );
-	}
-	else if ( KeyValues *val = pkv->FindKey( CFmtStr( "Properties/%d", PROPERTY_CSS_GAME_MODE_AS_NUMBER ) ) )
-	{
-		DevMsg( "  PROPERTY_CSS_GAME_MODE_AS_NUMBER near 0x%X (%d)\n", val->GetInt(), val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Contexts/%d", CONTEXT_GAME_STATE ) ) )
-	{
-		char const *szVal = "UNKNOWN";
-		switch ( val->GetInt() )
-		{
-		case CONTEXT_GAME_STATE_IN_MENUS: szVal = "in_menus"; Assert( false ); break;
-		case CONTEXT_GAME_STATE_SINGLE_PLAYER: szVal = "singleplayer"; Assert( false ); break;
-		case CONTEXT_GAME_STATE_MULTIPLAYER: szVal = "multiplayer"; break;
-		default: Assert( false ); break;
-		}
-		DevMsg( "  CONTEXT_GAME_STATE = %s (%d)\n", szVal, val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Contexts/%d", CONTEXT_CSS_MAP_GROUP ) ) )
-	{
-		DevMsg( "  CONTEXT_CSS_MAP_GROUP = %s (%d)\n", "", val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Properties/%d", PROPERTY_CSS_MATCH_VERSION ) ) )
-	{
-		DevMsg( "  PROPERTY_CSS_MATCH_VERSION = 0x%X (%d)\n", val->GetInt(), val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Properties/%d", PROPERTY_CSS_SEARCH_LISTEN_SERVER ) ) )
-	{
-		DevMsg( "  PROPERTY_CSS_SEARCH_LISTEN_SERVER = 0x%X (%d)\n", val->GetInt(), val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Properties/%d", PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS ) ) )
-	{
-		DevMsg( "  PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS >= 0x%X (%d)\n", val->GetInt(), val->GetInt() );
-	}
-
-	if ( KeyValues *val = pkv->FindKey( CFmtStr( "Properties/%d", PROPERTY_CSS_AGGREGATE_SKILL0 ) ) )
-	{
-		DevMsg( "  PROPERTY_CSS_AGGREGATE_SKILL0 near 0x%X (%d)\n", val->GetInt(), val->GetInt() );
-	}
-
-	DWORD validsettings[] = { X_CONTEXT_GAME_TYPE, X_CONTEXT_GAME_MODE, CONTEXT_CSS_GAME_TYPE, CONTEXT_CSS_GAME_MODE, PROPERTY_CSS_GAME_MODE_AS_NUMBER,
-	CONTEXT_GAME_STATE, CONTEXT_CSS_MAP_GROUP, PROPERTY_CSS_MATCH_VERSION, PROPERTY_CSS_SEARCH_LISTEN_SERVER, PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS,
-	PROPERTY_CSS_AGGREGATE_SKILL0 };
-	char const *categories[] = { "Contexts", "Properties" };
-	for ( int iCategory = 0; iCategory < Q_ARRAYSIZE( categories ); ++ iCategory )
-	{
-		for ( KeyValues *val = pkv->FindKey( categories[iCategory] )->GetFirstSubKey(); val; val = val->GetNextKey() )
-		{
-			DWORD idx = atoi( val->GetName() );
-			bool bValid = false;
-			for ( int jj = 0; jj < Q_ARRAYSIZE( validsettings ); ++ jj )
-			{
-				if ( validsettings[jj] == idx )
-				{
-					bValid = true;
-					break;
-				}
-			}
-			if ( !bValid )
-			{
-				DevMsg( "Unexpected entry in query %s: %s (0x%X)\n", categories[iCategory], val->GetName(), idx );
-			}
-			Assert( bValid );
-		}
-	}
-
-	DevMsg( "======== ********X360Query*********************** ==============\n" );
-#endif
 }
 
 // Defines session search keys for matchmaking
@@ -611,9 +397,6 @@ KeyValues * CMatchTitleGameSettingsMgr::DefineSessionSearchKeys( KeyValues *pSet
 	bool bCssLevel = true;
 	bool bCssGameType = true;
 	bool bCssGameMode = true;
-#if defined _X360
-	bool bCssGameModeAsNumber = true;
-#endif
 	bool bTeamMatch = true;
 	bool bTeamMatchTypeClan = false;
 	bool bTeamMatchTypeClanPreferred = false;
@@ -621,15 +404,7 @@ KeyValues * CMatchTitleGameSettingsMgr::DefineSessionSearchKeys( KeyValues *pSet
 	// Determine if this is a team matchmaking query: 
 	//  On Consoles we define "conteammatch" for team lobbies; 
 	//  On PC, we do NOT set bypasslobby for team lobbies
-#if defined( _GAMECONSOLE )
-	bTeamMatch = ( pSettings->GetString( "options/conteammatch", NULL ) != NULL );
-#else
 	bTeamMatch = ( pSettings->GetBool( "options/bypasslobby", false ) == false );
-#endif
-
-#if defined _X360
-	pResult->SetInt( "rule", rule );
-#endif
 
 	// Set the appropriate query based on if we're quickmatching or custommatching.
 	char const *szAction = pSettings->GetString( "options/action", "" );
@@ -653,78 +428,6 @@ KeyValues * CMatchTitleGameSettingsMgr::DefineSessionSearchKeys( KeyValues *pSet
 			bCssLevel = false;
 		}
 	}
-
-#if defined _X360
-	// X_CONTEXT_GAME_TYPE 
-	pResult->SetInt( CFmtStr( "Contexts/%d", X_CONTEXT_GAME_TYPE ), X_CONTEXT_GAME_TYPE_STANDARD );
-	pResult->SetInt( CFmtStr( "Contexts/%d", X_CONTEXT_GAME_MODE ), CONTEXT_GAME_MODE_CSS_GAME_MODE_MULTIPLAYER );
-
-	// X_CONTEXT_GAME_MODE 
-	if ( char const *szValue = pSettings->GetString( "game/mode", NULL ) )
-	{
-		DWORD dwValue = g_GameModeContexts->ScanValues( szValue );
-		if ( bCssGameMode && dwValue != 0xFFFF )
-		{
-			pResult->SetInt( CFmtStr( "Contexts/%d", CONTEXT_CSS_GAME_MODE ), dwValue );
-		}
-
-		// Omit this property based on the rule.
-		// Set the PROPERTY_CSS_GAME_MODE_AS_NUMBER value as the square of the CONTEXT_CSS_GAME_MODE Difficulty setting.
-		// The resulting sequence of numbers (0, 1, 4, 9, ...) ensures that if an exact match can't be found
-		// then the 'near' sort operation will prefer the next easier match to the next harder match.  For example,
-		// if COMPETITIVE is requested (1), then CASUAL matches (0) would be preferred to PRO matches (4).
-		dwValue = g_GameModeAsNumberContexts->ScanValues( szValue );
-		if ( bCssGameModeAsNumber && dwValue != 0xFFFF )
-		{
-			pResult->SetInt( CFmtStr( "Properties/%d", PROPERTY_CSS_GAME_MODE_AS_NUMBER ), dwValue );
-		}
-	}
-
-	// Set the game type (classic or gungame)
-	if ( char const *szGameType = pSettings->GetString( "game/type", NULL ) )
-	{
-		DWORD dwValue = g_GameTypeContexts->ScanValues( szGameType );
-		if ( bCssGameType && dwValue != 0xFFFF )
-		{
-			pResult->SetInt( CFmtStr( "Contexts/%d", CONTEXT_CSS_GAME_TYPE ), dwValue );
-		}
-	}
-
-	// Set the matchmaking version.
-	if ( bCssMatchVersion )
-	{
-		pResult->SetInt( CFmtStr( "Properties/%d", PROPERTY_CSS_MATCH_VERSION ), mm_title_debug_version.GetInt() );
-	}
-
-	if ( 0 && mm_title_debug_minquery.GetBool() )
-	{
-		DescribeX360QueryDefineSessionSearchKeys( pResult );
-		return pResult; // don't run the rest of filters, run with minimal set of parameters
-	}
-
-
-	// Set the mapgroup name we're using, if any.
-	if ( char const *szMapGroupName = pSettings->GetString( "game/mapgroupname", NULL ) )
-	{
-		// First check if the rich presence context for this map was set in gamemodes.txt
-		DWORD dwValue = dwValue = pSettings->GetInt( "game/mapRichPresence", 0xFFFF );
-		if ( dwValue == 0xFFFF )
-		{
-			dwValue = g_MapGroupContexts->ScanValues( szMapGroupName );
-		}
-		if ( bCssLevel && dwValue != 0xFFFF )
-		{
-			pResult->SetInt( CFmtStr( "Contexts/%d", CONTEXT_CSS_MAP_GROUP ), dwValue );
-		}
-	}
-
-	// Set desire to find games in lobbies
-	if ( bMatchmakingQueryForGameInProgress )
-	{
-		pResult->SetInt( CFmtStr( "Contexts/%d", CONTEXT_GAME_STATE ), CONTEXT_GAME_STATE_MULTIPLAYER );
-	}
-
-#endif
 
 	// Determine if we're playing gungameprogressive mode so we can use the proper matchmaking data fields.
 	MatchmakingDataType mmDataType = MMDATA_TYPE_GENERAL;
@@ -750,12 +453,6 @@ KeyValues * CMatchTitleGameSettingsMgr::DefineSessionSearchKeys( KeyValues *pSet
 
 	if ( IsX360() )
 	{
-#ifdef _X360
-		if ( bConTeamMatch )
-		{
-			pResult->SetInt( CFmtStr( "Properties/%d", PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS ), numPlayers );
-		}
-#endif
 	}
 	else
 	{
@@ -825,15 +522,6 @@ void CMatchTitleGameSettingsMgr::InitializeGameSettings( KeyValues *pSettings, c
 	}
 	
 	pSettings->SetInt( "members/numSlots", numSlots );
-
-#ifdef _X360
-	int extraSpectators = 2;
-	pSettings->SetInt( "members/numExtraSpectatorSlots", extraSpectators );
-	pSettings->SetInt( "game/mapRichPresence", dwRichPresenceContext );
-
-	pSettings->SetInt( "game/matchversion", mm_title_debug_version.GetInt() );
-	pSettings->SetInt("game/experience", 0);
-#endif
 
 	if ( !IsX360() )
 	{
@@ -1428,14 +1116,6 @@ void CMatchTitleGameSettingsMgr::AddSteamMatchmakingRule( KeyValues *pResult, bo
 			}
 		}
 
-#ifdef _X360
-		// Matchmaking rules version
-		if (bCssMatchVersion)
-		{
-			pResult->SetInt("Filter=/game:matchversion", mm_title_debug_version.GetInt() );
-		}
-#endif
-
 		// Privacy
 		char const *privacy = pSettings->GetString( "system/access", NULL );
 		AssertMsg(privacy, "Matchmaking: Rule SESSION_MATCH_QUERY_PLAYER_MATCH - no access mode; ignoring this filter");
@@ -1531,115 +1211,3 @@ void CMatchTitleGameSettingsMgr::UpdateTeamProperties( KeyValues *pCurrentSettin
 	MM_Title_RichPresence_UpdateTeamPropertiesCSGO( pCurrentSettings, pTeamProperties );
 }
 
-#ifdef _X360
-void MM_dumpcontextsandproperties( void )
-{
-	IXboxSystem *pXboxSystem = g_pMatchExtensions->GetIXboxSystem();
-	if ( pXboxSystem )
-	{
-		DWORD userIndex = XBX_GetPrimaryUserId();
-
-		uint value = 0;
-
-		KeyValues *pkv = new KeyValues( "ContextsAndProperties" );
-		KeyValues::AutoDelete autoDeleteEvent( pkv );
-
-		pXboxSystem->UserGetContext( userIndex, X_CONTEXT_GAME_TYPE, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(X_CONTEXT_GAME_TYPE)", X_CONTEXT_GAME_TYPE ), value );
-
-		pXboxSystem->UserGetContext( userIndex, X_CONTEXT_GAME_MODE, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(X_CONTEXT_GAME_MODE)", X_CONTEXT_GAME_MODE ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_LEVEL, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(CONTEXT_CSS_LEVEL)", CONTEXT_CSS_LEVEL ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_MAP_GROUP, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(CONTEXT_CSS_MAP_GROUP)", CONTEXT_CSS_MAP_GROUP ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_GAME_STATE, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(CONTEXT_GAME_STATE)", CONTEXT_GAME_STATE ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_GAME_MODE, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(CONTEXT_CSS_GAME_MODE)", CONTEXT_CSS_GAME_MODE ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_TEAM, value );
-		pkv->SetInt( CFmtStr( "Contexts/%d\t\t(CONTEXT_CSS_TEAM)", CONTEXT_CSS_TEAM ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_PRIVACY, value );
-		pkv->SetInt( CFmtStr( "Context/%d\t\t(CONTEXT_CSS_PRIVACY)", CONTEXT_CSS_PRIVACY ), value );
-
-		pXboxSystem->UserGetContext( userIndex, CONTEXT_CSS_GAME_TYPE, value );
-		pkv->SetInt( CFmtStr( "Context/%d\t\t(CONTEXT_CSS_GAME_TYPE)", CONTEXT_CSS_GAME_TYPE ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_EXPERIENCE, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_EXPERIENCE)", PROPERTY_CSS_AGGREGATE_EXPERIENCE ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_SKILL0, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_SKILL0)", PROPERTY_CSS_AGGREGATE_SKILL0 ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_SKILL1, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_SKILL1)", PROPERTY_CSS_AGGREGATE_SKILL1 ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_SKILL2, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_SKILL2)", PROPERTY_CSS_AGGREGATE_SKILL2 ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_SKILL3, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_SKILL3)", PROPERTY_CSS_AGGREGATE_SKILL3 ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_AGGREGATE_SKILL4, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_AGGREGATE_SKILL4)", PROPERTY_CSS_AGGREGATE_SKILL4 ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_MATCH_VERSION, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_MATCH_VERSION)", PROPERTY_CSS_MATCH_VERSION ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_OPEN_SLOTS, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_OPEN_SLOTS)", PROPERTY_CSS_OPEN_SLOTS ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_EXP_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_EXP_MAX)", PROPERTY_CSS_SEARCH_EXP_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_EXP_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_EXP_MIN)", PROPERTY_CSS_SEARCH_EXP_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL0_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL0_MAX)", PROPERTY_CSS_SEARCH_SKILL0_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL0_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL0_MIN)", PROPERTY_CSS_SEARCH_SKILL0_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL1_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL1_MAX)", PROPERTY_CSS_SEARCH_SKILL1_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL1_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL1_MIN)", PROPERTY_CSS_SEARCH_SKILL1_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL2_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL2_MAX)", PROPERTY_CSS_SEARCH_SKILL2_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL2_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL2_MIN)", PROPERTY_CSS_SEARCH_SKILL2_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL3_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL3_MAX)", PROPERTY_CSS_SEARCH_SKILL3_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL3_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL3_MIN)", PROPERTY_CSS_SEARCH_SKILL3_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL4_MAX, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL4_MAX)", PROPERTY_CSS_SEARCH_SKILL4_MAX ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_SEARCH_SKILL4_MIN, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_SEARCH_SKILL4_MIN)", PROPERTY_CSS_SEARCH_SKILL4_MIN ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_GAME_MODE_AS_NUMBER, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_GAME_MODE_AS_NUMBER)", PROPERTY_CSS_GAME_MODE_AS_NUMBER ), value );
-
-		pXboxSystem->UserGetPropertyInt( userIndex, PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS, value );
-		pkv->SetInt( CFmtStr( "Properties/%d\t\t(PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS)", PROPERTY_CSS_MAX_OPEN_TEAM_SLOTS ), value );
-
-		KeyValuesDumpAsDevMsg( pkv );
-	}
-}
-
-static ConCommand mm_dumpcontextsandproperties("mm_dumpcontextsandproperties", MM_dumpcontextsandproperties, "Dump the current values for all of the title's contexts and properties.", FCVAR_DEVELOPMENTONLY );
-#endif // _X360

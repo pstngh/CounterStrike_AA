@@ -153,7 +153,6 @@ static inline CChangeFrameList * GetMergedChangeFrameList( PackedEntity* pPrevFr
 	{
 		CActiveHltvServerIterator hltv;
 
-#ifndef _XBOX	
 		if ( hltv )
 		{
 			// in HLTV or Replay mode every PackedEntity keeps it's own ChangeFrameList
@@ -161,7 +160,6 @@ static inline CChangeFrameList * GetMergedChangeFrameList( PackedEntity* pPrevFr
 			pChangeFrame = pPrevFrame->GetChangeFrameList()->Copy();
 		}
 		else
-#endif
 		{
 			// Ok, now snag the changeframe from the previous frame and update the 'last frame changed'
 			// for the properties in the delta.

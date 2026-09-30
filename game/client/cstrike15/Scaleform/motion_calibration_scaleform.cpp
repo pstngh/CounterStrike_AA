@@ -16,11 +16,6 @@
 #include "gameui_interface.h"
 
 
-#if defined( _PS3 )
-#include <cell/gem.h> // PS3 move controller lib
-#endif // defined( _PS3 )
-
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
@@ -56,9 +51,6 @@ CMotionCalibrationScaleform::CMotionCalibrationScaleform() :
 
 CMotionCalibrationScaleform::~CMotionCalibrationScaleform()
 {
-#if defined( _PS3 )
-	g_pScaleformUI->PS3ForceCursorEnd();
-#endif
 }
 
 void CMotionCalibrationScaleform::LoadDialog( void )
@@ -162,9 +154,6 @@ void CMotionCalibrationScaleform::Show( void )
 
 void CMotionCalibrationScaleform::Hide( void )
 {
-#if defined( _PS3 )
-	g_pScaleformUI->PS3UseStandardCursor();
-#endif
 
 	if ( FlashAPIIsValid() && m_bVisible )
 	{
@@ -272,19 +261,7 @@ bool CMotionCalibrationScaleform::TryAdvance( bool bAccept, bool bCancel )
 	case SCENE_CALIBRATE_CONTROLLER_RESULT:
 		if ( inputsystem->GetMotionControllerDeviceStatus() != INPUT_DEVICE_MC_STATE_CONTROLLER_ERROR )
 		{
-#if defined( _PS3 )
-			// if GetMotionControllerDeviceStatusFlags is exactly = to the CELL_GEM_FLAG_CALIBRATION_OCCURRED and CELL_GEM_FLAG_CALIBRATION_SUCCEEDED bit mask then
-			// it means that no warning or error flags were raised and that we may proceed
-			bool bOkToProceed = ( inputsystem->GetMotionControllerDeviceStatusFlags() == ( CELL_GEM_FLAG_CALIBRATION_OCCURRED | CELL_GEM_FLAG_CALIBRATION_SUCCEEDED ) );
-
-			if ( bOkToProceed == false )
-			{
-				// according to the Sony SDK it is possible for the CELL_GEM_FLAG_CALIBRATION_OCCURRED flag to be ommited on success
-				bOkToProceed = ( inputsystem->GetMotionControllerDeviceStatusFlags() == CELL_GEM_FLAG_CALIBRATION_SUCCEEDED );
-			}
-#else
 			bool bOkToProceed = true;
-#endif // defined( _PS3 )
 
 			bResult = bAccept || bOkToProceed ;
 		}
@@ -433,48 +410,6 @@ void CMotionCalibrationScaleform::SceneDraw( int nSceneLevel )
 
 			case SCENE_CALIBRATE_CONTROLLER_RESULT:
 				{
-#if defined( _PS3 )
-					uint64 nCalibrationResult = inputsystem->GetMotionControllerDeviceStatusFlags();
-
-					if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_OCCURRED )
-					{
-						// default nav for warnings
-						m_pNavText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Nav_Accept", NULL ) );
-
-
-						if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_WARNING_BRIGHT_LIGHTING )								// Warning conditions
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Warning_Bright", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_WARNING_MOTION_DETECTED )
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Warning_Motion", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_VERY_COLORFUL_ENVIRONMENT )
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Warning_Colorful", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_CURRENT_HUE_CONFLICTS_WITH_ENVIRONMENT )
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Warning_Hue", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_FAILED_CANT_FIND_SPHERE )							// Error conditions
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Error_Cant_Find", NULL ) );
-							m_pNavText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Nav_Error", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_FAILED_MOTION_DETECTED )
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Error_Motion", NULL ) );
-							m_pNavText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Nav_Error", NULL ) );
-						}
-						else if ( nCalibrationResult & CELL_GEM_FLAG_CALIBRATION_FAILED_BRIGHT_LIGHTING )
-						{
-							m_pInfoText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Error_Bright", NULL ) );
-							m_pNavText->SetTextHTML( g_pScaleformUI->Translate( "#SFUI_Calibrate_Nav_Error", NULL ) );
-						}
-					}
-#endif // defined( _PS3 )
 				}
 				break;
 
@@ -501,13 +436,7 @@ void CMotionCalibrationScaleform::SceneDraw( int nSceneLevel )
 			case SCENE_ADJUST_SENSITIVITY:
 				if ( !m_bCursorVisible )
 				{
-#if defined( _PS3 )
-					g_pScaleformUI->PS3ForceCursorStart();
-#endif
 					g_pScaleformUI->ShowCursor();
-#if defined( _PS3 )
-					g_pScaleformUI->PS3UseMoveCursor();
-#endif
 					m_bCursorVisible = true;
 				}
 
@@ -567,9 +496,6 @@ void CMotionCalibrationScaleform::SceneThink( void )
 			g_pScaleformUI->HideCursor();
 			m_bCursorVisible = false;
 
-#if defined( _PS3 )
-			g_pScaleformUI->PS3ForceCursorEnd();
-#endif
 		}
 	}
 }

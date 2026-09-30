@@ -4,15 +4,11 @@
 //
 //===========================================================================//
 
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #define WIN_32_LEAN_AND_MEAN
 #include <windows.h>
 #define VA_COMMIT_FLAGS MEM_COMMIT
 #define VA_RESERVE_FLAGS MEM_RESERVE
-#elif defined( _X360 )
-#undef Verify
-#define VA_COMMIT_FLAGS (MEM_COMMIT|MEM_NOZERO|MEM_LARGE_PAGES)
-#define VA_RESERVE_FLAGS (MEM_RESERVE|MEM_LARGE_PAGES)
 #endif
 
 #include "materialsystem/imaterialvar.h"
@@ -40,16 +36,11 @@
 
 #define MATERIALVAR_CHAR_BUF_SIZE 512
 
-#if !defined( _X360 )
 #pragma pack (1)
-#endif
 
 //-----------------------------------------------------------------------------
 // Material var custom allocator
 //-----------------------------------------------------------------------------
-#ifdef _X360
-#define USE_MV_POOL
-#endif
 
 #ifdef USE_MV_POOL
 

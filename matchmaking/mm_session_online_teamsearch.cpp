@@ -17,9 +17,7 @@
 ConVar mm_teamsearch_errortime( "mm_teamsearch_errortime", "3.0", FCVAR_DEVELOPMENTONLY, "Time team search is in error state until it self-cancels" );
 ConVar mm_teamsearch_nostart( "mm_teamsearch_nostart", "0", FCVAR_DEVELOPMENTONLY, "Team search will fake cancel before searching for server" );
 
-#ifndef _GAMECONSOLE
 ConVar sv_search_team_key( "sv_search_team_key", "public", FCVAR_RELEASE, "When initiating team search, set this key to match with known opponents team" );
-#endif
 
 //
 //
@@ -87,18 +85,12 @@ CMatchSessionOnlineTeamSearch::CMatchSessionOnlineTeamSearch( KeyValues *pSettin
 	m_autodelete_pUpdateHostSessionPacket( m_pUpdateHostSessionPacket ),
 	m_iLinkState( 0 ),
 	m_xuidLinkPeer( 0ull ),
-#ifdef _X360
-	m_pXlspConnection( NULL ),
-	m_pXlspCommandBatch( NULL ),
-#endif
 	m_flCreationTime( Plat_FloatTime() )
 {
 	m_pSettings = pSettings->MakeCopy();
 	m_autodelete_pSettings.Assign( m_pSettings );
 
-#ifndef _GAMECONSOLE
 	m_pSettings->SetString( "options/searchteamkey", sv_search_team_key.GetString() );
-#endif
 
 	if ( IsPC() )
 	{
@@ -151,9 +143,7 @@ CMatchSearcher_OnlineTeamSearch::CMatchSearcher_OnlineTeamSearch( CMatchSessionO
 
 void CMatchSearcher_OnlineTeamSearch::StartSearchPass( KeyValues *pSearchPass )
 {
-#ifndef _GAMECONSOLE
 	pSearchPass->SetString( "Filter=/options:searchteamkey", sv_search_team_key.GetString() );
-#endif
 
 	CMatchSearcher_OnlineSearch::StartSearchPass( pSearchPass );
 }
@@ -474,19 +464,6 @@ void CMatchSessionOnlineTeamSearch::Destroy()
 		m_pDsSearcher = NULL;
 	}
 
-#ifdef _X360
-	if ( m_pXlspCommandBatch )
-	{
-		m_pXlspCommandBatch->Destroy();
-		m_pXlspCommandBatch = NULL;
-	}
-	if ( m_pXlspConnection )
-	{
-		m_pXlspConnection->Destroy();
-		m_pXlspConnection = NULL;
-	}
-#endif
-
 	CMatchSessionOnlineSearch::Destroy();
 }
 
@@ -681,19 +658,13 @@ void CMatchSessionOnlineTeamSearchLinkHost::LinkUpdate()
 	{
 	case STATE_SUBMIT_STATS:
 		{
-#ifdef _X360
-			m_pXlspConnection = new CXlspConnection( false );
-			CUtlVector< KeyValues * > arrCommands;
-#endif
 			if ( KeyValues *pCmd = new KeyValues( "stat_agg" ) )
 			{
 				int numSeconds = int( 1 + Plat_FloatTime() - m_flCreationTime );
 				numSeconds = ClampArrayBounds( numSeconds, 30 * 60 ); // 30 minutes
 				pCmd->SetInt( "search_team_time", numSeconds );
 
-#ifdef _X360
-				arrCommands.AddToTail( pCmd );
-#elif !defined( NO_STEAM ) && !defined( NO_STEAM_GAMECOORDINATOR )
+#if !defined( NO_STEAM ) && !defined( NO_STEAM_GAMECOORDINATOR )
 				CGCClientJobUpdateStats *pJob = new CGCClientJobUpdateStats( pCmd );
 				pJob->StartJob( NULL );
 #else
@@ -701,25 +672,11 @@ void CMatchSessionOnlineTeamSearchLinkHost::LinkUpdate()
 #endif
 
 			}
-#ifdef _X360
-			m_pXlspCommandBatch = new CXlspConnectionCmdBatch( m_pXlspConnection, arrCommands );
-#endif
 		}
 		m_iLinkState = STATE_REPORTING_STATS;
 		break;
 
 	case STATE_REPORTING_STATS:
-#ifdef _X360
-		m_pXlspCommandBatch->Update();
-		if ( !m_pXlspCommandBatch->IsFinished() )
-			return;
-
-		m_pXlspCommandBatch->Destroy();
-		m_pXlspCommandBatch = NULL;
-
-		m_pXlspConnection->Destroy();
-		m_pXlspConnection = NULL;
-#endif
 		m_iLinkState = STATE_CONFIRM_JOIN;
 		break;
 

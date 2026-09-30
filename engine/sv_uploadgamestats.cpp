@@ -8,11 +8,7 @@
 
 #ifdef _WIN32
 
-#if !defined( _X360 )
 #include <winsock.h>
-#else
-#include "winsockx.h"
-#endif
 
 #elif POSIX
 #define INVALID_SOCKET -1
@@ -23,13 +19,8 @@
 #ifdef OSX
 #include <uuid/uuid.h>
 #endif
-#ifdef _PS3
-#include "basetypes.h"
-#include "ps3/ps3_core.h"
-#else
 #include <pwd.h>
 #define closesocket close
-#endif
 #include "quakedef.h" // build_number()
 #endif
 
@@ -56,15 +47,6 @@
 #include "server.h"
 #include "sv_steamauth.h"
 #include "threadtools.h"
-
-#if defined( _X360 )
-#include "xbox/xbox_win32stubs.h"
-#endif
-
-#if defined( _PS3 )
-#include "ps3/ps3_win32stubs.h"
-#define closesocket socketclose
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -416,8 +398,6 @@ public:
 			{
 				bOk = false;
 			}
-#elif defined( _GAMECONSOLE )
-			Q_strncpy( username, "console", sizeof( username ) );
 #else
 			struct passwd *pass = getpwuid( getuid() );
 			if ( pass )
@@ -511,7 +491,7 @@ public:
 	// Only works in single player
 	virtual bool IsHDREnabled( void )
 	{
-#if defined( DEDICATED ) || defined( _X360 )
+#if defined( DEDICATED )
 		return false;
 #else
 		return g_pMaterialSystemHardwareConfig->GetHDREnabled();
@@ -953,9 +933,6 @@ EGameStatsUploadStatus Win32UploadGameStatsBlocking
 	const TGameStatsParameters & rGameStatsParameters
 )
 {
-#ifdef _PS3
-	return eGameStatsUploadFailed;
-#else
 	EGameStatsUploadStatus status = eGameStatsUploadSucceeded;
 
 	CUtlBuffer buf( rGameStatsParameters.m_uStatsBlobSize + 4096 );
@@ -1070,7 +1047,6 @@ EGameStatsUploadStatus Win32UploadGameStatsBlocking
 	}
 
 	return status;
-#endif
 }
 
 
@@ -1167,10 +1143,6 @@ void CAsyncUploaderThread::QueueData( char const *szMapName, uint uiBlobVersion,
 
 void CAsyncUploaderThread::ThreadProc()
 {
-#ifdef _GAMECONSOLE
-	Assert( !"This is illegal on console" );
-	DebuggerBreak();
-#endif
 	for ( ; ; )
 	{
 		// Fetch an item from queue

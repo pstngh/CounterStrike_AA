@@ -132,10 +132,6 @@ public:
 
 	virtual bool IsMultiRenderTarget( void ) = 0;
 
-#ifdef _PS3
-	virtual void Ps3gcmRawBufferAlias( char const *pRTName ) = 0;
-#endif
-
 	virtual bool MarkAsTempExcluded( bool bSet, int nExcludedDimensionLimit ) = 0;
 
 	virtual bool IsForceExcluded() const = 0;

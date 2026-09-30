@@ -15,10 +15,6 @@
 #ifndef _CS_BOT_H_
 #define _CS_BOT_H_
 
-#ifdef _GAMECONSOLE
-#define OPT_VIS_CSGO
-#endif
-
 #include "bot/bot.h"
 #include "bot/cs_bot_manager.h"
 #include "bot/cs_bot_chatter.h"

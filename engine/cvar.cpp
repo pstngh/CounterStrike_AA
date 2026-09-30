@@ -23,9 +23,6 @@
 #ifdef POSIX
 #include <wctype.h>
 #endif
-#ifdef _PS3
-#include <ps3/ps3_console.h>
-#endif
 
 #ifndef DEDICATED
 #include <vgui_controls/Controls.h>
@@ -1336,68 +1333,4 @@ CON_COMMAND_F( reset_gameconvars, "Reset a bunch of game convars to default valu
 //-----------------------------------------------------------------------------
 // Purpose: Send the cvars to VXConsole
 //-----------------------------------------------------------------------------
-#if defined( USE_VXCONSOLE )
-CON_COMMAND( getcvars, "" )
-{
-	{
-		// avoid noisy requests
-		// outer logic to prevent multiple requests more complicated than doing just this
-#if defined( _X360 )
-		bool bConnected = XBX_IsConsoleConnected();
-		if ( !bConnected )
-		{
-			return;
-		}
-#endif
-		static float s_flLastPublishTime = 0;
-		if ( s_flLastPublishTime && Plat_FloatTime() < s_flLastPublishTime + 2.0f )
-		{
-			return;
-		}
-		s_flLastPublishTime = Plat_FloatTime();
-	}
-
-#if defined( _X360 )
-	// get the version from the image
-	// regardles of where the image came from (DVD, HDD) this cracks the embedded version info
-	int nVersion = 0;
-	if ( !IsCert() )
-	{
-		HANDLE hFile = CreateFile( "d:\\version.xtx", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if ( hFile != INVALID_HANDLE_VALUE )
-		{
-			DWORD nFileSize = GetFileSize( hFile, NULL );
-			if ( nFileSize != (DWORD)-1 && nFileSize > 0 )
-			{
-				char versionData[1024];
-				DWORD nBufferSize = MIN( nFileSize, sizeof( versionData ) - 1 );			
-				DWORD nBytesRead = 0;
-				BOOL bResult = ReadFile( hFile, versionData, nBufferSize, &nBytesRead, NULL );
-				if ( bResult )
-				{
-					versionData[nBytesRead] = '\0';
-					nVersion = atoi( versionData );
-				}
-			}
-			CloseHandle( hFile );
-		}
-	}
-
-	XBX_rVersion( nVersion );
-#endif
-
-	// Host_Init() will be calling us again, so defer this expensive operation until then
-	if ( host_initialized )
-	{
-#ifdef _PS3
-		if ( g_pValvePS3Console )
-		{
-			g_pCVar->PublishToVXConsole();
-		}
-#else
-		g_pCVar->PublishToVXConsole();
-#endif
-	}
-}
-#endif
 

@@ -100,7 +100,7 @@ BEGIN_VS_SHADER_FLAGS( screenspace_general_dx9, "Help for screenspace_general", 
 
 		if ( params[BASETEXTURE]->IsDefined() )
 		{
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 			ImageFormat fmt = params[BASETEXTURE]->GetTextureValue()->GetImageFormat();
 			bool bSRGB;
 			if ( ( fmt == IMAGE_FORMAT_RGBA16161616F ) || ( fmt == IMAGE_FORMAT_RGBA16161616 ) )
@@ -114,7 +114,7 @@ BEGIN_VS_SHADER_FLAGS( screenspace_general_dx9, "Help for screenspace_general", 
 		}
 		if ( params[TEXTURE1]->IsDefined() )
 		{
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 			ImageFormat fmt = params[TEXTURE1]->GetTextureValue()->GetImageFormat();
 			bool bSRGB;
 			if ( ( fmt == IMAGE_FORMAT_RGBA16161616F ) || ( fmt == IMAGE_FORMAT_RGBA16161616 ) )
@@ -128,7 +128,7 @@ BEGIN_VS_SHADER_FLAGS( screenspace_general_dx9, "Help for screenspace_general", 
 		}
 		if ( params[TEXTURE2]->IsDefined() )
 		{
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 			ImageFormat fmt = params[TEXTURE2]->GetTextureValue()->GetImageFormat();
 			bool bSRGB;
 			if ( ( fmt == IMAGE_FORMAT_RGBA16161616F ) || ( fmt == IMAGE_FORMAT_RGBA16161616 ) )
@@ -142,7 +142,7 @@ BEGIN_VS_SHADER_FLAGS( screenspace_general_dx9, "Help for screenspace_general", 
 		}
 		if ( params[TEXTURE3]->IsDefined() )
 		{
-#if defined( PLATFORM_POSIX ) && !defined( _PS3 )
+#if defined( PLATFORM_POSIX )
 			ImageFormat fmt = params[TEXTURE3]->GetTextureValue()->GetImageFormat();
 			bool bSRGB;
 			if ( ( fmt == IMAGE_FORMAT_RGBA16161616F ) || ( fmt == IMAGE_FORMAT_RGBA16161616 ) )

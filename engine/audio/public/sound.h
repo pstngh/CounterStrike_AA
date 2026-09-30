@@ -323,10 +323,6 @@ bool S_SOSGetOpvarFloat( const char *pOpVarName, float &flValue );
 
 void S_ValidateSoundCache( char const *pchWavFile );
 
-#if defined( _GAMECONSOLE )
-void S_UnloadSound( const char *pName );
-#endif
-
 void S_PurgeSoundsDueToLanguageChange();
 
 #endif // SOUND_H

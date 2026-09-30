@@ -72,29 +72,6 @@ public:
 	virtual void BindTextureToMaterial2( int id, IMaterial2 *pMaterial ) = 0;
 	virtual IMaterial2 *GetTextureMaterial2( int id ) = 0; // Source2 version
 
-#if defined( _X360 )
-
-	//
-	// Local gamerpic
-	//
-
-	// Get the texture id for the local gamerpic.
-	virtual int GetLocalGamerpicTextureID( void ) const = 0;
-
-	// Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName ) = 0;
-
-	//
-	// Remote gamerpic
-	//
-
-	// Get the texture id for a remote gamerpic with the given xuid.
-	virtual int GetRemoteGamerpicTextureID( XUID xuid ) = 0;
-
-	// Update the remote gamerpic texture for the given xuid. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName ) = 0;
-
-#endif // _X360
 };
 
 ITextureDictionary *TextureDictionary();

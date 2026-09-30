@@ -15,11 +15,7 @@
 // Standard maximum +/- value of a joystick axis
 #define MAX_BUTTONSAMPLE			32768
 
-#if !defined( _X360 )
 #define INVALID_USER_ID		-1
-#else
-#define INVALID_USER_ID		XBX_INVALID_USER_ID
-#endif
 
 //-----------------------------------------------------------------------------
 // Forward declarations: 
@@ -27,11 +23,7 @@
 
 enum
 {
-#ifdef _PS3
-	MAX_JOYSTICKS = 7,
-#else
 	MAX_JOYSTICKS = 4,
-#endif
 	MOUSE_BUTTON_COUNT = 5,
 	MAX_NOVINT_DEVICES = 2,
 };

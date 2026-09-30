@@ -29,9 +29,6 @@
 
 #include "gameui_util.h"
 
-#ifdef _X360
-#include "xbox/xbox_launch.h"
-#endif
 #include "keyvalues.h"
 #include "engineinterface.h"
 #include "modinfo.h"
@@ -60,9 +57,7 @@ using namespace vgui;
 
 extern CAchievementMgr g_AchievementMgrCS;
 
-#if !defined( _GAMECONSOLE )
 void RequestEloBracket( volatile int32 *pOutBracket, int32 game_mode, int32 input_device );
-#endif
 
 CCreateMedalStatsDialogScaleform* CCreateMedalStatsDialogScaleform::m_pInstance = NULL;
 
@@ -123,9 +118,7 @@ CCreateMedalStatsDialogScaleform::CCreateMedalStatsDialogScaleform( eDialogType 
 	ACTIVE_SPLITSCREEN_PLAYER_GUARD( GET_ACTIVE_SPLITSCREEN_SLOT() );
 	m_iPlayerSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
 
-#if !defined( _GAMECONSOLE )
 	m_nEloBracket = -1;
-#endif
 }
 
 void CCreateMedalStatsDialogScaleform::OnOk( SCALEFORM_CALLBACK_ARGS_DECL )
@@ -683,11 +676,6 @@ static int GetStatValue( int desiredStat, const StatsCollection_t& statsCollecti
 void CCreateMedalStatsDialogScaleform::PopulateLastMatchStats()
 {
 	int userSlot = STEAM_PLAYER_SLOT;
-
-#if defined ( _X360 )
-	SF_FORCE_SPLITSCREEN_PLAYER_GUARD( m_iPlayerSlot );
-	userSlot = m_iPlayerSlot;
-#endif
 
 	// We actually want to query the LASTMATCH stats from the lifetime collection, where they're written at the end of each match
 	const StatsCollection_t& personalMatchStats = g_CSClientGameStats.GetLifetimeStats( userSlot );

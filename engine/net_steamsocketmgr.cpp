@@ -14,7 +14,7 @@
 #include <poll.h>
 #endif
 
-#if !defined(_X360) && !defined(NO_STEAM) && !defined(DEDICATED)
+#if !defined(NO_STEAM) && !defined(DEDICATED)
 #define USE_STEAM_SOCKETS
 #endif
 
@@ -459,11 +459,6 @@ static const tokenset_t< ESocketIndex_t > s_SocketIndexMap[] =
 {						 
 	{ "NS_CLIENT",		NS_CLIENT		},                          
 	{ "NS_SERVER",		NS_SERVER		},                          
-#ifdef _X360
-	{ "NS_X360_SYSTEMLINK",	NS_X360_SYSTEMLINK	},
-	{ "NS_X360_LOBBY",		NS_X360_LOBBY		},
-	{ "NS_X360_TEAMLINK",	NS_X360_TEAMLINK	},
-#endif
 	{ "NS_HLTV",		NS_HLTV			},
 	{ "NS_HLTV1",		NS_HLTV1		},
 	{ NULL, ( ESocketIndex_t )-1 }
@@ -1069,9 +1064,6 @@ void CSteamSocketMgr::PrintStatus()
 #else
 
 // For LINUX it's basically all stubbed
-#ifdef _PS3
-ASSERT_INVARIANT( sizeof( int ) == sizeof( socklen_t ) );
-#endif
 
 class CSteamSocketMgr : public ISteamSocketMgr
 {

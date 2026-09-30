@@ -48,9 +48,7 @@
 
 #include "netmessages.pb.h"
 
-#if !defined( _X360 )
 #include "xbox/xboxstubs.h"
-#endif
 
 template< int msgType, typename PB_OBJECT_TYPE, int groupType = INetChannelInfo::GENERIC, bool bReliable = true > 
 class CNetMessagePB : public INetMessage, public PB_OBJECT_TYPE

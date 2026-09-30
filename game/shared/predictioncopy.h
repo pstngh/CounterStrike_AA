@@ -11,9 +11,7 @@
 #pragma once
 #endif
 
-#ifndef _PS3
 #include <memory.h>
-#endif
 #include "datamap.h"
 #include "ehandle.h"
 #include "tier1/utlstring.h"
@@ -52,10 +50,6 @@ struct datarun_t
 		for ( int i = 0 ; i < TD_OFFSET_COUNT; ++i )
 		{
 			m_nStartOffset[ i ] = 0;
-#ifdef _GAMECONSOLE
-			// These are the offsets of the next run, for priming the L1 cache
-			m_nPrefetchOffset[ i ] = 0;
-#endif
 		}
 	}
 
@@ -65,10 +59,6 @@ struct datarun_t
 
 	// Offsets for run in the packed/unpacked data (I think the run starts need to be properly aligned)
 	int m_nStartOffset[ TD_OFFSET_COUNT ];
-#ifdef _GAMECONSOLE
-	// These are the offsets of the next run, for priming the L1 cache
-	int m_nPrefetchOffset[ TD_OFFSET_COUNT ];
-#endif
 	int m_nLength;
 };
 

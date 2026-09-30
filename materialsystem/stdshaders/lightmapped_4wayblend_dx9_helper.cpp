@@ -13,10 +13,8 @@
 #include "lightmapped_4wayblend_vs20.inc"
 #include "lightmapped_4wayblend_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 	#include "lightmapped_4wayblend_vs30.inc"
 	#include "lightmapped_4wayblend_ps30.inc"
-#endif
 
 #include "shaderapifast.h"
 #include "tier0/vprof.h"
@@ -28,11 +26,7 @@ extern ConVar mat_ambient_light_g;
 extern ConVar mat_ambient_light_b;
 
 
-#if defined( CSTRIKE15 ) && defined( _X360 )
-static ConVar r_shader_srgbread( "r_shader_srgbread", "1", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#else
 static ConVar r_shader_srgbread( "r_shader_srgbread", "0", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#endif
 
 static ConVar mat_force_vertexfog( "mat_force_vertexfog", "0", FCVAR_DEVELOPMENTONLY );
 
@@ -425,9 +419,7 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 						params[info.m_nSeamlessMappingScale]->GetFloatValue(),0,0,0 );
 				}
 				staticCmdsBuf.StoreEyePosInPixelShaderConstant( 10 );
-#ifndef _PS3
 				staticCmdsBuf.SetPixelShaderFogParams( 11 );
-#endif
 				staticCmdsBuf.End();
 				// now, copy buf
 				pContextData->m_pStaticCmds = new uint8[staticCmdsBuf.Size()];
@@ -511,9 +503,7 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 
 				bool bCSMBlending = g_pHardwareConfig->GetCSMAccurateBlending();
 
-				#if !defined( _X360 ) && !defined( _PS3 )
 				if ( !g_pHardwareConfig->SupportsPixelShaders_3_0() )
-				#endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( lightmapped_4wayblend_vs20 );
 					SET_STATIC_VERTEX_SHADER_COMBO( ENVMAP_MASK,  hasEnvmapMask );
@@ -524,9 +514,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 					SET_STATIC_VERTEX_SHADER_COMBO( SEAMLESS, bSeamlessMapping );
 					SET_STATIC_VERTEX_SHADER_COMBO( DETAILTEXTURE, hasDetailTexture );
 					SET_STATIC_VERTEX_SHADER_COMBO( SELFILLUM,  hasSelfIllum );
-					#if defined( _X360 ) || defined( _PS3 )
-						SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT, hasFlashlight);
-					#endif
 					SET_STATIC_VERTEX_SHADER( lightmapped_4wayblend_vs20 );
 
 					DECLARE_STATIC_PIXEL_SHADER( lightmapped_4wayblend_ps20b );
@@ -542,15 +529,11 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 					SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( ENVMAPANISOTROPY, bEnvmapAnisotropy );
 
-					#if defined( _X360 ) || defined( _PS3 )
-						SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT, hasFlashlight);
-					#endif
 					SET_STATIC_PIXEL_SHADER_COMBO( SHADER_SRGB_READ, bShaderSrgbRead );
 					SET_STATIC_PIXEL_SHADER_COMBO( LIGHTING_PREVIEW, nLightingPreviewMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( CSM_BLENDING, bCSMBlending );
 					SET_STATIC_PIXEL_SHADER( lightmapped_4wayblend_ps20b );
 				}
-				#if !defined( _X360 ) && !defined( _PS3 )
 				else // Shader model 3.0, PC only
 				{
 					int nCSMQualityComboValue = g_pHardwareConfig->GetCSMShaderMode( materials->GetCurrentConfigForVideoCard().GetCSMQualityMode() );
@@ -584,7 +567,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 					SET_STATIC_PIXEL_SHADER_COMBO( CSM_BLENDING, bCSMBlending );
 					SET_STATIC_PIXEL_SHADER( lightmapped_4wayblend_ps30 );
 				}
-				#endif
 
 				// HACK HACK HACK - enable alpha writes all the time so that we have them for
 				// underwater stuff and writing depth to dest alpha
@@ -626,9 +608,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 		{
 			// need to regenerate the semistatic cmds
 			pContextData->m_SemiStaticCmdsOut.Reset();
-#ifdef _PS3
-			pContextData->m_flashlightECB.Reset();
-#endif
 			pContextData->m_bMaterialVarsChanged = false;
 			
 			// If we don't have a texture transform, we don't have
@@ -910,11 +889,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 
 			if ( hasFlashlight && ( IsX360() || IsPS3() ) )
 			{
-#ifdef _PS3
-				{
-					pContextData->m_flashlightECB.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6 );
-				}
-#endif
 				if( IsX360())
 				{
 					pContextData->m_SemiStaticCmdsOut.SetVertexShaderFlashlightState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6 );
@@ -933,17 +907,9 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 				state.m_bFlashlightNoLambert = false;
 				state.m_bSinglePassFlashlight = bSinglePassFlashlight;
 
-#ifdef _PS3
-				{
-					pContextData->m_flashlightECB.SetPixelShaderFlashlightState( state );
-					pContextData->m_flashlightECB.End();
-				}
-#else
-
 				{
 					pContextData->m_SemiStaticCmdsOut.SetPixelShaderFlashlightState( state );
 				}
-#endif
 			}
 
 			pContextData->m_SemiStaticCmdsOut.End();
@@ -952,16 +918,9 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 	DYNAMIC_STATE
 	{
 
-#ifdef _PS3
-		CCommandBufferBuilder< CDynamicCommandStorageBuffer > DynamicCmdsOut;
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_pStaticCmds );
-		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( pContextData->m_SemiStaticCmdsOut.Base() );
-		if (hasFlashlight) ShaderApiFast( pShaderAPI )->ExecuteCommandBufferPPU( pContextData->m_flashlightECB.Base() );
-#else
 		CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
 		DynamicCmdsOut.Call( pContextData->m_pStaticCmds );
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
-#endif
 
 		bool hasEnvmap = params[info.m_nEnvmap]->IsTexture();
 
@@ -993,7 +952,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 
 		MaterialFogMode_t fogType = ShaderApiFast( pShaderAPI )->GetSceneFogMode();
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( lightmapped_4wayblend_vs30 );
@@ -1001,7 +959,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 			SET_DYNAMIC_VERTEX_SHADER_CMD( DynamicCmdsOut, lightmapped_4wayblend_vs30 );
 		}
 		else
-#endif
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( lightmapped_4wayblend_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( FASTPATH,  bVertexShaderFastPath );
@@ -1065,7 +1022,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 
 		float envmapContrast = params[info.m_nEnvmapContrast]->GetFloatValue();
 		
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( g_pHardwareConfig->SupportsPixelShaders_3_0() )
 		{
 			BOOL bCSMEnabled = pShaderAPI->IsCascadedShadowMapping() && !ToolsEnabled();
@@ -1092,7 +1048,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 			SET_DYNAMIC_PIXEL_SHADER_CMD( DynamicCmdsOut, lightmapped_4wayblend_ps30 );
 		}
 		else
-#endif
 		{
 			if ( IsGameConsole() && pShaderAPI->IsCascadedShadowMapping() )
 			{
@@ -1119,9 +1074,6 @@ void DrawLightmapped_4WayBlend_DX9( CBaseVSShader *pShader, IMaterialVar** param
 		}
 
 		DynamicCmdsOut.End();
-#ifdef _PS3
-		ShaderApiFast( pShaderAPI )->SetPixelShaderFogParams( 11 );
-#endif 
 		ShaderApiFast( pShaderAPI )->ExecuteCommandBuffer( DynamicCmdsOut.Base() );
 	}
 	pShader->Draw();

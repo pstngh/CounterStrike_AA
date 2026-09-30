@@ -9,9 +9,6 @@
 #include "tier0/dbg.h"
 #include "mathlib/mathlib.h"
 #include "bone_setup.h"
-#if defined( _PS3 )
-#include "bone_setup_PS3.h"
-#endif
 
 #include <string.h>
 
@@ -870,67 +867,6 @@ void CIKContext::AddDependencies( mstudioseqdesc_t &seqdesc, int iSequence, floa
   		m_ikChainRule.Element( ikrule.chain ).Element( nIndex ) = ikrule;
 	}
 }
-
-#if defined( _PS3 )
-
-//--------------------------------------------------------------------------------------
-// 2nd part of IKContext AddDependencies
-//
-// 1st part assumed to have run during a PS3 bonejob, building a list of IKRules to potentially add
-//--------------------------------------------------------------------------------------
-void CIKContext::AddAllDependencies_PS3( ikcontextikrule_t *ikRules, int numRules )
-{
-	SNPROF_ANIM("CIKContext::AddAllDependencies_PS3");
-
-	int i;
-
-	// FIXME: add proper number of rules!!!
-	for( i = 0; i < numRules; i++ )
-	{
-		ikcontextikrule_t &ikrule = ikRules[ i ];
-
-		// no copy constructors generally allowed
-		//memcpy( &ikrule, &ikRules[i], sizeof(ikcontextikrule_t) );
-
-		// don't add rule if the bone isn't going to be calculated
-//		int bone = m_pStudioHdr->pIKChain( ikrule.chain )->pLink( 2 )->bone;
-//		if ( !(m_pStudioHdr->boneFlags( bone ) & m_boneMask))
-//			continue;
-
-		// or if its relative bone isn't going to be calculated
-//		if ( ikrule.bone >= 0 && !(m_pStudioHdr->boneFlags( ikrule.bone ) & m_boneMask))
-//			continue;
-
-		// FIXME: Brutal hackery to prevent a crash
-		if (m_target.Count() == 0)
-		{
-			m_target.SetSize(12);
-			memset( m_target.Base(), 0, sizeof(m_target[0])*m_target.Count() );
-			ClearTargets();
-		}
-
-		//ikrule.flRuleWeight = flWeight;
-
-		if( ikrule.flRuleWeight * ikrule.flWeight > 0.999f )
-		{
-			if ( ikrule.type != IK_UNLATCH)
-			{
-				// clear out chain if rule is 100%
-				m_ikChainRule.Element( ikrule.chain ).RemoveAll( );
-				if ( ikrule.type == IK_RELEASE)
-				{
-					continue;
-				}
-			}
-		}
-
-		int nIndex = m_ikChainRule.Element( ikrule.chain ).AddToTail( );
-		m_ikChainRule.Element( ikrule.chain ).Element( nIndex ) = ikrule;
-	}
-}
-
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

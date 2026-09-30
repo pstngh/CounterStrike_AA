@@ -17,9 +17,7 @@
 #include "materialsystem/imaterialproxyfactory.h"
 #include "IHardwareConfigInternal.h"
 #include "utlsymbol.h"
-#ifndef _PS3
 #include <malloc.h>
-#endif
 #include "filesystem.h"
 #include <keyvalues.h>
 #include "mempool.h"

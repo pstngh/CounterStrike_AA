@@ -15,7 +15,7 @@
 //=============================================================================
 
 #include <limits.h>
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -995,7 +995,7 @@ bool CBaseFileSystem::AsyncResume()
 //-----------------------------------------------------------------------------
 FSAsyncStatus_t CBaseFileSystem::AsyncBeginRead( const char *pszFile, FSAsyncFile_t *phFile )
 {
-#if !defined( _PS3) && !defined(FILESYSTEM_STEAM) && !defined(DEDICATED)
+#if !defined(FILESYSTEM_STEAM) && !defined(DEDICATED)
 	if ( AsyncAllowHeldFiles() )
 	{
 		*phFile = g_AsyncOpenedFiles.FindOrAdd( pszFile );
@@ -1012,7 +1012,7 @@ FSAsyncStatus_t CBaseFileSystem::AsyncBeginRead( const char *pszFile, FSAsyncFil
 //-----------------------------------------------------------------------------
 FSAsyncStatus_t CBaseFileSystem::AsyncEndRead( FSAsyncFile_t hFile )
 {
-#if !defined( _PS3) && !defined(FILESYSTEM_STEAM) && !defined(DEDICATED)
+#if !defined(FILESYSTEM_STEAM) && !defined(DEDICATED)
 	if ( hFile != FS_INVALID_ASYNC_FILE )
 		g_AsyncOpenedFiles.Release( hFile );
 #endif
@@ -1470,7 +1470,7 @@ void CBaseFileSystem::DoAsyncCallback( const FileAsyncRequest_t &request, void *
 	if ( pDataToFree  )
 	{
 		Assert( !request.pfnAlloc );
-#if defined( OSX ) || defined( _PS3 ) || defined( LINUX )
+#if defined( OSX ) || defined( LINUX )
 		// The ugly delete[] (void*) method generates a compile warning on osx, as it should.
 		free( pDataToFree );
 #else

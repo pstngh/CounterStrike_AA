@@ -9,8 +9,6 @@
 #ifndef VSTDLIB_RANDOM_H
 #define VSTDLIB_RANDOM_H
 
-#if !defined( __SPU__ )
-
 #include "vstdlib/vstdlib.h"
 #include "tier0/basetypes.h"
 #include "tier0/threadtools.h"
@@ -106,8 +104,6 @@ VSTDLIB_INTERFACE float	RandomGaussianFloat( float flMean = 0.0f, float flStdDev
 VSTDLIB_INTERFACE void	InstallUniformRandomStream( IUniformRandomStream *pStream );
 
 #pragma warning(pop)
-
-#endif // #if !defined( __SPU__ )
 
 
 #endif // VSTDLIB_RANDOM_H

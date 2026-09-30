@@ -146,38 +146,6 @@ public:
 	virtual void DrawSetTexture(int id) = 0;
 	virtual bool DeleteTextureByID(int id) = 0;
 
-#if defined( _X360 )
-
-	//
-	// Local gamerpic
-	//
-
-	// Get the texture id for the local gamerpic.
-	virtual int GetLocalGamerpicTextureID( void ) = 0;
-
-	// Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName ) = 0;
-
-	// Set the current texture to be the local gamerpic.
-	// Returns false if the local gamerpic texture has not been set.
-	virtual bool DrawSetTextureLocalGamerpic( void ) = 0;
-
-	//
-	// Remote gamerpic
-	//
-
-	// Get the texture id for a remote gamerpic with the given xuid.
-	virtual int GetRemoteGamerpicTextureID( XUID xuid ) = 0;
-
-	// Update the remote gamerpic texture for the given xuid. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName ) = 0;
-
-	// Set the current texture to be the remote player's gamerpic.
-	// Returns false if the remote gamerpic texture has not been set for the given xuid.
-	virtual bool DrawSetTextureRemoteGamerpic( XUID xuid ) = 0;
-
-#endif // _X360
-
 	virtual void DrawGetTextureSize(int id, int &wide, int &tall) = 0;
 	virtual void DrawTexturedRect(int x0, int y0, int x1, int y1) = 0;
 	virtual bool IsTextureIDValid(int id) = 0;

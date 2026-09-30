@@ -226,9 +226,7 @@ bool CEngineSprite::Init( const char *pName )
 
 	const char *pExt = Q_GetFileExtension( pName );
 	bool bIsAVI = pExt && !Q_stricmp( pExt, "avi" );
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	bool bIsBIK = pExt && !Q_stricmp( pExt, "bik" );
-#endif
 	if ( bIsAVI && IsPC() )
 	{
 		m_hAVIMaterial = avi->CreateAVIMaterial( pName, pName, "GAME" );
@@ -244,7 +242,6 @@ bool CEngineSprite::Init( const char *pName )
 			pMaterial->IncrementReferenceCount();
 		}
 	}
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	else if ( bIsBIK )
 	{
 		m_hBIKMaterial = bik->CreateMaterial( pName, pName, "GAME" );
@@ -260,7 +257,6 @@ bool CEngineSprite::Init( const char *pName )
 			pMaterial->IncrementReferenceCount();
 		}
 	}
-#endif
 	else
 	{
 		char pTemp[MAX_PATH];
@@ -364,13 +360,11 @@ void CEngineSprite::Shutdown( void )
 		m_hAVIMaterial = AVIMATERIAL_INVALID;
 	}
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	if ( m_hBIKMaterial != BIKMATERIAL_INVALID )
 	{
 		bik->DestroyMaterial( m_hBIKMaterial );
 		m_hBIKMaterial = BIKMATERIAL_INVALID;
 	}
-#endif
 
 	UnloadMaterial();
 }
@@ -404,12 +398,10 @@ void CEngineSprite::GetTexCoordRange( float *pMinU, float *pMinV, float *pMaxU, 
 	{
 		avi->GetTexCoordRange( m_hAVIMaterial, pMaxU, pMaxV );
 	}
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	if ( IsBIK() )
 	{
 		bik->GetTexCoordRange( m_hBIKMaterial, pMaxU, pMaxV );
 	}
-#endif
 	float flOOWidth = ( m_width != 0 ) ? 1.0f / m_width : 1.0f;
 	float flOOHeight = ( m_height!= 0 ) ? 1.0f / m_height : 1.0f;
 
@@ -457,13 +449,11 @@ IMaterial *CEngineSprite::GetMaterial( RenderMode_t nRenderMode, int nFrame )
 		return m_material[ 0 ];	// render mode is ignored for avi
 	}
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	if ( IsBIK() )
 	{
 		bik->SetFrame( m_hBIKMaterial, nFrame );
 		return m_material[ 0 ]; // render mode is ignored for bink
 	}
-#endif
 	
 	IMaterial *pMaterial = m_material[nRenderMode];
 	Assert( pMaterial );
@@ -487,13 +477,11 @@ void CEngineSprite::SetFrame( RenderMode_t nRenderMode, int nFrame )
 		return;
 	}
 
-#if !defined( _GAMECONSOLE ) || defined( BINK_ENABLED_FOR_CONSOLE )
 	if ( IsBIK() )
 	{
 		bik->SetFrame( m_hBIKMaterial, nFrame );
 		return;
 	}
-#endif
 
 	IMaterial *pMaterial = m_material[nRenderMode];
 	if ( !pMaterial )

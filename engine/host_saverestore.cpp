@@ -63,17 +63,7 @@
 #include "vstdlib/jobthread.h"
 #include "tier1/fmtstr.h"
 
-#if !defined( _X360 )
 #include "xbox/xboxstubs.h"
-#else
-#include "xbox/xbox_launch.h"
-#endif
-
-#if defined (_PS3)
-#include "ps3_pathinfo.h"
-#include "sys_dll.h"
-#include "saverestore_filesystem_passthrough.h"
-#endif
 
 #if !defined( DEDICATED ) && !defined( NO_STEAM )
 #include "cl_steamauth.h"
@@ -153,15 +143,6 @@ CSaveRestore *g_pSaveRestore = &g_SaveRestore;
 
 //-----------------------------------------------------------------------------
 
-#ifdef _PS3
-struct QueuedAutoSave_t
-{
-	CUtlString	m_Filename;
-	CUtlString	m_Comment;
-};
-CTSQueue< QueuedAutoSave_t >	g_QueuedAutoSavesToCommit;
-#endif
-
 void FinishAsyncSave()
 {
 	LOCAL_THREAD_LOCK();
@@ -174,20 +155,6 @@ void FinishAsyncSave()
 		g_AsyncSaveCallQueue.CallQueued();
 		g_pFileSystem->AsyncFinishAllWrites();
 
-#ifdef _PS3
-		const char *pLastSavePath;
-		const char *pLastSaveComment;
-		bool bValid = g_SaveRestore.GetMostRecentSaveInfo( &pLastSavePath, &pLastSaveComment, NULL );
-		if ( bValid && V_stristr( pLastSavePath, "autosave" ) && !V_stristr( pLastSavePath, "autosavedangerous" ) )
-		{
-			// only queue autosaves for commit
-			// autosavedangerous are handled elsewhere when they are re-classified as safe to commit
-			QueuedAutoSave_t saveParams;
-			saveParams.m_Filename = pLastSavePath;
-			saveParams.m_Comment = pLastSaveComment;
-			g_QueuedAutoSavesToCommit.PushItem( saveParams );
-		}
-#endif
 	}
 
 	g_SaveRestore.MarkMostRecentSaveInfoInvalid();
@@ -378,13 +345,10 @@ void CSaveRestore::ForgetRecentSave()
 //-----------------------------------------------------------------------------
 const char *CSaveRestore::GetSaveDir(void)
 {
-#ifdef _PS3
-	return g_pPS3PathInfo->SaveShadowPath();
-#else
 	static char szDirectory[MAX_OSPATH] = {0};
 	if ( !szDirectory[0] )
 	{
-		#if defined( _GAMECONSOLE ) || defined( DEDICATED ) || defined( NO_STEAM )
+		#if defined( DEDICATED ) || defined( NO_STEAM )
 		Q_strncpy( szDirectory, "SAVE/", sizeof( szDirectory ) );
 		#else
 		Q_snprintf( szDirectory, sizeof( szDirectory ), "SAVE/%llu/", Steam3Client().SteamUser() ? Steam3Client().SteamUser()->GetSteamID().ConvertToUint64() : 0ull );
@@ -392,7 +356,6 @@ const char *CSaveRestore::GetSaveDir(void)
 		#endif
 	}
 	return szDirectory;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -568,16 +531,6 @@ int CSaveRestore::SaveGameSlot( const char *pSaveName, const char *pSaveComment,
 	}
 
 	g_AsyncSaveCallQueue.DisableQueue( !save_async.GetBool() );
-
-#if defined( _PS3 )
-	if ( ( bIsAutosave || bIsAutosaveDangerous ) && !m_PS3AutoSaveAsyncStatus.JobDone() )
-	{
-		// we can't have more than 1 autosave in progress due to local renames that occurr to to aging logic
-		// the ps3saveapi expects the filenames to survive the duration of its operations
-		Warning( "*** REJECTING: %s, current autosave in progress.\n", pSaveName );
-		return 0;
-	}
-#endif
 
 	// Figure out the name for this save game
 	CalcSaveGameName( pSaveName, name, sizeof( name ) );
@@ -2822,20 +2775,6 @@ void CSaveRestore::AutoSaveDangerousIsSafe()
 	// Use this as the most recent now that it's safe
 	SetMostRecentSaveGame( "autosave" );
 
-#ifdef _PS3
-	char fixedFilename[MAX_PATH];
-	Q_snprintf( fixedFilename, sizeof( fixedFilename ), "%s%s", GetSaveDir(), V_GetFileName( szNewName ) );
-
-	const char *pLastAutosaveDangerousComment;
-	GetMostRecentSaveInfo( NULL, NULL, &pLastAutosaveDangerousComment );
-
-	// only queue autosaves for commit
-	QueuedAutoSave_t saveParams;
-	saveParams.m_Filename = fixedFilename;
-	saveParams.m_Comment = pLastAutosaveDangerousComment;
-	g_QueuedAutoSavesToCommit.PushItem( saveParams );
-#endif
-
 	// Finish off all writes
 	if ( IsXSave() )
 	{
@@ -3321,10 +3260,6 @@ void CSaveRestore::SetIsXSave( bool bIsXSave )
 void CSaveRestore::Shutdown( void )
 {
 	FinishAsyncSave();
-#ifdef _PS3
-	extern void SaveUtilV2_Shutdown();
-	SaveUtilV2_Shutdown();
-#endif
 	if ( g_pSaveThread )
 	{
 		g_pSaveThread->Stop();
@@ -3368,24 +3303,6 @@ void CSaveRestore::OnFrameRendered()
 		}
 	}
 
-#ifdef _PS3
-	if ( !ps3saveuiapi->IsSaveUtilBusy() && g_QueuedAutoSavesToCommit.Count() )
-	{
-		QueuedAutoSave_t queuedSave;
-		if ( g_QueuedAutoSavesToCommit.PopItem( &queuedSave ) )
-		{
-			DevMsg( "Committing AutoSave: %s\n", queuedSave.m_Filename.Get() );
-
-			m_PS3AutoSaveAsyncStatus.m_nCurrentOperationTag = kSAVE_TAG_WRITE_AUTOSAVE;
-
-			ps3saveuiapi->WriteAutosave( 
-				&m_PS3AutoSaveAsyncStatus, 
-				queuedSave.m_Filename.Get(), 
-				queuedSave.m_Comment.Get(), 
-				save_history_count.GetInt() );
-		}
-	}
-#endif
 }
 
 bool CSaveRestore::StorageDeviceValid( void )
@@ -3398,50 +3315,12 @@ bool CSaveRestore::StorageDeviceValid( void )
 	if ( !IsXSave() )
 		return true;
 
-#ifdef _GAMECONSOLE
-	if ( IsPS3() ) // PS3 always has a hard drive
-	{	
-		return true;
-	}
-	else 
-	{
-		// Savegames storage device is mounted only for single-player modes
-		if ( XBX_GetNumGameUsers() != 1 )
-			return false;
-
-		// Otherwise, we must have a real storage device
-		int iSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
-		int iController = XBX_GetUserId( iSlot );
-		if ( iController < 0 ||
-			XBX_GetUserIsGuest( iSlot ) )
-			return false;
-
-		DWORD nStorageDevice = XBX_GetStorageDeviceId( iController );
-		if ( !XBX_DescribeStorageDevice( nStorageDevice ) )
-			return false;
-	}
-#endif
-
 	return true;
 }
 
 bool CSaveRestore::IsSaveInProgress()
 {
 	bool bSaveInProgress = !!(int)g_bSaveInProgress;
-
-#ifdef _PS3
-	// Save In Progress, needs to mean exactly that, a game save in progress/
-	// The container state could still be busy, that state needs has to be resolved elsewhere
-	bSaveInProgress |= g_QueuedAutoSavesToCommit.Count();
-	if ( ps3saveuiapi->IsSaveUtilBusy() )
-	{
-		uint32 nOpTag = ps3saveuiapi->GetCurrentOpTag();
-		if ( nOpTag == kSAVE_TAG_WRITE_AUTOSAVE || nOpTag == kSAVE_TAG_WRITE_SAVE )
-		{
-			bSaveInProgress = true;
-		}
-	}
-#endif
 
 	return bSaveInProgress;
 }

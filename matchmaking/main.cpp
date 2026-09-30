@@ -86,10 +86,6 @@ static MatchExtInterface_t s_table[] =
 	{ VENGINE_CLIENT_INTERFACE_VERSION,	(ExtFn_t) &CMatchExtensions::GetIVEngineClient,		false },
 	{ INTERFACEVERSION_VENGINESERVER,	(ExtFn_t) &CMatchExtensions::GetIVEngineServer,		false },
 	{ INTERFACEVERSION_GAMEEVENTSMANAGER2, (ExtFn_t) &CMatchExtensions::GetIGameEventManager2, false },
-#ifdef _X360
-	{ XBOXSYSTEM_INTERFACE_VERSION,		(ExtFn_t) &CMatchExtensions::GetIXboxSystem,		false },
-	{ XONLINE_INTERFACE_VERSION,		(ExtFn_t) &CMatchExtensions::GetIXOnline,			false },
-#endif
 	{ NULL, NULL, NULL }
 };
 
@@ -128,7 +124,7 @@ bool CMatchFramework::Connect( CreateInterfaceFn factory )
 	
 	SteamApiContext_Init();
 
-#if !defined( _GAMECONSOLE ) && !defined( SWDS )
+#if !defined( SWDS )
 	// Trigger intialization from Steam users
 	if ( g_pPlayerManager )
 		g_pPlayerManager->OnGameUsersChanged();

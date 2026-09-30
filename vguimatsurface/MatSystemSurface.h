@@ -133,38 +133,6 @@ public:
 	virtual void DrawSetTextureRGBA( int id, const unsigned char *rgba, int wide, int tall );
 	virtual void DrawSetTextureRGBALinear( int id, const unsigned char *rgba, int wide, int tall );
 
-#if defined( _X360 )
-
-	//
-	// Local gamerpic
-	//
-
-	// Get the texture id for the local gamerpic.
-	virtual int GetLocalGamerpicTextureID( void );
-
-	// Update the local gamerpic texture. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetLocalGamerpicTexture( DWORD userIndex, const char *pDefaultGamerpicFileName );
-
-	// Set the current texture to be the local gamerpic.
-	// Returns false if the local gamerpic texture has not been set.
-	virtual bool DrawSetTextureLocalGamerpic( void );
-
-	//
-	// Remote gamerpic
-	//
-
-	// Get the texture id for a remote gamerpic with the given xuid.
-	virtual int GetRemoteGamerpicTextureID( XUID xuid );
-
-	// Update the remote gamerpic texture for the given xuid. Use the given texture if a gamerpic cannot be loaded.
-	virtual bool SetRemoteGamerpicTextureID( XUID xuid, const char *pDefaultGamerpicFileName );
-
-	// Set the current texture to be the remote player's gamerpic.
-	// Returns false if the remote gamerpic texture has not been set for the given xuid.
-	virtual bool DrawSetTextureRemoteGamerpic( XUID xuid );
-
-#endif // _X360
-
 	virtual void DrawTexturedRect( int x0, int y0, int x1, int y1 );
 	virtual void DrawTexturedSubRect( int x0, int y0, int x1, int y1, float texs0, float text0, float texs1, float text1 );
 	virtual void DrawTexturedSubRectGradient( int x0, int y0, int x1, int y1, float texs0, float text0, float texs1, float text1, Color colStart, Color colEnd, bool bHorizontal );

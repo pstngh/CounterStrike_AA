@@ -62,17 +62,9 @@ inline bool CullNodeSIMD( const Frustum_t &frustum, mnode_t *pNode )
 		fltx4 zTotalBack = AddSIMD( MulSIMD( frustum.planes[i].nZ, centerz ), MulSIMD(frustum.planes[i].nZAbs, extz ) );
 		fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 		// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if defined( _X360 )
-		if  ( !XMVector3GreaterOrEqual( dotBack, frustum.planes[i].dist ) )
-			return true;
-#elif defined( _PS3 )
-		if ( vec_any_lt( dotBack, frustum.planes[i].dist ) )
-			return true;
-#else
 		fltx4 isOut = ( fltx4 ) CmpLtSIMD( dotBack, frustum.planes[i].dist );
 		if ( IsAnyTrue( isOut ) )
 			return true;
-#endif
 	}
 	return false; 
 }

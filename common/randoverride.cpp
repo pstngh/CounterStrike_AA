@@ -3,7 +3,6 @@
 // Purpose:
 //
 //=============================================================================//
-#ifndef _PS3
 #if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
 
 #include "stdlib.h"
@@ -26,4 +25,3 @@ int __cdecl rand()
 }
 
 #endif // !_STATIC_LINKED || _SHARED_LIB
-#endif // PS3

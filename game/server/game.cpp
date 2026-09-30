@@ -29,11 +29,7 @@ ConVar  mapcyclefile( "mapcyclefile", "mapcycle.txt", FCVAR_NONE, "Name of the .
 ConVar  loopsingleplayermaps("loopsingleplayermaps", "0", FCVAR_REPLICATED | FCVAR_CHEAT );
 
 ConVar  servercfgfile( "servercfgfile","server.cfg", FCVAR_RELEASE );
-#if defined(_GAMECONSOLE)
-ConVar  lservercfgfile( "lservercfgfile","listenserver360.cfg" );
-#else
 ConVar  lservercfgfile( "lservercfgfile","listenserver.cfg" );
-#endif
 
 // multiplayer server rules
 ConVar	teamplay( "mp_teamplay","0", FCVAR_NOTIFY );

@@ -112,23 +112,12 @@ public:
 		return groupOffset[nSortGroup] + sortID;
 	}
 
-#ifdef _PS3
-	void EnsureCapacityForSPU( int maxSortIDs, int minMaterialLists );
-
-	inline const surfacesortgroup_t &GetGroupByIndex( int groupIndex ) const
-	{
-		if (!IsGroupUsed(groupIndex))
-			return m_emptyGroup;
-		return m_groupsShared[m_groupIndices[groupIndex]];
-	}
-#else
 	inline const surfacesortgroup_t &GetGroupByIndex( int groupIndex ) const
 	{
 		if (!IsGroupUsed(groupIndex))
 			return m_emptyGroup;
 		return m_groups[groupIndex];
 	}
-#endif
 
 	inline const CUtlVector<surfacesortgroup_t *> &GetSortList( int nSortGroup ) const
 	{
@@ -140,85 +129,28 @@ public:
 		return m_list[index];
 	}
 
-#if defined(_PS3)
-	inline const materiallist_t *GetMaterialList( void ) const
-	{
-		return &m_list[0];
-	}
-
-	inline const surfacesortgroup_t *GetGroupsShared( void ) const
-	{
-		return &m_groupsShared[0];
-	}
-
-	inline const uint16 *GetGroupIndices( void ) const
-	{
-		return &m_groupIndices[0];
-	}
-
-	inline surfacesortgroup_t **GetSortGroupLists( int nSortGroup )
-	{
-		return (m_sortGroupLists[ nSortGroup ].Base());
-	}
-
-	// base addresses of CUtlVecs for SPU
-	inline void *GetMaterialListUtlPtr( void )
-	{
-		return &m_list;
-	}
-
-	inline void *GetGroupsSharedUtlPtr( void )
-	{
-		return &m_groupsShared;
-	}
-
-	inline void *GetGroupIndicesUtlPtr( void )
-	{
-		return &m_groupIndices;
-	}
-
-	inline void *GetSortGroupListsUtlPtr( int nSortGroup )
-	{
-		return &m_sortGroupLists[ nSortGroup ];
-	}
-
-#endif
-
 
 	inline const surfacesortgroup_t &GetGroupForSortID( int sortGroup, int sortID ) const
 	{
 		return GetGroupByIndex(GetIndexForSortID(sortGroup,sortID));
 	}
 
-#if !defined(_PS3)
 	void EnsureMaxSortIDs( int newMaxSortIDs );
-#endif
 
 private:
 
 	void InitGroup( surfacesortgroup_t *pGrup );
-#ifdef _PS3
-	bool IsGroupUsed( int groupIndex ) const { return (m_groupIndices[groupIndex] != 0xFFFF); }
-	inline void MarkGroupUsed( int groupIndex ) { m_groupIndices[groupIndex] = m_groupsShared.Count(); m_groupsShared.AddToTail(); }
-	inline void MarkGroupNotUsed( int groupIndex ) { m_groupIndices[groupIndex] = 0xFFFF; }
-#else
 	bool IsGroupUsed( int groupIndex ) const { return (m_groupUsed[ (groupIndex>>3) ] & (1<<(groupIndex&7))) != 0; }
 	inline void MarkGroupUsed( int groupIndex ) { m_groupUsed[groupIndex>>3] |= (1<<(groupIndex&7)); }
 	inline void MarkGroupNotUsed( int groupIndex ) { m_groupUsed[groupIndex>>3] &= ~(1<<(groupIndex&7)); }
-#endif
 
 	CUtlVector<materiallist_t>			m_list;
 
 	// On PS3, the sparse array is smaller so that we fit on SPU
 	// and the Used flags, just become the indirection to remove the sparseness
 
-#ifdef _PS3
-	CUtlVector<surfacesortgroup_t>		m_groupsShared;			// Not sparse
-	CUtlVector<uint16>					m_groupIndices;			// Sparse
-#else
 	CUtlVector<surfacesortgroup_t>		m_groups;		// one per sortID per MAT_SORT_GROUP, sparse
 	CUtlVector<byte>					m_groupUsed;
-#endif
 
 	// list of indices into m_groups in order per MAT_SORT_GROUP, compact
 	CUtlVector<surfacesortgroup_t *>	m_sortGroupLists[MAX_MAT_SORT_GROUPS];

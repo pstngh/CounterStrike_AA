@@ -19,12 +19,6 @@
 #include "tier1/utlmap.h"
 #include "tier1/fmtstr.h"
 
-#ifdef _X360
-#include "xbox/xbox_console.h"
-#elif defined( _PS3 )
-#include "ps3/ps3_console.h"
-#endif
-
 #ifdef POSIX
 #include <wctype.h>
 #include <wchar.h>
@@ -99,10 +93,6 @@ public:
 	virtual void			ConsoleDPrintf( const char *pFormat, ... ) const;
 	virtual void			RevertFlaggedConVars( int nFlag );
 	virtual void			InstallCVarQuery( ICvarQuery *pQuery );
-
-#if defined( USE_VXCONSOLE )
-	virtual void			PublishToVXConsole( );
-#endif
 
 	virtual void			SetMaxSplitScreenSlots( int nSlots );
 	virtual int				GetMaxSplitScreenSlots() const;
@@ -980,65 +970,6 @@ void CCvar::ConsoleDPrintf( const char *pFormat, ... ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-#if defined( USE_VXCONSOLE )
-#ifdef _PS3 
-/*
-Here's a terrible hack.
-In porting the part of the game that speaks to VXConsole, EA chose to
-write it as a cluster of global functions, instead of a class interface like
-Aaron did with IXboxConsole. Some of these globals need access to symbols 
-inside the engine, so they are defined there. However, CCvar is inside vstdlib.
-In the EA build this didn't make a difference because everything was a huge
-monolithic executable, and you could just access any symbol from anywhere.
-In our build, with its PRXes, that doesn't fly.
-So, the proper solution to this problem is to wrap all of the PS3 vxconsole
-stuff in an interface, put it inside vstlib, create the dcim connection there,
-and then export the interface pointer. The engine meanwhile would export the 
-symbols the vxlib needs, and then we give that interface class inside
-vstlib a pointer to the engine once the engine is available. 
-Right now however I just want to get the thing working with as little modification
-as possible so I can fix the vxconsole windows app itself and hopefully get 
-bidirectional TTY to our game. So, instead of the proper solution,
-I'm just duct-taping everything together by simply passing a pointer to the engine
-symbol this function needs whenever I call it. 
-Blech. I'll fix it later. 
--egr 4/29/10. (is it later than September 2010? go call egr and make fun of him.)
-*/
-void CCvar::PublishToVXConsole()
-#else
-void CCvar::PublishToVXConsole()
-#endif
-{
-	const char *commands[6*1024];
-	const char *helptext[6*1024];
-	int	numCommands = 0;
-
-	// iterate and publish commands to the remote console
-	for ( CConCommandHash::CCommandHashIterator_t i = m_CommandHash.First() ;
-		m_CommandHash.IsValidIterator( i ) ; 
-		i = m_CommandHash.Next( i ) )
-	{
-		ConCommandBase *pCur = m_CommandHash[ i ];
-		// add unregistered commands to list
-		if ( numCommands < sizeof(commands)/sizeof(commands[0]) )
-		{
-			commands[numCommands] = pCur->GetName();
-			helptext[numCommands] = pCur->GetHelpText();
-			numCommands++;
-		}
-	}
-
-	if ( numCommands )
-	{
-#ifdef _PS3
-		g_pValvePS3Console->AddCommands( numCommands, commands, helptext );
-#else
-		XBX_rAddCommands( numCommands, commands, helptext );
-#endif
-	}
-}
-
-#endif
 
 
 static bool ConVarSortFunc( ConCommandBase * const &lhs, ConCommandBase * const &rhs )

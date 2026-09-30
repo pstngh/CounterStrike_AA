@@ -886,16 +886,6 @@ void CStudioRenderContext::R_StudioBuildMeshGroup(	const char *pModelName, bool 
 	bool bExtraUVs = (TexCoordSize(1, vertexFormat) > 0);
 
 	MeshBuffersAllocationSettings_t *pMeshAllocationSettings = 0;
-#ifdef _PS3
-	if ( pStudioHdr->flags & STUDIOHDR_FLAGS_PS3_EDGE_FORMAT )
-	{
-		Error("Edge lib disabled");
-// used to be...
-// 		pMeshAllocationSettings = ( MeshBuffersAllocationSettings_t * ) stackalloc( sizeof( MeshBuffersAllocationSettings_t ) );
-// 		V_memset( pMeshAllocationSettings, 0, sizeof( *pMeshAllocationSettings ) );
-// 		pMeshAllocationSettings->m_uiIbUsageFlags = D3DUSAGE_EDGE_DMA_INPUT;
-	}
-#endif
 
 	// This mesh could have trilists or quadlists in it
 	CMeshBuilder meshBuilder;
@@ -908,39 +898,6 @@ void CStudioRenderContext::R_StudioBuildMeshGroup(	const char *pModelName, bool 
 	{
 		const mstudio_meshvertexdata_t *vertData = GetFatVertexData( pMesh, pStudioHdr );
 		Assert( vertData );
-
-#ifdef _PS3
-		vertexFileHeader_t *pVVDcache = g_pStudioDataCache->CacheVertexData( pStudioHdr );
-		if( pVVDcache )
-		{
-			// <sergiy> adding a check here because this is the site of one of the now-rare crashes-on-quit during loading a map.
-			const byte *pbEdgeDmaInputData = pVVDcache->GetPs3EdgeDmaInput(); // Compiled at tool-time data for Edge Dma Input
-			if ( ( pStudioHdr->flags & STUDIOHDR_FLAGS_PS3_EDGE_FORMAT ) &&
-				pbEdgeDmaInputData &&
-				( pStripGroup->numStrips > 0 ) )
-			{
-				Error("Edge Lib Disabled");
-						
-// 				// First strip in its index buffer will have strip group's offset
-// 				const OptimizedModel::OptimizedIndexBufferMarkupPs3_t *pMarkup = ( OptimizedModel::OptimizedIndexBufferMarkupPs3_t * ) pStripGroup->pIndex( 0 );
-// 				if ( pMarkup->m_uiHeaderCookie != pMarkup->kHeaderCookie )
-// 					Error( "<vitaliy> R_StudioBuildMeshGroup encountered invalid PS3 mesh markup!\n" );
-// 				pbEdgeDmaInputData += pMarkup->m_nEdgeDmaInputOffsetPerStripGroup;
-// 
-// 				// How long is the Edge Dma Input buffer
-// 				uint32 numEdgeDmaInputBytesForEntireStripGroup = pMarkup->m_nEdgeDmaInputSizePerStripGroup;
-// 				
-// 				// Lock the data
-// 				void *pbDataVB = pMeshGroup->m_pMesh->AccessRawHardwareDataStream( 0, numEdgeDmaInputBytesForEntireStripGroup, D3DUSAGE_EDGE_DMA_INPUT, NULL );
-// 
-// 				// Copy the data
-// 				V_memcpy( pbDataVB, pbEdgeDmaInputData, numEdgeDmaInputBytesForEntireStripGroup );
-// 
-// 				// Unlock the data
-// 				pMeshGroup->m_pMesh->AccessRawHardwareDataStream( 0, 0, D3DUSAGE_EDGE_DMA_INPUT, pbDataVB );
-			}
-		}
-#endif
 
 		for ( i = 0; i < pStripGroup->numVerts; ++i )
 		{

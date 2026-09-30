@@ -9,9 +9,6 @@
 #include "mathlib/vmatrix.h"
 #include "ragdoll_shared.h"
 #include "bone_setup.h"
-#if defined( _PS3 )
-#include "bone_setup_PS3.h"
-#endif
 #include "materialsystem/imesh.h"
 #include "engine/ivmodelinfo.h"
 #include "iviewrender.h"
@@ -458,10 +455,6 @@ public:
 	virtual void UpdateOnRemove();
 	virtual float LastBoneChangedTime();
 
-#if defined( _PS3 )
-	virtual void AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &boneSetup, BoneVector pos[], BoneQuaternion q[], float currentTime );
-#endif
-
 
 	// Incoming from network
 	Vector		m_ragPos[RAGDOLL_MAX_ELEMENTS];
@@ -662,23 +655,6 @@ void C_ServerRagdoll::AccumulateLayers( IBoneSetup &boneSetup, BoneVector pos[],
 		boneSetup.AccumulatePose( pos, q, m_nOverlaySequence, GetCycle(), m_flBlendWeightCurrent, currentTime, m_pIk );
 	}
 }
-
-#if defined( _PS3 )
-void C_ServerRagdoll::AccumulateLayers_AddPoseCalls( IBoneSetup_PS3 &boneSetup, BoneVector pos[], BoneQuaternion q[], float currentTime )
-{
-	BaseClass::AccumulateLayers_AddPoseCalls( boneSetup, pos, q, currentTime );
-
-	if ( m_nOverlaySequence >= 0 && m_nOverlaySequence < boneSetup.GetStudioHdr()->GetNumSeq() )
-	{
-		if (r_sequence_debug.GetInt() == entindex())
-		{
-			DevMsgRT( "%8.4f : %30s : %5.3f : %4.2f\n", currentTime, boneSetup.GetStudioHdr()->pSeqdesc( m_nOverlaySequence ).pszLabel(), GetCycle(), m_flBlendWeightCurrent );
-		}
-//		boneSetup.AccumulatePose( pos, q, m_nOverlaySequence, GetCycle(), m_flBlendWeightCurrent, currentTime, m_pIk );
-		boneSetup.AccumulatePose_AddToBoneJob( boneSetup.GetBoneJobSPU(), m_nOverlaySequence, GetCycle(), m_flBlendWeightCurrent, m_pIk, 0 );
-	}
-}
-#endif
 
 void C_ServerRagdoll::BuildTransformations( CStudioHdr *hdr, BoneVector *pos, BoneQuaternion q[], const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed )
 {

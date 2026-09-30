@@ -49,9 +49,7 @@ struct DmxElementUnpackStructure_t;
 namespace vgui
 {
 
-#if !defined( _GAMECONSOLE )
 #define VGUI_USEDRAGDROP 1
-#endif
 
 #if defined( VGUI_USEKEYBINDINGMAPS )
 struct PanelKeyBindingMap;

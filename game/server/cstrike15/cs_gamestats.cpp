@@ -30,9 +30,7 @@
 #include "hegrenade_projectile.h"
 #include "Effects/inferno.h"
 
-#if !defined( _GAMECONSOLE )
 #include "cdll_int.h"
-#endif
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -210,7 +208,7 @@ int GetCSLevelIndex( const char *pLevelName )
 
 
 CCSGameStats CCS_GameStats;
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 CCSGameStats::StatContainerList_t* CCSGameStats::s_StatLists = new CCSGameStats::StatContainerList_t();
 #endif
 
@@ -301,7 +299,7 @@ void CCSGameStats::Event_ShotFired( CBasePlayer *pPlayer, CBaseCombatWeapon* pWe
 
 			// OGS tracking
 			// Check to see if this bullet is from a weapon that fires multiple bullets with a single shot.
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )			
+#if !defined( NO_STEAM )			
 			uint8 iSubBullet = 0;			
 			SWeaponShotData *lastShotData = m_WeaponShotData.Count() ? m_WeaponShotData.Tail() : NULL;
 
@@ -895,7 +893,7 @@ void CCSGameStats::Event_PlayerDamage( CBasePlayer *pBasePlayer, const CTakeDama
 	// OGS stats
 
 	// See if this is a bullet from a weapon that fires multiple (shotgun)
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 
 	if ( info.GetBulletID() != 0 )
 	{
@@ -929,7 +927,7 @@ void CCSGameStats::Event_MoneySpent( CCSPlayer* pPlayer, int moneySpent, const c
 	if ( pPlayer && moneySpent > 0)
 	{
 		IncrementStat(pPlayer, CSSTAT_MONEY_SPENT, moneySpent);
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 		if ( pItemName && !pPlayer->IsBot() )
 		{
 			CSteamID steamIDForBuyer;
@@ -978,10 +976,8 @@ void CCSGameStats::FireGameEvent( IGameEvent *event )
 	}
 	else if ( V_strcmp( pEventName, "round_officially_ended" ) == 0 )
 	{
-#if !defined( _GAMECONSOLE )
 		// Upload round stats here to avoid end-of-round visual hitch
 		UploadRoundStats();
-#endif
 	}
 	else if ( V_strcmp(pEventName, "break_prop") == 0 )
 	{
@@ -1148,7 +1144,7 @@ void CCSGameStats::ResetRoundStats()
 //-----------------------------------------------------------------------------
 void CCSGameStats::ClearOGSRoundStats()
 {
-#if !defined( _GAMECONSOLE ) && !defined( NO_STEAM )
+#if !defined( NO_STEAM )
 	m_WeaponHitData.PurgeAndDeleteElements();
 	m_WeaponMissData.PurgeAndDeleteElements();
 	m_WeaponShotData.PurgeAndDeleteElements();
@@ -1531,9 +1527,7 @@ void CCSGameStats::Event_LevelShutdown( float fElapsed )
 	}
 	CBaseGameStats::Event_LevelShutdown(fElapsed);
 
-#if !defined( _GAMECONSOLE )
 	GetSteamWorksGameStatsServer().EndSession();
-#endif
 }
 
 // Reset any per match info that resides in the player class
@@ -1549,8 +1543,6 @@ void CCSGameStats::ResetPlayerClassMatchStats()
 		}
 	}
 }
-
-#if !defined( _GAMECONSOLE )
 
 
 extern double g_rowCommitTime;
@@ -1979,4 +1971,3 @@ bool SWeaponHitData::InitAsBombEvent( CCSPlayer *pCSPlayer, CPlantedC4 *pPlanted
 
 
 
-#endif // !_GAMECONSOLE

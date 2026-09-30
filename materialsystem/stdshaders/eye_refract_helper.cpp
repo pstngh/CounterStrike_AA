@@ -10,10 +10,8 @@
 #include "eye_refract_ps20.inc"
 #include "eye_refract_ps20b.inc"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "eye_refract_vs30.inc"
 #include "eye_refract_ps30.inc"
-#endif
 
 #include "convar.h"
 
@@ -119,9 +117,7 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 			pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );	// Light warp
 		}
 
-#if !defined( PLATFORM_X360 )
 		bool bWorldNormal = ( ENABLE_FIXED_LIGHTING_OUTPUTNORMAL_AND_DEPTH == ( IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 ) + 2 * IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER1 )));
-#endif
 
 		ShadowFilterMode_t nShadowFilterMode = SHADOWFILTERMODE_DEFAULT;
 		if ( bDrawFlashlightAdditivePass == true )
@@ -141,9 +137,7 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 			pShaderShadow->EnableAlphaWrites( true );
 		}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			DECLARE_STATIC_VERTEX_SHADER( eye_refract_vs20 );
 			SET_STATIC_VERTEX_SHADER_COMBO( HALFLAMBERT, IS_FLAG_SET( MATERIAL_VAR_HALFLAMBERT ) );
@@ -183,7 +177,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 				SET_STATIC_PIXEL_SHADER( eye_refract_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );	// Screen space ambient occlusion
@@ -217,7 +210,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 				pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );	// Noise map
 			}
 		}
-#endif
 
 		// On DX9, get the gamma read and write correct
 		pShaderShadow->EnableSRGBRead( SHADER_SAMPLER1, true );			// Iris
@@ -314,9 +306,7 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 
 		int nFixedLightingMode = pShaderAPI->GetIntRenderingParameter( INT_RENDERPARM_ENABLE_FIXED_LIGHTING );
 
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( eye_refract_vs20 );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( SKINNING, pShaderAPI->GetCurrentNumBones() > 0 );
@@ -326,7 +316,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( TESSELLATION, 0 );
 			SET_DYNAMIC_VERTEX_SHADER( eye_refract_vs20 );
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_10, VERTEX_SHADER_SHADER_SPECIFIC_CONST_11, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -361,7 +350,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( TESSELLATION, nTessellationMode );
 			SET_DYNAMIC_VERTEX_SHADER( eye_refract_vs30 );
 		}
-#endif
 
 		// Special constant for DX9 eyes: { Dilation, Glossiness, x, x };
 		float vPSConst[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -417,9 +405,7 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 		}
 
 		// Flashlight tax
-#if !defined( _X360 ) && !defined( _PS3 )
 		if ( !g_pHardwareConfig->HasFastVertexTextures() )
-#endif
 		{
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 			{
@@ -435,7 +421,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 				SET_DYNAMIC_PIXEL_SHADER( eye_refract_ps20 );
 			}
 		}
-#if !defined( _X360 ) && !defined( _PS3 )
 		else
 		{
 			DECLARE_DYNAMIC_PIXEL_SHADER( eye_refract_ps30 );
@@ -449,7 +434,6 @@ void Draw_Eyes_Refract_Internal( CBaseVSShader *pShader, IMaterialVar** params, 
 
 			SetupUberlightFromState( pShaderAPI, flashlightState );
 		}
-#endif
 
 		pShaderAPI->SetPixelShaderFogParams( PSREG_FOG_PARAMS );
 

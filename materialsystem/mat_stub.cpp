@@ -315,11 +315,6 @@ public:
 	virtual void AddDownsizedSubTarget( const char *szName, int iDownsizePow2, MaterialRenderTargetDepth_t depth ) { NULL; }
 	virtual void SetActiveSubTarget( const char *szName ) { NULL; }
 
-#if defined( _X360 )
-	virtual bool ClearTexture( int r, int g, int b, int a ) { return true; }
-	virtual bool CreateRenderTargetSurface( int width, int height, ImageFormat format, bool bSameAsTexture, RTMultiSampleCount360_t multiSampleCount = RT_MULTISAMPLE_NONE ) { return true; }
-#endif
-
 	virtual int GetReferenceCount() const { return 0; }
 
 	virtual bool IsTempExcluded() const { return false; }
@@ -489,16 +484,9 @@ public:
 	// Are dx dynamic textures preferred?
 	virtual bool PreferDynamicTextures() const		{ return false; }
 
-#ifdef _GAMECONSOLE
-	// Vitaliy: need HDR to run with -noshaderapi on console
-	virtual bool SupportsHDR() const				{ return true; }
-	virtual HDRType_t GetHDRType() const			{ return HDR_TYPE_INTEGER; }
-	virtual HDRType_t GetHardwareHDRType() const	{ return HDR_TYPE_INTEGER; }
-#else
 	virtual bool SupportsHDR() const				{ return false; }
 	virtual HDRType_t GetHDRType() const			{ return HDR_TYPE_NONE; }
 	virtual HDRType_t GetHardwareHDRType() const	{ return HDR_TYPE_NONE; }
-#endif
 
 	virtual bool NeedsAAClamp() const				{ return false; }
 	virtual bool NeedsATICentroidHack() const		{ return false; }
@@ -519,12 +507,7 @@ public:
 	virtual bool HasFastVertexTextures() const { return false; }
 	virtual bool ActualHasFastVertexTextures() const { return false; }
 	virtual int MaxHWMorphBatchCount() const { return 0; }
-#ifdef _GAMECONSOLE
-	// Vitaliy: need HDR to run with -noshaderapi on console
-	virtual bool SupportsHDRMode( HDRType_t nMode ) const { return nMode == HDR_TYPE_NONE || nMode == HDR_TYPE_INTEGER; }
-#else
 	virtual bool SupportsHDRMode( HDRType_t nMode ) const { return 0; }
-#endif
 	virtual bool IsDX10Card() const { return 0; }
 	virtual bool GetHDREnabled( void ) const { return true; }
 	virtual void SetHDREnabled( bool bEnable ) {}
@@ -1726,32 +1709,6 @@ public:
 		return m_pRealMaterialSystem->GetCompositeTextureGenerator();
 	}
 
-#if defined( _X360 )
-
-	virtual ITexture *CreateGamerpicTexture(
-		const char			*pTextureName,
-		const char			*pTextureGroupName,
-		int					nFlags )
-	{
-		return &g_DummyTexture;
-	}
-
-	virtual bool UpdateLocalGamerpicTexture(
-		ITexture			*pTexture,
-		DWORD				userIndex )
-	{
-		return true;
-	}
-
-	virtual bool UpdateRemoteGamerpicTexture(
-		ITexture			*pTexture,
-		XUID				xuid )
-	{
-		return true;
-	}
-
-#endif // _X360
-
 	// Sets the Clear Color for ClearBuffer....
 	virtual void ClearColor3ub( unsigned char r, unsigned char g, unsigned char b )
 	{
@@ -2144,7 +2101,7 @@ public:
 		pFallbackShader[0] = 0;
 	}
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	virtual void DoStartupShaderPreloading( void )
 	{
 	}
@@ -2300,12 +2257,7 @@ public:
 
 	virtual bool SupportsMSAAMode( int nMSAAMode ) { return false; }
 	virtual bool SupportsCSAAMode( int nNumSamples, int nQualityLevel ) { return false; }
-#ifdef _GAMECONSOLE
-	// Vitaliy: need HDR to run with -noshaderapi on console
-	virtual bool SupportsHDRMode( HDRType_t nMode ) { return nMode == HDR_TYPE_NONE || nMode == HDR_TYPE_INTEGER; }
-#else
 	virtual bool SupportsHDRMode( HDRType_t nMode ) { return 0; }
-#endif
 	virtual bool IsDX10Card() { return false; }
 
 	// Hooks for firing PIX events from outside the Material System...
@@ -2493,58 +2445,7 @@ public:
 	virtual void			AddRefRenderData() {}
 	virtual void			ReleaseRenderData() {}
 
-#if defined( _X360 )
-	virtual void				ListUsedMaterials( void ) {}
-	virtual HXUIFONT			OpenTrueTypeFont( const char *pFontname, int tall, int style )
-	{
-		return (HXUIFONT)0;
-	}
-	virtual void				CloseTrueTypeFont( HXUIFONT hFont ) {}
-	virtual bool				GetTrueTypeFontMetrics( HXUIFONT hFont, wchar_t wchFirst, wchar_t wchLast, XUIFontMetrics *pFontMetrics, XUICharMetrics *pCharMetrics ) 
-	{
-		pFontMetrics->fLineHeight = 0.0f;
-		pFontMetrics->fMaxAscent = 0.0f;
-		pFontMetrics->fMaxDescent = 0.0f;
-		pFontMetrics->fMaxWidth = 0.0f;
-		pFontMetrics->fMaxHeight = 0.0f;
-		pFontMetrics->fMaxAdvance = 0.0f;
-		return true;
-	}
-
-	virtual bool				GetTrueTypeGlyphs( HXUIFONT hFont, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset )
-	{
-		return false;
-	}
-
-	virtual void				PersistDisplay() {}
-	virtual void				*GetD3DDevice() { return NULL; }
-
-	virtual void				PushVertexShaderGPRAllocation( int iVertexShaderCount = 64 ) { };
-	virtual void				PopVertexShaderGPRAllocation( void ) { };
-
-	virtual bool				OwnGPUResources( bool bEnable ) { return false; }
-
-	virtual void				FlushHiStencil() {}
-#elif defined( _PS3 )
-	virtual void				ListUsedMaterials( void ) {}
-	virtual HPS3FONT			OpenTrueTypeFont( const char *pFontname, int tall, int style ){ return NULL; }
-	virtual void				CloseTrueTypeFont( HPS3FONT hFont ){};
-	virtual bool				GetTrueTypeFontMetrics( HPS3FONT hFont, int nFallbackTall, wchar_t wchFirst, wchar_t wchLast, CPS3FontMetrics *pFontMetrics, CPS3CharMetrics *pCharMetrics ){return false;}
-	// Render a sequence of characters and extract the data into a buffer
-	// For each character, provide the width+height of the font texture subrect,
-	// an offset to apply when rendering the glyph, and an offset into a buffer to receive the RGBA data
-	virtual bool				GetTrueTypeGlyphs( HPS3FONT hFont, int nFallbackTall, int numChars, wchar_t *pWch, int *pOffsetX, int *pOffsetY, int *pWidth, int *pHeight, unsigned char *pRGBA, int *pRGBAOffset ){return false;}
-	virtual void TransmitScreenshotToVX() {};
-	virtual void CompactRsxLocalMemory( char const *szReason ) {}
-	virtual void SetFlipPresentFrequency( int nNumVBlanks ) {}
-#endif
 	virtual void SpinPresent( uint nFrames ){}
-
-#if defined( _GAMECONSOLE )
-	virtual void				BeginConsoleZPass( const WorldListIndicesInfo_t &indicesInfo ) {}
-	virtual void				BeginConsoleZPass2( int nSlack ) {}
-	virtual void				EndConsoleZPass() {}
-#endif
 
 #if defined( INCLUDE_SCALEFORM )
 	virtual void				SetScaleformSlotViewport( int slot, int x, int y, int w, int h ) {}
@@ -2562,9 +2463,6 @@ public:
 	virtual void RenderRocketMenu(){ }
 #endif // INCLUDE_SCALEFORM
 
-#if defined( _PS3 )
-	virtual void				FlushTextureCache() { }
-#endif
 	virtual void                AntiAliasingHint( int ) {}
 
 	virtual void				CompactMemory() {}

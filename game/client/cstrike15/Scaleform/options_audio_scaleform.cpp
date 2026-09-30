@@ -27,9 +27,7 @@
 #include "dsound.h"
 #endif
 
-#ifndef _GAMECONSOLE
 #include "steam/steam_api.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>

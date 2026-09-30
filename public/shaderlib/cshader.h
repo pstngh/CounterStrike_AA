@@ -38,7 +38,7 @@
 //-----------------------------------------------------------------------------
 // Global interfaces
 //-----------------------------------------------------------------------------
-#if defined( _PS3 ) || defined( _OSX )
+#if defined( _OSX )
 #include "shaderapidx9/hardwareconfig.h"
 #else
 extern IMaterialSystemHardwareConfig *g_pHardwareConfig;
@@ -384,12 +384,6 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	psh ## shader = psh ## shader; \
 	pShaderAPI->SetPixelShaderIndex( _pshIndex.GetIndex() )
 
-#ifdef _PS3
-
-#define SET_DYNAMIC_PIXEL_SHADER_CMD( cmdstream, shader ) SET_DYNAMIC_PIXEL_SHADER( shader )
-
-#else
-
 #define SET_DYNAMIC_PIXEL_SHADER_CMD( cmdstream, shader ) \
 	int dynamicpixshader_ ## shader ## _missingcurlybraces = 0; \
 	dynamicpixshader_ ## shader ## _missingcurlybraces = dynamicpixshader_ ## shader ## _missingcurlybraces; \
@@ -397,8 +391,6 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	psh_testAllCombos = psh_testAllCombos; \
 	psh ## shader = psh ## shader; \
 	cmdstream.SetPixelShaderIndex( _pshIndex.GetIndex() )
-
-#endif
 
 // vsh_testAllCombos adds up all of the vsh_forgot_to_set_dynamic_ ## var's from 
 // SET_DYNAMIC_VERTEX_SHADER_COMBO so that an error is generated if they aren't set.
@@ -413,12 +405,6 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	vsh ## shader = vsh ## shader; \
 	pShaderAPI->SetVertexShaderIndex( _vshIndex.GetIndex() )
 
-#ifdef _PS3
-
-#define SET_DYNAMIC_VERTEX_SHADER_CMD( cmdstream, shader ) SET_DYNAMIC_VERTEX_SHADER( shader )
-
-#else
-
 #define SET_DYNAMIC_VERTEX_SHADER_CMD( cmdstream, shader ) \
 	int dynamicvertshader_ ## shader ## _missingcurlybraces = 0; \
 	dynamicvertshader_ ## shader ## _missingcurlybraces = dynamicvertshader_ ## shader ## _missingcurlybraces; \
@@ -426,7 +412,6 @@ inline bool CShader_IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag
 	vsh_testAllCombos = vsh_testAllCombos; \
 	vsh ## shader = vsh ## shader; \
 	cmdstream.SetVertexShaderIndex( _vshIndex.GetIndex() )
-#endif
 
 // psh_testAllCombos adds up all of the psh_forgot_to_set_static_ ## var's from 
 // SET_STATIC_PIXEL_SHADER_COMBO so that an error is generated if they aren't set.

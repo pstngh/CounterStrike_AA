@@ -422,30 +422,6 @@ void CMatchSessionOnlineHost::OnRunCommand_StartDsSearchFinished()
 		return;
 	}
 
-#if defined _GAMECONSOLE
-
-	if ( !dsResult.m_bDedicated &&
-		m_pSettings->GetString( "server/server", NULL ) )
-	{
-		// We should be connecting to the dedicated server, but we
-		// failed to reserve it, just bail out with an error
-		KeyValues *notify = new KeyValues( "mmF->SysSessionUpdate" );
-		notify->SetPtr( "syssession", m_pSysSession );
-		notify->SetString( "error", "n/a" );
-		g_pMatchEventsSubscription->BroadcastEvent( notify );
-		return;
-	}
-
-	if ( !dsResult.m_bDedicated )
-	{
-		// Transition into loading state
-		m_eState = STATE_LOADING;
-		StartListenServerMap();
-		return;
-	}
-
-#else
-
 	// On PC if we fail to find or reserve a DS then bail
 	if ( !dsResult.m_bDedicated )
 	{
@@ -458,7 +434,6 @@ void CMatchSessionOnlineHost::OnRunCommand_StartDsSearchFinished()
 		return;
 	}
 
-#endif
 	//
 	// We have reserved a dedicated server
 	//
@@ -558,11 +533,6 @@ void CMatchSessionOnlineHost::OnRunCommand_StartListenServerStarted( uint32 exte
 	{
 		if ( CSysSessionHost *pSysSessionHost = dynamic_cast< CSysSessionHost * >( m_pTeamSearcher->LinkSysSession() ) )
 		{
-#ifdef _X360
-			char chSessionInfo[ XSESSION_INFO_STRING_LENGTH ] = {0};
-			pSysSessionHost->GetHostSessionInfo( chSessionInfo );
-			kvServer->SetString( "sessioninfo", chSessionInfo );
-#endif
 		}
 	}
 
@@ -883,16 +853,7 @@ void CMatchSessionOnlineHost::InviteTeam()
 	KeyValues *pOptions = pUpdate->FindKey( "options" );
 	pOptions->SetUint64( "teamResKey", teamResKey );
 	
-#ifdef _X360
-	char chSessionInfo[ XSESSION_INFO_STRING_LENGTH ] = {0};
-	m_pSysSession->GetHostSessionInfo( chSessionInfo );
-	pOptions->SetString( "sessioninfo", chSessionInfo );
-	pOptions->SetUint64( "sessionid", m_pSysSession->GetHostSessionId() );
-#else
-
 	pOptions->SetUint64( "sessionid", m_pSysSession->GetSessionID() );
-
-#endif
 
 	// Set up "teammembers" key
 	KeyValues *pTeamMembers = pUpdate->CreateNewKey();
@@ -1095,19 +1056,6 @@ void CMatchSessionOnlineHost::DebugPrint()
 
 bool CMatchSessionOnlineHost::IsAnotherSessionJoinable( const char *pszAnotherSessionInfo )
 {
-#ifdef _X360
-	if ( m_pSysSession )
-	{
-		char chHostInfo[ XSESSION_INFO_STRING_LENGTH ] = {0};
-		m_pSysSession->GetHostSessionInfo( chHostInfo );
-		
-		XSESSION_INFO xsi, xsiAnother;
-		MMX360_SessionInfoFromString( xsi, chHostInfo );
-		MMX360_SessionInfoFromString( xsiAnother, pszAnotherSessionInfo );
-		if ( !memcmp( &xsiAnother.sessionID, &xsi.sessionID, sizeof( xsi.sessionID ) ) )
-			return false;
-	}
-#endif
 	return true;
 }
 
@@ -1619,9 +1567,6 @@ void CMatchSessionOnlineHost::InitializeGameSettings()
 		pMembers->SetInt( "numMachines", 1 );
 
 		int numPlayers = 1;
-#ifdef _GAMECONSOLE
-		numPlayers = XBX_GetNumGameUsers();
-#endif
 
 		pMembers->SetInt( "numPlayers", numPlayers );
 		pMembers->SetInt( "numSlots", MAX( numSlotsCreated, numPlayers ) );
@@ -1631,9 +1576,6 @@ void CMatchSessionOnlineHost::InitializeGameSettings()
 			XUID machineid = g_pPlayerManager->GetLocalPlayer( XBX_GetPrimaryUserId() )->GetXUID();
 
 			pMachine->SetUint64( "id", machineid );
-#if defined( _PS3 ) && !defined( NO_STEAM )
-			pMachine->SetUint64( "psnid", steamapicontext->SteamUser()->GetConsoleSteamID().ConvertToUint64() );
-#endif
 			pMachine->SetUint64( "flags", MatchSession_GetMachineFlags() );
 			pMachine->SetInt( "numPlayers", numPlayers );
 			pMachine->SetUint64( "dlcmask", g_pMatchFramework->GetMatchSystem()->GetDlcManager()->GetDataInfo()->GetUint64( "@info/installed" ) );
@@ -1645,9 +1587,6 @@ void CMatchSessionOnlineHost::InitializeGameSettings()
 				if ( KeyValues *pPlayer = pMachine->FindKey( CFmtStr( "player%d", k ), true ) )
 				{
 					int iController = 0;
-#ifdef _GAMECONSOLE
-					iController = XBX_GetUserId( k );
-#endif
 					IPlayerLocal *player = g_pPlayerManager->GetLocalPlayer( iController );
 
 					pPlayer->SetUint64( "xuid", player->GetXUID() );

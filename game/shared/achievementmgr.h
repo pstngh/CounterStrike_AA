@@ -69,9 +69,6 @@ public:
 	bool IsAchievementAllowedInGame( int iAchievementID );
 	bool HasAchieved( const char *pchName, int nUserSlot );
 	void AwardAchievement( int iAchievementID, int nUserSlot );
-#if defined ( _X360 )
-	void AwardXBoxAchievement( int iAchievementID, int iXBoxAchievementID, int nUserSlot );
-#endif
 	void UpdateAchievement( int iAchievementID, int nData, int nUserSlot );
 #if defined( CLIENT_DLL ) && !defined( NO_STEAM )
 	void UpdateStateFromSteam_Internal( int nUserSlot );
@@ -166,16 +163,6 @@ private:
 	bool m_bCheckSigninState;
 	bool m_bReadingFromTitleData;
 
-#ifdef _X360 
-	struct PendingAchievementInfo_t {
-		int nAchievementID;					// Achievement we're waiting to check the status of
-		int nUserSlot;						// Which user is being awarded the achievement
-		AsyncHandle_t pOverlappedResult;	// Result we'll check again
-	};
-
-	CUtlVector<PendingAchievementInfo_t>	m_pendingAchievementState;
-#endif
-
 	CUtlVector<int> m_AchievementsAwarded[MAX_SPLITSCREEN_PLAYERS];
 	CUtlVector<int> m_AchievementsAwardedDuringCurrentGame[MAX_SPLITSCREEN_PLAYERS];
 	void ClearAchievementData( int nUserSlot );
@@ -211,9 +198,6 @@ protected:
 
 // helper functions
 const char *GetModelName( CBaseEntity *pBaseEntity );
-#if defined ( _X360 )
-bool IsXboxFriends( int userID, int entityIndex );
-#endif
 
 #ifdef CLIENT_DLL
 bool CalcPlayersOnFriendsList( int iMinPlayers );

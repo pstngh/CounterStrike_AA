@@ -7,7 +7,7 @@
 
 #include "memdbgon.h"
 
-#if !defined( _X360 ) && !defined( NO_STEAM ) && !defined( SWDS )
+#if !defined( NO_STEAM ) && !defined( SWDS )
 
 // Context for the Game Coordinator
 #ifndef NO_STEAM_GAMECOORDINATOR
@@ -24,10 +24,8 @@ CSteamAPIContext *steamapicontext = &g_SteamAPIContext;
 // Init the steam APIs
 void SteamApiContext_Init()
 {
-#ifndef _PS3
 	if ( !SteamAPI_InitSafe() )
 		return;
-#endif
 
 	if ( !steamapicontext->Init() )
 		return;

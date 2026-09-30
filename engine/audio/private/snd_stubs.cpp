@@ -10,14 +10,7 @@
 #if !defined( DEDICATED ) && ( defined( OSX ) || defined( _WIN32 ) || defined( LINUX ) ) && !defined( NO_STEAM )
 #include "cl_steamauth.h"
 #include "client.h"
-#if defined( PS3SDK_INSTALLED ) 
-#define PS3_CROSS_PLAY
-#endif
 #if !defined( CSTRIKE15 )
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )
-#include "ps3sceCelp8.h"
-#define SOUND_PC_CELP_ENABLED
-#endif 
 #endif // CSTRIKE15
 extern IVEngineClient *engineClient;
 #endif
@@ -289,16 +282,6 @@ public:
 	byte m_pbVoiceData[ 18*1024 * XUSER_MAX_COUNT ];
 	float m_flLastTalkingTimestamp;
 
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )	
-#ifdef SOUND_PC_CELP_ENABLED
-	sceCelp8encHandle m_sceCelp8encHandle;
-	sceCelp8decHandle m_sceCelp8decHandle;
-	CUtlVectorFixed< byte, SCE_CELP8ENC_INPUT_SIZE > m_bufEncLeftover;
-	CUtlVectorFixed< byte, SCE_CELP8DEC_INPUT_SIZE > m_bufDecLeftover;
-#endif // SOUND_PC_CELP_ENABLED
-	Resample_CELP_to_PC_t m_resampleCelp2Pc;
-	Resample_PC_to_CELP_t m_resamplePc2Celp;
-#endif
 };
 
 CEngineVoiceSteam::CEngineVoiceSteam()
@@ -309,64 +292,10 @@ CEngineVoiceSteam::CEngineVoiceSteam()
 	m_bVoiceForPs3 = false;
 	m_flLastTalkingTimestamp = 0.0f;
 
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )
-#ifdef SOUND_PC_CELP_ENABLED
-	m_sceCelp8encHandle = NULL;
-	sceCelp8encAttr encQueryAttr;
-	if ( sceCelp8encQueryAttr( &encQueryAttr ) < 0 )
-	{
-		Warning( "ERROR: Failed to configure PS3 voice encoder!\n" );
-	}
-	else
-	{
-		DevMsg( "PS3 voice encoder version %d.%d.%d.%d [%u]\n",
-			(encQueryAttr.verNumber&0xff000000)>>24,
-			(encQueryAttr.verNumber&0xff0000)>>16,
-			(encQueryAttr.verNumber&0xff00)>>8,
-			(encQueryAttr.verNumber&0xff),
-			encQueryAttr.memSize );
-		m_sceCelp8encHandle = malloc( encQueryAttr.memSize );
-		if ( m_sceCelp8encHandle )
-			sceCelp8encInitInstance( m_sceCelp8encHandle );
-	}
-#endif
-
-#ifdef SOUND_PC_CELP_ENABLED
-	m_sceCelp8decHandle = NULL;
-	sceCelp8decAttr decQueryAttr;
-	if ( sceCelp8decQueryAttr( &decQueryAttr ) < 0 )
-	{
-		Warning( "ERROR: Failed to configure PS3 voice decoder!\n" );
-	}
-	else
-	{
-		DevMsg( "PS3 voice decoder version %d.%d.%d.%d [%u]\n",
-			(decQueryAttr.verNumber&0xff000000)>>24,
-			(decQueryAttr.verNumber&0xff0000)>>16,
-			(decQueryAttr.verNumber&0xff00)>>8,
-			(decQueryAttr.verNumber&0xff),
-			decQueryAttr.memSize );
-		m_sceCelp8decHandle = malloc( decQueryAttr.memSize );
-		if ( m_sceCelp8decHandle )
-			sceCelp8decInitInstance( m_sceCelp8decHandle );
-	}
-#endif
-#endif
 }
 
 CEngineVoiceSteam::~CEngineVoiceSteam()
 {
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )
-#ifdef SOUND_PC_CELP_ENABLED
-	if ( m_sceCelp8encHandle )
-		free( m_sceCelp8encHandle );
-	m_sceCelp8encHandle = NULL;
-
-	if ( m_sceCelp8decHandle )
-		free( m_sceCelp8decHandle );
-	m_sceCelp8decHandle = NULL;
-#endif // SOUND_PC_CELP_ENABLED
-#endif
 }
 
 bool CEngineVoiceSteam::IsHeadsetPresent( int iController )
@@ -376,11 +305,7 @@ bool CEngineVoiceSteam::IsHeadsetPresent( int iController )
 
 bool CEngineVoiceSteam::IsLocalPlayerTalking( int iController )
 {
-#ifdef _PS3
-	EVoiceResult res = Steam3Client().SteamUser()->GetAvailableVoice( NULL, NULL );
-#else
 	EVoiceResult res = Steam3Client().SteamUser()->GetAvailableVoice( NULL, NULL, 0 );
-#endif
 	switch ( res )
 	{
 	case k_EVoiceResultOK:
@@ -416,9 +341,6 @@ void CEngineVoiceSteam::AddPlayerToVoiceList( XUID xPlayer, int iController, uin
 		
 		if ( snd_voice_echo.GetBool() )
 		{
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )		
-			m_bVoiceForPs3 = (snd_voice_echo.GetInt() == 2);
-#endif
 			Steam3Client().SteamUser()->StartVoiceRecording();
 		}
 	}
@@ -429,9 +351,6 @@ void CEngineVoiceSteam::AddPlayerToVoiceList( XUID xPlayer, int iController, uin
 		{
 			RemoteTalker_t rt = { xPlayer, uiFlags, 0 };
 			m_arrRemoteVoice.AddToTail( rt );
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )			
-			m_bVoiceForPs3 = !!(uiFlags & ENGINE_VOICE_FLAG_PS3);
-#endif
 			AudioInitializationUpdate();
 			// Steam3Client().SteamUser()->StartVoiceRecording();
 		}
@@ -481,11 +400,7 @@ bool CEngineVoiceSteam::VoiceUpdateData( int iController )
 	}
 #endif // SND_VOICE_LOG_DEBUG
 
-#ifdef _PS3
-	EVoiceResult res = Steam3Client().SteamUser()->GetAvailableVoice( NULL, NULL );
-#else
 	EVoiceResult res = Steam3Client().SteamUser()->GetAvailableVoice( NULL, NULL, 0 );
-#endif
 	bool bResult = ( res == k_EVoiceResultOK );
 	if ( bResult )
 		m_flLastTalkingTimestamp = Plat_FloatTime();
@@ -560,97 +475,8 @@ void CEngineVoiceSteam::GetVoiceData( int iController, const byte **ppvVoiceData
 	EVoiceResult res = k_EVoiceResultOK;
 	if ( !m_bVoiceForPs3 )
 	{
-#ifdef _PS3
-		res = Steam3Client().SteamUser()->GetVoice( true, pbVoiceData, size, pnumVoiceDataBytes, false, NULL, 0, NULL );
-#else
 		res = Steam3Client().SteamUser()->GetVoice( true, pbVoiceData, size, pnumVoiceDataBytes, false, NULL, 0, NULL, 0 );
-#endif
 	}
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )	
-	else
-	{
-#ifdef _PS3
-		res = Steam3Client().SteamUser()->GetVoice( true, pbVoiceData, size, pnumVoiceDataBytes, false, NULL, 0, NULL );
-#else
-		res = Steam3Client().SteamUser()->GetVoice( true, pbVoiceData, size, pnumVoiceDataBytes, false, NULL, 0, NULL, 0 );
-#endif
-
-#if defined( SOUND_PC_CELP_ENABLED )
-		if ( !m_sceCelp8encHandle )
-			res = k_EVoiceResultNotRecording;
-#endif
-
-		int16 *pbUncompressedVoiceData = ( int16* ) stackalloc( 11025*2 );
-		unsigned int numUncompressedVoiceBytes = 11025*2;
-		if ( res == k_EVoiceResultOK )
-		{
-#ifdef _PS3
-			res = Steam3Client().SteamUser()->DecompressVoice( pbVoiceData, *pnumVoiceDataBytes, pbUncompressedVoiceData, numUncompressedVoiceBytes, &numUncompressedVoiceBytes );
-#else
-			res = Steam3Client().SteamUser()->DecompressVoice( pbVoiceData, *pnumVoiceDataBytes, pbUncompressedVoiceData, numUncompressedVoiceBytes, &numUncompressedVoiceBytes, 11025 );
-#endif
-		}
-
-		if ( res == k_EVoiceResultOK )
-		{
-			uint32 numOutSamples = m_resamplePc2Celp.Resample( pbUncompressedVoiceData, numUncompressedVoiceBytes/2, ( int16* ) pbVoiceData );
-			*pnumVoiceDataBytes = numOutSamples * 2;
-
-#ifdef SND_VOICE_LOG_DEBUG
-			if ( snd_voice_log.GetInt() & SND_VOICE_LOG_RECORD_LOCAL_11025 )
-			{
-				g_bufSndVoiceLog11025.Put( pbUncompressedVoiceData, numUncompressedVoiceBytes );
-			}
-			if ( snd_voice_log.GetInt() & SND_VOICE_LOG_RECORD_LOCAL )
-			{
-				g_bufSndVoiceLog.Put( pbVoiceData, numOutSamples * 2 );
-			}
-#endif // SND_VOICE_LOG_DEBUG
-
-#if defined( SOUND_PC_CELP_ENABLED )
-			byte *pbSrc = pbVoiceData;
-			byte *pbDst = pbVoiceData;
-			byte *pbSrcEnd = pbSrc + *pnumVoiceDataBytes;
-
-			while ( pbSrc < pbSrcEnd )
-			{
-				// Copy src data into encoding buffer, advance src
-				int numBytesRoomForEncode = SCE_CELP8ENC_INPUT_SIZE - m_bufEncLeftover.Count();
-				numBytesRoomForEncode = MIN( numBytesRoomForEncode, pbSrcEnd - pbSrc );
-				m_bufEncLeftover.AddMultipleToTail( numBytesRoomForEncode, pbSrc );
-				pbSrc += numBytesRoomForEncode;
-
-				// If we have sufficient number of bytes for encoding, then encode, advance dst
-				if ( m_bufEncLeftover.Count() == SCE_CELP8ENC_INPUT_SIZE )
-				{
-					byte encBuffer[ SCE_CELP8ENC_OUTPUT_SIZE ] = {0};
-					int numBytesGenerated = 0;
-					int encResult = sceCelp8encEncode( m_sceCelp8encHandle, m_bufEncLeftover.Base(), encBuffer, &numBytesGenerated );
-					if ( encResult < 0 )
-						numBytesGenerated = 0;
-					if ( numBytesGenerated > 0 )
-					{
-						V_memcpy( pbDst, encBuffer, numBytesGenerated );
-						pbDst += numBytesGenerated;
-					}
-					m_bufEncLeftover.RemoveAll();
-				}
-				else
-					break;
-			}
-			// Set the number of bytes after encoding process
-			*pnumVoiceDataBytes = pbDst - pbVoiceData;
-
-#endif
-		}
-		if ( res != k_EVoiceResultOK )
-		{
-			*pnumVoiceDataBytes = 0;
-			*ppvVoiceDataBuffer = NULL;
-			return;
-		}
-	}
-#endif
 
 	// On PC respect user push-to-talk setting and don't transmit voice
 	// if push-to-talk key is not held
@@ -701,11 +527,7 @@ void CEngineVoiceSteam::PlayIncomingVoiceData( XUID xuid, const byte *pbData, un
 	int idxRemoteTalker = 0;
 	for ( DWORD dwSlot = 0; dwSlot < XBX_GetNumGameUsers(); ++ dwSlot )
 	{
-#ifdef _GAMECONSOLE
-		int iCtrlr = XBX_GetUserId( dwSlot );
-#else
 		int iCtrlr = dwSlot;
-#endif
 		IPlayerLocal *pPlayer = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( iCtrlr );
 		if ( pPlayer && pPlayer->GetXUID() == xuid )
 		{
@@ -803,81 +625,12 @@ playvoice:
 #endif // SND_VOICE_LOG_DEBUG
 	if ( !(m_arrRemoteVoice[idxRemoteTalker].m_uiFlags & ENGINE_VOICE_FLAG_PS3) )
 	{
-#ifdef _PS3
-		EVoiceResult res = Steam3Client().SteamUser()->DecompressVoice( const_cast< byte * >( pbData ), dwDataSize,
-			pbUncompressedVoice, sizeof( pbUncompressedVoice ), &numUncompressedBytes );
-#else
 		EVoiceResult res = Steam3Client().SteamUser()->DecompressVoice( const_cast< byte * >( pbData ), dwDataSize,
 			pbUncompressedVoice, sizeof( pbUncompressedVoice ), &numUncompressedBytes, 11025 );
-#endif
 
 		if ( res != k_EVoiceResultOK )
 			return;
 	}
-#if defined( PS3_CROSS_PLAY ) || defined ( _PS3 )	
-#ifdef SOUND_PC_CELP_ENABLED
-	else if ( m_sceCelp8decHandle )
-	{
-		int numCelpCompressedDecodedBufferMaxBytes = SOUND_PC_CELP_FREQ * 2;
-		byte *pbCelpCompressedDecodedBuffer = ( byte * ) stackalloc( numCelpCompressedDecodedBufferMaxBytes );
-		byte *pbSrc = const_cast< byte * >( pbData ), *pbDst = pbCelpCompressedDecodedBuffer;
-		byte *pbSrcEnd = pbSrc + dwDataSize, *pbDstEnd = pbDst + numCelpCompressedDecodedBufferMaxBytes;
-		while ( pbSrc < pbSrcEnd )
-		{
-			// Copy src data into decoding buffer, advance src
-			int numBytesRoomForDecode = SCE_CELP8DEC_INPUT_SIZE - m_bufDecLeftover.Count();
-			numBytesRoomForDecode = MIN( numBytesRoomForDecode, pbSrcEnd - pbSrc );
-			m_bufDecLeftover.AddMultipleToTail( numBytesRoomForDecode, pbSrc );
-			pbSrc += numBytesRoomForDecode;
-
-			// If we have sufficient number of bytes for encoding, then encode, advance dst
-			if ( m_bufDecLeftover.Count() == SCE_CELP8DEC_INPUT_SIZE )
-			{
-				byte decBuffer[ SCE_CELP8DEC_OUTPUT_SIZE ] = {0};
-				int numBytesGenerated = SCE_CELP8DEC_OUTPUT_SIZE;
-#ifdef SOUND_PC_CELP_ENABLED
-				int decResult = sceCelp8decDecode( m_sceCelp8decHandle, m_bufDecLeftover.Base(), decBuffer, 0 );
-#else
-				int decResult = -1;
-#endif
-#ifdef SND_VOICE_LOG_DEBUG
-				if ( snd_voice_log.GetInt() & SND_VOICE_LOG_RECORD_REMOTE )
-				{
-					g_bufSndVoiceLog.Put( decBuffer, numBytesGenerated );
-				}
-#endif
-
-				if ( decResult < 0 )
-					numBytesGenerated = 0;
-				if ( ( numBytesGenerated > 0 ) && ( pbDst + numBytesGenerated <= pbDstEnd ) )
-				{
-					// even if we have no room to store decoded data, keep decoding
-					// to keep decoder state consistent
-					V_memcpy( pbDst, decBuffer, numBytesGenerated );
-					pbDst += numBytesGenerated;
-				}
-				m_bufDecLeftover.RemoveAll();
-			}
-			else
-				break;
-		}
-		// Set the number of bytes after encoding process
-		numUncompressedBytes = pbDst - pbCelpCompressedDecodedBuffer;
-
-		uint32 numOutSamples = m_resampleCelp2Pc.Resample( ( const int16 * ) pbCelpCompressedDecodedBuffer, numUncompressedBytes/2, ( int16 * ) pbUncompressedVoice );
-		numUncompressedBytes = numOutSamples * 2;
-		if ( !numOutSamples )
-			return;
-
-#ifdef SND_VOICE_LOG_DEBUG
-		if ( snd_voice_log.GetInt() & SND_VOICE_LOG_RECORD_REMOTE_11025 )
-		{
-			g_bufSndVoiceLog11025.Put( pbUncompressedVoice, numUncompressedBytes );
-		}
-#endif // SND_VOICE_LOG_DEBUG
-	}
-#endif // SOUND_PC_CELP_ENABLED
-#endif // PS3_CROSS_PLAY  || _PS3
 
 	// Voice channel index
 	int idxVoiceChan = idxRemoteTalker;

@@ -86,14 +86,6 @@ private:
 	XUID								m_PlayerXUID;
 
 	// Platform-specific stats storage
-#ifdef _X360
-	XUSER_STATS_SPEC					m_statsSpec;
-	XUSER_STATS_READ_RESULTS*			m_pResultsBuffer;
-	CUtlVector<XUSER_STATS_ROW*>		m_pResults;
-	
-	XONLINE_FRIEND*						m_pFriends;
-	XUSER_STATS_READ_RESULTS*			m_pFriendsResult[MAX_FRIENDS+1];
-#endif
 
 #if !defined( NO_STEAM )
 	// Map from name of board to Steam handle

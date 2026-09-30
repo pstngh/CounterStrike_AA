@@ -6,11 +6,7 @@
 
 #include "mm_framework.h"
 
-#ifdef _X360
-#include "xonline.h"
-#else
 #include "xbox/xboxstubs.h"
-#endif
 
 #include "matchsystem.h"
 #include "playermanager.h"

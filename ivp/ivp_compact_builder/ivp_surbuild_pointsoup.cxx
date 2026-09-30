@@ -15,18 +15,8 @@
 #include <ivp_surbuild_ledge_soup.hxx>
 #include <ivp_surbuild_pointsoup.hxx>
 
-#if defined(WIN32) && !defined(_XBOX)
+#if defined(WIN32)
 #include "wtypes.h"
-#elif defined(_XBOX)
-#	ifndef WINVER
-#		define WINVER 0x0500
-#	endif
-#	ifndef _X86_
-#		define _X86_
-#	endif  /* _X86_ */
-#	include <excpt.h>
-#	include <stdarg.h>
-#	include <windef.h>
 #endif
 
 int IVP_SurfaceBuilder_Pointsoup::get_offset_from_pointlist(IVP_Template_Point *points, int length, IVP_U_Point *point)

@@ -8,9 +8,7 @@
 
 #include "cmatnullrendercontext.h"
 
-#ifndef _PS3
 #define MATSYS_INTERNAL
-#endif
 #include "cmatrendercontext.h"
 #include "itextureinternal.h"
 
@@ -706,13 +704,6 @@ public:
 		AssertMsg( 0, "CMatNullRenderContext only provides base features, not a stub (right now)" );
 	}
 
-#ifdef _PS3
-	virtual void DrawReloadZcullQuad()
-	{
-		AssertMsg( 0, "CMatNullRenderContext only provides base features, not a stub (right now)" );
-	}
-#endif // _PS3
-
 	bool OnDrawMesh(IMesh *,CPrimList *,int)
 	{
 		AssertMsg( 0, "CMatNullRenderContext only provides base features, not a stub (right now)" );
@@ -889,46 +880,6 @@ public:
 	virtual void FlipCulling( bool bFlipCulling ) {}
 
 
-#if defined( _X360 )
-	virtual void PushVertexShaderGPRAllocation( int iVertexShaderCount = 64 )
-	{
-		Assert( 0 );
-	}
-
-	virtual void PopVertexShaderGPRAllocation( void )
-	{
-		Assert( 0 );
-	}
-
-	virtual void FlushHiStencil()
-	{
-		Assert( 0 );
-	}
-#endif
-
-#if defined( _GAMECONSOLE )
-	virtual void BeginConsoleZPass( const WorldListIndicesInfo_t &indicesInfo )
-	{
-		Assert( 0 );
-	}
-
-	virtual void BeginConsoleZPass2( int nSlack )
-	{
-		Assert( 0 );
-	}
-	
-	virtual void EndConsoleZPass()
-	{
-		Assert( 0 );
-	}
-#endif
-
-#if defined( _PS3 )
-	virtual void FlushTextureCache()
-	{
-		Assert( 0 );
-	}
-#endif
 	virtual void AntiAliasingHint(int )
 	{
 		Assert( 0 );
@@ -971,7 +922,7 @@ public:
 	virtual void							PrintfVA( char *fmt, va_list vargs ){};
 	virtual float							Knob( char *knobname, float *setvalue=NULL ) { return 0.0f; };	
 
-#if defined( DX_TO_GL_ABSTRACTION ) && !defined( _GAMECONSOLE )
+#if defined( DX_TO_GL_ABSTRACTION )
 	void									DoStartupShaderPreloading( void ) {};
 #endif
 

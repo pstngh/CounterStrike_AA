@@ -11,11 +11,6 @@
 #include "datacache/imdlcache.h"
 #include "utlvector.h"
 #include "vprof.h"
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#elif defined( _PS3 )
-#include "materialsystem/imaterialsystem.h" // for loading fontlib
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -223,17 +218,8 @@ bool IGameSystem::InitAllSystems()
 
 		IGameSystem *sys = s_GameSystems[i];
 
-#if defined( _GAMECONSOLE )
-		char sz[128];
-		Q_snprintf( sz, sizeof( sz ), "%s->Init():Start", sys->Name() );
-		COM_TimestampedLog( sz );
-#endif
 		bool valid = sys->Init();
 
-#if defined( _GAMECONSOLE )
-		Q_snprintf( sz, sizeof( sz ), "%s->Init():Finish", sys->Name() );
-		COM_TimestampedLog( sz );
-#endif
 		if ( !valid )
 		{
 			DevWarning( 1, "Failed to load %s\n", sys->Name() );

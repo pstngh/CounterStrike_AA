@@ -10,10 +10,8 @@
 
 #include "convar.h"
 
-#if !defined( _X360 ) && !defined( _PS3 )
 #include "lightmappedgeneric_vs30.inc"
 #include "worldtwotextureblend_ps30.inc"
-#endif
 
 #include "lightmappedgeneric_vs20.inc"
 #include "worldtwotextureblend_ps20.inc"
@@ -26,11 +24,7 @@
 
 
 
-#if defined( CSTRIKE15 ) && defined( _X360 )
-static ConVar r_shader_srgbread( "r_shader_srgbread", "1", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#else
 static ConVar r_shader_srgbread( "r_shader_srgbread", "0", 0, "1 = use shader srgb texture reads, 0 = use HW" );
-#endif
 
 
 // FIXME: Need to make a dx9 version so that "CENTROID" works.
@@ -260,7 +254,6 @@ END_SHADER_PARAMS
 
 			int nLightingPreviewMode = 0;
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->HasFastVertexTextures() )
 			{
 				DECLARE_STATIC_VERTEX_SHADER( lightmappedgeneric_vs30 );
@@ -280,7 +273,6 @@ END_SHADER_PARAMS
 				SET_STATIC_VERTEX_SHADER( lightmappedgeneric_vs30 );
 			}
 			else
-#endif
 			{
 				DECLARE_STATIC_VERTEX_SHADER( lightmappedgeneric_vs20 );
 				SET_STATIC_VERTEX_SHADER_COMBO( ENVMAP_MASK,  false );
@@ -296,13 +288,9 @@ END_SHADER_PARAMS
 				SET_STATIC_VERTEX_SHADER_COMBO( LIGHTING_PREVIEW, nLightingPreviewMode != 0 );
 				SET_STATIC_VERTEX_SHADER_COMBO( PAINT, 0 );
 				SET_STATIC_VERTEX_SHADER_COMBO( ADDBUMPMAPS, 0 );
-	#if defined( _X360 ) || defined( _PS3 )
-				SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT, hasFlashlight );
-	#endif
 				SET_STATIC_VERTEX_SHADER( lightmappedgeneric_vs20 );
 			}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->HasFastVertexTextures() )
 			{
 				DECLARE_STATIC_PIXEL_SHADER( worldtwotextureblend_ps30 );
@@ -318,7 +306,6 @@ END_SHADER_PARAMS
 				SET_STATIC_PIXEL_SHADER( worldtwotextureblend_ps30 );
 			}
 			else
-#endif
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 			{
 				DECLARE_STATIC_PIXEL_SHADER( worldtwotextureblend_ps20b );
@@ -465,7 +452,6 @@ END_SHADER_PARAMS
 				}
 			}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if (g_pHardwareConfig->HasFastVertexTextures() )
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_vs30 );
@@ -473,7 +459,6 @@ END_SHADER_PARAMS
 				SET_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_vs30 );
 			}
 			else
-#endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( lightmappedgeneric_vs20 );
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( FASTPATH,  bVertexShaderFastPath );
@@ -495,7 +480,6 @@ END_SHADER_PARAMS
 				bWriteWaterFogToAlpha = false;
 			}
 
-#if !defined( _X360 ) && !defined( _PS3 )
 			if ( g_pHardwareConfig->HasFastVertexTextures() )
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( worldtwotextureblend_ps30 );
@@ -508,7 +492,6 @@ END_SHADER_PARAMS
 				SET_DYNAMIC_PIXEL_SHADER( worldtwotextureblend_ps30 );
 			}
 			else
-#endif
 			if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 			{
 				DECLARE_DYNAMIC_PIXEL_SHADER( worldtwotextureblend_ps20b );

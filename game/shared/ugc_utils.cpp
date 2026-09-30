@@ -43,7 +43,7 @@ extern IFileSystem	*filesystem;
 extern CSteamAPIContext	*steamapicontext; // available on game clients
 #endif // !NO_STEAM
 
-#if !defined( NO_STEAM ) && !defined ( _PS3 )
+#if !defined( NO_STEAM )
 
 Color g_WorkshopLogColor( 0, 255, 255, 255 );
 BEGIN_DEFINE_LOGGING_CHANNEL( LOG_WORKSHOP, "Workshop", LCF_CONSOLE_ONLY, LS_WARNING, g_WorkshopLogColor );
