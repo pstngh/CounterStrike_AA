@@ -759,6 +759,7 @@ bool CSourceAppSystemGroup::Create()
 		}
 	}
 
+#ifdef COMPILER_MSVC // the CMake build has no process utils
 	if ( IsPC() && IsPlatformWindows() )
 	{
 		AppModule_t vstdlibModule = LoadModule( LAUNCHER_APPSYSTEM( "vstdlib" ) );
@@ -766,6 +767,7 @@ bool CSourceAppSystemGroup::Create()
 		if ( !processUtils )
 			return false;
 	}
+#endif
 
 	if ( CommandLine()->FindParm( "-dev" ) )
 	{

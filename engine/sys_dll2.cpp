@@ -543,12 +543,14 @@ bool CEngineAPI::Connect( CreateInterfaceFn factory )
 	g_pRocketUI = ( IRocketUI* ) factory( ROCKETUI_INTERFACE_VERSION, NULL );
 #endif
 
+#if defined( AVI_VIDEO )
 	if ( IsPC() && !IsPosix() )
 	{
 		avi = (IAvi*)factory( AVI_INTERFACE_VERSION, NULL );
 		if ( !avi )
 			return false;
 	}
+#endif
 
 #if defined( BINK_VIDEO )
 	bik = (IBik*)factory( BIK_INTERFACE_VERSION, NULL );

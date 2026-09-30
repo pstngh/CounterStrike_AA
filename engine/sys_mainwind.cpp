@@ -2103,7 +2103,7 @@ void CGame::SetMainWindow( HWND window )
 #error
 #endif
 
-	if ( IsPC() && !IsPosix() )
+	if ( avi )
 	{
 		avi->SetMainWindow( (void*)window );
 	}
