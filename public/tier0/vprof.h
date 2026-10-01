@@ -459,8 +459,8 @@ public:
 	void Start();
 	void Stop();
 
-	void SetTargetThreadId( unsigned id ) { m_TargetThreadId = id; }
-	unsigned GetTargetThreadId() { return m_TargetThreadId; }
+	void SetTargetThreadId( ThreadId_t id ) { m_TargetThreadId = id; }
+	ThreadId_t GetTargetThreadId() { return m_TargetThreadId; }
 	bool InTargetThread() { return ( m_TargetThreadId == ThreadGetCurrentId() ); }
 
 	void EnterScope( const tchar *pszName, int detailLevel, const tchar *pBudgetGroupName, bool bAssertAccounted );
@@ -601,7 +601,9 @@ protected:
 	tchar *m_CounterNames[MAXCOUNTERS];
 	int m_NumCounters;
 
-	unsigned m_TargetThreadId;
+	// A 32-bit id would truncate 64-bit pthread_t values, so InTargetThread()
+	// would never match and no scope or counter would be recorded.
+	ThreadId_t m_TargetThreadId;
 };
 
 //-------------------------------------

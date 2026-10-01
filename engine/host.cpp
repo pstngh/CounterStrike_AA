@@ -563,7 +563,7 @@ ConVar telemetry_demoend( "telemetry_demoend", "0", 0, "When playing demo, stop 
 
 #endif
 
-static unsigned g_MainThreadId = ThreadGetCurrentId();
+static ThreadId_t g_MainThreadId = ThreadGetCurrentId();
 
 extern bool gfBackground;
 

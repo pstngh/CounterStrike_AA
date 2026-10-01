@@ -9,6 +9,7 @@
 #define __VPROF_ENGINE_H__
 
 #include "igameserverdata.h"
+#include "tier0/threadtools.h"
 
 class IVProfExport;
 class CVProfile;
@@ -41,6 +42,6 @@ extern IVProfExport *g_pVProfExport; // used by engine's budget panel
 // The budget panel and vprof panels use this for display.
 extern CVProfile *g_pVProfileForDisplay;
 
-extern unsigned g_VProfTargetThread;
+extern ThreadId_t g_VProfTargetThread;
 
 #endif

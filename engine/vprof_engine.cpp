@@ -54,7 +54,7 @@ static void ExecuteDeferredOp()
 	}
 }
 
-unsigned g_VProfTargetThread = ThreadGetCurrentId();
+ThreadId_t g_VProfTargetThread = ThreadGetCurrentId();
 	
 const double MAX_SPIKE_REPORT = 1.0;
 const int MAX_SPIKE_REPORT_FRAMES = 10;
