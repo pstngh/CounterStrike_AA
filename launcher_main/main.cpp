@@ -152,6 +152,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 int main( int argc, char *argv[] )
 {
+	// stdout is fully buffered when it is a file, as when the Mac launcher writes
+	// launcher-game.log, and a crash would discard the last lines of output.
+	setvbuf( stdout, NULL, _IOLBF, 0 );
+
 #ifdef OSX
 	// The main thread runs the game and, on a listen server, the server. A process that
 	// another app starts may not get the user-interactive QoS class macOS gives apps it
