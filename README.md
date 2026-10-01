@@ -187,7 +187,7 @@ To record performance, enter `perf_log 1` in the console, or turn on Write perf_
 - **Leaning and movement.** Left Shift leans left and Space leans right, with OpenMoHAA's timing, and F jumps. Control toggles crouch and C toggles walk. Movement uses Allied Assault's run, walk and crouch speeds, and opposing movement and lean keys resolve like nullbinds: the last key pressed wins.
 - **Sniping.** The AWP uses a circular 20-degree scope and Allied Assault's camera kick.
 - **Recoil and spread.** Recoil and hit reactions are softened, and spread doesn't grow while moving.
-- **Loadouts.** CT players spawn with a USP-S, M4A1-S, AK-47, AUG and AWP, and T players with a USP-S, AK-47 and AWP. Grenades, knives and C4 are removed.
+- **Loadouts.** CT players spawn with a USP-S, M4A1-S, AK-47 and AWP, and T players with a USP-S, AK-47 and AWP. Grenades, knives and C4 are removed.
 - **Matches.** Local matches are free-for-all deathmatch with no warmup or round end. The host has god mode, full ammunition, maximum money, and can buy anywhere.
 - **Bots.** Bots carry a random primary, keep hunting, and lean as they strafe.
 - **View.** The FOV is fixed at 80, the HUD shows only the crosshair, and the K key cycles the weapon model between hidden, weapon only, and weapon and hands.

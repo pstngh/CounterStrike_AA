@@ -2064,7 +2064,6 @@ void CCSPlayer::GiveDefaultItems()
 			{
 				GiveNamedItem( "weapon_m4a1_silencer" );
 				GiveNamedItem( "weapon_ak47" );
-				GiveNamedItem( "weapon_aug" );
 			}
 			else
 			{
