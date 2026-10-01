@@ -483,8 +483,11 @@ static void EndSegment( double flNow, const char *pszReason )
 
 static void OpenLog()
 {
+	// The base directory is empty on POSIX, where the game runs from its root
+	// directory. A relative name would open in the mod's write path (csgo/).
 	char szPath[MAX_PATH];
-	V_ComposeFileName( host_parms.basedir ? host_parms.basedir : ".", "perf_log.txt", szPath, sizeof( szPath ) );
+	const char *pszBaseDir = ( host_parms.basedir && host_parms.basedir[0] ) ? host_parms.basedir : NULL;
+	V_MakeAbsolutePath( szPath, sizeof( szPath ), "perf_log.txt", pszBaseDir );
 	s_hLog = g_pFileSystem->Open( szPath, "a" );
 	if ( s_hLog == FILESYSTEM_INVALID_HANDLE )
 	{
