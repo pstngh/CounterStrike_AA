@@ -145,7 +145,13 @@ bool CAudioSDL::Init( const audio_device_init_params_t &params )
 	desired.freq = int(MIX_DEFAULT_SAMPLING_RATE);
 	desired.format = AUDIO_S16SYS;
 	desired.channels = 2;
+#if defined( OSX )
+	// SDL's CoreAudio backend queues at least three device buffers and at least
+	// 15 ms, so 1024 frames kept 46-70 ms of sound waiting; 256 keeps about 30.
+	desired.samples = 256;
+#else
 	desired.samples = 1024;
+#endif
 	desired.callback = AudioCallback;
 	desired.userdata = this;
 

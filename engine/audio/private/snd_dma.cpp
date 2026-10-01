@@ -314,8 +314,14 @@ int64  			g_paintedtime = 0; 		// sample PAIRS mixed since start
 float			g_ClockSyncArray[NUM_CLOCK_SYNCS] = {0};
 int64			g_SoundClockPaintTime[NUM_CLOCK_SYNCS] = {0};
 
+#if defined( OSX )
+// The clock sync already delays the first sound by a tick, so a gunshot
+// heard 30 ms later than that gains no steadier spacing on the Mac.
+ConVar snd_delay_sound_shift( "snd_delay_sound_shift", "0" );
+#else
 // default 30ms
 ConVar snd_delay_sound_shift( "snd_delay_sound_shift", "0.03" );
+#endif
 // this forces the clock to resync on the next delayed/sync sound
 void S_SyncClockAdjust( clocksync_index_t syncIndex )
 {
@@ -588,7 +594,14 @@ ConVar snd_mapobjective_volume( "snd_mapobjective_volume", "1.0", FCVAR_ARCHIVE 
 ConVar snd_tensecondwarning_volume( "snd_tensecondwarning_volume", "1.0", FCVAR_ARCHIVE | FCVAR_RELEASE, "Relative volume of ten second warning music." );
 ConVar snd_deathcamera_volume("snd_deathcamera_volume", "1.0", FCVAR_ARCHIVE | FCVAR_RELEASE, "Relative volume of the death camera music.");
 
+#if defined( OSX )
+// Each frame tops the queue up to one frame plus this much audio, and a new
+// sound starts after everything queued. 0.1 made gunshots audibly late; raise
+// it if sound clicks during frame-rate hitches.
+ConVar snd_mixahead( "snd_mixahead", "0.03", FCVAR_ARCHIVE );
+#else
 ConVar snd_mixahead( "snd_mixahead", "0.1", FCVAR_ARCHIVE );
+#endif
 ConVar snd_delay_for_choreo_enabled( "snd_delay_for_choreo_enabled", "1", 0, "Enables update of delay for choreo to compensate for IO latency." );
 ConVar snd_delay_for_choreo_reset_after_N_milliseconds( "snd_delay_for_choreo_reset_after_N_milliseconds", "500", 0, "Resets the choreo latency after N milliseconds of VO not playing. Default is 500 ms." );
 

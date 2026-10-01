@@ -107,6 +107,16 @@ renderer the render-thread time includes waiting for the GPU at present.
 In the console, `gl_swap_limit 0` also lets more than one frame queue for
 display, at the cost of input latency.
 
+Sound is mixed ahead of playback, so a new sound waits behind the audio
+already queued. With CS:GO's defaults, a gunshot reached the headphones about
+0.23 s after the shot: `snd_mixahead 0.1` queued about 116 ms, the gunshot's
+clock sync added a tick and `snd_delay_sound_shift` 30 ms more, and SDL's
+1024-frame CoreAudio buffers held another 46–70 ms. The Mac build defaults to
+`snd_mixahead 0.03`, `snd_delay_sound_shift 0` and 256-frame buffers, about
+0.1 s in all. A config saved by an older build keeps `snd_mixahead 0.1` until
+it is changed. If sound clicks when the frame rate hitches, raise
+`snd_mixahead`, for example to 0.05.
+
 Write perf_log.txt (`perf_log 1` in the console) appends a performance log to
 `perf_log.txt` in the game directory; Show in Finder reveals it. Each session
 records the build, the Mac and its cores, the GPU and the command line. Frames
