@@ -1466,6 +1466,11 @@ void CStaticPropMgr::UnserializeModels( CUtlBuffer& buf )
 		Log_Warning( LOG_StaticPropManager, "Really old map format! Static props can't be loaded...\n" );
 		return;
 	}
+	if ( nLumpVersion > 11 )
+	{
+		Log_Warning( LOG_StaticPropManager, "Static prop lump version %d is newer than this engine reads! Static props can't be loaded...\n", nLumpVersion );
+		return;
+	}
 
 	int count = buf.GetInt();
 
@@ -1526,6 +1531,13 @@ void CStaticPropMgr::UnserializeModels( CUtlBuffer& buf )
 		
 		case 10:
 			buf.Get( &lump, sizeof( StaticPropLump_t ) );
+			break;
+
+		case 11:
+			// Version 11 appends a uniform scale, which these props can't
+			// apply yet, so scaled props draw at their model's own size.
+			buf.Get( &lump, sizeof( StaticPropLump_t ) );
+			buf.SeekGet( CUtlBuffer::SEEK_CURRENT, sizeof( StaticPropLumpV11_t ) - sizeof( StaticPropLump_t ) );
 			break;
 		}
 
