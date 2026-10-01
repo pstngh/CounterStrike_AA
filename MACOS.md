@@ -263,10 +263,10 @@ Bots keep hunting instead of buying, camping, or holding a position, and move
 while aiming, scoping, and reloading. AWP bots can fire while moving with the
 preset's existing movement accuracy. Movement preserves navigation, crouching
 through low passages, and ladder climbing; fallback sidesteps check for walls
-and drops. Collisions can still briefly interrupt movement. Bots lean toward
-whichever side they strafe, as Allied Assault players do, and aim from the
-leaned eye their shots leave from; `bot_strafe_lean 0` turns the bot lean off
-(default 1). Explicit bot debug
+and drops. Collisions can still briefly interrupt movement. Bots don't lean by
+default. `bot_strafe_lean 1` makes them lean toward whichever side they strafe,
+as Allied Assault players do, and aim from the leaned eye their shots leave
+from (default 0). Explicit bot debug
 stops and freeze controls remain available. This behavior does not apply to
 dedicated servers, cooperative/training modes, or builds without the preset.
 
