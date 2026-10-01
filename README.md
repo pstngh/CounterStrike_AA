@@ -189,7 +189,7 @@ To record performance, enter `perf_log 1` in the console, or turn on Write perf_
 - **Recoil and accuracy.** Recoil and hit reactions are softened. Guns have no spread, so shots land on the recoil-adjusted crosshair, and bullets are slightly wider against players so near misses still hit. Shotguns keep their pellet spread.
 - **Loadouts.** CT players spawn with a USP-S, M4A1-S, AK-47 and AWP, and T players with a USP-S, AK-47 and AWP. Grenades, knives and C4 are removed.
 - **Matches.** Local matches are free-for-all deathmatch with no warmup or round end. The host has god mode, full ammunition, maximum money, and can buy anywhere.
-- **Bots.** Bots carry a random primary, keep hunting, and lean as they strafe.
+- **Bots.** Bots carry a random primary and keep hunting. They don't lean unless `bot_strafe_lean 1` is set.
 - **View.** The FOV is fixed at 80, the HUD shows only the crosshair, and the K key cycles the weapon model between hidden, weapon only, and weapon and hands.
 
 The preset changes shared client and server code, including the player network table. A preset client therefore only plays correctly on a server built from the same source with the same setting. [MACOS.md](MACOS.md#mac-gameplay-preset) documents every change and the console variables that tune them.
