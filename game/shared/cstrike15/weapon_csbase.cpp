@@ -1220,9 +1220,18 @@ float CWeaponCSBase::GetInaccuracy() const
 		return 0.0f;
 
 #if defined( USE_MAC_PRESET )
-	// Every shot leaves exactly along the recoil-adjusted aim, whatever the
-	// stance, movement or spray. Recoil still moves the aim.
+	// Human players' shots leave exactly along the recoil-adjusted aim,
+	// whatever the stance, movement or spray. Bots keep the weapon's
+	// first-shot standing or crouching cone, which firing, moving and
+	// jumping can't widen.
 	float fAccuracy = 0.0f;
+	if ( pPlayer->IsBot() )
+	{
+		const CCSWeaponInfo &weaponInfo = GetCSWpnData();
+		fAccuracy = FBitSet( pPlayer->GetFlags(), FL_DUCKING ) && pPlayer->GetGroundEntity()
+			? weaponInfo.GetInaccuracyCrouch( GetEconItemView(), m_weaponMode )
+			: weaponInfo.GetInaccuracyStand( GetEconItemView(), m_weaponMode );
+	}
 #else
 	const CCSWeaponInfo& weaponInfo = GetCSWpnData();
 
@@ -1293,6 +1302,19 @@ float CWeaponCSBase::GetInaccuracy() const
 
 	return fAccuracy;
 }
+
+#if defined( USE_MAC_PRESET )
+float CWeaponCSBase::GetSpread() const
+{
+	// Bots and shotguns keep the weapon's spread; human players' other guns
+	// fire exactly where they aim.
+	const CCSPlayer *pPlayer = GetPlayerOwner();
+	if ( ( pPlayer && pPlayer->IsBot() ) || GetCSWpnData().GetBullets( GetEconItemView() ) > 1 )
+		return GetCSWpnData().GetSpread( GetEconItemView(), m_weaponMode.Get() );
+
+	return 0.0f;
+}
+#endif
 
 
 int CWeaponCSBase::GetRecoilSeed( void ) const
@@ -3708,9 +3730,9 @@ void CWeaponCSBase::UpdateAccuracyPenalty( )
 		return;
 
 #if defined( USE_MAC_PRESET )
-	// The preset's GetInaccuracy is always zero and never reads the
-	// accumulated penalty, so keep it at zero rather than computing and
-	// networking a decaying value every tick.
+	// The preset's GetInaccuracy never reads the accumulated penalty, so
+	// keep it at zero rather than computing and networking a decaying value
+	// every tick.
 	m_fAccuracyPenalty = 0.0f;
 #else
 	const CCSWeaponInfo& weaponInfo = GetCSWpnData( );
