@@ -742,6 +742,10 @@ void UTIL_TraceLineFilterEntity( CBaseEntity *pEntity, const Vector &vecAbsStart
 	UTIL_TraceLine( vecAbsStart, vecAbsEnd, mask, &traceFilter, ptr );
 }
 
+#if defined( USE_MAC_PRESET )
+float g_flBulletHitboxRadius = 0.0f;
+#endif
+
 void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, ITraceFilter *filter, trace_t *tr )
 {
 	trace_t playerTrace;

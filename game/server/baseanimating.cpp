@@ -2840,7 +2840,12 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask,
 	matrix3x4_t *hitboxbones[MAXSTUDIOBONES];
 	pcache->ReadCachedBonePointers( hitboxbones, pStudioHdr->numbones() );
 
-	if ( TraceToStudioCsgoHitgroupsPriority( physprops, ray, pStudioHdr, set, hitboxbones, fContentsMask, GetAbsOrigin(), GetModelHierarchyScale(), tr ) )
+#if defined( USE_MAC_PRESET )
+	const float flHitboxInflate = IsPlayer() ? g_flBulletHitboxRadius : 0.0f;
+#else
+	const float flHitboxInflate = 0.0f;
+#endif
+	if ( TraceToStudioCsgoHitgroupsPriority( physprops, ray, pStudioHdr, set, hitboxbones, fContentsMask, GetAbsOrigin(), GetModelHierarchyScale(), tr, flHitboxInflate ) )
 	{
 		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
 		const mstudiobone_t *pBone = pStudioHdr->pBone(pbox->bone);

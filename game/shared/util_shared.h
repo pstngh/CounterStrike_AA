@@ -469,6 +469,13 @@ void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector
 
 void UTIL_ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, unsigned int mask, ITraceFilter *filter, trace_t *tr );
 
+#if defined( USE_MAC_PRESET )
+// Player hitbox traces grow every hitbox by this many units. Bullet traces set
+// it and put it back to 0 afterwards, so a bullet is a thin cylinder against
+// players and still a line against the world and every other trace.
+extern float g_flBulletHitboxRadius;
+#endif
+
 // Particle effect tracer
 void		UTIL_ParticleTracer( const char *pszTracerEffectName, const Vector &vecStart, const Vector &vecEnd, int iEntIndex = 0, int iAttachment = 0, bool bWhiz = false );
 

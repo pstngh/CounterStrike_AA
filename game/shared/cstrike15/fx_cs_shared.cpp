@@ -417,11 +417,6 @@ void FX_FireBullets(
 
 	RandomSeed( iSeed );	// init random system with this seed
 
-#if defined( USE_MAC_PRESET )
-	// Keep the Negev on its first-shot spread curve throughout a spray.
-	flRecoilIndex = 0.0f;
-#endif
-
 	// Accuracy curve density adjustment FOR R8 REVOLVER SECONDARY FIRE, NEGEV WILD BEAST
 	float flRadiusCurveDensity = RandomFloat();
 	if ( nItemDefIndex == 64 && iMode == Secondary_Mode ) /*R8 REVOLVER SECONDARY FIRE*/

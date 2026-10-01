@@ -211,10 +211,15 @@ cannot be bought, granted, picked up, or spawned on maps. C4 cannot be granted
 or picked up, and bomb sites do not become objectives. Local matches start in
 free-for-all deathmatch, with respawns enabled and every player a valid target.
 Set `mp_teammates_are_enemies 0` in the console for team deathmatch; the preset
-sets it back to 1 on every map load. Weapon
-inaccuracy uses each weapon's first-shot standing or crouching baseline while
-running, jumping, climbing, or spraying. Shots retain their normal random
-first-shot spread. Automatic-weapon recoil remains visible and affects aim,
+sets it back to 1 on every map load. Weapons
+have no inaccuracy or spread: every shot leaves exactly along the
+recoil-adjusted aim while standing, crouching, running, jumping, climbing, or
+spraying, and an unscoped AWP is as accurate as a scoped one. Shotguns keep
+their pellet pattern, centered on the aim. Against players, a bullet is a
+cylinder with a 1-unit radius rather than a line, which widens the 4.2-unit
+head capsule to 5.2 units; walls and every other surface still stop the exact
+line. `weapon_bullet_radius` sets the radius from 0 to 4, and 0 restores exact
+lines. Automatic-weapon recoil remains visible and affects aim,
 but each shot samples a different recoil table entry instead of following a
 fixed spray sequence. The view tracks recoil so the crosshair remains centered
 on the recoil-adjusted shot direction. Guns using aim recoil retain each

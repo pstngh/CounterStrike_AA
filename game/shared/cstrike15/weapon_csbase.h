@@ -337,7 +337,12 @@ public:
 	virtual float GetAccuracyFishtail() const { return m_fAccuracyFishtail; }
 	virtual void SetAccuracyFishtail( float fFishtail ) { m_fAccuracyFishtail = fFishtail; }
 #endif
+#if defined( USE_MAC_PRESET )
+	// Shotguns keep their pellet pattern; every other gun fires exactly where it aims.
+	virtual float GetSpread() const { return GetCSWpnData().GetBullets( GetEconItemView() ) > 1 ? GetCSWpnData().GetSpread( GetEconItemView(), m_weaponMode.Get() ) : 0.0f; }
+#else
 	virtual float GetSpread() const { return GetCSWpnData().GetSpread( GetEconItemView(), m_weaponMode.Get() ); }
+#endif
 
 	virtual void UpdateAccuracyPenalty();
 

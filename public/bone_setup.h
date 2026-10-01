@@ -456,8 +456,9 @@ void Studio_InvalidateBoneCacheIfNotMatching( memhandle_t cacheHandle, float flT
 
 // Given a ray, trace for an intersection with this studiomodel.  Get the array of bones from StudioSetupHitboxBones
 bool TraceToStudio( class IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *pStudioHdr, mstudiohitboxset_t *set, matrix3x4_t **hitboxbones, int fContentsMask, const Vector &vecOrigin, float flScale, trace_t &trace );
-// Given a ray, trace for an intersection with this studiomodel, bullets will hit bodyparts that result in higher damage
-bool TraceToStudioCsgoHitgroupsPriority( class IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *pStudioHdr, mstudiohitboxset_t *set, matrix3x4_t **hitboxbones, int fContentsMask, const Vector &vecOrigin, float flScale, trace_t &trace );
+// Given a ray, trace for an intersection with this studiomodel, bullets will hit bodyparts that result in higher damage.
+// flHitboxInflate grows every hitbox by that many world units, which is the same as tracing a cylinder of that radius.
+bool TraceToStudioCsgoHitgroupsPriority( class IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *pStudioHdr, mstudiohitboxset_t *set, matrix3x4_t **hitboxbones, int fContentsMask, const Vector &vecOrigin, float flScale, trace_t &trace, float flHitboxInflate = 0.0f );
 // TERROR: TraceToStudio variant that prioritizes hitgroups, so bullets can pass through arms and chest to hit the head, for instance
 bool TraceToStudioGrouped( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *pStudioHdr, mstudiohitboxset_t *set, 
 						  matrix3x4_t **hitboxbones, int fContentsMask, trace_t &tr, const CUtlVector< int > &sortedHitgroups );

@@ -1380,6 +1380,14 @@ struct DelayedDamageInfoData_t
 };
 #endif
 
+#if defined( USE_MAC_PRESET )
+// 1 unit grows the 4.2-unit head capsule to 5.2: a little easier to hit
+// without visibly bending shots around a player.
+ConVar weapon_bullet_radius( "weapon_bullet_radius", "1", FCVAR_REPLICATED | FCVAR_RELEASE,
+	"Radius, in units, that bullets have against player hitboxes. 0 makes bullets exact lines. Walls always see the exact line.",
+	true, 0.0f, true, 4.0f );
+#endif
+
 void CCSPlayer::FireBullet( 
 	Vector vecSrc,	// shooting postion
 	const QAngle &shootAngles,  //shooting angle
@@ -1467,6 +1475,12 @@ void CCSPlayer::FireBullet(
 
 		trace_t tr; // main enter bullet trace
 
+#if defined( USE_MAC_PRESET )
+		// Only these two traces see the wider player hitboxes. Walls always
+		// stop the exact line, and the penetration traces below use normal
+		// hitboxes.
+		g_flBulletHitboxRadius = weapon_bullet_radius.GetFloat();
+#endif
 		UTIL_TraceLineIgnoreTwoEntities( vecSrc, vecEnd, CS_MASK_SHOOT|CONTENTS_HITBOX, this, lastPlayerHit, COLLISION_GROUP_NONE, &tr );
 		{
 			CTraceFilterSkipTwoEntities filter( this, lastPlayerHit, COLLISION_GROUP_NONE );
@@ -1475,6 +1489,9 @@ void CCSPlayer::FireBullet(
 			const float rayExtension = 40.0f;
 			UTIL_ClipTraceToPlayers( vecSrc, vecEnd + vecDir * rayExtension, CS_MASK_SHOOT|CONTENTS_HITBOX, &filter, &tr );
 		}
+#if defined( USE_MAC_PRESET )
+		g_flBulletHitboxRadius = 0.0f;
+#endif
 
 		if ( !flDist_aim )
 		{

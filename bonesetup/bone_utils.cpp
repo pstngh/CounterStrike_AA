@@ -2122,7 +2122,7 @@ float Studio_GetPoseParameter( const CStudioHdr *pStudioHdr, int iParameter, flo
 
 #pragma warning (disable : 4701)
 
-static int ClipRayToCapsule( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& matrix, trace_t &tr )
+static int ClipRayToCapsule( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& matrix, trace_t &tr, float flInflate )
 {
 	BONE_PROFILE_FUNC();
 
@@ -2132,7 +2132,7 @@ static int ClipRayToCapsule( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t&
 
 	CShapeCastResult cast;
 	Assert( tr.fraction >= 0 && tr.fraction <= 1.0f );
-	CastCapsuleRay( cast, ray.m_Start /*+start offset?*/, ray.m_Delta * tr.fraction, vecCapsuleCenters, pbox->flCapsuleRadius );
+	CastCapsuleRay( cast, ray.m_Start /*+start offset?*/, ray.m_Delta * tr.fraction, vecCapsuleCenters, pbox->flCapsuleRadius + flInflate );
 	if ( cast.DidHit() )
 	{
 		tr.fraction *= cast.m_flHitTime;
@@ -2158,17 +2158,22 @@ static int ClipRayToCapsule( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t&
 }
 
 //-----------------------------------------------------------------------------
-// Purpose:
+// Purpose: flInflate grows the hitbox by that distance on every side, in the
+//          matrix's units.
 //-----------------------------------------------------------------------------
-static int ClipRayToHitbox( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& matrix, trace_t &tr )
+static int ClipRayToHitbox( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& matrix, trace_t &tr, float flInflate = 0.0f )
 {
 	const float flProjEpsilon = 0.01f;
 	BONE_PROFILE_FUNC();
 
 	if ( pbox->flCapsuleRadius > 0 )
 	{
-		return ClipRayToCapsule( ray, pbox, matrix, tr );
+		return ClipRayToCapsule( ray, pbox, matrix, tr, flInflate );
 	}
+
+	const Vector vecInflate( flInflate, flInflate, flInflate );
+	const Vector bbmin = pbox->bbmin - vecInflate;
+	const Vector bbmax = pbox->bbmax + vecInflate;
 
 	// scale by current t so hits shorten the ray and increase the likelihood of early outs
 	Vector delta2;
@@ -2177,18 +2182,18 @@ static int ClipRayToHitbox( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& 
 	// OPTIMIZE: Store this in the box instead of computing it here
 	// compute center in local space
 	Vector boxextents;
-	boxextents.x = (pbox->bbmin.x + pbox->bbmax.x) * 0.5; 
-	boxextents.y = (pbox->bbmin.y + pbox->bbmax.y) * 0.5; 
-	boxextents.z = (pbox->bbmin.z + pbox->bbmax.z) * 0.5; 
+	boxextents.x = (bbmin.x + bbmax.x) * 0.5; 
+	boxextents.y = (bbmin.y + bbmax.y) * 0.5; 
+	boxextents.z = (bbmin.z + bbmax.z) * 0.5; 
 	
 	// transform to world space
 	Vector boxCenter;
 	VectorTransform( boxextents, matrix, boxCenter );
 
 	// calc extents from local center
-	boxextents.x = pbox->bbmax.x - boxextents.x;
-	boxextents.y = pbox->bbmax.y - boxextents.y;
-	boxextents.z = pbox->bbmax.z - boxextents.z;
+	boxextents.x = bbmax.x - boxextents.x;
+	boxextents.y = bbmax.y - boxextents.y;
+	boxextents.z = bbmax.z - boxextents.z;
 	
 	// OPTIMIZE: This is optimized for world space.  If the transform is fast enough, it may make more
 	// sense to just xform and call UTIL_ClipToBox() instead.  MEASURE THIS.
@@ -2249,7 +2254,7 @@ static int ClipRayToHitbox( const Ray_t &ray, mstudiobbox_t *pbox, matrix3x4_t& 
 	// delta was prescaled by the current t, so no need to see if this intersection
 	// is closer
 	trace_t boxTrace;
-	if ( !IntersectRayWithBox( start, extent, pbox->bbmin, pbox->bbmax, 0.0f, &boxTrace ) )
+	if ( !IntersectRayWithBox( start, extent, bbmin, bbmax, 0.0f, &boxTrace ) )
 		return -1;
 
 	Assert( IsFinite(boxTrace.fraction) );
@@ -2450,7 +2455,7 @@ bool TraceToStudio( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *
 // Purpose:
 //-----------------------------------------------------------------------------
 bool TraceToStudioCsgoHitgroupsPriority( IPhysicsSurfaceProps *pProps, const Ray_t& ray, CStudioHdr *pStudioHdr, mstudiohitboxset_t *set, 
-	matrix3x4_t **hitboxbones, int fContentsMask, const Vector &vecOrigin, float flScale, trace_t &tr )
+	matrix3x4_t **hitboxbones, int fContentsMask, const Vector &vecOrigin, float flScale, trace_t &tr, float flHitboxInflate )
 {
 	BONE_PROFILE_FUNC();
 	if ( !ray.m_IsRay )
@@ -2569,7 +2574,7 @@ bool TraceToStudioCsgoHitgroupsPriority( IPhysicsSurfaceProps *pProps, const Ray
 			Ray_t newRay;
 			newRay.Init( vecRayStart, vecRayStart + vecRayDelta );  
 
-			side = ClipRayToHitbox( newRay, pbox, matScaled, pHitGroupResult->m_trHitGroup );
+			side = ClipRayToHitbox( newRay, pbox, matScaled, pHitGroupResult->m_trHitGroup, flHitboxInflate * invScale );
 		}
 		else
 		{
@@ -2581,7 +2586,7 @@ bool TraceToStudioCsgoHitgroupsPriority( IPhysicsSurfaceProps *pProps, const Ray
 			AngleMatrix(pbox->angOffsetOrientation, matOrientation);
 			MatrixMultiply(matCopy, matOrientation, matCopy);
 
-			side = ClipRayToHitbox( ray, pbox, matCopy, pHitGroupResult->m_trHitGroup );
+			side = ClipRayToHitbox( ray, pbox, matCopy, pHitGroupResult->m_trHitGroup, flHitboxInflate );
 		}
 		Assert( IsFinite( pHitGroupResult->m_trHitGroup.fraction ) );
 

@@ -1220,12 +1220,9 @@ float CWeaponCSBase::GetInaccuracy() const
 		return 0.0f;
 
 #if defined( USE_MAC_PRESET )
-	// Every shot uses the weapon's fresh-shot accuracy.  Firing, moving, and
-	// jumping cannot accumulate a wider spray cone.
-	const CCSWeaponInfo &weaponInfo = GetCSWpnData();
-	float fAccuracy = FBitSet( pPlayer->GetFlags(), FL_DUCKING ) && pPlayer->GetGroundEntity()
-		? weaponInfo.GetInaccuracyCrouch( GetEconItemView(), m_weaponMode )
-		: weaponInfo.GetInaccuracyStand( GetEconItemView(), m_weaponMode );
+	// Every shot leaves exactly along the recoil-adjusted aim, whatever the
+	// stance, movement or spray. Recoil still moves the aim.
+	float fAccuracy = 0.0f;
 #else
 	const CCSWeaponInfo& weaponInfo = GetCSWpnData();
 
@@ -3711,8 +3708,8 @@ void CWeaponCSBase::UpdateAccuracyPenalty( )
 		return;
 
 #if defined( USE_MAC_PRESET )
-	// The preset's GetInaccuracy uses only fresh-shot accuracy and never reads
-	// the accumulated penalty, so keep it at zero rather than computing and
+	// The preset's GetInaccuracy is always zero and never reads the
+	// accumulated penalty, so keep it at zero rather than computing and
 	// networking a decaying value every tick.
 	m_fAccuracyPenalty = 0.0f;
 #else
