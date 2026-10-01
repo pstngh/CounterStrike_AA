@@ -1384,7 +1384,7 @@ struct DelayedDamageInfoData_t
 // 1 unit grows the 4.2-unit head capsule to 5.2: a little easier to hit
 // without visibly bending shots around a player.
 ConVar weapon_bullet_radius( "weapon_bullet_radius", "1", FCVAR_REPLICATED | FCVAR_RELEASE,
-	"Radius, in units, that bullets have against player hitboxes. 0 makes bullets exact lines. Walls always see the exact line.",
+	"Radius, in units, that human players' bullets have against player hitboxes. 0 makes bullets exact lines. Bots' bullets and walls always use the exact line.",
 	true, 0.0f, true, 4.0f );
 #endif
 
@@ -1476,10 +1476,10 @@ void CCSPlayer::FireBullet(
 		trace_t tr; // main enter bullet trace
 
 #if defined( USE_MAC_PRESET )
-		// Only these two traces see the wider player hitboxes. Walls always
-		// stop the exact line, and the penetration traces below use normal
-		// hitboxes.
-		g_flBulletHitboxRadius = weapon_bullet_radius.GetFloat();
+		// Only these two traces see the wider player hitboxes, and only for
+		// human shooters. Walls always stop the exact line, and the
+		// penetration traces below use normal hitboxes.
+		g_flBulletHitboxRadius = IsBot() ? 0.0f : weapon_bullet_radius.GetFloat();
 #endif
 		UTIL_TraceLineIgnoreTwoEntities( vecSrc, vecEnd, CS_MASK_SHOOT|CONTENTS_HITBOX, this, lastPlayerHit, COLLISION_GROUP_NONE, &tr );
 		{

@@ -217,11 +217,12 @@ the recoil-adjusted aim while standing, crouching, running, jumping, climbing,
 or spraying, and an unscoped AWP is as accurate as a scoped one. Shotguns keep
 their pellet pattern, centered on the aim. Bots keep each weapon's first-shot
 standing or crouching spread, which running, jumping, climbing, and spraying
-don't widen. Against players, a bullet is a
-cylinder with a 1-unit radius rather than a line, which widens the 4.2-unit
-head capsule to 5.2 units; walls and every other surface still stop the exact
-line. `weapon_bullet_radius` sets the radius from 0 to 4, and 0 restores exact
-lines. Automatic-weapon recoil remains visible and affects aim,
+don't widen. Against players, a human player's
+bullet is a cylinder with a 1-unit radius rather than a line, which widens the
+4.2-unit head capsule to 5.2 units; walls and every other surface still stop
+the exact line, and bots' bullets stay exact lines. `weapon_bullet_radius` sets
+the radius from 0 to 4, and 0 restores exact lines. Automatic-weapon
+recoil remains visible and affects aim,
 but each shot samples a different recoil table entry instead of following a
 fixed spray sequence. The view tracks recoil so the crosshair remains centered
 on the recoil-adjusted shot direction. Guns using aim recoil retain each
