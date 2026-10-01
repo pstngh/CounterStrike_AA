@@ -20,7 +20,16 @@ void hk_Hinge_BP_Builder::set_axis_ws( hk_Rigid_Body *a, hk_Rigid_Body *b, const
 //lwss add - rebuilt from debug bins
 void hk_Hinge_BP_Builder::set_axis_perp_os(int obj_index, const hk_Vector3 &perp_os)
 {
-    float normalizedLength = 1.0f / sqrtf(perp_os.length_squared());
+    // phys_hinge passes a zero vector. Keep it zero so hk_Hinge_Constraint
+    // picks a perpendicular itself; normalizing it gives NaN, which then
+    // reaches the attached body's velocity (de_train's hinged sign).
+    float lengthSquared = perp_os.length_squared();
+    if ( !( lengthSquared > 0.0f ) )
+    {
+        m_hinge_bp.m_axis_perp_os[ obj_index ].set_zero();
+        return;
+    }
+    float normalizedLength = 1.0f / sqrtf(lengthSquared);
     m_hinge_bp.m_axis_perp_os[ obj_index ].x = (perp_os.x * normalizedLength);
     m_hinge_bp.m_axis_perp_os[ obj_index ].y = (perp_os.y * normalizedLength);
     m_hinge_bp.m_axis_perp_os[ obj_index ].z = (perp_os.z * normalizedLength);
