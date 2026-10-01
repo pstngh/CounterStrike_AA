@@ -8,8 +8,8 @@ fi
 
 launcher_source="${0:A:h}/macos_launcher"
 game_directory="${1:A}"
-if [[ ! -x "$game_directory/csgo_osx64" || ! -d "$game_directory/csgo/maps" ]]; then
-    print -u2 "Expected a playable CS:GO directory at $game_directory"
+if [[ ! -x "$game_directory/csgo_osx64" ]]; then
+    print -u2 "Expected a built game directory at $game_directory"
     exit 1
 fi
 
@@ -19,6 +19,8 @@ bundle="$staging_directory/CSGO Launcher.app"
 mkdir -p "$bundle/Contents/MacOS"
 mkdir -p "$bundle/Contents/Resources"
 cp "$launcher_source/Info.plist" "$bundle/Contents/Info.plist"
+# Without Valve's assets, as in CI, the manifest stays empty and the launcher
+# lists csgo/maps itself when it starts.
 maps_manifest="$bundle/Contents/Resources/maps.txt"
 : > "$maps_manifest"
 for map_file in "$game_directory"/csgo/maps/*.bsp(N); do

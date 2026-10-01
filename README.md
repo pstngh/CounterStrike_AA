@@ -24,7 +24,7 @@ Every push to `main` builds both platforms in GitHub Actions. Open the latest su
 - `csgo-linux-x64` for Linux
 - `csgo-macos-arm64` for Apple Silicon Macs
 
-Each artifact is a tarball of the game directory's binaries, without Valve's assets. Unpack it over a game directory prepared as described in [Game files](#game-files).
+Each artifact is a tarball of the game directory's binaries, without Valve's assets. The macOS one also contains `CSGO Launcher.app`. Unpack it over a game directory prepared as described in [Game files](#game-files).
 
 ## Building
 
@@ -170,13 +170,13 @@ arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 
 `-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. On macOS, messages about the Steam API failing to start are expected and harmless.
 
-To build the Mac launcher app into a game directory, run:
+On macOS, open `CSGO Launcher.app` in the game directory. The prebuilt macOS artifact includes it. To build it into a game directory yourself, run:
 
 ```sh
 src/tools/install_macos_launcher.sh game
 ```
 
-Then open `CSGO Launcher.app` from that directory. [MACOS.md](MACOS.md#native-mac-launcher) describes its settings.
+[MACOS.md](MACOS.md#native-mac-launcher) describes its settings.
 
 To record performance, enter `perf_log 1` in the console, or turn on Write perf_log.txt in the Mac launcher's Graphics Settings. The game then appends frame timing, where each frame's time goes and the settings that affect it to `perf_log.txt` in the game directory. [MACOS.md](MACOS.md#performance-options) describes the log.
 

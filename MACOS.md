@@ -131,11 +131,17 @@ thread by subsystem and function. The profile costs a little frame time;
 
 ## Native Mac launcher
 
-Build the launcher app in a playable game directory:
+The macOS build artifact from GitHub Actions includes the launcher app. To build
+it in a game directory yourself:
 
 ```sh
 ./tools/install_macos_launcher.sh ../game
 ```
+
+The script records the maps installed at that moment inside the app, because
+listing the maps folder at startup can stall when it is synced by File
+Provider. The prebuilt app has no such list and reads `csgo/maps` when it
+starts; run the script again to record yours.
 
 Open `CSGO Launcher.app` in that directory to choose an installed map, bot count
 and difficulty, and windowed or fullscreen resolution. The overall Quality menu

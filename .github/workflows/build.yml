@@ -99,8 +99,8 @@ jobs:
           test -d /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
           brew install ninja sdl2-compat ccache
 
-      # tools/install_macos_launcher.sh compiles the launcher on the user's Mac;
-      # type-check it here so a broken launcher fails CI instead.
+      # The launcher is built into the artifact after the game. Type-check it
+      # first so a broken launcher fails before the long game build.
       - name: Type-check the launcher
         run: |
           /Library/Developer/CommandLineTools/usr/bin/swiftc -swift-version 5 -parse-as-library -typecheck \
@@ -120,6 +120,9 @@ jobs:
 
       - name: Build
         run: cmake --build build && ccache --show-stats
+
+      - name: Build the launcher
+        run: src/tools/install_macos_launcher.sh game
 
       # A tarball keeps the executable bits that artifact zips drop.
       - name: Package
