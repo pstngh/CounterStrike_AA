@@ -1663,6 +1663,9 @@ C_CSPlayer::C_CSPlayer() :
 	m_flLeanAngle = 0.0f;
 	m_angOpenMoHAAWeaponKick.Init();
 	m_angOpenMoHAADamageKick.Init();
+	m_flMohaaBobPhase = 0.0f;
+	m_flMohaaBobAmp = 0.0f;
+	m_vecMohaaViewModelOffset.Init();
 #endif
 
 	m_angEyeAngles.Init();
@@ -4290,8 +4293,116 @@ void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, f
 static ConVar cl_viewmodel_lean_lower( "cl_viewmodel_lean_lower", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
 	"Additional weapon lowering at full lean. 0 disables lowering; 4 uses the original drop. Does not change weapon bob.",
 	true, 0.0f, true, 4.0f );
+// MOHAA's view-weapon motion (OpenMoHAA a2f34019, its vm_* defaults; units are MOHAA's, like the
+// Thompson's view model): cgame/cg_view.c CG_OffsetFirstPersonView keeps a bob phase and amplitude,
+// cgame/cg_viewmodelanim.c CG_CalcViewModelMovement turns them into sway and eases towards run,
+// crouch, air and lean offsets, applied along the view angles with half the pitch and 3/4 of the
+// roll. The fps rig's spine also rolls 0.7 x lean while the camera rolls 0.4 x lean
+// (fgame/bg_pmove.cpp PmoveAdjustAngleSettings_Client), so the gun tilts with a lean.
+void C_CSPlayer::ApplyMohaaViewModelMovement( const QAngle &eyeAngles )
+{
+	C_BaseViewModel *pViewModel = GetViewModel( 0 );
+	if ( !pViewModel )
+		return;
+
+	const float dt = gpGlobals->frametime;
+	const bool bWalking = ( GetFlags() & FL_ONGROUND ) != 0;
+	const Vector vecVelocity = GetAbsVelocity();
+	const float flSpeed = vecVelocity.Length();
+	const float flLean = m_flLeanAngle;
+	const float flPitch = AngleNormalize( eyeAngles[PITCH] );
+
+	if ( bWalking )
+	{
+		m_flMohaaBobPhase += 2.0f * dt * M_PI * ( flSpeed * 0.0015f + 0.9f );
+		m_flMohaaBobAmp = m_flMohaaBobAmp != 0.0f ? flSpeed : flSpeed * 0.5f;
+		if ( flLean != 0.0f )
+			m_flMohaaBobAmp *= 0.75f;
+		m_flMohaaBobAmp *= ( 1.0f - fabsf( flPitch ) * ( 1.0f / 90.0f ) * 0.5f ) * 0.5f;
+	}
+	else if ( m_flMohaaBobAmp > 0.0f )
+	{
+		m_flMohaaBobAmp -= 2.0f * dt * m_flMohaaBobAmp;
+		if ( m_flMohaaBobAmp < 0.1f )
+			m_flMohaaBobAmp = 0.0f;
+	}
+
+	// sway: vm_sway_side 0.005, vm_sway_front 0.1, vm_sway_up 0.003
+	float flPhase = sinf( m_flMohaaBobPhase + M_PI / 10.0f ) * m_flMohaaBobAmp * 0.005f;
+	Vector vecMove( flPhase * 0.1f, flPhase, 0.0f );
+	flPhase = sinf( 2.0f * ( m_flMohaaBobPhase - 0.94f ) + M_PI );
+	vecMove.z = ( sinf( ( m_flMohaaBobPhase - 0.94f ) * 4.0f + M_PI / 2.0f ) * 0.125f + flPhase ) * m_flMohaaBobAmp * 0.003f;
+
+	// target offsets (front, left, up): vm_offset_crouch -0.5 2.25 0.2, vm_offset_air -3 1.5 -6,
+	// vm_offset_vel -2 1.5 -4 from 100 (vm_offset_vel_base) to 250 units/s, vm_offset_upvel 0.0025
+	Vector vecTarget( 0.0f, 0.0f, 0.0f );
+	if ( bWalking )
+	{
+		if ( GetFlags() & FL_DUCKING )
+			vecTarget.Init( -0.5f, 2.25f, 0.2f );
+		const float flOverBase = MIN( flSpeed - 100.0f, 150.0f );
+		if ( flOverBase > 0.0f )
+			vecTarget += ( flOverBase / 150.0f ) * Vector( -2.0f, 1.5f, -4.0f );
+	}
+	else
+	{
+		vecTarget.Init( -3.0f, 1.5f, -6.0f );
+		vecTarget.z -= vecVelocity.z * 0.0025f;
+	}
+
+	// ease towards it at vm_offset_speed 8, never past it
+	for ( int i = 0; i < 3; i++ )
+	{
+		const float flDelta = vecTarget[i] - m_vecMohaaViewModelOffset[i];
+		m_vecMohaaViewModelOffset[i] += dt * flDelta * 8.0f;
+		if ( ( flDelta > 0.0f && m_vecMohaaViewModelOffset[i] > vecTarget[i] ) ||
+			 ( flDelta < 0.0f && m_vecMohaaViewModelOffset[i] < vecTarget[i] ) )
+			m_vecMohaaViewModelOffset[i] = vecTarget[i];
+	}
+	vecMove += m_vecMohaaViewModelOffset;
+	if ( flLean != 0.0f )
+		vecMove.z -= fabsf( flLean ) * 0.1f;			// vm_lean_lower
+	const float flLength = vecMove.Length();
+	if ( flLength > 8.0f )								// vm_offset_max
+		vecMove *= 8.0f / flLength;
+
+	Vector vecForward, vecRight, vecUp;
+	AngleVectors( QAngle( flPitch * 0.5f, eyeAngles[YAW], eyeAngles[ROLL] * 0.75f ), &vecForward, &vecRight, &vecUp );
+	pViewModel->SetLocalOrigin( pViewModel->GetLocalOrigin() +
+		vecForward * vecMove.x - vecRight * vecMove.y + vecUp * vecMove.z );
+
+	if ( flLean != 0.0f )
+	{
+		// rig relative to the camera: roll(-0.4 lean) * pitch(8) * roll(0.7 lean) * pitch(-8), on top of
+		// the zero-lean camera-space placement the animations carry (which includes the pitch(8))
+		matrix3x4_t matCamera, matA, matB, matC, matD, matTmp, matTmp2, matExtra, matFinal;
+		AngleMatrix( QAngle( 0.0f, 0.0f, -0.4f * flLean ), matA );
+		AngleMatrix( QAngle( 8.0f, 0.0f, 0.0f ), matB );
+		AngleMatrix( QAngle( 0.0f, 0.0f, 0.7f * flLean ), matC );
+		AngleMatrix( QAngle( -8.0f, 0.0f, 0.0f ), matD );
+		ConcatTransforms( matA, matB, matTmp );
+		ConcatTransforms( matTmp, matC, matTmp2 );
+		ConcatTransforms( matTmp2, matD, matExtra );
+		AngleMatrix( pViewModel->GetLocalAngles(), matCamera );
+		ConcatTransforms( matCamera, matExtra, matFinal );
+		QAngle angFinal;
+		MatrixAngles( matFinal, angFinal );
+		pViewModel->SetLocalAngles( angFinal );
+	}
+}
+
 void C_CSPlayer::CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAngles )
 {
+	C_WeaponCSBase *pMohaaWeapon = GetActiveCSWeapon();
+	if ( IsLocalPlayer() && IsAlive() && !::input->CAM_IsThirdPerson() && pMohaaWeapon && pMohaaWeapon->IsMohaaThompson() )
+	{
+		// MOHAA's own motion instead of CS:GO's lean drop; once per rendered frame, not in prediction
+		BaseClass::CalcViewModelView( eyeOrigin, eyeAngles );
+		if ( !prediction->InPrediction() )
+			ApplyMohaaViewModelMovement( eyeAngles );
+		return;
+	}
+
 	if ( !IsLocalPlayer() || m_flLeanAngle == 0.0f || !IsAlive() || ::input->CAM_IsThirdPerson() )
 	{
 		BaseClass::CalcViewModelView( eyeOrigin, eyeAngles );

@@ -613,6 +613,13 @@ public:
 	virtual void CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov );
 #if defined( USE_MAC_PRESET )
 	virtual void CalcViewModelView( const Vector &eyeOrigin, const QAngle &eyeAngles );
+#if defined( USE_MAC_PRESET )
+	// MOHAA's view-weapon motion for MOHAA's Thompson (bob sway, run/crouch/air/lean offsets, lean roll).
+	void ApplyMohaaViewModelMovement( const QAngle &eyeAngles );
+	float m_flMohaaBobPhase;
+	float m_flMohaaBobAmp;
+	Vector m_vecMohaaViewModelOffset;
+#endif
 #endif
 
 public:
