@@ -46,6 +46,8 @@ public:
 
 	// Derived classes call this to fire a bullet.
 	bool CSBaseGunFire( float flCycleTime, CSWeaponMode weaponMode );
+	// The direction a shot leaves in: the final aim (+ MOHAA's Thompson kick in the Mac preset).
+	QAngle GetShotAngles( CCSPlayer *pPlayer );
 
 	void BurstFireRemaining( void );
 

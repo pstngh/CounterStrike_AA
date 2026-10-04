@@ -149,6 +149,18 @@ void CWeaponCSBaseGun::Drop( const Vector &vecVelocity )
 }
 
 #if defined( USE_MAC_PRESET )
+QAngle CWeaponCSBaseGun::GetShotAngles( CCSPlayer *pPlayer )
+{
+	QAngle angles = pPlayer->GetFinalAimAngle();
+#if defined( USE_MAC_PRESET )
+	// MOHAA's Thompson kicks the view and the aim together (C_CSPlayer::CalcView adds the same kick
+	// to the camera), so the centred crosshair always marks where its bullets go, like CS:GO recoil.
+	if ( IsMohaaThompson() )
+		angles += pPlayer->m_angOpenMoHAAWeaponKick.Get();
+#endif
+	return angles;
+}
+
 static void MacAWPToggleScopeOnPress( CWeaponCSBaseGun *pWeapon, CCSPlayer *pPlayer )
 {
 	if ( pWeapon->GetCSWeaponID() != WEAPON_AWP ||
@@ -670,7 +682,7 @@ void CWeaponCSBaseGun::BurstFireRemaining()
 		pPlayer->entindex(),
 		nItemDefIndex,
 		pPlayer->Weapon_ShootPosition(),
-		pPlayer->GetFinalAimAngle(),
+		GetShotAngles( pPlayer ),
 		GetCSWeaponID(),
 		Secondary_Mode,
 		CBaseEntity::GetPredictionRandomSeed( SERVER_PLATTIME_RNG ) & 255,
@@ -766,7 +778,7 @@ bool CWeaponCSBaseGun::CSBaseGunFire( float flCycleTime, CSWeaponMode weaponMode
 		pPlayer->entindex(),
 		nItemDefIndex,
 		pPlayer->Weapon_ShootPosition(),
-		pPlayer->GetFinalAimAngle(),
+		GetShotAngles( pPlayer ),
 		GetCSWeaponID(),
 		weaponMode,
 		CBaseEntity::GetPredictionRandomSeed( SERVER_PLATTIME_RNG ) & 255,
