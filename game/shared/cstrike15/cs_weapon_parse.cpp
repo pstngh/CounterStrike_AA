@@ -82,6 +82,7 @@ WeaponNameInfo s_weaponNameInfo[] =
 	{ WEAPON_SG552,				"weapon_sg552" },
 	{ WEAPON_TMP,				"weapon_tmp" },
 	{ WEAPON_UMP45,				"weapon_ump45" },
+	{ WEAPON_UMP45,				"weapon_thompson" },	// Mac preset: MOHAA's Thompson on the UMP-45
 	{ WEAPON_XM1014,			"weapon_xm1014" },
 
 	{ WEAPON_BIZON,				"weapon_bizon" },
@@ -751,6 +752,9 @@ void CCSWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName )
 		break;
 	case WEAPON_AWP:
 		iPosition = 3;
+		break;
+	case WEAPON_UMP45:	// the Thompson
+		iPosition = 4;
 		break;
 	default:
 		break;

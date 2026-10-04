@@ -2070,6 +2070,9 @@ void CCSPlayer::GiveDefaultItems()
 				GiveNamedItem( "weapon_ak47" );
 			}
 			GiveNamedItem( "weapon_awp" );
+			// MOHAA's Thompson (an items_game item installed by moh-csgo-weapons).
+			// Given last: it does not outweigh the AWP, so the spawn weapon stays.
+			GiveNamedItem( "weapon_thompson" );
 		}
 		m_bPickedUpWeapon = false;
 		return;
