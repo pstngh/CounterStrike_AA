@@ -236,6 +236,13 @@ public:
 		return GetCSWpnData().HasSilencer( GetEconItemView() ); 
 	}
 
+#if defined( USE_MAC_PRESET )
+	// MOHAA's Thompson: an items_game item installed by moh-csgo-weapons on the UMP-45's entity
+	// class. Drawn like MOHAA (at the world FOV, without viewmodel offsets, turn lag or arms) with
+	// OpenMoHAA's camera kick and movement speed.
+	bool IsMohaaThompson( void ) const;
+#endif
+
 	virtual void SetWeaponModelIndex( const char *pName );
 	virtual void OnPickedUp( CBaseCombatCharacter *pNewOwner );
 

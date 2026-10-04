@@ -395,6 +395,7 @@ public:
 		float fMagnitude );
 #if defined( USE_MAC_PRESET )
 	void ApplyOpenMoHAAAWPViewKick();
+	void ApplyOpenMoHAAThompsonViewKick();
 	void ApplyOpenMoHAADamageViewKick( const Vector &damageDirection, float damage );
 	void DecayOpenMoHAAViewKicks( float frameTime );
 #endif

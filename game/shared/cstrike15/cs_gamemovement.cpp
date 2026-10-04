@@ -1329,7 +1329,7 @@ void CCSGameMovement::Accelerate( Vector& wishdir, float wishspeed, float accel 
 #if defined( USE_MAC_PRESET )
 		bMacLocalPlayer = m_pCSPlayer->IsLocalListenServerHost();
 		if ( bMacLocalPlayer )
-			flWeaponMaxSpeed = CS_AAWeaponMaxSpeed( csWeapon->GetCSWeaponID() );
+			flWeaponMaxSpeed = CS_AAWeaponMaxSpeed( csWeapon );
 #endif
 		bIsSlowSniperScoped = !bMacLocalPlayer && csWeapon->GetCSZoomLevel() > 0 &&
 			csWeapon->GetZoomLevels() > 1 && ( flWeaponMaxSpeed * CS_PLAYER_SPEED_WALK_MODIFIER ) < 110.0f;

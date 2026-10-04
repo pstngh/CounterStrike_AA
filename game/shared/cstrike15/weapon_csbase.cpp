@@ -3187,6 +3187,16 @@ void CWeaponCSBase::SendActivityEvents( int nActEvents )
 #endif
 
 
+#if defined( USE_MAC_PRESET )
+bool CWeaponCSBase::IsMohaaThompson( void ) const
+{
+	// The weapon_thompson item definition (moh-csgo-weapons thompson_csgo.py DEF_INDEX).
+	const int kItemDefMohaaThompson = 1928;
+	const CEconItemView *pItem = GetEconItemView();
+	return pItem && pItem->IsValid() && pItem->GetItemIndex() == kItemDefMohaaThompson;
+}
+#endif
+
 bool CWeaponCSBase::DefaultPistolReload()
 {
 	CCSPlayer *pPlayer = GetPlayerOwner();
@@ -3905,6 +3915,11 @@ void CWeaponCSBase::Recoil( CSWeaponMode weaponMode )
 	if ( GetCSWeaponID() == WEAPON_AWP )
 	{
 		pPlayer->ApplyOpenMoHAAAWPViewKick();
+		return;
+	}
+	if ( IsMohaaThompson() )
+	{
+		pPlayer->ApplyOpenMoHAAThompsonViewKick();
 		return;
 	}
 #endif

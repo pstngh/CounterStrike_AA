@@ -449,7 +449,15 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	Vector vecForward;
 	AngleVectors( vmangoriginal, &vecForward, &vecRight, &vecUp );
 	//Vector vecOffset = Vector( viewmodel_offset_x.GetFloat(), viewmodel_offset_y.GetFloat(), viewmodel_offset_z.GetFloat() ); 
-	if ( !m_bShouldIgnoreOffsetAndAccuracy )
+	bool bMohaaView = false;
+#if defined( USE_MAC_PRESET )
+	// MOHAA's Thompson carries MOHAA's camera-space placement in its animations: no CS:GO
+	// viewmodel offsets, bob or turn lag.
+	CBaseCombatWeapon *pViewWeapon = m_hWeapon.Get();
+	CWeaponCSBase *pMohaaWeapon = dynamic_cast< CWeaponCSBase * >( pViewWeapon );
+	bMohaaView = pMohaaWeapon && pMohaaWeapon->IsMohaaThompson();
+#endif
+	if ( !m_bShouldIgnoreOffsetAndAccuracy && !bMohaaView )
 	{
 #ifdef IRONSIGHT
 		CWeaponCSBase *pIronSightWeapon = (CWeaponCSBase*)owner->GetActiveWeapon();
@@ -484,15 +492,19 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	{
 		if ( !prediction->InPrediction() )
 		{
-			// add weapon-specific bob 
-			pWeapon->AddViewmodelBob( this, vmorigin, vmangles );
+			// add weapon-specific bob (not for MOHAA's Thompson: CS:GO's bob also slides the
+			// viewmodel by the weapon's accuracy, m_flGunAccuracyPosition, even standing still)
+			if ( !bMohaaView )
+				pWeapon->AddViewmodelBob( this, vmorigin, vmangles );
 #if defined ( CSTRIKE_DLL )
-			CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
+			if ( !bMohaaView )
+				CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
 #endif
 		}
 	}
 	// Add model-specific bob even if no weapon associated (for head bob for off hand models)
-	AddViewModelBob( owner, vmorigin, vmangles );
+	if ( !bMohaaView )
+		AddViewModelBob( owner, vmorigin, vmangles );
 #if !defined ( CSTRIKE_DLL )
 	// This was causing weapon jitter when rotating in updated CS:S; original Source had this in above InPrediction block  07/14/10
 	// Add lag

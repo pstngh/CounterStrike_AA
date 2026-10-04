@@ -767,7 +767,9 @@ int C_BaseViewModel::DrawModel( int flags, const RenderableInstance_t &instance 
 		// Hands and sleeves are separate attachments from the weapon model.
 		// Keep weapon stickers and other weapon add-ons in weapon-only mode.
 #if defined( USE_MAC_PRESET )
-		if ( cg_drawviewmodel.GetInt() == 2 )
+		// MOHAA's Thompson is shown without arms (weapon only), as the owner plays MOHAA.
+		C_WeaponCSBase *pArmsWeapon = dynamic_cast< C_WeaponCSBase * >( GetOwningWeapon() );
+		if ( cg_drawviewmodel.GetInt() == 2 && !( pArmsWeapon && pArmsWeapon->IsMohaaThompson() ) )
 #endif
 		FOR_EACH_VEC( m_vecViewmodelArmModels, i )
 		{

@@ -48,6 +48,7 @@
 #include "menu.h" // CHudMenu
 #include "matchmaking/imatchframework.h"
 #include "clientmode_csnormal.h"
+#include "weapon_csbase.h"
 
 
 #ifdef CSTRIKE15
@@ -852,6 +853,16 @@ void ClientModeShared::Layout( bool bForce /*= false*/)
 
 float ClientModeShared::GetViewModelFOV( void )
 {
+#if defined( USE_MAC_PRESET )
+	{
+		// MOHAA draws its weapons at the world FOV (cg_fov). With the default FOV here,
+		// view.cpp's FOV offset makes the viewmodel FOV equal the world FOV exactly.
+		C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+		C_WeaponCSBase *pWeapon = pLocal ? dynamic_cast< C_WeaponCSBase * >( pLocal->GetActiveWeapon() ) : NULL;
+		if ( pWeapon && pWeapon->IsMohaaThompson() )
+			return pLocal->GetDefaultFOV();
+	}
+#endif
 
 #ifdef IRONSIGHT
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();

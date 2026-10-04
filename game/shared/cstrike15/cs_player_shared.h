@@ -15,6 +15,8 @@ void CS_ApplyAABodyLean( const CStudioHdr *pHdr, matrix3x4a_t *pBoneToWorld, int
 
 // Allied Assault deathmatch speed cap for a weapon carried by the local listen-server host.
 float CS_AAWeaponMaxSpeed( int weaponId );
+class CWeaponCSBase;
+float CS_AAWeaponMaxSpeed( const CWeaponCSBase *pWeapon );
 
 // Grenades, C4 and knives (but not the Zeus, which is typed as a knife) are
 // removed from every buy, pickup, loadout and map spawn.

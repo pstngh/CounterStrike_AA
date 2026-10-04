@@ -413,6 +413,14 @@ float CS_AAWeaponMaxSpeed( int weaponId )
 	return weaponId == WEAPON_AWP ? CS_PLAYER_SPEED_RUN * 0.8f : CS_PLAYER_SPEED_RUN;
 }
 
+float CS_AAWeaponMaxSpeed( const CWeaponCSBase *pWeapon )
+{
+	// MOHAA's Thompson: its TIKI's dmmovementspeed 0.96.
+	if ( pWeapon && pWeapon->IsMohaaThompson() )
+		return CS_PLAYER_SPEED_RUN * 0.96f;
+	return CS_AAWeaponMaxSpeed( pWeapon ? (int)pWeapon->GetCSWeaponID() : (int)WEAPON_NONE );
+}
+
 bool CS_MacPresetProhibitsWeapon( int weaponType, int weaponId )
 {
 	return weaponType == WEAPONTYPE_GRENADE || weaponId == WEAPON_C4 ||
@@ -580,7 +588,7 @@ float CCSPlayer::GetPlayerMaxSpeed()
 				float weaponSpeed = pWeapon->GetMaxSpeed();
 #if defined( USE_MAC_PRESET )
 				if ( IsLocalListenServerHost() )
-					weaponSpeed = CS_AAWeaponMaxSpeed( pWeapon->GetCSWeaponID() );
+					weaponSpeed = CS_AAWeaponMaxSpeed( pWeapon );
 #endif
 				speed = MIN( weaponSpeed, speed );
 			}
@@ -2779,6 +2787,21 @@ void CCSPlayer::ApplyOpenMoHAAAWPViewKick()
 	m_angOpenMoHAAWeaponKick = kick;
 }
 
+// MOHAA's Thompson (thompsonsmg.tik): viewkick -1.58 -1.58  -0.16 -0.16  0.9 "V"  8.5 8.6 16.0.
+// A fixed 1.58-degree rise per shot with yaw linked to the accumulated pitch (the "V" pattern, as
+// the Axis Kar98 sniper's above), capped at 8.5 degrees of pitch and 8.6 of yaw; the cap keeps the
+// pitch below the 16-degree loss-of-control scatter. Recentered at 0.9 (DecayOpenMoHAAViewKicks).
+void CCSPlayer::ApplyOpenMoHAAThompsonViewKick()
+{
+	QAngle kick = m_angOpenMoHAAWeaponKick.Get();
+	kick[PITCH] += -1.58f;
+	kick[YAW] += kick[PITCH] * -0.16f;
+	kick[PITCH] = clamp( kick[PITCH], -8.5f, 8.5f );
+	kick[YAW] = clamp( kick[YAW], -8.6f, 8.6f );
+	kick[ROLL] = 0.0f;
+	m_angOpenMoHAAWeaponKick = kick;
+}
+
 void CCSPlayer::ApplyOpenMoHAADamageViewKick( const Vector &damageDirection, float damage )
 {
 	Vector direction = damageDirection;
@@ -2811,7 +2834,11 @@ void CCSPlayer::DecayOpenMoHAAViewKicks( float frameTime )
 	}
 
 	QAngle weaponKick = m_angOpenMoHAAWeaponKick.Get();
-	const float recenter = GetTeamNumber() == TEAM_TERRORIST ? 0.5f : 6.0f;
+	// The TIKI recenter speed of the weapon that kicked: the Thompson's 0.9, else the AWP's
+	// team profile (Kar98 sniper 0.5, Springfield 6).
+	const CWeaponCSBase *pActiveWeapon = GetActiveCSWeapon();
+	const float recenter = pActiveWeapon && pActiveWeapon->IsMohaaThompson() ? 0.9f :
+		GetTeamNumber() == TEAM_TERRORIST ? 0.5f : 6.0f;
 	weaponKick[PITCH] = DecayOpenMoHAAWeaponKickAxis( weaponKick[PITCH], recenter, 12.0f, 25.0f, frameTime );
 	weaponKick[YAW] = DecayOpenMoHAAWeaponKickAxis( weaponKick[YAW], recenter, 12.0f, 25.0f, frameTime );
 	weaponKick[ROLL] = 0.0f;
