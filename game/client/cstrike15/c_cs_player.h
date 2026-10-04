@@ -569,8 +569,6 @@ public:
 #if defined( USE_MAC_PRESET )
 	void ApplyOpenMoHAAAWPViewKick();
 	void ApplyOpenMoHAAThompsonViewKick();
-	// The camera-only OpenMoHAA kicks CalcView adds to the view (the aim does not follow them).
-	QAngle GetOpenMoHAACameraKick();
 	void ApplyOpenMoHAADamageViewKick( const Vector &damageDirection, float damage );
 	void DecayOpenMoHAAViewKicks( float frameTime );
 #endif

@@ -30,7 +30,6 @@
 	#include "vgui/ISurface.h"
 	#include "vgui_controls/Controls.h"
 	#include "c_cs_player.h"
-	#include "view.h"
 	#include "predicted_viewmodel.h"
 	#include "hud_crosshair.h"
 	#include "c_te_effect_dispatch.h"
@@ -2096,30 +2095,6 @@ void CWeaponCSBase::DrawCrosshair()
 
 	int iCenterX = ScreenWidth() / 2;
 	int iCenterY = ScreenHeight() / 2;
-
-#if defined( CLIENT_DLL ) && defined( USE_MAC_PRESET )
-	// MOHAA's Thompson kicks only the camera (C_CSPlayer::CalcView); its bullets keep the aim. Draw
-	// the crosshair where the un-kicked aim direction lands on screen, so it stays on the impacts.
-	if ( IsMohaaThompson() )
-	{
-		const QAngle kick = pPlayer->GetOpenMoHAACameraKick();
-		if ( kick.x != 0.0f || kick.y != 0.0f )
-		{
-			const QAngle &camAngles = MainViewAngles( GET_ACTIVE_SPLITSCREEN_SLOT() );
-			Vector aim, forward, right, up;
-			AngleVectors( QAngle( camAngles.x - kick.x, camAngles.y - kick.y, 0.0f ), &aim );
-			AngleVectors( camAngles, &forward, &right, &up );
-			const float depth = DotProduct( aim, forward );
-			if ( depth > 0.01f )
-			{
-				// Pixels per unit of tangent: CS:GO's FOV is horizontal for a 4:3 screen of this height.
-				const float f = ScreenHeight() * ( 2.0f / 3.0f ) / tanf( DEG2RAD( pPlayer->GetFOV() ) * 0.5f );
-				iCenterX += RoundFloatToInt( f * DotProduct( aim, right ) / depth );
-				iCenterY -= RoundFloatToInt( f * DotProduct( aim, up ) / depth );
-			}
-		}
-	}
-#endif
 
 	float flAngleToScreenPixel = 0;
 

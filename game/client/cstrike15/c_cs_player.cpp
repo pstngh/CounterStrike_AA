@@ -4227,17 +4227,6 @@ static ConVar cl_damagekick_scale( "cl_damagekick_scale", "0.1", FCVAR_CLIENTDLL
 	true, 0.0f, true, 1.0f );
 #endif
 
-#if defined( USE_MAC_PRESET )
-QAngle C_CSPlayer::GetOpenMoHAACameraKick()
-{
-	const C_WeaponCSBase *pKickWeapon = GetActiveCSWeapon();
-	const float weaponKickScale = pKickWeapon && pKickWeapon->IsMohaaThompson() ?
-		cl_thompson_viewkick_scale.GetFloat() : cl_viewkick_scale.GetFloat();
-	return m_angOpenMoHAAWeaponKick.Get() * weaponKickScale
-		+ m_angOpenMoHAADamageKick.Get() * cl_damagekick_scale.GetFloat();
-}
-#endif
-
 void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, float &zFar, float &fov )
 {
 	BaseClass::CalcView( eyeOrigin, eyeAngles, zNear, zFar, fov );
@@ -4265,7 +4254,11 @@ void C_CSPlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, f
 		// Keep OpenMoHAA's directional response and recenter curves, but make
 		// their rendered camera movement gentler. Scaling here leaves the
 		// predicted kick state, aim recoil and stock weapon bob unchanged.
-		eyeAngles += GetOpenMoHAACameraKick();
+		const C_WeaponCSBase *pKickWeapon = GetActiveCSWeapon();
+		const float weaponKickScale = pKickWeapon && pKickWeapon->IsMohaaThompson() ?
+			cl_thompson_viewkick_scale.GetFloat() : cl_viewkick_scale.GetFloat();
+		eyeAngles += m_angOpenMoHAAWeaponKick.Get() * weaponKickScale
+			+ m_angOpenMoHAADamageKick.Get() * cl_damagekick_scale.GetFloat();
 	}
 
 	if ( IsLocalPlayer() && IsAlive() && !::input->CAM_IsThirdPerson() && m_flLeanAngle != 0.0f )
