@@ -105,6 +105,7 @@ add_subdirectory(serverbrowser)
 add_subdirectory(soundemittersystem)
 add_subdirectory(studiorender)
 add_subdirectory(togl)
+add_subdirectory(tometal)
 add_subdirectory(vguimatsurface)
 add_subdirectory(vscript)
 
