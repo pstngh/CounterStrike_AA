@@ -126,6 +126,10 @@ public:
 #endif
 
 	virtual double GetPrevGLSwapWindowTime() = 0;
+
+	// The CAMetalLayer the game window presents through when the game runs
+	// with -metal; NULL when it renders with OpenGL.
+	virtual void *GetMetalLayer() = 0;
 };
 
 extern ILauncherMgr *g_pLauncherMgr;

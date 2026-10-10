@@ -6,6 +6,7 @@
 
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include "SDL_metal.h"
 
 #include "appframework/ilaunchermgr.h"
 #include "tier1/keyvalues.h"
@@ -234,6 +235,8 @@ public:
 	virtual void OnFrameRendered();
 
 	virtual double GetPrevGLSwapWindowTime() { return m_flPrevGLSwapWindowTime; }
+
+	virtual void *GetMetalLayer() { return m_pMetalLayer; }
 	
 	// Returns all dependent libraries
 	virtual const AppSystemInfo_t* GetDependencies() {return NULL;}
@@ -271,6 +274,11 @@ private:
 #if defined( OSX )
 	bool					m_force_vsync;				// true if 10.6.4 + bad NV driver
 #endif
+
+	// -metal: the window presents through a CAMetalLayer and has no GL context
+	bool m_bMetal;
+	SDL_MetalView m_metalView;
+	void *m_pMetalLayer;
 
 	SDL_Window *m_Window;
 
@@ -444,6 +452,10 @@ InitReturnVal_t CSDLMgr::Init()
 	m_bTextMode = false;
 #endif
 
+	m_bMetal = CommandLine()->FindParm( "-metal" ) != 0;
+	m_metalView = NULL;
+	m_pMetalLayer = NULL;
+
 #if defined( WIN32 ) && defined( DX_TO_GL_ABSTRACTION )
 	if ( !m_bTextMode ) 
 		SDL_SetMainReady();
@@ -472,13 +484,16 @@ InitReturnVal_t CSDLMgr::Init()
 			Error( "SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError() );
 
 #if defined( DX_TO_GL_ABSTRACTION )
-		if ( CommandLine()->FindParm( "-gl_debug" ) )
+		if ( !m_bMetal )
 		{
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
-		}
+			if ( CommandLine()->FindParm( "-gl_debug" ) )
+			{
+				SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
+			}
 
-		if (SDL_GL_LoadLibrary(NULL) == -1)
-			Error( "SDL_GL_LoadLibrary(NULL) failed: %s", SDL_GetError() );
+			if (SDL_GL_LoadLibrary(NULL) == -1)
+				Error( "SDL_GL_LoadLibrary(NULL) failed: %s", SDL_GetError() );
+		}
 #endif
 	}
 
@@ -624,7 +639,10 @@ void CSDLMgr::Shutdown()
 	m_readFBO = 0;
 
 	DestroyGameWindow();
-	SDL_GL_UnloadLibrary();
+	if ( !m_bMetal )
+	{
+		SDL_GL_UnloadLibrary();
+	}
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
@@ -706,9 +724,12 @@ bool CSDLMgr::CreateHiddenGameWindow( const char *pTitle, bool bWindowed, int wi
 
 #if defined( DX_TO_GL_ABSTRACTION )
 	// Set up GL context...
-	const int *attrib = m_pixelFormatAttribs;
-	for (int i = 0; i < m_pixelFormatAttribCount; i++, attrib += 2)
-		SDL_GL_SetAttribute((SDL_GLattr) attrib[0], attrib[1]);
+	if ( !m_bMetal )
+	{
+		const int *attrib = m_pixelFormatAttribs;
+		for (int i = 0; i < m_pixelFormatAttribCount; i++, attrib += 2)
+			SDL_GL_SetAttribute((SDL_GLattr) attrib[0], attrib[1]);
+	}
 #endif
 
 	// no window yet? Create one now!
@@ -718,7 +739,7 @@ bool CSDLMgr::CreateHiddenGameWindow( const char *pTitle, bool bWindowed, int wi
 	int y = SDL_WINDOWPOS_CENTERED_DISPLAY( displayindex );
 	int flags = SDL_WINDOW_HIDDEN;
 #if defined( DX_TO_GL_ABSTRACTION )
-	flags |= SDL_WINDOW_OPENGL;
+	flags |= m_bMetal ? SDL_WINDOW_METAL : SDL_WINDOW_OPENGL;
 #endif
 	m_Window = SDL_CreateWindow( pTitle, x, y, width, height,  flags );
 
@@ -726,6 +747,8 @@ bool CSDLMgr::CreateHiddenGameWindow( const char *pTitle, bool bWindowed, int wi
 		Error( "Failed to create SDL window: %s", SDL_GetError() );
 
 #ifdef OSX
+	if ( !m_bMetal )
+	{
 	GLMRendererInfoFields rendererInfo;
 	GetDisplayDB()->GetRendererInfo( 0, &rendererInfo );
 	//-----------------------------------------------------------------------------------------
@@ -746,12 +769,25 @@ bool CSDLMgr::CreateHiddenGameWindow( const char *pTitle, bool bWindowed, int wi
 			exit(1);
 		}
 	}
+	}
 #endif
 	
 	if (m_bFullScreen)
 	{
 		SDL_SetWindowDisplayMode(m_Window, &mode);
 		SDL_SetWindowFullscreen(m_Window, SDL_TRUE);
+	}
+
+	if ( m_bMetal )
+	{
+		m_metalView = SDL_Metal_CreateView( m_Window );
+		if ( !m_metalView )
+			Error( "Failed to create a Metal view: %s", SDL_GetError() );
+		m_pMetalLayer = SDL_Metal_GetLayer( m_metalView );
+
+		m_WindowWidth = width;
+		m_WindowHeight = height;
+		return true;
 	}
 
 #if defined( DX_TO_GL_ABSTRACTION )
@@ -1416,8 +1452,11 @@ void CSDLMgr::SizeWindow( int width, int tall )
 	SDL_SetWindowSize(m_Window, width, tall);
 
 #if defined( DX_TO_GL_ABSTRACTION )
-	gGL->glViewport(0, 0, (GLsizei) width, (GLsizei) tall);
-	gGL->glScissor( 0,0, (GLsizei) width, (GLsizei) tall );
+	if ( gGL )
+	{
+		gGL->glViewport(0, 0, (GLsizei) width, (GLsizei) tall);
+		gGL->glScissor( 0,0, (GLsizei) width, (GLsizei) tall );
+	}
 #endif
 }
 
@@ -1821,6 +1860,12 @@ void CSDLMgr::DestroyGameWindow()
 			SDL_GL_MakeCurrent(m_Window, NULL);
 			SDL_GL_DeleteContext(m_GLContext);
 			m_GLContext = NULL;
+		}
+		if ( m_metalView )
+		{
+			SDL_Metal_DestroyView( m_metalView );
+			m_metalView = NULL;
+			m_pMetalLayer = NULL;
 		}
 		SDL_SetWindowFullscreen(m_Window, SDL_FALSE);  // just in case.
 		SDL_SetWindowGrab(m_Window, SDL_FALSE);  // just in case.
