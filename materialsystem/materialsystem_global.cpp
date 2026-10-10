@@ -24,6 +24,3 @@ IShaderShadow* g_pShaderShadow = 0;
 
 IClientMaterialSystem *g_pClientMaterialSystem = 0;
 
-#if defined( INCLUDE_SCALEFORM )
-IScaleformUI* g_pScaleformUI = 0;
-#endif

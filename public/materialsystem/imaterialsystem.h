@@ -1714,19 +1714,6 @@ public:
 
 	// expose scaleform functons
 
-#if defined( INCLUDE_SCALEFORM )
-	virtual void SetScaleformSlotViewport( int slot, int x, int y, int w, int h ) = 0;
-	virtual void RenderScaleformSlot( int slot ) = 0;
-	virtual void ForkRenderScaleformSlot( int slot ) = 0;
-	virtual void JoinRenderScaleformSlot( int slot ) = 0;
-
-	virtual void SetScaleformCursorViewport( int x, int y, int w, int h ) = 0;
-	virtual void RenderScaleformCursor() = 0;
-
-	virtual void AdvanceAndRenderScaleformSlot( int slot ) = 0;
-	virtual void AdvanceAndRenderScaleformCursor() = 0;
-#endif
-
 	virtual void SetRenderingPaint( bool bEnable ) = 0;
 
 	// Draws batches of different materials using a faster API

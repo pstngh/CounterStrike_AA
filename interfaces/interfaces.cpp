@@ -57,10 +57,6 @@ ISceneSystem *g_pSceneSystem = 0;
 IMatchFramework *g_pMatchFramework = 0;
 IGameUISystemMgr *g_pGameUISystemMgr = 0;
 
-#if defined( INCLUDE_SCALEFORM )
-IScaleformUI *g_pScaleformUI = 0;
-#endif
-
 //-----------------------------------------------------------------------------
 // Not exactly a global, but we're going to keep track of these here anyways
 //-----------------------------------------------------------------------------
@@ -160,10 +156,6 @@ static InterfaceGlobals_t g_pInterfaceGlobals[] =
 
 	{ MATCHFRAMEWORK_INTERFACE_VERSION, &g_pMatchFramework },
 	{ GAMEUISYSTEMMGR_INTERFACE_VERSION, &g_pGameUISystemMgr },
-
-#if defined( INCLUDE_SCALEFORM )
-	{ SCALEFORMUI_INTERFACE_VERSION, &g_pScaleformUI },
-#endif
 
 };
 

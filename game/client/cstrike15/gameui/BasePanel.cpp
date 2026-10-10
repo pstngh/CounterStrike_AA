@@ -69,10 +69,6 @@ using namespace vgui;
 #include "optionssubaudio.h"
 #include "iachievementmgr.h"
 #include "customtabexplanationdialog.h"
-#if defined( INCLUDE_SCALEFORM )
-#include "loadingscreen_scaleform.h"
-#include "itempickup_scaleform.h"
-#endif
 // dgoodenough - limit this to X360 only
 // PS3_BUILDFIX
 #include "xbox/xboxstubs.h"
@@ -542,10 +538,6 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 	// [jason] Flags to enable/disable scaleform screens during the startup sequence (start screen, mainmenu)
 	m_bForceStartScreen = false;
 	m_bShowStartScreen = true;
-#if defined( INCLUDE_SCALEFORM )
-    m_bScaleformMainMenuEnabled = true;
-	m_bScaleformPauseMenuEnabled = true;
-#endif
 	m_bBypassStartScreen = false;
 
     m_iIntroMovieButtonPressed = -1;
@@ -877,9 +869,6 @@ void CBaseModPanel::UpdateBackgroundState()
 		// 360 guarantees a progress bar
 		// level loading is truly completed when the progress bar is gone, then transition to main menu
 		if ( IsPC() || ( IsGameConsole()
-		#if defined( INCLUDE_SCALEFORM )
-		 && !CLoadingScreenScaleform::IsOpen()
-        #endif
 		) )
 		{
 			SetBackgroundRenderState( BACKGROUND_MAINMENU );
@@ -893,25 +882,6 @@ void CBaseModPanel::UpdateBackgroundState()
 	{
 		SetBackgroundRenderState( BACKGROUND_DISCONNECTED );
 	}
-
-    #if defined( INCLUDE_SCALEFORM )
-	if ( GameUI().IsConsoleUI() )
-	{
-		if ( !m_ExitingFrameCount && !m_bLevelLoading && !CLoadingScreenScaleform::IsOpen() && GameUI().IsInLevel() )
-		{
-			// paused
-			if ( m_flBackgroundFillAlpha == 0.0f )
-				m_flBackgroundFillAlpha = 120.0f;
-		}
-		else
-		{
-			m_flBackgroundFillAlpha = 0;
-		}
-
-		// console ui has completely different menu/dialog/fill/fading behavior
-		return;
-	}
-    #endif
 
 	// don't evaluate the rest until we've initialized the menus
 	if ( !m_bPlatformMenuInitialized )
@@ -1131,44 +1101,6 @@ void CBaseModPanel::OnLevelLoadingStarted( const char *levelName, bool bShowProg
 		// frame buffer is about to be cleared, copy it off for ui backing purposes
 		m_bCopyFrameBuffer = true;
 	}
-#if defined( INCLUDE_SCALEFORM )
-	// kick off the scaleform screen load if it hasn't been opened yet
-	if ( !CLoadingScreenScaleform::IsOpen() )
-	{
-		if ( levelName )
-		{
-			if ( !levelName[0] )
-			{
-				levelName = engine->GetLevelNameShort();
-			}
-
-			char levelSettings[1024];
-
-			V_snprintf( levelSettings, ARRAYSIZE(levelSettings),
-				" Game { "
-					" type %s"
-					" mode %s" 
-					" map %s" 
-				" } "
-				,
-
-				g_pGameTypes->GetGameTypeFromInt( g_pGameTypes->GetCurrentGameType() ),
-				g_pGameTypes->GetGameModeFromInt( g_pGameTypes->GetCurrentGameType(), g_pGameTypes->GetCurrentGameMode() ),
-				levelName
-				);
-
-			KeyValues *pSettings = KeyValues::FromString( "Settings", levelSettings );
-			KeyValues::AutoDelete autodelete( pSettings );
-
-			CLoadingScreenScaleform::LoadDialogForKeyValues( pSettings );
-		}
-		else
-		{
-			// If we don't have a valid level name yet, just open the loading screen and await further info
-			CLoadingScreenScaleform::LoadDialog( );
-		}
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1478,7 +1410,6 @@ CEG_NOINLINE DWORD InitUiAllowProperTintFlag( void )
 
 	return CEG_ALLOW_PROPER_TINT;
 }
-#if !defined( INCLUDE_SCALEFORM )
 static DWORD CEG_ALLOW_TEXTCHAT = 0x01B3; // will override
 
 CEG_NOINLINE DWORD InitHudAllowTextChatFlag( void )
@@ -1489,7 +1420,6 @@ CEG_NOINLINE DWORD InitHudAllowTextChatFlag( void )
 
 	return CEG_ALLOW_TEXTCHAT;
 }
-#endif
 
 
 int CBaseModPanel::CheckForAnyKeyPressed( bool bCheckKeyboard )
@@ -5407,8 +5337,5 @@ void CBaseModPanel::ShowMainMenu( bool bShow )
 
 bool CBaseModPanel::LoadingProgressWantsIsolatedRender( bool bContextValid )
 {
-    #if defined( INCLUDE_SCALEFORM )
-	return CLoadingScreenScaleform::LoadingProgressWantsIsolatedRender( bContextValid );
-    #endif
 	return false;
 }

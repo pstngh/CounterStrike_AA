@@ -31,10 +31,6 @@
 #include "hltvserver.h"
 #include "UtlStringMap.h"
 
-#if defined( INCLUDE_SCALEFORM )
-#include "scaleformui/scaleformui.h"
-#endif
-
 #include "vgui/ILocalize.h"
 #include "eiface.h"
 #include "cl_broadcast.h"
@@ -50,10 +46,6 @@ ConVar cl_teammate_color_2( "cl_teammate_color_2", "150 34 223" );
 ConVar cl_teammate_color_3( "cl_teammate_color_3", "0 165 90" );
 ConVar cl_teammate_color_4( "cl_teammate_color_4", "92 168 255" );
 ConVar cl_teammate_color_5( "cl_teammate_color_5", "255 155 37" );
-
-#if defined( INCLUDE_SCALEFORM )
-const char* g_szDefaultScaleformClientMovieName = "resource/flash/GameUIRootMovie.swf";
-#endif
 
 #ifdef ENABLE_RPT
 void CL_NotifyRPTOfDisconnect( );
@@ -1244,14 +1236,6 @@ void CBaseClientState::Disconnect( bool bShowMainMenu )
 		splitscreen->RemoveSplitScreenUser( m_nSplitScreenSlot, m_nPlayerSlot + 1 );
 	}
 
-#if defined( INCLUDE_SCALEFORM )
-	if ( g_pScaleformUI )
-	{
-		g_pScaleformUI->ShutdownIME();
-		g_pScaleformUI->SlotRelease( SF_SS_SLOT( m_nSplitScreenSlot ) );
-	}
-#endif
-
 #endif // DEDICATED
 }
 
@@ -2292,33 +2276,6 @@ bool CBaseClientState::InternalProcessStringCmd( const CNETMsg_StringCmd& msg )
 
 
 #ifndef DEDICATED
-#if defined( INCLUDE_SCALEFORM )
-class CScaleformAvatarImageProviderImpl : public IScaleformAvatarImageProvider
-{
-public:
-	// Scaleform low-level image needs rgba bits of the inventory image (if it's ready)
-	virtual bool GetImageInfo( uint64 xuid, ImageInfo_t *pImageInfo ) OVERRIDE
-	{
-		CSteamID steamID( xuid );
-		if ( !steamID.IsValid() || !steamID.BIndividualAccount() || !steamID.GetAccountID() )
-			return false;
-
-		if ( !GetBaseLocalClient().IsConnected() )
-			return false;
-
-		// Find the player with the given account ID
-		CBaseClientState::PlayerAvatarDataMap_t const &data = GetBaseLocalClient().m_mapPlayerAvatarData;
-		CBaseClientState::PlayerAvatarDataMap_t::IndexType_t const idxData = data.Find( steamID.GetAccountID() );
-		if ( idxData == data.InvalidIndex() )
-			return false;
-
-		const CNETMsg_PlayerAvatarData& msg = *data.Element( idxData );
-		pImageInfo->m_cbImageData = msg.rgb().size();
-		pImageInfo->m_pvImageData = msg.rgb().data();
-		return true;
-	}
-} g_CScaleformAvatarImageProviderImpl;
-#endif
 #endif
 
 bool CBaseClientState::NETMsg_PlayerAvatarData( const CNETMsg_PlayerAvatarData& msg )
@@ -2335,10 +2292,6 @@ bool CBaseClientState::NETMsg_PlayerAvatarData( const CNETMsg_PlayerAvatarData& 
 	m_mapPlayerAvatarData.Insert( pClientDataCopy->accountid(), pClientDataCopy );
 
 #ifndef DEDICATED
-#if defined( INCLUDE_SCALEFORM )
-    if ( g_pScaleformUI )
-		g_pScaleformUI->AvatarImageReload( uint64( pClientDataCopy->accountid() ), &g_CScaleformAvatarImageProviderImpl );
-#endif
 #endif
 
 	return true;
@@ -2527,14 +2480,6 @@ bool CBaseClientState::SVCMsg_ServerInfo( const CSVCMsg_ServerInfo& msg )
 	
 #ifndef DEDICATED
 	splitscreen->AddBaseUser( 0, msg.player_slot() + 1 );
-
-#if defined( INCLUDE_SCALEFORM )
-	if ( g_pScaleformUI )
-	{
-		extern IScaleformSlotInitController *g_pIScaleformSlotInitControllerEngineImpl;
-		g_pScaleformUI->InitSlot( SF_SS_SLOT( 0 ), g_szDefaultScaleformClientMovieName, g_pIScaleformSlotInitControllerEngineImpl );
-	}
-#endif
 
 #endif
 	m_nPlayerSlot = msg.player_slot();
@@ -3249,19 +3194,12 @@ bool CBaseClientState::SVCMsg_SplitScreen( const CSVCMsg_SplitScreen& msg )
 	case MSG_SPLITSCREEN_ADDUSER:
 		{
 			splitscreen->AddSplitScreenUser( msg.slot(), msg.player_index() );
-#if defined( INCLUDE_SCALEFORM )
-			extern IScaleformSlotInitController *g_pIScaleformSlotInitControllerEngineImpl;
-			g_pScaleformUI->InitSlot( SF_SS_SLOT( msg.slot() ), g_szDefaultScaleformClientMovieName, g_pIScaleformSlotInitControllerEngineImpl );
-#endif
 		}
 		break;
 	case MSG_SPLITSCREEN_REMOVEUSER:
 		{
 			splitscreen->RemoveSplitScreenUser( msg.slot(), msg.player_index() );
 
-#if defined( INCLUDE_SCALEFORM )
-			g_pScaleformUI->SlotRelease( SF_SS_SLOT( msg.slot() ) );
-#endif
 		}
 		break;
 	}

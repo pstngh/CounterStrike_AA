@@ -12,9 +12,6 @@
 #include "tier3/tier3.h"
 #ifdef CLIENT_DLL
 #include "c_cs_player.h"
-#if defined( INCLUDE_SCALEFORM )
-#include "itempickup_scaleform.h"
-#endif
 #include "keyvalues.h"
 #include "filesystem.h"
 #include "ienginevgui.h"
@@ -1546,97 +1543,6 @@ bool CCSPlayerInventory::ClearLoadoutSlot( int iTeam, int iSlot )
 
 
 #ifdef CLIENT_DLL
-#if defined(INCLUDE_SCALEFORM)
-//
-// Inventory image provider for Scaleform
-//
-IScaleformInventoryImageProvider *g_pIScaleformInventoryImageProvider = NULL;
-class CScaleformInventoryImageProviderImpl : public IScaleformInventoryImageProvider
-{
-public:
-	CScaleformInventoryImageProviderImpl()
-	{
-		m_mapItems2Owners.SetLessFunc( DefLessFunc( itemid_t ) );
-
-		Assert( !g_pIScaleformInventoryImageProvider );
-		g_pIScaleformInventoryImageProvider = this;
-	}
-	~CScaleformInventoryImageProviderImpl()
-	{
-		Assert( g_pIScaleformInventoryImageProvider == this );
-		g_pIScaleformInventoryImageProvider = NULL;
-	}
-
-public:
-	// Scaleform low-level image needs rgba bits of the inventory image (if it's ready)
-	virtual bool GetInventoryImageInfo( uint64 uiItemId, ImageInfo_t *pImageInfo )
-	{
-		CEconItemView *pItemView = FindOrCreateEconItemViewForItemID( uiItemId );
-		if ( !pItemView )
-			return false;
-
-		if ( pImageInfo )
-		{
-			pImageInfo->m_pvEconItemView = reinterpret_cast< void *>( pItemView );
-			pImageInfo->m_bufImageDataRGBA = pItemView->GetInventoryImageRgba( ECON_ITEM_GENERATED_ICON_WIDTH, ECON_ITEM_GENERATED_ICON_HEIGHT, InventoryImageReadyCallback );
-			pImageInfo->m_pDefaultIconName = pItemView->GetStaticData() ? pItemView->GetStaticData()->GetIconDefaultImage() : NULL;
-			pImageInfo->m_nWidth = ECON_ITEM_GENERATED_ICON_WIDTH;
-			pImageInfo->m_nHeight = ECON_ITEM_GENERATED_ICON_HEIGHT;
-		}
-
-		return true;
-	}
-
-	static void InventoryImageReadyCallback( const CEconItemView *pItemView, CUtlBuffer &rawImageRgba, int nWidth, int nHeight, uint64 nItemID )
-	{
-		g_pScaleformUI->InventoryImageUpdate( nItemID, g_pIScaleformInventoryImageProvider );
-	}
-
-	CEconItemView * FindOrCreateEconItemViewForItemID( uint64 uiItemId )
-	{
-		CEconItemView *pItemView = NULL;
-
-		// Reference def/paint items ID structure:
-		if ( CombinedItemIdIsDefIndexAndPaint( uiItemId ) )
-		{
-			uint16 iPaintIndex = CombinedItemIdGetPaint( uiItemId );
-			uint16 iDefIndex = CombinedItemIdGetDefIndex( uiItemId );
-			uint8 ub1 = CombinedItemIdGetUB1( uiItemId );
-
-			pItemView = InventoryManager()->FindOrCreateReferenceEconItem( iDefIndex, iPaintIndex, ub1 );
-			Assert( pItemView && pItemView->IsValid() );
-		}
-		// Otherwise it's a real owned item
-		else
-		{
-			CUtlMap< itemid_t, XUID >::IndexType_t idx = m_mapItems2Owners.Find( uiItemId );
-			if ( idx == m_mapItems2Owners.InvalidIndex() )
-				return NULL;
-
-			XUID xuidOwner = m_mapItems2Owners.Element( idx );
-			if ( !xuidOwner )
-				return NULL;
-
-			CCSPlayerInventory *pInv = CSInventoryManager()->GetInventoryForPlayer( CSteamID( xuidOwner ) );
-			if ( !pInv )
-				return NULL;
-
-			pItemView = pInv->GetInventoryItemByItemID( uiItemId );
-		}
-
-		return pItemView;
-	}
-
-public:
-	CUtlMap< itemid_t, XUID > m_mapItems2Owners;
-}
-g_ScaleformInventoryImageProviderImpl;
-
-CEconItemView * CEconItemView::FindOrCreateEconItemViewForItemID( uint64 uiItemId )
-{
-	return g_ScaleformInventoryImageProviderImpl.FindOrCreateEconItemViewForItemID( uiItemId );
-}
-#endif // #if defined(INCLUDE_SCALEFORM)
 #else
 
 CEconItemView::UtlMapLookupByID_t CEconItemView::s_mapLookupByID;
@@ -1719,15 +1625,6 @@ void CCSPlayerInventory::ItemHasBeenUpdated( CEconItemView *pItem, bool bUpdateA
 	}
 #endif
 
-#if defined(CLIENT_DLL) && defined(INCLUDE_SCALEFORM)
-	// Assert that this item belongs to this inventory and store the mapping to owner
-	CSteamID owner( this->GetOwner().ID() );
-	Assert( pItem->GetAccountID() == owner.GetAccountID() );
-	g_ScaleformInventoryImageProviderImpl.m_mapItems2Owners.InsertOrReplace( pItem->GetItemID(), owner.ConvertToUint64() );
-
-	// Make sure that the item inventory image is updated no that the item can be found in the mapping
-	g_pScaleformUI->InventoryImageUpdate( pItem->GetItemID(), g_pIScaleformInventoryImageProvider );
-#endif
 }
 
 void CCSPlayerInventory::DefaultEquippedDefinitionHasBeenUpdated( CEconDefaultEquippedDefinitionInstanceClient *pDefaultEquippedDefinition )

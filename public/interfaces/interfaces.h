@@ -179,11 +179,6 @@ DECLARE_TIER2_INTERFACE( IMatchFramework, g_pMatchFramework );
 #define GAMEUISYSTEMMGR_INTERFACE_VERSION	"GameUISystemMgr001"
 DECLARE_TIER3_INTERFACE( IGameUISystemMgr, g_pGameUISystemMgr );
 
-#if defined( INCLUDE_SCALEFORM )
-#define SCALEFORMUI_INTERFACE_VERSION "ScaleformUI002"
-DECLARE_TIER3_INTERFACE( IScaleformUI, g_pScaleformUI );
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Not exactly a global, but we're going to keep track of these here anyways

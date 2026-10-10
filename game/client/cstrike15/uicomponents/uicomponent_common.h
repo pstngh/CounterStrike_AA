@@ -12,10 +12,6 @@
 #pragma once
 #endif
 
-#if defined( INCLUDE_SCALEFORM )
-#define USE_SCALEFORM_BINDINGS
-#endif
-
 #if defined ( PANORAMA_ENABLE )
 #define USE_PANORAMA_BINDINGS
 #endif // PANORAMA_ENABLE
@@ -31,10 +27,6 @@
 // of the order of includes. 
 #define MEMBER_FUNCPTRS_MAXSIZE
 #pragma pointers_to_members( full_generality, virtual_inheritance )
-#endif
-
-#ifdef USE_SCALEFORM_BINDINGS
-#include "scaleformui/scaleformui.h"
 #endif
 
 #ifdef USE_PANORAMA_BINDINGS
@@ -100,152 +92,6 @@ public:
 		DECLARE_PANORAMA_JSREGISTERFUNC
 
 
-#if defined (USE_SCALEFORM_BINDINGS) || defined (TEST_SCALEFORM_EVENTS)
-
-//-----------------------------------------------------------------------------
-// Purpose: Helpers for Scaleform events
-// The following macros and template functions allow Scaleform events to be declared
-// and broadcast using Panorama-style macros, so a single UI_COMPONENT_BROADCAST_EVENT
-// macro can broadcast both Panorama and Scaleform events.
-//-----------------------------------------------------------------------------
-namespace sfevents
-{
-	template < typename T >
-	void SetSFParam(KeyValues * pKv, const char* pName)
-	{
-		// Fallback for non-specialized types.
-		pKv->SetInt(pName, 0);
-	}
-
-	template <> inline void SetSFParam< const char * >(KeyValues * pKv, const char* pName)	{ pKv->SetString(pName, ""); }
-	template <> inline void SetSFParam< uint8 >(KeyValues * pKv, const char* pName)			{ pKv->SetInt(pName, 0); }
-	template <> inline void SetSFParam< uint16 >(KeyValues * pKv, const char* pName)		{ pKv->SetInt(pName, 0); }
-	template <> inline void SetSFParam< uint32 >(KeyValues * pKv, const char* pName)		{ pKv->SetInt(pName, 0); }
-	template <> inline void SetSFParam< uint64 >(KeyValues * pKv, const char* pName)		{ pKv->SetUint64(pName, 0); }
-	template <> inline void SetSFParam< int32 >(KeyValues * pKv, const char* pName)			{ pKv->SetInt(pName, 0); }
-	template <> inline void SetSFParam< int64 >(KeyValues * pKv, const char* pName)			{ pKv->SetUint64(pName, 0); }
-	template <> inline void SetSFParam< float >(KeyValues * pKv, const char* pName)			{ pKv->SetFloat(pName, 0.0f); }
-	template <> inline void SetSFParam< bool >(KeyValues * pKv, const char* pName)			{ pKv->SetBool(pName, false); }
-	template <> inline void SetSFParam< void* >(KeyValues * pKv, const char* pName)			{ pKv->SetPtr(pName, NULL); }
-
-	inline void SetSFParamValues(KeyValues * pKv, ...)
-	{
-		va_list args;
-		va_start(args, pKv);
-
-		FOR_EACH_SUBKEY(pKv, pSubkey)
-		{
-			switch (pSubkey->GetDataType()) {
-			case KeyValues::TYPE_STRING:
-				pKv->SetString(pSubkey->GetName(), va_arg(args, const char*));
-				break;
-			case KeyValues::TYPE_INT:
-				pKv->SetInt(pSubkey->GetName(), va_arg(args, int));
-				break;
-			case KeyValues::TYPE_FLOAT:
-				pKv->SetFloat(pSubkey->GetName(), va_arg(args, double));
-				break;
-			case KeyValues::TYPE_UINT64:
-				pKv->SetUint64(pSubkey->GetName(), va_arg(args, uint64));
-				break;
-			case KeyValues::TYPE_PTR:
-				pKv->SetPtr(pSubkey->GetName(), va_arg(args, void*));
-				break;
-			default:
-				Plat_FatalError("Invalid SF Event param type\n");
-				break;
-			}
-		}
-	}
-}
-
-#define SF_COMPONENT_EVENT_NAME( category, eventname ) "ScaleformComponent_" #category "_" #eventname
-#define SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname ) g_ScaleformComponent_##category##_##eventname##_event
-
-#define SF_COMPONENT_DECLARE_EVENT0( category, eventname ) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); } \
-			 KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DECLARE_EVENT1( category, eventname, param1_name, param1 ) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { \
-				m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); \
-				sfevents::SetSFParam<param1>(m_pKv, param1_name); \
-			} \
-			KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DECLARE_EVENT2(category, eventname, param1_name, param1, param2_name, param2) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { \
-				m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); \
-				sfevents::SetSFParam<param1>(m_pKv, param1_name); \
-				sfevents::SetSFParam<param2>(m_pKv, param2_name); \
-			} \
-			KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DECLARE_EVENT3(category, eventname, param1_name, param1, param2_name, param2, param3_name, param3) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { \
-				m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); \
-				sfevents::SetSFParam<param1>(m_pKv, param1_name); \
-				sfevents::SetSFParam<param2>(m_pKv, param2_name); \
-				sfevents::SetSFParam<param3>(m_pKv, param3_name); \
-			} \
-			KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DECLARE_EVENT4(category, eventname, param1_name, param1, param2_name, param2, param3_name, param3, param4_name, param4) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { \
-				m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); \
-				sfevents::SetSFParam<param1>(m_pKv, param1_name); \
-				sfevents::SetSFParam<param2>(m_pKv, param2_name); \
-				sfevents::SetSFParam<param3>(m_pKv, param3_name); \
-				sfevents::SetSFParam<param4>(m_pKv, param4_name); \
-			} \
-			KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DECLARE_EVENT5(category, eventname, param1_name, param1, param2_name, param2, param3_name, param3, param4_name, param4, param5_name, param5) \
-class ScaleformComponent_##category##_##eventname##_event \
-		{ public: \
-			ScaleformComponent_##category##_##eventname##_event() { \
-				m_pKv = new KeyValues(SF_COMPONENT_EVENT_NAME(category, eventname)); \
-				sfevents::SetSFParam<param1>(m_pKv, param1_name); \
-				sfevents::SetSFParam<param2>(m_pKv, param2_name); \
-				sfevents::SetSFParam<param3>(m_pKv, param3_name); \
-				sfevents::SetSFParam<param4>(m_pKv, param4_name); \
-				sfevents::SetSFParam<param5>(m_pKv, param5_name); \
-			} \
-			KeyValues* m_pKv; \
-		}; \
-extern ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_DEFINE_EVENT(category, eventname) \
-ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname );
-
-#define SF_COMPONENT_BROADCAST_EVENT( category, eventname, ... ) \
-	{ \
-		KeyValues* pKv = SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname ).m_pKv->MakeCopy(); \
-		sfevents::SetSFParamValues(pKv, ##__VA_ARGS__); \
-		if(g_pMatchFramework) g_pMatchFramework->GetEventsSubscription()->BroadcastEvent(pKv); \
-	}
-#else  // if defined (USE_SCALEFORM_BINDINGS) || defined (TEST_SCALEFORM_EVENTS)
-
 #define SF_COMPONENT_EVENT_NAME( category, eventname ) "ScaleformComponent_" #category "_" #eventname
 #define SF_COMPONENT_EVENT_OBJECT_NAME( category, eventname ) g_ScaleformComponent_##category##_##eventname##_event
 #define SF_COMPONENT_DECLARE_EVENT0( category, eventname )
@@ -257,171 +103,6 @@ ScaleformComponent_##category##_##eventname##_event SF_COMPONENT_EVENT_OBJECT_NA
 #define SF_COMPONENT_DEFINE_EVENT(category, eventname)
 #define SF_COMPONENT_BROADCAST_EVENT( category, eventname, ... )
 
-#endif // if defined (USE_SCALEFORM_BINDINGS) || defined (TEST_SCALEFORM_EVENTS)
-
-
-#ifdef USE_SCALEFORM_BINDINGS
-#define SF_COMPONENT_FUNCTION_NAME( fnname ) UiComponentFunction_##fnname
-
-// Should match SCALEFORM_CALLBACK_ARGS_DECL in uiscaleform.h
-#define SF_DEFAULT_PARAMS_DECL IUIMarshalHelper* pui, SFPARAMS obj
-#define SF_DEFAULT_PARAMS_PASS pui, obj
-
-#define SF_COMPONENT_FUNCTION( returntype, fnname ) \
-	void SF_COMPONENT_FUNCTION_NAME(fnname)( SF_DEFAULT_PARAMS_DECL )
-
-#define SF_COMPONENT_FUNCTION_IMPL( classname, fnname ) \
-	void classname::SF_COMPONENT_FUNCTION_NAME(fnname)( SF_DEFAULT_PARAMS_DECL )
-
-#define SF_COMPONENT_FUNCTION_DELEGATE( ptrcomponent, fnname ) \
-	( ptrcomponent )->SF_COMPONENT_FUNCTION_NAME( fnname )( SF_DEFAULT_PARAMS_PASS )
-
-#define SF_COMPONENT_API_DEF_BEGIN( componentclass ) \
-	class componentclass##_Table : public IScaleformUIFunctionHandlerDefinitionTable \
-	{ \
-	public: \
-		virtual const ScaleformUIFunctionHandlerDefinition* GetTable( void ) const \
-		{ \
-			static const ScaleformUIFunctionHandlerDefinition fnTable[] = { 
-
-#define SF_COMPONENT_FUNCTION_API_DEF( returntype, fnname, componentclass ) \
-	{ #fnname, reinterpret_cast<ScaleformUIFunctionHandler>( &componentclass::SF_COMPONENT_FUNCTION_NAME( fnname ) ) }, 
-
-#define SF_COMPONENT_FUNCTION_API_DEF_NOPREFIX( returntype, fnname, componentclass ) \
-	{ #fnname, reinterpret_cast<ScaleformUIFunctionHandler>( &componentclass::fnname ) } 
-
-#define SF_COMPONENT_API_DEF_END( componentclass ) \
-					{ NULL, NULL } \
-			}; \
-			return fnTable; \
-		} \
-	}; \
-	static componentclass##_Table g_##componentclass##_Table; \
-	static SFVALUE g_##componentclass##_SFVALUE[SF_SLOT_IDS_COUNT];
-
-#define SF_COMPONENT_API_INSTALL( iSlot, componentclass, ptrInstance, componentname ) \
-	do { \
-		Assert( ( iSlot >= 0 ) && ( iSlot < SF_SLOT_IDS_COUNT ) ); \
-		g_pScaleformUI->InstallGlobalObject( iSlot, "CScaleformComponent_" #componentname, \
-		reinterpret_cast<ScaleformUIFunctionHandlerObject*>(static_cast<componentclass *>(ptrInstance)), \
-		&g_##componentclass##_Table, \
-			&g_##componentclass##_SFVALUE[iSlot] ); \
-		} while( 0 )
-
-#define SF_COMPONENT_API_REMOVE( iSlot, componentclass ) \
-	do { \
-		Assert( ( iSlot >= 0 ) && ( iSlot < SF_SLOT_IDS_COUNT ) ); \
-		g_pScaleformUI->RemoveGlobalObject( iSlot, g_##componentclass##_SFVALUE[iSlot] ); g_##componentclass##_SFVALUE[iSlot] = NULL; \
-		} while( 0 )
-
-#define SF_INTEGRATION_XUID_PARAM( xuidVarName, iParam ) const char * xuidVarName = 0; { \
-	if ( pui->Params_GetArgType( obj, iParam ) != IUIMarshalHelper::VT_String ) \
-		{ \
-		AssertMsg( 0, __FUNCTION__ "ActionScript passed a non string param for xuid!\n" ); \
-		return;\
-		} \
-	xuidVarName = ( pui->Params_GetArgAsString( obj, iParam ) ); \
-	}
-
-#define SF_INTEGRATION_ITEMID_PARAM( itemidVarName, iParam ) itemid_t itemidVarName = 0; { \
-	if ( pui->Params_GetArgType( obj, iParam ) != IUIMarshalHelper::VT_String ) \
-		{ \
-		AssertMsg( 0, __FUNCTION__ " ActionScript passed a non string param for item id!\n" ); \
-		return;\
-		} \
-	const char *pItemID = ( pui->Params_GetArgAsString( obj, iParam ) ); \
-	if ( !pItemID ) \
-		return; \
-	itemidVarName = (uint64) Q_atoi64( pItemID ) ; \
-			}
-
-#define SF_COMPONENT_NOTIFY_FLASH( category, eventname ) \
-	if ( FlashAPIIsValid() ) \
-				{ \
-		WITH_SLOT_LOCKED \
-																{ \
-			m_pScaleformUI->Value_InvokeWithoutReturn( m_FlashAPI, SF_COMPONENT_EVENT_NAME( category, eventname ), NULL, 0 ); \
-																} \
-				}
-
-#define SF_COMPONENT_FORWARD_EVENT( szEvent ) \
-	if ( StringHasPrefix( szEvent, "ScaleformComponent_" ) ) \
-			{ \
-		if ( FlashAPIIsValid() ) \
-						{ \
-			WITH_SLOT_LOCKED \
-												{ \
-				m_pScaleformUI->Value_InvokeWithoutReturn( m_FlashAPI, szEvent, NULL, 0 ); \
-												} \
-						} \
-			}
-
-#define SF_COMPONENT_HOST_DECL() \
-	public: \
-		CScaleformComponentHostSupport_ImageCacheHelper m_CScaleformComponentHostSupport_ImageCacheHelper; \
-		void ScaleformComponentHost_EnsureAvatarCached( SF_DEFAULT_PARAMS_DECL ) \
-						{ \
-			SF_INTEGRATION_XUID_PARAM( xuidUser, 0 ); \
-			m_CScaleformComponentHostSupport_ImageCacheHelper.EnsureAvatarCached( xuidUser ); \
-						} \
-		void ScaleformComponentHost_EnsureInventoryImageCached( SF_DEFAULT_PARAMS_DECL ) \
-						{ \
-			SF_INTEGRATION_ITEMID_PARAM( itemID, 0 ); \
-			m_CScaleformComponentHostSupport_ImageCacheHelper.EnsureInventoryImageCached( itemID ); \
-						} \
-		void ScaleformComponentHost_EnsureItemDataImageCached( SF_DEFAULT_PARAMS_DECL ) \
-						{ \
-			uint16 iDefIndex = ( uint16 ) pui->Params_GetArgAsNumber( obj, 0 ); \
-			uint16 iPaintIndex = ( uint16 ) pui->Params_GetArgAsNumber( obj, 1 ); \
-			m_CScaleformComponentHostSupport_ImageCacheHelper.EnsureItemDataImageCached( iDefIndex, iPaintIndex ); \
-						} \
-		void ScaleformComponentHost_GetScaleformComponentEventParamString( SF_DEFAULT_PARAMS_DECL ) \
-						{ \
-			const char *pEventName = ( pui->Params_GetArgAsString( obj, 0 ) ); \
-			const char *pParamName = ( pui->Params_GetArgAsString( obj, 1 ) ); \
-			if ( !pEventName || !pParamName ) \
-				return; \
-			KeyValues *kvEventData = g_pMatchFramework->GetEventsSubscription()->GetEventData( pEventName ); \
-			if ( !kvEventData ) \
-				return; \
-			pui->Params_SetResult( obj, kvEventData->GetString( pParamName, "" ) ); \
-						} \
-
-#define SF_COMPONENT_HOST_IMAGE_CACHE_ENABLE( bEnable ) m_CScaleformComponentHostSupport_ImageCacheHelper.EnableCaching( bEnable )
-
-#define SF_COMPONENT_HOST_API_DEF() \
-					{ "EnsureAvatarCached", reinterpret_cast<ScaleformUIFunctionHandler>( &T::ScaleformComponentHost_EnsureAvatarCached )}, \
-					{ "EnsureInventoryImageCached", reinterpret_cast<ScaleformUIFunctionHandler>( &T::ScaleformComponentHost_EnsureInventoryImageCached )}, \
-					{ "EnsureItemDataImageCached", reinterpret_cast<ScaleformUIFunctionHandler>( &T::ScaleformComponentHost_EnsureItemDataImageCached )}, \
-					{ "GetScaleformComponentEventParamString", reinterpret_cast<ScaleformUIFunctionHandler>( &T::ScaleformComponentHost_GetScaleformComponentEventParamString )} \
-
-
-		// Registration of GC job handler for scaleform components
-#define SF_COMPONENT_GC_REG_JOB( gcclientclass, cjobclass, cmsgclass, gcmsgid, ccomponentclass, ccomponentfn ) \
-class cjobclass : public GCSDK::CGCClientJob \
-				{ \
-public: \
-	cjobclass( GCSDK::CGCClient *pGCClient ) : GCSDK::CGCClientJob( pGCClient ) { } \
-	virtual bool BYieldingRunJobFromMsg( GCSDK::IMsgNetPacket *pNetPacket ) \
-					{ \
-	GCSDK::CProtoBufMsg<cmsgclass> msg( pNetPacket ); \
-	ccomponentclass::GetInstance()->ccomponentfn( msg.Body() ); \
-	return true; \
-					} \
-				}; \
-GC_REG_CLIENT_JOB( cjobclass, gcmsgid );
-
-inline char const * HelperSfGetStringParamSafe(SF_DEFAULT_PARAMS_DECL, int iParam, char const *szDefault = NULL)
-{
-	if ((iParam >= 0)
-		&& (int(pui->Params_GetNumArgs(obj)) > iParam)
-		&& ( pui->Params_GetArgType( obj, iParam ) == IUIMarshalHelper::VT_String ) )
-		return pui->Params_GetArgAsString(obj, iParam);
-	else
-		return szDefault;
-}
-
-#else // USE_SCALEFORM_BINDINGS
 
 #define SF_COMPONENT_FUNCTION_NAME( fnname )
 #define SF_DEFAULT_PARAMS_DECL
@@ -443,8 +124,6 @@ inline char const * HelperSfGetStringParamSafe(SF_DEFAULT_PARAMS_DECL, int iPara
 #define SF_COMPONENT_HOST_IMAGE_CACHE_ENABLE( bEnable )
 #define SF_COMPONENT_HOST_API_DEF()
 #define SF_COMPONENT_GC_REG_JOB( gcclientclass, cjobclass, cmsgclass, gcmsgid, ccomponentclass, ccomponentfn )
-
-#endif  // USE_SCALEFORM_BINDINGS
 
 
 #ifdef USE_PANORAMA_BINDINGS
@@ -664,7 +343,7 @@ SF_COMPONENT_DEFINE_EVENT( category, eventname )
 
 // Only register Panorama cplusplus event handlers if not using Scaleform
 // (Otherwise handlers will be called twice) 
-#if (defined (USE_PANORAMA_BINDINGS ) && !(defined (USE_SCALEFORM_BINDINGS) || defined (TEST_SCALEFORM_EVENTS)))
+#if defined (USE_PANORAMA_BINDINGS )
 
 #define UI_COMPONENT_REGISTER_EVENT_HANDLER(category, eventname, pObj, methodptr) \
 	RegisterForUnhandledEvent( PANORAMA_COMPONENT_EVENT_NAME(category, eventname)(), pObj, methodptr );
@@ -717,27 +396,6 @@ GC_REG_CLIENT_JOB( cjobclass, gcmsgid );
 
 
 // Function decl/impl helpers for ui component code that will be called by scaleform and/or javascript
-#if defined( INCLUDE_SCALEFORM )
-#define UI_COMPONENT_FUNCTION_NAME( fnname ) UiComponentFunction_##fnname
-#define UI_DEFAULT_PARAMS_DECL IUIMarshalHelper* pui, SFPARAMS obj
-#define UI_DEFAULT_PARAMS_PASS pui, obj
-
-#define UI_COMPONENT_FUNCTION( returntype, fnname ) \
-	void UI_COMPONENT_FUNCTION_NAME(fnname)( UI_DEFAULT_PARAMS_DECL )
-
-#define UI_COMPONENT_FUNCTION_IMPL( classname, fnname ) \
-	void classname::UI_COMPONENT_FUNCTION_NAME(fnname)( UI_DEFAULT_PARAMS_DECL )
-
-inline char const * HelperUiGetStringParamSafe( UI_DEFAULT_PARAMS_DECL, int iParam, char const *szDefault = NULL )
-{
-	if ( ( iParam >= 0 )
-		&& ( int( pui->Params_GetNumArgs( obj ) ) > iParam )
-		&& ( pui->Params_GetArgType( obj, iParam ) == IScaleformUI::VT_String ) )
-		return pui->Params_GetArgAsString( obj, iParam );
-	else
-		return szDefault;
-}
-#endif
 
 // Convert keyvalues to a json formatted string
 bool Helper_RecursiveKeyValuesToJSONString( const KeyValues* pKV, CUtlBuffer &outBuffer );

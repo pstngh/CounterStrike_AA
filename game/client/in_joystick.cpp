@@ -1531,16 +1531,6 @@ void CInput::MotionControllerMove( float frametime, CUserCmd *cmd )
 	int iObserverMode = pPlayer->GetObserverMode();
 	bool ignorePointerInput = ( iObserverMode == OBS_MODE_DEATHCAM || iObserverMode == OBS_MODE_FREEZECAM );
 
-#if defined( INCLUDE_SCALEFORM )
-
-	// If we're in the pause menu, then lock the cursor to the screen.
-	if ( g_pScaleformUI->SlotDeniesInputToGame( SF_SS_SLOT( nSlot ) )  )
-	{
-		ignorePointerInput = true;
-	}
-
-#endif
-	
 	// If we're in the pause menu, then lock the cursor to the screen.
 	if ( ignorePointerInput  )
 	{
@@ -1794,11 +1784,6 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		return;
 
 	int nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
-
-#if defined( INCLUDE_SCALEFORM )
-	if ( g_pScaleformUI->SlotDeniesInputToGame( SF_SS_SLOT( nSlot ) ) )
-		return;
-#endif
 
 	PerUserInput_t &user = GetPerUser( nSlot );
 

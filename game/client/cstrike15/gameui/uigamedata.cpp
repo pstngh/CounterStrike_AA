@@ -31,7 +31,6 @@
 #include "inputsystem/iinputsystem.h"
 #include <time.h>
 #include <gc_clientsystem.h>
-#include "messagebox_scaleform.h"
 
 
 // BaseModUI High-level windows
@@ -1249,13 +1248,7 @@ public:
 			char const *szReason = RemapText_t::RemapRawText( arrText, msg.Body().errormsg().c_str() );
 
 			g_pMatchFramework->CloseSession();
-#if defined( INCLUDE_SCALEFORM )
-            CMessageBoxScaleform::UnloadAllDialogs( true );
-#endif
             BasePanel()->RestoreMainMenuScreen();
-#if defined( INCLUDE_SCALEFORM )
-            CCommandMsgBox::CreateAndShow( "#SFUI_Disconnect_Title", szReason, true );
-#endif
             return false;
 		}
 
@@ -1294,13 +1287,7 @@ public:
 			char const *szReason = RemapText_t::RemapRawText( arrText, msg.Body().errormsg().c_str() );
 
 			g_pMatchFramework->CloseSession();
-#if defined( INCLUDE_SCALEFORM )
-            CMessageBoxScaleform::UnloadAllDialogs( true );
-#endif
             BasePanel()->RestoreMainMenuScreen();
-#if defined( INCLUDE_SCALEFORM )
-            CCommandMsgBox::CreateAndShow( "#SFUI_Disconnect_Title", szReason, true );
-#endif
 			return false;
 		}
 

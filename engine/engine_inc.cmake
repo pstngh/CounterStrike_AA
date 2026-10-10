@@ -25,10 +25,6 @@ add_definitions(-DUSE_CONVARS -DVOICE_OVER_IP -DBUMPMAP -DENGINE_DLL -DVERSION_S
 
 if( DEDICATED )
     add_definitions(-DDEDICATED -DSWDS)
-else()
-    if( USE_SCALEFORM )
-        add_definitions(-DINCLUDE_SCALEFORM)
-    endif()
 endif()
 remove_definitions(-DBASE) #used by cryptopp REEE
 add_definitions(-DALLOW_TEXT_MODE=1)

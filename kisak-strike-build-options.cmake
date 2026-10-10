@@ -4,10 +4,6 @@
 
 
 
-# UI Options
-option(USE_SCALEFORM "Use In-Complete Proprietary Flash UI with blob ( Not Recommended )" OFF)
-# Without Scaleform the developer console is the only UI.
-
 # DEDICATED Server
 option(DEDICATED "Build as DEDICATED server. This is Separate from the main build and they are not in-tree compatible.
 Make sure to build with -DDEDICATED=0 once you want a regular client again." OFF)

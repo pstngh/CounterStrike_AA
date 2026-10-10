@@ -19,9 +19,6 @@
 #include "vgui/IPanel.h"
 
 #if defined ( CSTRIKE15 )
-#if defined( INCLUDE_SCALEFORM )
-#include "Scaleform/HUD/sfhudinfopanel.h"
-#endif
 #endif // CSTRIKE15
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -29,18 +26,7 @@
 
 // [jason] Forward the message to the Scaleform info panel
 #if defined ( CSTRIKE15 )
-#if defined( INCLUDE_SCALEFORM )
-#define FORWARD_PRIORITY_MSG( x )												\
-		{																		\
-			CHudElement *pElement = GetHud().FindElement( "SFHudInfoPanel" );	\
-			if ( pElement )														\
-			{																	\
-				((SFHudInfoPanel *)pElement)->SetPriorityText( x );				\
-			}																	\
-		}
-#else
 #define FORWARD_PRIORITY_MSG( x ) (void)0
-#endif
 #endif // CSTRIKE15
 
 static ConVar		scr_centertime( "scr_centertime", "4" );

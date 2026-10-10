@@ -18,10 +18,6 @@
 #include "tier0/dbg.h"
 #include "tier2/tier2.h"
 
-#if defined( INCLUDE_SCALEFORM )
-#include "scaleformui/scaleformui.h"
-#endif
-
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
@@ -86,14 +82,6 @@ inline IHardwareConfigInternal *HardwareConfig()
 	extern IHardwareConfigInternal* g_pHWConfig;
 	return g_pHWConfig;
 }
-
-#if defined( INCLUDE_SCALEFORM )
-inline IScaleformUI* ScaleformUI()
-{
-	extern IScaleformUI* g_pScaleformUI;
-	return g_pScaleformUI;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // Accessor to get at the material system

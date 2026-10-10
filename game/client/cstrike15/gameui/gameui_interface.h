@@ -15,10 +15,6 @@
 #include "vgui_controls/PHandle.h"
 #include "convar.h"
 
-#if defined( INCLUDE_SCALEFORM )
-#include "scaleformui/scaleformui.h"
-#endif
-
 #include "uicomponents/uicomponent_common.h"
 
 	#define BACKGROUND_MUSIC_FILENAME "mainmenu.mp3"
@@ -209,10 +205,6 @@ extern CGameUI &GameUI();
 
 // expose client interface
 extern IGameClientExports *GameClientExports();
-
-#if defined(INCLUDE_SCALEFORM)
-extern IScaleformUI* ScaleformUI();
-#endif
 
 
 #endif // GAMEUI_INTERFACE_H

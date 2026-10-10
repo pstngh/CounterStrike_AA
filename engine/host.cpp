@@ -138,9 +138,6 @@
 
 #include "matchmaking/mm_helpers.h"
 #include "ixboxsystem.h"
-#if defined( INCLUDE_SCALEFORM )
-#include "scaleformui/scaleformui.h"
-#endif
 
 extern IXboxSystem *g_pXboxSystem;
 extern ConVar cl_cloud_settings;
@@ -170,11 +167,6 @@ int host_tickcount = 0;
 int host_currentframetick = 0;
 bool g_bLowViolence = false;
 static bool g_bAllowSecureServers = true;
-
-#if defined( INCLUDE_SCALEFORM )
-const char g_szDefaultScaleformMovieName[] = "resource/flash/MainUIRootMovie.swf";
-const char g_szDefaultScaleformCursorName[] = "resource/flash/Cursor.swf";
-#endif
 
 #ifdef USE_SDL
 	#include "appframework/ilaunchermgr.h"
@@ -3741,21 +3733,6 @@ void _Host_RunFrame (float time)
 		}
 #endif	// DEDICATED
 
-#if defined ( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && shouldrender )
-		{
-			float timeScale = host_timescale.GetFloat() * sv.GetTimescale();
-			if ( timeScale <= 0.0f )
-				timeScale = 1.0f;
-
-			// using realtime here, because we never want scaleform menus paused (they fail to work).
-			// we may want to remove timescale here also
-			static float flLastScaleformRunFrame = g_ClientGlobalVariables.realtime;
-			g_pScaleformUI->RunFrame( ( g_ClientGlobalVariables.realtime - flLastScaleformRunFrame ) / timeScale );
-			flLastScaleformRunFrame = g_ClientGlobalVariables.realtime;
-		}
-#endif
-
 		g_Log.RunFrame();
 
 		if ( shouldrender )
@@ -4479,62 +4456,6 @@ void Host_FinishSecureSignatureChecks()
 #endif
 }
 
-#if !defined( DEDICATED ) && defined( INCLUDE_SCALEFORM )
-class CScaleformSlotInitControllerEngineImpl : public IScaleformSlotInitController
-{
-public:
-	// A new slot has been created and InitSlot almost finished, perform final configuration
-	virtual void ConfigureNewSlotPostInit( int slot )
-	{
-	};
-
-	// Notification to external systems that a file was loaded by Scaleform libraries
-	virtual bool OnFileLoadedByScaleform( char const *pszFilename, void *pvBuffer, int numBytesLoaded )
-	{
-		Host_DisallowSecureServers();
-		return false;
-	}
-
-	virtual const void * GetStringUserData( const char * pchStringTableName, const char * pchKeyName, int * pLength )
-	{
-		int numTables = GetBaseLocalClient().m_StringTableContainer->GetNumTables();
-
-		CNetworkStringTable *pTable = NULL;
-
-		for ( int i = 0; i < numTables; i++ )
-		{
-			// iterate through server tables
-			pTable = ( CNetworkStringTable* )GetBaseLocalClient().m_StringTableContainer->GetTable( i );
-
-			if ( !pTable )
-				continue;
-
-			if ( !V_strcmp( pTable->GetTableName(), pchStringTableName ) )
-				break;
-		}
-
-
-		if ( pTable )
-		{
-			int index = pTable->FindStringIndex( pchKeyName );
-			if ( index != ::INVALID_STRING_INDEX )
-			{
-				return pTable->GetStringUserData( index, pLength );
-			}
-		}
-
-		return NULL;
-	}
-
-	virtual void PassSignaturesArray( void *pvArray )
-	{
-		;
-	}
-}
-g_CScaleformSlotInitControllerEngineImpl;
-IScaleformSlotInitController *g_pIScaleformSlotInitControllerEngineImpl = &g_CScaleformSlotInitControllerEngineImpl;
-#endif
-
 bool Should360EmulatePS3()
 {
 	return ( IsX360() && CommandLine()->FindParm( "-ps3" ) ); 
@@ -4729,11 +4650,6 @@ void Host_Init( bool bDedicated )
 
 		// NOTE: This depends on the mod search path being set up
 		TRACEINIT( InitMaterialSystem(), ShutdownMaterialSystem() );
-
-#if defined( INCLUDE_SCALEFORM )
-		extern IScaleformSlotInitController *g_pIScaleformSlotInitControllerEngineImpl;
-		TRACEINIT( ScaleformInitFullScreenAndCursor(g_pScaleformUI, g_szDefaultScaleformMovieName, g_szDefaultScaleformCursorName, g_pIScaleformSlotInitControllerEngineImpl ), ScaleformReleaseFullScreenAndCursor( g_pScaleformUI ) );
-#endif
 
 		TRACEINIT( modelloader->Init(), modelloader->Shutdown() );
 
@@ -5529,10 +5445,6 @@ void Host_Shutdown(void)
 		TRACESHUTDOWN( TextMessageShutdown() );
 
 		TRACESHUTDOWN( EngineVGui()->Shutdown() );
-
-#if defined( INCLUDE_SCALEFORM )
-		TRACESHUTDOWN( ScaleformReleaseFullScreenAndCursor( g_pScaleformUI ) );
-#endif
 
 		TRACESHUTDOWN( S_Shutdown() );
 

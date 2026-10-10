@@ -19,9 +19,6 @@
 #include "cdll_int.h"
 #include "c_cs_player.h"
 #include "menu.h" // for CHudMenu defs
-#if defined( INCLUDE_SCALEFORM )
-#include "Scaleform/HUD/sfhud_radio.h"
-#endif
 #include "cs_gamerules.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -63,21 +60,6 @@ static int g_whichMenu = 0;
 //
 void OpenRadioMenu( int index )
 {
-#if defined( INCLUDE_SCALEFORM )
-	if ( CSGameRules() && CSGameRules()->IsPlayingTraining() )
-		return;
-
-	C_CSPlayer *pLocalPlayer = C_CSPlayer::GetLocalCSPlayer();
-	if ( pLocalPlayer && pLocalPlayer->GetObserverMode() > OBS_MODE_NONE )
-		return;
-
-	SFHudRadio* pRadio = GET_HUDELEMENT( SFHudRadio );
-	if ( pRadio )
-	{
-		pRadio->ShowRadioGroup( index );
-		g_whichMenu = index;
-	}
-#endif
 }
 
 static void radio1_f( const CCommand &args )

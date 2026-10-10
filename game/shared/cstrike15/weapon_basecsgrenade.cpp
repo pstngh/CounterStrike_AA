@@ -19,9 +19,6 @@
 #ifdef CLIENT_DLL
 
 	#include "c_cs_player.h"
-    #if defined( INCLUDE_SCALEFORM )
-	#include "HUD/sfweaponselection.h"
-    #endif
 	#include "c_rumble.h"
 	#include "rumble_shared.h"
 #else
@@ -457,27 +454,6 @@ void CBaseCSGrenade::ItemPostFrame()
 				pPlayer->SwitchToNextBestWeapon( this );
 			}
 #if defined (CLIENT_DLL)
-#if defined( INCLUDE_SCALEFORM )
-			// when a grenade is removed, force the local player to update thier inventory screen
-			C_CSPlayer *pLocalPlayer = C_CSPlayer::GetLocalCSPlayer();
-			if ( pLocalPlayer && pLocalPlayer == pPlayer )
-			{
-				SFWeaponSelection *pHudWS = GET_HUDELEMENT( SFWeaponSelection );
-				if ( pHudWS )
-				{
-					int nAmmoCount = pPlayer->GetAmmoCount(m_iPrimaryAmmoType);
-					if ( nAmmoCount <= 0 )
-					{
-						pHudWS->ShowAndUpdateSelection( WEPSELECT_DROP, this );
-					}
-					else
-					{
-						// we need to tell the hud that this weapon still exists and then update the selected weapon
-						pHudWS->ShowAndUpdateSelection( WEPSELECT_PICKUP, this );
-					}
-				}
-			}
-#endif
 #endif
 			return;	//don't animate this grenade any more!
 		}	

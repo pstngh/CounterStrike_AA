@@ -20,9 +20,7 @@ using namespace vgui;
 
 extern ConVar hud_drawhistory_time;
 
-#if !defined ( INCLUDE_SCALEFORM )
 DECLARE_HUDELEMENT( CHudHistoryResource );
-#endif //INCLUDE_SCALEFORM
 
 DECLARE_HUD_MESSAGE( CHudHistoryResource, ItemPickup );
 DECLARE_HUD_MESSAGE( CHudHistoryResource, AmmoDenied );

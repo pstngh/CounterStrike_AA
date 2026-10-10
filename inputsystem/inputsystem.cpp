@@ -18,16 +18,8 @@
 #include "materialsystem/imaterialsystem.h"
 #endif
 
-#if defined( INCLUDE_SCALEFORM )
-#include "scaleformui/scaleformui.h"
-#endif
-
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
-
-#if defined( INCLUDE_SCALEFORM )
-IScaleformUI* g_pScaleformUI = NULL;
-#endif
 
 #if defined( USE_SDL )
 #include "SDL.h"
@@ -239,10 +231,6 @@ bool CInputSystem::Connect( CreateInterfaceFn factory )
 {
 	if ( !BaseClass::Connect( factory ) )
 		return false;
-
-#if defined( INCLUDE_SCALEFORM )
-	g_pScaleformUI = (IScaleformUI*)factory( SCALEFORMUI_INTERFACE_VERSION, NULL );
-#endif
 
 #if defined( USE_SDL )
 	m_pLauncherMgr = (ILauncherMgr *)factory(  SDLMGR_INTERFACE_VERSION, NULL );
@@ -643,18 +631,6 @@ void CInputSystem::PollInputState_Windows()
 				PostEvent( IE_Quit, m_nLastSampleTick );
 				break;
 			}
-
-#if defined( INCLUDE_SCALEFORM )
-			if ( g_pScaleformUI )
-			{
-				// Scaleform IME requirement. Pass these messages to GFxIME BEFORE any TranlsateMessage/DispatchMessage.
-				if ( (msg.message == WM_KEYDOWN) || (msg.message == WM_KEYUP) || ImmIsUIMessage( NULL, msg.message, msg.wParam, msg.lParam ) 
-					|| (msg.message == WM_LBUTTONDOWN) || (msg.message == WM_LBUTTONUP) )
-				{
-					g_pScaleformUI->PreProcessKeyboardEvent( (size_t)msg.hwnd, msg.message, msg.wParam, msg.lParam );
-				}
-			}
-#endif
 
 			TranslateMessage( &msg );
 			DispatchMessage( &msg );
@@ -1811,12 +1787,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		// Note that this is passed to IME managers even if the IME is currently
 		// disallowed so that IMEs are still aware of the current language
 		// in case they are allowed in the future.
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI )
-		{
-			g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam );
-		}
-#endif
 		if ( ShouldGenerateUIEvents() )
 		{
 			PostEvent( IE_InputLanguageChanged, m_nLastSampleTick );
@@ -1824,20 +1794,9 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_KEYDOWN:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-			return 0;
-#endif
 		break;
 
 	case WM_IME_STARTCOMPOSITION:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-		{
-			m_bIMEComposing = true;
-			return 0;
-		}
-#endif
 
 		if ( ShouldGenerateUIEvents() )
 		{
@@ -1848,10 +1807,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_COMPOSITION:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-			return 0;
-#endif
 
 		if ( ShouldGenerateUIEvents() )
 		{
@@ -1861,13 +1816,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_ENDCOMPOSITION:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-		{
-			m_bIMEComposing = false;
-			return 0;
-		}
-#endif
 
 		if ( ShouldGenerateUIEvents() )
 		{
@@ -1878,10 +1826,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_NOTIFY:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-			return 0;
-#endif
 
 		if ( ShouldGenerateUIEvents() )
 		{
@@ -1927,10 +1871,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_CHAR:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI && g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam ) )
-			return 0;
-#endif
 
 		if ( ShouldGenerateUIEvents() )
 		{
@@ -1942,14 +1882,6 @@ LRESULT CInputSystem::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		break;
 
 	case WM_IME_SETCONTEXT:
-#if defined( INCLUDE_SCALEFORM )
-		if ( g_pScaleformUI )
-		{
-			g_pScaleformUI->HandleIMEEvent( (size_t)hwnd, uMsg, wParam, lParam );
-			lParam = 0;
-		}
-		else 
-#endif
 		if ( ShouldGenerateUIEvents() )
 		{
 			// We draw all IME windows ourselves

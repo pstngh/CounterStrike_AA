@@ -147,13 +147,6 @@
     #include "iachievementmgr.h"
     #include "hud.h"
     #include "hud_element_helper.h"
-    #if defined( INCLUDE_SCALEFORM )
-        #include "Scaleform/HUD/sfhud_chat.h"
-        #include "Scaleform/HUD/sfhud_radio.h"
-        #include "Scaleform/options_scaleform.h"
-        #include "Scaleform/loadingscreen_scaleform.h"
-        #include "Scaleform/HUD/sfhud_deathnotice.h"
-    #endif
 #endif
 
 #if defined( CSTRIKE15 )
@@ -212,10 +205,6 @@ IBik *bik = NULL;
 IQuickTime *pQuicktime = NULL;
 IVJobs * g_pVJobs = NULL;
 IRenderToRTHelper *g_pRenderToRTHelper = NULL;
-
-#if defined( INCLUDE_SCALEFORM )
-IScaleformUI* g_pScaleformUI = NULL;
-#endif
 
 IUploadGameStats *gamestatsuploader = NULL;
 IBlackBox *blackboxrecorder = NULL;
@@ -961,11 +950,6 @@ public:
 	virtual void PrepareSignedEvidenceData( void *pvData, int numBytes, CDemoPlaybackParameters_t const *pPlaybackParameters );
 	virtual bool ShouldSkipEvidencePlayback( CDemoPlaybackParameters_t const *pPlaybackParameters );
 
-#if defined( INCLUDE_SCALEFORM )
-    // Scaleform slot controller
-	virtual IScaleformSlotInitController * GetScaleformSlotInitController();
-#endif
-
 	virtual bool IsConnectedUserInfoChangeAllowed( IConVar *pCvar );
 	virtual void OnCommandDuringPlayback( char const *cmd );
 
@@ -1340,10 +1324,6 @@ int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGl
 	ConnectTier1Libraries( &appSystemFactory, 1 );
 	ConnectTier2Libraries( &appSystemFactory, 1 );
 	ConnectTier3Libraries( &appSystemFactory, 1 );
-
-#if defined( INCLUDE_SCALEFORM )
-	g_pScaleformUI = ( IScaleformUI* ) appSystemFactory( SCALEFORMUI_INTERFACE_VERSION, NULL );
-#endif
 
 #ifndef NO_STEAM
 	SteamAPI_InitSafe();
@@ -3801,46 +3781,17 @@ void CHLClient::GetStatus( char *buffer, int bufsize )
 #if defined ( CSTRIKE15 )
 bool CHLClient::IsChatRaised( void )
 {
-#if defined( INCLUDE_SCALEFORM )
-    SFHudChat* pChat = GET_HUDELEMENT( SFHudChat );
-
-	if ( pChat == NULL )
-	{
-		return false;
-	}
-	else
-	{
-		return pChat->ChatRaised();
-	}
-#else
 	return false;
-#endif
 }
 
 bool CHLClient::IsRadioPanelRaised( void )
 {
-#if defined( INCLUDE_SCALEFORM )
-    SFHudRadio* pRadio = GET_HUDELEMENT( SFHudRadio );
-
-	if ( pRadio == NULL )
-	{
-		return false;
-	}
-	else
-	{
-		return pRadio->PanelRaised();
-	}
-#else
 	return false;
-#endif
 }
 
 
 bool CHLClient::IsBindMenuRaised( void )
 {
-#if defined( INCLUDE_SCALEFORM )
-    return COptionsScaleform::IsBindMenuRaised();
-#endif
     return false;
 }
 
@@ -3862,9 +3813,6 @@ bool CHLClient::IsTeamMenuRaised( void )
 
 bool CHLClient::IsLoadingScreenRaised( void )
 {
-#if defined( INCLUDE_SCALEFORM )
-	return CLoadingScreenScaleform::IsOpen();
-#endif
 	return false;
 }
 
@@ -4376,14 +4324,6 @@ bool CHLClient::ShouldSkipEvidencePlayback( CDemoPlaybackParameters_t const *pPl
 	return true;
 }
 
-#if defined( INCLUDE_SCALEFORM )
-// Scaleform slot controller
-IScaleformSlotInitController * CHLClient::GetScaleformSlotInitController()
-{
-	/* Removed for partner depot */
-	return nullptr;
-}
-#endif
 bool CHLClient::IsConnectedUserInfoChangeAllowed( IConVar *pCvar )
 {
 	return CSGameRules() ? CSGameRules()->IsConnectedUserInfoChangeAllowed( NULL ) : true;

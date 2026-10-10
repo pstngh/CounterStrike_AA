@@ -41,9 +41,6 @@
 	#include "cs_custom_material_swap.h"
 	#include "cs_custom_weapon_visualsdata_processor.h"
 	//#include "glow_outline_effect.h"
-#if defined( INCLUDE_SCALEFORM )
-	#include "HUD/sfhudreticle.h"
-#endif
 
 	extern IVModelInfoClient* modelinfo;
 
@@ -2080,27 +2077,6 @@ void CWeaponCSBase::DrawCrosshair()
 	float flAngleToScreenPixel = 0;
 
 #ifdef CLIENT_DLL
-#if defined( INCLUDE_SCALEFORM )
-	// subtract a ratio of cam driver motion from crosshair according to cl_cam_driver_compensation_scale
-	if ( cl_cam_driver_compensation_scale.GetFloat() != 0 )
-	{
-		CBasePlayer *pOwner = ToBasePlayer( GetPlayerOwner() );
-		if ( pOwner )
-		{
-			CBaseViewModel *vm = pOwner->GetViewModel( m_nViewModelIndex );
-			if ( vm && vm->m_flCamDriverWeight > 0 )
-			{
-				QAngle angCamDriver = vm->m_flCamDriverWeight * vm->m_angCamDriverLastAng * clamp( cl_cam_driver_compensation_scale.GetFloat(), -10.0f, 10.0f );
-				if ( angCamDriver.x != 0 || angCamDriver.y != 0  )
-				{
-					flAngleToScreenPixel = VIEWPUNCH_COMPENSATE_MAGIC_SCALAR * 2 * ( ScreenHeight() / ( 2.0f * tanf(DEG2RAD( pPlayer->GetFOV() ) / 2.0f) ) );
-					iCenterY -= ( flAngleToScreenPixel * sinf( DEG2RAD( angCamDriver.x ) ) ) ;
-					iCenterX += ( flAngleToScreenPixel * sinf( DEG2RAD( angCamDriver.y ) ) ) ;
-				}
-			}
-		}
-	}
-#endif
 #endif
 
 /*
