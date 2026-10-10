@@ -1240,4 +1240,4 @@ void CCStrike15BasePanel::OnPlayCreditsVideo( void )
 
 
 
-#endif	// INCLUDE_SCALEFORM/ROCKETUI
+#endif	// INCLUDE_SCALEFORM

@@ -1040,14 +1040,13 @@ void CBaseModPanel::SetBackgroundRenderState(EBackgroundState state)
 			// [jason] Restore the Scaleform main menu when we return to Front End
 			if ( m_eBackgroundState == BACKGROUND_LEVEL || m_eBackgroundState == BACKGROUND_LOADING )
 			{
-				if ( IsScaleformMainMenuEnabled() || IsRocketMainMenuEnabled() )
+				if ( IsScaleformMainMenuEnabled() )
 				{
 					// Do not bring main menu up if we're planning to show the start screen as well!
 					if ( !IsStartScreenEnabled() )
 					{
 						ShowMainMenu( false );
 						ShowScaleformMainMenu( true );
-						ShowRocketMainMenu( true );
 					}
 				}
 				else
@@ -1178,7 +1177,7 @@ void CBaseModPanel::OnLevelLoadingStarted( const char *levelName, bool bShowProg
 void CBaseModPanel::OnLevelLoadingFinished()
 {
 	// [jason] $FIXME: Switch back to Scaleform, unless we are still using vgui for Pause Menu
-	if ( m_bScaleformPauseMenuEnabled || m_bRocketPauseMenuEnabled )
+	if ( m_bScaleformPauseMenuEnabled )
 	{
 		ShowMainMenu( false );
 	}
@@ -1451,7 +1450,7 @@ void CBaseModPanel::CompleteStartScreenSignIn( void )
 
 	m_bShowStartScreen = false;
 
-	if ( IsScaleformMainMenuEnabled() || IsRocketMainMenuEnabled() )
+	if ( IsScaleformMainMenuEnabled() )
 	{
 		// Display the scaleform main menu now
 		OnOpenCreateMainMenuScreen( );
@@ -1962,7 +1961,7 @@ void CBaseModPanel::OnGameUIActivated()
 			static ConVarRef cv_console_window_open( "console_window_open" );
 			if ( !IsPC() || !cv_console_window_open.GetBool() )
 			{
-				if (m_bScaleformPauseMenuEnabled || m_bRocketPauseMenuEnabled)
+				if ( m_bScaleformPauseMenuEnabled )
 				{
 					OnOpenPauseMenu();
 				}
@@ -1986,7 +1985,7 @@ void CBaseModPanel::OnGameUIActivated()
 	else // not the pause menu, update presence
 	{
 		// [jason] Safety check: If we're not in level, be sure that the pause menu is hidden
-		if ( IsScaleformPauseMenuActive() || IsRocketPauseMenuActive() )
+		if ( IsScaleformPauseMenuActive() )
 		{
 			DismissPauseMenu();
 		}
@@ -1994,11 +1993,10 @@ void CBaseModPanel::OnGameUIActivated()
 		// [jason] If we are bringing the main menu UI up again (not start screen or loading) then ensure we have raised the main menu
 		if ( !m_bLevelLoading && !IsScaleformIntroMovieEnabled() &&
 			!IsStartScreenActive() && 
-			(IsScaleformMainMenuEnabled() && !IsScaleformMainMenuActive()) || (IsRocketMainMenuEnabled() && !IsRocketMainMenuActive()) )
+			IsScaleformMainMenuEnabled() && !IsScaleformMainMenuActive() )
 		{
 			ShowMainMenu( false );
 			ShowScaleformMainMenu( true );
-			ShowRocketMainMenu( true );
 		}
 
 		if ( IsGameConsole() )
@@ -3667,22 +3665,6 @@ bool CBaseModPanel::IsScaleformMainMenuActive( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CBaseModPanel::ShowRocketMainMenu( bool bShow )
-{
-	/** Does nothing by default **/
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CBaseModPanel::IsRocketMainMenuActive( void )
-{
-	return false;
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Overridden if you want to use Scaleform to create the menu
 //-----------------------------------------------------------------------------
 void CBaseModPanel::OnOpenPauseMenu( void )
@@ -3726,30 +3708,6 @@ bool CBaseModPanel::IsScaleformPauseMenuActive( void )
 // Purpose: To be overridden by Scaleform
 //-----------------------------------------------------------------------------
 bool CBaseModPanel::IsScaleformPauseMenuVisible( void )
-{
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: To be overridden by RocketUI
-//-----------------------------------------------------------------------------
-void CBaseModPanel::ShowRocketPauseMenu( bool bShow )
-{
-	/** Does nothing by default */
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: To be overridden by RocketUI
-//-----------------------------------------------------------------------------
-bool CBaseModPanel::IsRocketPauseMenuActive( void )
-{
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: To be overridden by RocketUI
-//-----------------------------------------------------------------------------
-bool CBaseModPanel::IsRocketPauseMenuVisible( void )
 {
 	return false;
 }
@@ -4105,8 +4063,7 @@ void CBaseModPanel::OnCreditsFinished( void )
 void CBaseModPanel::OnGameUIHidden()
 {
 	// [jason] Dismiss Pause menu if we close it via ESC key, etc
-	if ( (IsScaleformPauseMenuEnabled() && IsScaleformPauseMenuActive()) ||
-	     (IsRocketPauseMenuEnabled() && IsRocketPauseMenuActive()) )
+	if ( IsScaleformPauseMenuEnabled() && IsScaleformPauseMenuActive() )
 	{
 		DismissPauseMenu();
 	}

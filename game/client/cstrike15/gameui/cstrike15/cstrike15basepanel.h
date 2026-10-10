@@ -133,7 +133,7 @@ protected:
    	virtual void OnPlayCreditsVideo( void );
 
     void CheckIntroMovieStaticDependencies( void );
-#endif// Scaleform/RocketUI
+#endif// Scaleform
 
 protected:
 	enum CCSOnClosedCommand

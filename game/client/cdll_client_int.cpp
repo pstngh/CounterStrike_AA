@@ -3844,7 +3844,6 @@ bool CHLClient::IsBindMenuRaised( void )
     return false;
 }
 
-//rocketui note: This is only used in keys.cpp for scaleform
 bool CHLClient::IsTeamMenuRaised( void )
 {
 	if ( !GetViewPortInterface() )
@@ -3861,7 +3860,6 @@ bool CHLClient::IsTeamMenuRaised( void )
 	return false;
 }
 
-//rocketui note: This is only used in keys.cpp for scaleform
 bool CHLClient::IsLoadingScreenRaised( void )
 {
 #if defined( INCLUDE_SCALEFORM )

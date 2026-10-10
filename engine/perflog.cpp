@@ -58,7 +58,7 @@ static const char *const s_pszLoggedSettings[] =
 	"mat_picmip", "mat_forceaniso", "mat_trilinear", "mat_antialias", "mat_reducefillrate",
 	"mat_postprocess_enable", "mat_motion_blur_enabled", "cl_detaildist", "r_drawdetailprops",
 	"cl_threaded_bone_setup", "snd_mix_async", "r_threaded_shadow_clip", "r_threaded_particles", "r_threaded_renderables",
-	"rocket_enable", "perf_log_profile", "bot_quota", "bot_difficulty", "host_timescale",
+	"perf_log_profile", "bot_quota", "bot_difficulty", "host_timescale",
 };
 
 // Frames right after joining a map include loading work, so they are skipped.

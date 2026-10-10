@@ -80,7 +80,6 @@ class IVGuiRenderSurface;
 
 class IScaleformUISystemMgr;
 class IScaleformUI;
-class IRocketUI;
 
 namespace vgui
 {
