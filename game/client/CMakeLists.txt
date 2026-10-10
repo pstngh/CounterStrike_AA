@@ -194,6 +194,7 @@ target_sources(${OUTBINNAME} PRIVATE "cstrike15/gameui/loadcommentarydialog.cpp"
 target_sources(${OUTBINNAME} PRIVATE "cstrike15/gameui/changegamedialog.cpp")
 
 target_sources(${OUTBINNAME} PRIVATE "cstrike15/cs_hud_chat.cpp")
+target_sources(${OUTBINNAME} PRIVATE "cstrike15/cs_hud_console_messages.cpp")
 target_sources(${OUTBINNAME} PRIVATE "cstrike15/cs_hud_scope.cpp")
 target_sources(${OUTBINNAME} PRIVATE "cstrike15/cs_hud_weaponselection.cpp")
 target_sources(${OUTBINNAME} PRIVATE "cstrike15/hud_flashbang.cpp")

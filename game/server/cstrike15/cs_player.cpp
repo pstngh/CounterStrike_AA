@@ -10760,6 +10760,14 @@ void CCSPlayer::State_Enter_WELCOME()
 		{
 			engine->ClientCommand( edict(), "jointeam 3\n" );
 		}
+#if defined( USE_MAC_PRESET )
+		else if ( IsLocalListenServerHost() && !IsBot() )
+		{
+			// The console is the only UI, so no MOTD or loading screen would
+			// send joingame. Send it now; its handler puts the host on CT.
+			engine->ClientCommand( edict(), "joingame\n" );
+		}
+#endif
 		else if ( enableMOTD )
 		{
 			KeyValues *data = new KeyValues("data" );

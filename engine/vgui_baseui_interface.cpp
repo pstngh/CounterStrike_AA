@@ -2008,6 +2008,11 @@ bool CEngineVGui::Key_Event( const InputEvent_t &event )
 			{
 				HideConsole();
 			}
+			else if ( baseButtonCode == KEY_ESCAPE )
+			{
+				// The console is the only UI, so Escape opens it.
+				Cbuf_AddText( Cbuf_GetCurrentPlayer(), "showconsole" );
+			}
 			else if ( IsGameUIVisible()  )
 			{
 				// gameui_hide on console start button but not ESC key.
