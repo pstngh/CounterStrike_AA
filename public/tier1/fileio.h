@@ -207,9 +207,6 @@ private:
 #endif
 	friend class CDirWatcherFriend;
 
-#ifdef LINUX
-	void AddFileToChangeList( const char *pchFile );
-#endif
 #ifdef WIN32
 	// used by callback functions to push a file onto the list
 	void AddFileToChangeList( const char *pchFile );

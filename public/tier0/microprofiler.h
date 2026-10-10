@@ -36,7 +36,7 @@ inline unsigned long long GetTimebaseRegister( void )
 	return Plat_Rdtsc();
 }
 
-#elif (defined(_LINUX) || defined( OSX )) && !defined(__e2k__)
+#elif defined( OSX ) && !defined(__e2k__)
 inline unsigned long long GetTimebaseRegister( void )
 {
 #ifdef PLATFORM_64BITS

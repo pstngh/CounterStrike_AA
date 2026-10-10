@@ -30,10 +30,6 @@
 
 #ifdef OSX
 #include <Carbon/Carbon.h>
-#elif defined(LINUX)
-#include <sys/vfs.h>
-#include <sys/stat.h> // stat()
-#include <unistd.h> // execl()
 #endif
 
 #ifdef USE_SDL

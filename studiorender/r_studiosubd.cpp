@@ -261,9 +261,7 @@ static matrix3x4_t *ComputeSkinMatrixSSE( mstudioboneweight_t &boneweights, matr
 		return &scratchMatrix;
 	}
 #else
-#ifndef LINUX
 	#pragma message( "ComputeSkinMatrixSSE C implementation only" )
-#endif
 	extern matrix3x4_t *ComputeSkinMatrix( mstudioboneweight_t &boneweights, matrix3x4_t *pPoseToWorld, matrix3x4_t &scratchMatrix );
 	return ComputeSkinMatrix( boneweights, pPoseToWorld, scratchMatrix );
 #endif
@@ -485,9 +483,6 @@ void GenerateWorldSpacePatches( float *pSubDBuff, int nNumPatches, unsigned shor
 //-----------------------------------------------------------------------------------
 void CStudioRender::GenerateBicubicPatches( mstudiomesh_t* pmesh, studiomeshgroup_t* pGroup, bool bDoFlex )
 {
-#if defined( LINUX )
-  	Assert(0);
-#else
 	VPROF_BUDGET( "CStudioRender::GenerateBicubicPatches", _T("SubD Rendering") );
 
 	FillTables(); // This only does work the first time through
@@ -537,7 +532,6 @@ void CStudioRender::GenerateBicubicPatches( mstudiomesh_t* pmesh, studiomeshgrou
 	// Unlock subd buffers
 	pRenderContext->UnlockSubDBuffer( );
 
-#endif // !LINUX
 }
 
 

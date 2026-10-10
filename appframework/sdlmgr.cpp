@@ -725,10 +725,6 @@ bool CSDLMgr::CreateHiddenGameWindow( const char *pTitle, bool bWindowed, int wi
 	if (m_Window == NULL)
 		Error( "Failed to create SDL window: %s", SDL_GetError() );
 
-#if defined( LINUX )
-	SetAssertDialogParent( m_Window );
-#endif
-
 #ifdef OSX
 	GLMRendererInfoFields rendererInfo;
 	GetDisplayDB()->GetRendererInfo( 0, &rendererInfo );

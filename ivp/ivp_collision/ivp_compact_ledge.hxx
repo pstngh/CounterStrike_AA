@@ -177,7 +177,7 @@ public:
     
     inline int get_n_triangles() const { return n_triangles; };
     
-#if defined(LINUX) || defined(SUN) || (defined(__MWERKS__) && defined(__POWERPC__)) || defined(GEKKO)
+#if defined(SUN) || (defined(__MWERKS__) && defined(__POWERPC__)) || defined(GEKKO)
     inline int get_n_points() const { return  size_div_16 - n_triangles - 1; };
 #endif    
 

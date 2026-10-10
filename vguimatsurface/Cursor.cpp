@@ -396,8 +396,6 @@ void CursorSelect( InputContextHandle_t hContext, HCursor hCursor )
 	};
 	
 	g_pInputSystem->SetMouseCursorVisible( s_bCursorVisible );
-#elif defined( LINUX )
-#error
 #else
 #error
 #endif

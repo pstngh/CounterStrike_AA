@@ -477,7 +477,7 @@ IVP_Compact_Ledge *IVP_SurfaceBuilder_Pointsoup::convert_pointsoup_to_compact_le
     // starting qhull
     // --------------
 
-#if defined(PSXII) || defined(WIN32) || defined(LINUX) || defined(GEKKO)
+#if defined(PSXII) || defined(WIN32) || defined(GEKKO)
     FILE *outfile = NULL;   // output from qh_produce_output() use NULL to skip qh_produce_output()
     FILE *errfile = NULL;   // error messages from qhull code
 #else

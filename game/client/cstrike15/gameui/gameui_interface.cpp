@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //===========================================================================//
 
-#if !defined( _OSX ) & !defined (LINUX)
+#if !defined( _OSX )
 #include <windows.h>
 #endif
 #include "cbase.h"
@@ -15,12 +15,12 @@
 // dgoodenough - io.h and direct.h don't exist on PS3
 // PS3_BUILDFIX
 // @wge Fix for OSX too.
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <io.h>
 #endif
 #include <tier0/dbg.h>
 // @wge Fix for OSX too.
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <direct.h>
 #endif
 
@@ -433,7 +433,7 @@ void CGameUI::PlayGameStartupSound()
 // PS3_BUILDFIX
 // FIXME - we need to find some sort of entropy here and select based on that.
 // @wge Fix for OSX too.
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 		int index = 0;
 #else
 		SYSTEMTIME SystemTime;

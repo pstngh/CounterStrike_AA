@@ -212,9 +212,7 @@ void C_SunlightShadowControl::ClientThink()
 		else
 		{
 			g_pClientShadowMgr->UpdateFlashlightState( m_LocalFlashlightHandle, state );
-#ifndef LINUX
 #pragma message("TODO: rebuild sunlight projected texture after sunlight control changes.")
-#endif
 			g_pClientShadowMgr->UpdateProjectedTexture( m_LocalFlashlightHandle, true );
 		}
 	}

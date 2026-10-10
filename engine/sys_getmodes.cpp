@@ -1361,14 +1361,6 @@ void CVideoMode_Common::AdjustWindow( int nWidth, int nHeight, int nBPP, bool bW
 
 	g_pLauncherMgr->SizeWindow( WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top );
 
-#ifdef LINUX
-	if( bWindowed )
-	{
-		SDL_Window* win = (SDL_Window*)g_pLauncherMgr->GetWindowRef();
-		SDL_SetWindowBordered( win, ( CommandLine()->FindParm( "-noborder" ) ) ? SDL_FALSE : SDL_TRUE );
-	}
-#endif
-
 #else
     Assert( !"Impl me" );
 #endif
@@ -2462,9 +2454,6 @@ void CVideoMode_MaterialSystem::RestoreVideo( void )
 #elif OSX
     ShowWindow( (WindowRef)game->GetMainWindow() );
     CollapseWindow( (WindowRef)game->GetMainWindow(), false );
-#elif LINUX
-// 	XMapWindow( g_pLauncherMgr->GetDisplay(), (Window)game->GetMainWindow() );
-// !!! FIXME: Mapping isn't really what we want here.
 #elif _WIN32
 #else
 #error
@@ -2498,9 +2487,6 @@ void CVideoMode_MaterialSystem::ReleaseFullScreen( void )
 		 //CGAssociateMouseAndMouseCursorPosition (TRUE);
 	}
 	CGDisplayShowCursor (kCGDirectMainDisplay);
-#elif LINUX
-//	XUnmapWindow( g_pLauncherMgr->GetDisplay(), (Window)game->GetMainWindow() );
-// !!! FIXME: Unmapping isn't really what we want here.
 #elif _WIN32
 #else
 #error

@@ -316,7 +316,7 @@ void FastSinCos( float x, float* s, float* c )  // any x
 		movss	[edx], xmm4
 	}
 }
-#elif defined( _OSX ) || defined (LINUX) || defined( _WIN64 )
+#elif defined( _OSX ) || defined( _WIN64 )
 // [will] - Note: could use optimization.
 void FastSinCos( float x, float* s, float* c )  // any x
 {

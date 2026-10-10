@@ -301,9 +301,7 @@ void C_EnvProjectedTexture::UpdateLight( void )
 			// quickly check the proposed light's bbox against the view frustum to determine whether we
 			// should bother to create it, if it doesn't exist, or cull it, if it does.
 
-#ifndef LINUX
 #pragma message("OPTIMIZATION: this should be made SIMD")
-#endif
 			// get the half-widths of the near and far planes, 
 			// based on the FOV which is in degrees. Remember that
 			// on planet Valve, x is forward, y left, and z up. 

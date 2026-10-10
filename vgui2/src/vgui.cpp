@@ -453,13 +453,11 @@ void CVGui::RunFrame()
 
 	}
 
-#if !defined( LINUX )
 	if ( !bIsReentrant )
 	{
 		VPROF( "input()->RunFrame()" );
 		g_pInput->RunFrame();
 	}
-#endif
 
 	// messenging
 	if ( !bIsReentrant )
@@ -488,18 +486,6 @@ void CVGui::RunFrame()
 			t->panel->Client()->OnTick();
 		}
 	}
-
-#ifdef LINUX
-    // On Linux we want to run the input frame here instead of before
-    // DispatchMessages() because the way mouse positioning is handled we won't
-    // get an accurate position until after DispatchMessages() is called and
-    // if we RunFrame() before DispatchMessages(), we'll lag focus by a frame.
-    if ( !bIsReentrant )
-    {
-        VPROF( "input()->RunFrame()" );
-        g_pInput->RunFrame();
-    }
-#endif
 
 	{
 		VPROF( "SolveTraverse" );

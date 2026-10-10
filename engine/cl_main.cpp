@@ -648,9 +648,7 @@ static bool CL_SoundMessageLessFunc( SoundInfo_t const &sound1, SoundInfo_t cons
 }
 
 static CUtlRBTree< SoundInfo_t, int > g_SoundMessages( 0, 0, CL_SoundMessageLessFunc );
-#ifndef LINUX
 extern ConVar snd_show;
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Add sound to queue
@@ -664,7 +662,6 @@ void CL_AddSound( const SoundInfo_t &sound )
 void CL_SndShow( const char *pName, const SoundInfo_t &pSound )
 {
 
-#ifndef LINUX
 	if ( snd_show.GetInt() >= 2 )
 	{
 		DevMsg( "%i (seq %i) %s : src %d : ch %d : %d dB : vol %.2f : time %.3f (%.4f delay) @%.1f %.1f %.1f\n", 
@@ -681,7 +678,6 @@ void CL_SndShow( const char *pName, const SoundInfo_t &pSound )
 			pSound.vOrigin.y,
 			pSound.vOrigin.z );
 	}
-#endif
 }
 
 //-----------------------------------------------------------------------------

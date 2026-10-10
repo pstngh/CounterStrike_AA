@@ -2796,8 +2796,6 @@ GLMContext::GLMContext( IDirect3DDevice9 *pDevice, GLMDisplayParams *params )
 #ifdef OSX
 	// call Cocoa manager, ask for the attrib list (also naming the specific renderer ID) and use that to make our context
 	CGLPixelFormatAttribute *selAttribs	=	NULL;
-#elif defined(LINUX)
-	int *selAttribs	=	NULL;
 #elif defined(_WIN32 )
 	int *selAttribs	=	NULL;
 #else

@@ -1144,9 +1144,7 @@ matrix3x4_t *ComputeSkinMatrixSSE( mstudioboneweight_t &boneweights, matrix3x4_t
 		return &scratchMatrix;
 	}
 #else
-#ifndef LINUX
 #pragma message("ComputeSkinMatrixSSE C implementation only")
-#endif
 
 return ComputeSkinMatrix( boneweights, pPoseToWorld, scratchMatrix );
 #endif

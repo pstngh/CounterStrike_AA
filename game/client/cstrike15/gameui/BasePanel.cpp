@@ -2499,7 +2499,7 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 // dgoodenough - use Q_snprintf on PS3
 // PS3_BUILDFIX
 // @wge Fix for OSX too.
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 			Q_snprintf( szAppId, 50, "%d", engine->GetAppID() );
 			szAppId[49] = 0;
 #else
@@ -2511,7 +2511,7 @@ void CBaseModPanel::RunMenuCommand(const char *command)
 
 			// Set Steam URL for re-launch in registry. Launcher will check this registry key and exec it in order to re-load the game in the proper language
 			// @wge HACK FIXME - Windows specific registry code.
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 			HKEY hKey;
 
 			if ( IsPC() && RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Valve\\Source", NULL, KEY_WRITE, &hKey) == ERROR_SUCCESS )

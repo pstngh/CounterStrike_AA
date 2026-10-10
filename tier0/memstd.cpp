@@ -2291,9 +2291,7 @@ void *CStdMemAlloc::RegionAlloc( int region, size_t nSize, const char *pFileName
 	return LMDNoteAlloc( CStdMemAlloc::InternalAlloc( region, nAdjustedSize ), nSize, 0, pFileName, nLine );
 }
 
-#if defined (LINUX)
-#include <malloc.h>
-#elif defined (OSX)
+#if   defined (OSX)
 #define malloc_usable_size( ptr ) malloc_size( ptr )
 extern "C" {
 	extern size_t malloc_size( const void *ptr );

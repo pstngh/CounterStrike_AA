@@ -21,7 +21,7 @@
 #endif
 
 #define ASYNC_FILEIO
-#if defined( LINUX ) || defined ( OSX )
+#if defined ( OSX )
 // Linux hasn't got a good AIO library that we have found yet, so lets punt for now
 #undef ASYNC_FILEIO
 #endif
@@ -1610,7 +1610,7 @@ static char selectBuf[PATH_MAX];
 
 #if defined(OSX) && !defined(__MAC_10_8)
 static int FileSelect( direntBig_t *ent )
-#elif defined(LINUX) || defined(OSX)
+#elif defined(OSX)
 static int FileSelect( const direntBig_t *ent )
 #else
 #error

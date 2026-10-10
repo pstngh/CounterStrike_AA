@@ -14,11 +14,6 @@
 #include <Carbon/Carbon.h>
 #include <sys/sysctl.h>
 #endif
-#if defined(LINUX)
-#include <unistd.h>
-#include <fcntl.h>
-#include "SDL.h"
-#endif
 
 #include "quakedef.h"
 #include "igame.h"
@@ -339,25 +334,6 @@ bool Sys_MessageBox(const char *title, const char *info, bool bShowOkAndCancel)
 	}
 	return false;
 
-#elif defined( LINUX ) && !defined( DEDICATED )
-
-	int buttonid = 0;
-	SDL_MessageBoxData messageboxdata = { 0 };
-	SDL_MessageBoxButtonData buttondata[] =
-	{
-		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,	1,	"OK"		},
-		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT,	0,	"Cancel"	},
-	};
-
-	messageboxdata.window = GetAssertDialogParent();
-	messageboxdata.title = title;
-	messageboxdata.message = info;
-	messageboxdata.numbuttons = bShowOkAndCancel ? 2 : 1;
-	messageboxdata.buttons = buttondata;
-
-	SDL_ShowMessageBox( &messageboxdata, &buttonid );
-	return ( buttonid == 1 );
-
 #elif defined ( POSIX )
 
 	Warning( "%s\n", info );
@@ -370,7 +346,7 @@ bool Sys_MessageBox(const char *title, const char *info, bool bShowOkAndCancel)
 
 bool g_bUpdateMinidumpComment = true;
 
-#if !defined(NO_STEAM) && !defined(DEDICATED) && !defined(LINUX)
+#if !defined(NO_STEAM) && !defined(DEDICATED)
 void BuildMinidumpComment( char const *pchSysErrorText );
 #endif
 
@@ -417,8 +393,6 @@ void Sys_Error_Internal( bool bMinidump, const char *error, va_list argsList )
 	{
 #ifdef _WIN32
 		::MessageBox( NULL, text, "Engine Error", MB_OK | MB_TOPMOST );
-#elif defined ( LINUX )
-		Sys_MessageBox( "Engine Error", text, false );
 #endif
 	}
 
@@ -431,7 +405,7 @@ void Sys_Error_Internal( bool bMinidump, const char *error, va_list argsList )
 		DebuggerBreak(); 
 	}
 
-#if !defined(NO_STEAM) && !defined(DEDICATED) && !defined(LINUX)
+#if !defined(NO_STEAM) && !defined(DEDICATED)
 	Status_Update();
 	BuildMinidumpComment( text );
 	g_bUpdateMinidumpComment = false;
@@ -468,12 +442,6 @@ void Sys_Error_Internal( bool bMinidump, const char *error, va_list argsList )
 	printf("\n ##### Sys_Error: %s", text );
 	fflush(stdout );
 	
-	int *p = 0;
-	*p = 0xdeadbeef;
-#elif defined( LINUX )
-	// Doing this doesn't quite work the way we want because there is no "crashing" thread
-	// and we see "No thread was identified as the cause of the crash; No signature could be created because we do not know which thread crashed" on the back end
-	//SteamAPI_WriteMiniDump( 0, NULL, build_number() );
 	int *p = 0;
 	*p = 0xdeadbeef;
 #else
@@ -678,41 +646,6 @@ void Sys_InitMemory( void )
 	{
 		memsize = ONE_HUNDRED_TWENTY_EIGHT_MB;
 	}
-#elif defined(LINUX)
-	const int fd = open("/proc/meminfo", O_RDONLY);
-	if (fd < 0)
-	{
-		Sys_Error( "Can't open /proc/meminfo (%s)!\n", strerror(errno) );
-	}
-
-	char buf[1024 * 16];
-	const ssize_t br = read(fd, buf, sizeof (buf));
-	close(fd);
-	if (br < 0)
-	{
-		Sys_Error( "Can't read /proc/meminfo (%s)!\n", strerror(errno) );
-	}
-	buf[br] = '\0';
-
-	// Split up the buffer by lines...
-	char *line = buf;
-	for (char *ptr = buf; *ptr; ptr++)
-	{
-		if (*ptr == '\n')
-		{
-			// we've got a complete line.
-			*ptr = '\0';
-			unsigned long long ull = 0;
-			if (sscanf(line, "MemTotal: %llu kB", &ull) == 1)
-			{
-				// found it!
-				memsize = ((uint64_t) ull) * 1024;
-				break;
-			}
-			line = ptr;
-		}
-	}
-
 #else
 #error Write me.
 #endif
@@ -886,9 +819,6 @@ public:
 				}
 				else
 				{
-#ifdef _LINUX
-					SendStringToParentProcess( va( "#%02d:%s", g_nForkID, pMessage ) );
-#endif
 				}
 
 			}
@@ -1049,24 +979,6 @@ int Sys_InitGame( CreateInterfaceFn appSystemFactory, const char* pBaseDir, void
 	Q_FixSlashes( s_pBaseDir );
 	host_parms.basedir = s_pBaseDir;
 
-#ifdef LINUX
-	if ( CommandLine()->FindParm ( "-pidfile" ) )
-	{	
-		FileHandle_t pidFile = g_pFileSystem->Open( CommandLine()->ParmValue ( "-pidfile", "srcds.pid" ), "w+" );
-		if ( pidFile )
-		{
-			char dir[MAX_PATH];
-			getcwd( dir, sizeof(dir) );
-			g_pFileSystem->FPrintf( pidFile, "%i\n", getpid() );
-			g_pFileSystem->Close(pidFile);
-		}
-		else
-		{
-			Warning("Unable to open pidfile (%s)\n", CommandLine()->CheckParm ( "-pidfile" ));
-		}
-	}
-#endif
-
 
 	// Initialize clock
 	TRACEINIT( Sys_Init(), Sys_Shutdown() );
@@ -1097,7 +1009,7 @@ int Sys_InitGame( CreateInterfaceFn appSystemFactory, const char* pBaseDir, void
 
 	MapReslistGenerator_BuildMapList();
 
-#if !defined(NO_STEAM) && !defined(DEDICATED) && !defined(LINUX)
+#if !defined(NO_STEAM) && !defined(DEDICATED)
 	Status_Update();
 	BuildMinidumpComment( NULL );
 #endif
@@ -1286,17 +1198,6 @@ void LoadEntityDLLs( const char *szBaseDir, bool bServerOnly )
 		LoadThisDll( szDllFilename, bServerOnly );
 	}
 
-#elif defined( LINUX )
-	if ( s_bIsDedicatedServer && !CommandLine()->FindParm( "-novalveds" ) )
-	{
-		Q_snprintf( szDllFilename, sizeof( szDllFilename ), "server_valve" );
-		LoadThisDll( szDllFilename, bServerOnly );
-	}
-	if ( !serverGameDLL )
-	{
-		Q_snprintf( szDllFilename, sizeof( szDllFilename ), "server"  );
-		LoadThisDll( szDllFilename, bServerOnly );
-	}
 #elif defined( POSIX )
 	Q_snprintf( szDllFilename, sizeof( szDllFilename ), "server" );
 	LoadThisDll( szDllFilename, bServerOnly );
@@ -1620,11 +1521,7 @@ CON_COMMAND( star_memory, "Dump memory stats" )
 {
 	// get a current stat of available memory
 	// 32 MB is reserved and fixed by OS, so not reporting to allow memory loggers sync
-#ifdef LINUX
-	struct mallinfo memstats = mallinfo( );
-	Msg( "sbrk size: %.2f MB, Used: %.2f MB, #mallocs = %d\n",
-		 memstats.arena / ( 1024.0 * 1024.0), memstats.uordblks / ( 1024.0 * 1024.0 ), memstats.hblks );
-#elif OSX
+#if   OSX
 	struct mstats memstats = mstats( );
 	Msg( "Available %.2f MB, Used: %.2f MB, #mallocs = %d\n",
 		 memstats.bytes_free / ( 1024.0 * 1024.0), memstats.bytes_used / ( 1024.0 * 1024.0 ), memstats.chunks_used );

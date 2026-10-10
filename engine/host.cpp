@@ -3341,11 +3341,7 @@ void _Host_RunFrame (float time)
 		numticks = 0;	// how many ticks we will simulate this frame
 		
 		// If we're using sv_alternateticks, make sure there are at least 2 ticks worth of host_remainder time to consume
-#if defined( LINUX )
-		bool bAlternateTicks = false;
-#else
 		bool bAlternateTicks = sv_alternateticks.GetBool() && ( GetBaseLocalClient().m_nMaxClients == 1 );
-#endif
 
 		float flMinimumTickInterval = bAlternateTicks ? host_state.interval_per_tick * 2.0f : host_state.interval_per_tick;
 		if ( host_remainder >= flMinimumTickInterval )
@@ -4288,17 +4284,6 @@ void InstallConVarHook( void );
 int g_nForkID = 0;
 int g_nSocketToParentProcess = -1;
 
-#ifdef _LINUX
-#include <sys/socket.h>
-#include <sys/types.h>
-void SendStringToParentProcess( char const *pMsg )
-{
-	Assert( IsChildProcess() );
-	Assert( g_nSocketToParentProcess != -1 );
-	send( g_nSocketToParentProcess, pMsg, 1 + strlen( pMsg ), MSG_DONTWAIT );
-}
-#endif
-
 
 CDebugInputThread * g_pDebugInputThread;
 
@@ -4354,14 +4339,14 @@ static bool Host_IsValidSignature( const char *pFilename, bool bAllowUnknown )
 // Ask steam if it is ok to load this DLL.  Unsigned DLLs should not be loaded unless
 // the client is running -insecure (testing a plugin for example)
 // This keeps legitimate users with modified binaries from getting VAC banned because of them
-#if defined( DEDICATED ) || defined( OSX ) || defined( LINUX )
+#if defined( DEDICATED ) || defined( OSX )
 #else
 static CUtlVector< CUtlString * > g_PendingSignatureChecks;
 static CUtlVector< CUtlString * > g_FailedSignatureChecks;
 #endif
 bool Host_AllowLoadModule( const char *pFilename, const char *pPathID, bool bAllowUnknown )
 {
-#if defined( DEDICATED ) || defined( OSX ) || defined( LINUX )
+#if defined( DEDICATED ) || defined( OSX )
 	// dedicated servers don't check signatures
 	// OSX and Linux have no ability to check signatures
 	return true;
@@ -4458,7 +4443,7 @@ void Host_DisallowSecureServers()
 
 void Host_FinishSecureSignatureChecks()
 {
-#if defined( DEDICATED ) || defined( OSX ) || defined( LINUX )
+#if defined( DEDICATED ) || defined( OSX )
 #else
 	while ( g_PendingSignatureChecks.Count() )
 	{
@@ -4615,12 +4600,6 @@ void Host_Init( bool bDedicated )
 	host_idealtime = 0;
 
 	// this code is called prefork. If we are going to fork, we want to delay some stuff, because we might not even be acting as a "real" server.
-#ifdef _LINUX
-	if ( CommandLine()->FindParm( "-fork" ) )
-	{
-		g_nForkID = FORK_ID_PARENT_PROCESS;
-	}
-#endif
 
 #if defined(_WIN32)
 	if ( CommandLine()->FindParm( "-pme" ) )
@@ -4833,7 +4812,7 @@ void Host_Init( bool bDedicated )
 	// Audio system initializes after matchmaking, so need to explicitly
 	// set the voice interface extension
 	IEngineVoice *pIEngineVoice = NULL;
-#if ( defined( _WIN32 ) || defined( OSX ) || defined( LINUX ) ) && !defined( NO_STEAM )
+#if ( defined( _WIN32 ) || defined( OSX ) ) && !defined( NO_STEAM )
 	pIEngineVoice = Audio_GetEngineVoiceSteam();
 #else
 	pIEngineVoice = Audio_GetEngineVoiceStub();

@@ -405,8 +405,6 @@ void Host_PrintStatus( cmd_source_t commandSource, void ( *print )(const char *f
 		const char *osType =
 #if defined( WIN32 )
 			"Windows";
-#elif defined( _LINUX )
-		"Linux";
 #elif defined( PLATFORM_OSX )
 		"OSX";
 #else
@@ -1625,11 +1623,7 @@ void Host_PrintMemoryStatus( const char *mapname )
 {
 	const float MB = 1.0f / ( 1024*1024 );
 	Assert( mapname );
-#ifdef PLATFORM_LINUX
-	struct mallinfo memstats = mallinfo( );
-	Msg( "[MEMORYSTATUS] [%s] Operating system reports sbrk size: %.2f MB, Used: %.2f MB, #mallocs = %d\n",
-		mapname, MB*memstats.arena, MB*memstats.uordblks, memstats.hblks );
-#elif defined(PLATFORM_OSX)
+#if   defined(PLATFORM_OSX)
 	struct mstats stats = mstats();
 	Msg( "[MEMORYSTATUS] [%s] Operating system reports  Used: %.2f MB, Free: %.2f Total: %.2f\n",
 		mapname, MB*stats.bytes_used, MB*stats.bytes_free, MB*stats.bytes_total );

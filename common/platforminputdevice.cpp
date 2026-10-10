@@ -103,8 +103,6 @@ const InputDevicePlatform_t PlatformInputDevice::s_LocalInputPlatform =
 		INPUT_DEVICE_PLATFORM_WINDOWS;
 	#elif defined( PLATFORM_OSX )
 		INPUT_DEVICE_PLATFORM_OSX;
-	#elif defined( PLATFORM_LINUX )
-		INPUT_DEVICE_PLATFORM_LINUX;
 	#else
 		INPUT_DEVICE_PLATFORM_NONE;
 	#endif

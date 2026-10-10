@@ -415,7 +415,6 @@ void CEngineSoundClient::StopSound( int iEntIndex, int iChannel, const char *pSa
 
 void CEngineSoundClient::SetRoomType( IRecipientFilter& filter, int roomType )
 {
-#ifndef LINUX
 	extern ConVar snd_dsp_spew_changes;
 	extern ConVar dsp_room;
 	if ( snd_dsp_spew_changes.GetBool() )
@@ -423,7 +422,6 @@ void CEngineSoundClient::SetRoomType( IRecipientFilter& filter, int roomType )
 		DevMsg( "Changing to room type %d.\n", roomType );
 	}
 	dsp_room.SetValue( roomType );
-#endif
 }
 
 void CEngineSoundClient::SetPlayerDSP( IRecipientFilter& filter, int dspType, bool fastReset )

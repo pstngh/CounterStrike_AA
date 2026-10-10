@@ -72,7 +72,6 @@ float GetAlpha( BYTE byte )
 }
 
 
-#if !defined( LINUX )
 // draw a surface in random color
 void DebugDrawSurface( SurfaceHandle_t surfID )
 {
@@ -94,7 +93,6 @@ void DebugDrawSurface( SurfaceHandle_t surfID )
 		CDebugOverlay::AddTriangleOverlay( vOrigin, v1, v2, surfColor.r(), surfColor.g(), surfColor.b(), 128, false, 0.1f );
 	}
 }
-#endif
 
 extern MaterialSystem_SortInfo_t *materialSortInfoArray;
 
@@ -1155,7 +1153,6 @@ void ProjectPointOntoSurfaceTexture( const SurfaceCtx_t& ctx, SurfaceHandle_t su
 
 bool ComputePaintRect( SurfaceHandle_t surfID, const Vector &vPosition, float flSphereRadius, PaintRect_t& paintRect )
 {
-#if !defined( LINUX )
 	// find dist from plane
 	VPlane forwardFacingPlane = MSurf_GetForwardFacingPlane( surfID );
 	float distFromPlane = forwardFacingPlane.DistTo( vPosition );
@@ -1210,7 +1207,6 @@ bool ComputePaintRect( SurfaceHandle_t surfID, const Vector &vPosition, float fl
 
 		return ( rect.width > 0 && rect.height > 0 );
 	}
-#endif
 
 	return false;
 }

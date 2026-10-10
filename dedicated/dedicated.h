@@ -74,10 +74,6 @@ public:
 // main server entry point after init
 void RunServer( bool bSupressStdIOBecauseWeAreAForkedChild );
 
-#ifdef _LINUX
-void RunServerSubProcesses( int nNumChildInstances );
-#endif
-
 // modify the command line, replacing all occurrences of ## with nIndex
 void PerformCommandLineSubstitutions( int nIndex );
 

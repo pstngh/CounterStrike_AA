@@ -7,9 +7,7 @@
 #define SSEMATH_H
 
 #include <xmmintrin.h>
-#ifndef _LINUX
 #include <emmintrin.h>
-#endif
 
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
@@ -1104,22 +1102,14 @@ FORCEINLINE fltx4 LoadAlignedSIMD( const VectorAligned & pSIMD )
 // The reason is that a Vector address is always passed into this class ( 3 floats )
 // However the simd reads 4 floats at a time because it is faster.
 // This doesn't segfault because of the 16 byte memory alignments
-#ifdef USE_ASAN
-ATTRIBUTE_NO_SANITIZE_ADDRESS inline // can't combine these 2 attributes
-#else
 FORCEINLINE
-#endif
 fltx4 LoadUnalignedSIMD( const void *pSIMD )
 {
 	return _mm_loadu_ps( reinterpret_cast<const float *>( pSIMD ) );
 }
 
 // lwss: similar to above ^^
-#ifdef USE_ASAN
-ATTRIBUTE_NO_SANITIZE_ADDRESS inline // can't combine these 2 attributes
-#else
 FORCEINLINE
-#endif
 fltx4 LoadUnaligned3SIMD( const void *pSIMD )
 {
 	return _mm_loadu_ps( reinterpret_cast<const float *>( pSIMD ) );

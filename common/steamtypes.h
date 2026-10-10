@@ -27,15 +27,11 @@ typedef unsigned long uint32;
 #ifndef int64
 #ifdef _WIN32
 typedef __int64 int64;
-#elif _LINUX
-typedef long long int64;
 #endif
 #endif
 #ifndef uint64
 #ifdef _WIN32
 typedef unsigned __int64 uint64;
-#elif _LINUX
-typedef unsigned long long uint64;
 #endif
 #endif
 

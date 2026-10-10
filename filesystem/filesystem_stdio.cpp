@@ -24,9 +24,6 @@
 #include "tier0/tslist.h"
 #elif defined(POSIX)
 #include <fcntl.h>
-#ifdef LINUX
-#include <sys/file.h>
-#endif
 #endif
 #include "tier1/convar.h"
 #include "tier0/vprof.h"
@@ -648,16 +645,6 @@ int CFileSystem_Stdio::FS_chmod( const char *path, int pmode )
 		return -1;
 
 	int rt = _chmod( path, pmode );
-#if defined( LINUX )
-	if (rt==-1)
-	{
-		char file[MAX_PATH];
-		if ( findFileInDirCaseInsensitive(path, file) )
-		{
-			rt=_chmod(file,pmode);
-		}
-	}	
-#endif
 	return rt;
 }
 
@@ -673,16 +660,6 @@ int CFileSystem_Stdio::FS_stat( const char *path, struct _stat *buf )
 
 	int rt;
     rt = _stat( path, buf );
-#if defined(LINUX)
-	if ( rt == -1 )
-	{
-		char file[MAX_PATH];
-		if ( findFileInDirCaseInsensitive( path, file ) )
-		{
-			rt = _stat( file, buf );
-		}
-	}	
-#endif
 	return rt;
 }
 
@@ -816,28 +793,6 @@ CStdioFile *CStdioFile::FS_fopen( const char *filename, const char *options, int
 			*size = buf.st_size;
 		}
 	}
-
-#if defined( LINUX )
-	if(!pFile && !strchr(options,'w') && !strchr(options,'+') ) // try opening the lower cased version
-	{
-		char file[MAX_PATH];
-		if ( findFileInDirCaseInsensitive(filename, file ) )
-		{	
-			pFile = fopen( file, options );
-
-			if (pFile && size)
-			{
-				// todo: replace with filelength()? 
-				struct _stat buf;
-				int rt = _stat( file, &buf );
-				if (rt == 0)
-				{
-					*size = buf.st_size;
-				}
-			}
-		}
-	}
-#endif
 
 	if ( pFile )
 	{

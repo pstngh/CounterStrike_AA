@@ -18,12 +18,6 @@
 #include "filesystem.h"
 #include "vguifont.h"
 
-#ifdef LINUX
-#include <ft2build.h>
-#include FT_FREETYPE_H
-typedef void *(*FontDataHelper)( const char *pchFontName, int &size );
-#endif
-
 #ifdef CreateFont
 #undef CreateFont
 #endif
@@ -71,11 +65,6 @@ public:
 	IFileSystem *FileSystem() { return m_pFileSystem; }
 	IMaterialSystem *MaterialSystem() { return m_pMaterialSystem; }
 
-#ifdef LINUX
-	FT_Library GetFontLibraryHandle() { return library; }
-	void SetFontDataHelper( FontDataHelper helper ) { pFontDataHelper = helper; }
-#endif
-
 	// used as a hint that intensive TTF operations are finished
 	void ClearTemporaryFontCache();
 	void GetKernedCharWidth( vgui::HFont font, wchar_t ch, wchar_t chBefore, wchar_t chAfter, float &wide, float &abcA, float &abcC );
@@ -90,10 +79,6 @@ private:
 	CUtlVector<CFontAmalgam> m_FontAmalgams;
 	CUtlVector<font_t *> m_Win32Fonts;
 
-#ifdef LINUX
-	FT_Library library; 
-	FontDataHelper pFontDataHelper;		
-#endif
 	char m_szLanguage[64];
 	IFileSystem		*m_pFileSystem;
 	IMaterialSystem *m_pMaterialSystem;

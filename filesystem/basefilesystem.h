@@ -16,13 +16,11 @@
 
 #if defined( _WIN32 )
 
-#if !defined(LINUX)
 	#include <io.h>
 	#include <direct.h>
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
 	#define SUPPORT_VPK
-#endif
 #undef GetCurrentDirectory
 #undef GetJob
 #undef AddJob

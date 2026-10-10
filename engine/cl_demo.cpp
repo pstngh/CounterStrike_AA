@@ -4016,13 +4016,11 @@ CON_COMMAND( demo_listhighlights, "List all highlights data for the demo." )
 
 bool CDemoPlayer::OverrideView( democmdinfo_t& info )
 {
-#if !defined( LINUX )
 	if ( g_pDemoUI && g_pDemoUI->OverrideView( info, GetPlaybackTick() ) )
 		return true;
 
 	if ( demoaction && demoaction->OverrideView( info, GetPlaybackTick() ) )
 		return true;
-#endif
 	return false;
 }
 

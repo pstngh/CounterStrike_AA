@@ -23,9 +23,6 @@
 #include "tier2/tier2.h"
 #include "dedicated.h"
 #include "vstdlib/cvar.h"
-#ifdef LINUX
-#include <mcheck.h>
-#endif
 
 #ifdef _WIN32
 #include <windows.h> 
@@ -621,19 +618,6 @@ int main(int argc, char **argv)
 	Plat_SetCommandLine( CommandLine()->GetCmdLine() );
 #endif
 
-#ifdef LINUX
-	if ( CommandLine()->CheckParm( "-mtrace" ) )
-	{
-		mtrace();
-	}
-#ifndef DEDICATED
-	if ( CommandLine()->CheckParm( "-logmem" ) )
-	{
-		EnableMemoryLogging( true );
-	}
-#endif
-#endif
-
 	// Figure out the directory the executable is running from
 	// and make that be the current working directory
 	char pBasedir[ MAX_PATH ];
@@ -651,17 +635,6 @@ int main(int argc, char **argv)
 	CDedicatedSteamApplication steamApplication( &dedicatedSystems );
 	int nRet = steamApplication.Run( );
 
-#ifdef LINUX
-#ifndef DEDICATED
-
-	EnableMemoryLogging( false );
-
-	if ( CommandLine()->CheckParm( "-mtrace" ) )
-	{
-		muntrace();
-	}
-#endif
-#endif
 	return nRet;
 
 }

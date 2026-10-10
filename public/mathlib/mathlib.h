@@ -500,9 +500,6 @@ extern float SinCosTable[SIN_TABLE_SIZE];
 
 inline float TableCos( float theta )
 {
-#if defined( LINUX )
-	return cos(theta); // under the GCC compiler the float-represented-as-an-int causes an internal compiler error
-#else
 
 	union
 	{
@@ -513,14 +510,10 @@ inline float TableCos( float theta )
 	// ideally, the following should compile down to: theta * constant + constant, changing any of these constants from defines sometimes fubars this.
 	ftmp.f = theta * ( float )( SIN_TABLE_SIZE / ( 2.0f * M_PI ) ) + ( FTOIBIAS + ( SIN_TABLE_SIZE / 4 ) );
 	return SinCosTable[ ftmp.i & ( SIN_TABLE_SIZE - 1 ) ];
-#endif
 }
 
 inline float TableSin( float theta )
 {
-#if defined( LINUX )
-	return sin(theta); // under the GCC compiler the float-represented-as-an-int causes an internal compiler error
-#else
 	union
 	{
 		int i;
@@ -530,7 +523,6 @@ inline float TableSin( float theta )
 	// ideally, the following should compile down to: theta * constant + constant
 	ftmp.f = theta * ( float )( SIN_TABLE_SIZE / ( 2.0f * M_PI ) ) + FTOIBIAS;
 	return SinCosTable[ ftmp.i & ( SIN_TABLE_SIZE - 1 ) ];
-#endif
 }
 
 template<class T>

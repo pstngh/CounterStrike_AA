@@ -268,11 +268,7 @@ char *p_make_string(const char *templat, ...)
     va_list parg;
     memset(buffer,0,P_MIN(1000, MAX_MAKE_STRING_LEN)); // only for sparc-debugging
     va_start(parg,templat);
-#ifdef LINUX
-    vsnprintf(buffer,MAX_MAKE_STRING_LEN,templat,parg);
-#else
     vsprintf(buffer, templat,parg);
-#endif
     va_end(parg);
     return p_strdup(buffer);
 }
@@ -291,11 +287,7 @@ IVP_ERROR_STRING p_export_error(const char *templat, ...)
     p += strlen(p);
     
     va_start(parg,templat);	
-#ifdef LINUX
-    vsnprintf(buffer,MAX_MAKE_STRING_LEN,templat,parg);
-#else
     vsprintf(buffer, templat,parg);
-#endif
     va_end(parg);
 
     P_FREE(p_error_buffer);
@@ -314,16 +306,10 @@ void ivp_message(const char *templat, ...)
     p += strlen(p);
     
     va_start(parg,templat);	
-#ifdef LINUX
-    vsnprintf(buffer,MAX_MAKE_STRING_LEN,templat,parg);
-#else
     vsprintf(buffer, templat,parg);
-#endif
     va_end(parg);
 #ifdef WIN32
     OutputDebugString(buffer);
-#elif defined(LINUX)
-    printf("%s",buffer);
 #else
     printf("%s",buffer);
 #endif

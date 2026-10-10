@@ -63,9 +63,7 @@ void Con_ColorPrintf( const Color& clr, const char *fmt, ... )
 	}
 
 	SendStringToNetConsoles( msg );
-#if defined( LINUX )
-	// linux prints output elsewhere.  This disables standard printf's to keep from double printing all linux output
-#elif POSIX
+#if   POSIX
 	printf( "%s", msg );
 #else
 	Msg( "%s", msg );

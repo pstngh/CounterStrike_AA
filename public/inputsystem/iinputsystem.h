@@ -184,7 +184,7 @@ public:
 	// Mouse visibility, tell inputsystem when we hide stuff rather than querying the OS which is expensive on OSX
 	virtual void SetMouseCursorVisible( bool bVisible ) = 0;
 
-#if defined( USE_SDL ) || defined( LINUX )
+#if defined( USE_SDL )
 	virtual void DisableHardwareCursor( void ) = 0;
 	virtual void EnableHardwareCursor( void ) = 0;
 #endif

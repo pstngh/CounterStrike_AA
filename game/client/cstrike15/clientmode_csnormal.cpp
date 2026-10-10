@@ -219,7 +219,7 @@ CON_COMMAND_F( toggleRdrOpt, "", FCVAR_DEVELOPMENTONLY )
 		engine->ExecuteClientCmd( "r_csm_fast_path 1" );
 		engine->ExecuteClientCmd( "r_renderoverlaybatch 1" );
 		engine->ExecuteClientCmd( "cl_radar_fast_transforms 1" );
-#if defined( _WIN32 ) || defined( LINUX )
+#if defined( _WIN32 )
 		engine->ExecuteClientCmd( "mat_vtxlit_new_path 1" );
 		engine->ExecuteClientCmd( "mat_depthwrite_new_path 1" );
 		engine->ExecuteClientCmd( "mat_lmap_new_path 1" );
@@ -233,7 +233,7 @@ CON_COMMAND_F( toggleRdrOpt, "", FCVAR_DEVELOPMENTONLY )
 		engine->ExecuteClientCmd( "r_csm_fast_path 0" );
 		engine->ExecuteClientCmd( "r_renderoverlaybatch 0" );
 		engine->ExecuteClientCmd( "cl_radar_fast_transforms 0" );
-#if defined( _WIN32 ) || defined( LINUX )
+#if defined( _WIN32 )
 		engine->ExecuteClientCmd( "mat_vtxlit_new_path 0" );
 		engine->ExecuteClientCmd( "mat_depthwrite_new_path 0" );
 		engine->ExecuteClientCmd( "mat_lmap_new_path 0" );

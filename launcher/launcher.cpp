@@ -12,12 +12,6 @@
 #include <direct.h>
 #elif defined ( OSX ) 
 #include <Carbon/Carbon.h>
-#elif defined ( LINUX )
-#define O_EXLOCK 0
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <locale.h>
 #else
 #error
 #endif
@@ -66,15 +60,6 @@
 #include "tier1/fmtstr.h"
 #include "vjobs_interface.h"
 #include "vstdlib/jobthread.h"
-
-#ifdef LINUX
-#include "SDL.h"
-
-#define MB_OK 			0x00000001
-#define MB_SYSTEMMODAL	0x00000002
-#define MB_ICONERROR	0x00000004
-int MessageBox( HWND hWnd, const char *message, const char *header, unsigned uType );
-#endif
 
 #ifdef OSX
 #define RELAUNCH_FILE "/tmp/hl2_relaunch"
@@ -166,7 +151,7 @@ public:
 	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
 	{
 #if !defined( _CERT )
-#if defined ( WIN32 ) || defined( LINUX )
+#if defined ( WIN32 )
 		if ( pContext->m_Severity == LS_WARNING && pContext->m_ChannelID == LOG_EngineInitialization )
 		{
 			::MessageBox( NULL, pMessage, "Warning!", MB_OK | MB_SYSTEMMODAL | MB_ICONERROR );
@@ -989,14 +974,6 @@ int MessageBox( HWND hWnd, const char *message, const char *header, unsigned uTy
 
 }
 
-#elif defined( LINUX )
-
-int MessageBox( HWND hWnd, const char *message, const char *header, unsigned uType )
-{
-	SDL_ShowSimpleMessageBox( 0, header, message, GetAssertDialogParent() );
-	return 0;
-}
-
 #endif
 
 //-----------------------------------------------------------------------------
@@ -1043,47 +1020,6 @@ bool GrabSourceMutex()
 	CRC32_ProcessBuffer( &gameCRC, (void *)pchGameParam, Q_strlen( pchGameParam ) );
 	CRC32_Final( &gameCRC );
 	
-#ifdef LINUX
-	/*
-	 * Linux
-	 */
-
-	// Check TMPDIR environment variable for temp directory.
-	const char *tmpdir = getenv( "TMPDIR" );
-
-	// If it's NULL, or it doesn't exist, or it isn't a directory, fallback to /tmp.
-	struct stat buf;
-	if( !tmpdir || stat( tmpdir, &buf ) || !S_ISDIR ( buf.st_mode ) )
-		tmpdir = "/tmp";
-
-	V_snprintf( g_lockFilename, sizeof(g_lockFilename), "%s/source_engine_%lu.lock", tmpdir, gameCRC );
-
-	g_lockfd = open( g_lockFilename, O_WRONLY | O_CREAT, 0666 );
-	if ( g_lockfd == -1 )
-	{
-		printf( "open(%s) failed\n", g_lockFilename );
-		return false;
-	}
-
-	// In case we have a umask setting creation to something other than 0666,
-	// force it to 0666 so we don't lock other users out of the game if
-	// the game dies etc.
-	fchmod(g_lockfd, 0666);
-
-	struct flock fl;
-	fl.l_type = F_WRLCK;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0;
-	fl.l_len = 1;
-
-	if ( fcntl ( g_lockfd, F_SETLK, &fl ) == -1 )
-	{
-		printf( "fcntl(%d) for %s failed\n", g_lockfd, g_lockFilename );
-		return false;
-	}
-
-	return true;
-#else
 	/*
 	 * OSX
 	 */
@@ -1110,7 +1046,6 @@ bool GrabSourceMutex()
 	}
 
 	return false;
-#endif	// LINUX
 
 #endif	// POSIX
 	return true;
@@ -1391,26 +1326,6 @@ extern "C" DLL_EXPORT int LauncherMain( int argc, char **argv )
 #ifdef WIN32
 	SetAppInstance( hInstance );
 #endif
-
-#ifdef LINUX
-	//  fix to stop us from crashing in printf/sscanf functions that don't expect
-	//  localization to mess with your "." and "," float seperators. Mac OSX also sets LANG
-	//  to en_US.UTF-8 before starting up (in info.plist I believe).
-	// We need to double check that localization for libcef is handled correctly
-	//  when we slam things to en_US.UTF-8.
-	// Also check if C.UTF-8 exists and use it? This file: /usr/lib/locale/C.UTF-8.
-	// It looks like it's only installed on Debian distros right now though.
-        const char en_US[] = "en_US.UTF-8";
-
-        setenv( "LC_ALL", en_US, 1 );
-        setlocale( LC_ALL, en_US );
-
-        const char *CurrentLocale = setlocale( LC_ALL, NULL );
-        if ( Q_stricmp( CurrentLocale, en_US ) )
-        {
-                Warning( "WARNING: setlocale('%s') failed, using locale:'%s'. International characters may not work.\n", en_US, CurrentLocale );
-        }
-#endif // LINUX
 
 	// Hook the debug output stuff.
 	LoggingSystem_RegisterLoggingListener( &g_LauncherLoggingListener );

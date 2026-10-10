@@ -3190,47 +3190,6 @@ void NET_GetLocalAddress (void)
 		}
 		else
 		{
-#if defined( LINUX )
-		//        Run the systems ifconfig call to scan for an eth0 address so we don't show only the machine's loopback address
-		//
-		// note:  This block simply grabs and prints out the IP address to the TTY stream
-		//        the rest of the port/network information is printed in NET_Config()
-
-		FILE * fp = popen("ifconfig", "r");
-        	if (fp) 
-		{
-            		char *curLine=NULL; 
-			size_t n;
-			bool lastWasEth0 = false;
-                	while ((getline(&curLine, &n, fp) > 0) && curLine) 	
-			{
-				// loop through each line returned from ifconfig
-				if( strstr(curLine, "Link encap:") )
-				{
-					if(strstr(curLine, "eth0") )
-						lastWasEth0 = true; // this is part of the entry we want, the next IP after this is the right one
-					else
-						lastWasEth0 = false;
-				} 
-
-                 	  	if (lastWasEth0 && (curLine = strstr(curLine, "inet addr:") )) 
-				{
-                        		curLine+=10; // skip past the eth0 lable and blank space to the address we want
-					char* curChar = strchr(curLine, ' ');
-                        		if ( curChar ) 
-					{
-						*curChar ='\0';
-                        			Msg("Network: IP %s ", curLine);
-                        		}
-                   		}
-                	}
-	        	pclose(fp);
-        	}
-		else
-		{
-			Msg( "Network: <failed to find IP> " );
-		}
-#endif // LINUX
 
 			gethostname( buff, sizeof(buff) );	// get own IP address
 			buff[sizeof(buff)-1] = 0;			// Ensure that it doesn't overrun the buffer
@@ -3416,10 +3375,8 @@ void NET_Config ( void )
 	}
 	
 
-#if !defined( LINUX )
   	// note:  linux prints out the network IP before calling this function
 	DevMsg( "Network: IP %s ", net_local_adr.ToString(true));
-#endif
 	DevMsg( "mode %s, dedicated %s, ports %i SV / %i CL\n", 
 		net_multiplayer?"MP":"SP", net_dedicated?"Yes":"No", 
 		net_sockets[NS_SERVER].nPort, net_sockets[NS_CLIENT].nPort );

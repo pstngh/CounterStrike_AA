@@ -116,7 +116,7 @@ mat_fullbright 1 doesn't work properly on alpha materials in testroom_standards
 #pragma warning (disable:4189)
 #endif
 
-#if ( ( defined( _WIN32 ) || defined( LINUX ) ) && ( !defined( DYNAMIC_SHADER_COMPILE ) ) )
+#if defined( _WIN32 ) && ( !defined( DYNAMIC_SHADER_COMPILE ) )
 
 ConVar mat_vtxlit_new_path( "mat_vtxlit_new_path", "1", FCVAR_DEVELOPMENTONLY );
 ConVar mat_unlit_new_path( "mat_unlit_new_path", "1", FCVAR_DEVELOPMENTONLY );

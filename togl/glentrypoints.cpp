@@ -21,9 +21,6 @@
 #include "tier1.h"
 #include "tier2/tier2.h"
 
-#ifdef _LINUX
-#include <GL/glx.h>
-#endif
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
@@ -111,7 +108,7 @@ void *VoidFnPtrLookup_GlMgr( const char *libname, const char *fn, bool &okay, co
 	if ((!okay) && (!bRequired))  // always look up if required (so we get a complete list of crucial missing symbols).
 		return NULL;
 	// The SDL path would work on all these platforms, if we were using SDL there, too...
-#if defined( LINUX ) || defined( WIN32 )
+#if defined( WIN32 )
 	// SDL does the right thing, so we never need to use tier0 in this case.
 	retval = (*gGL_GetProcAddressCallback)( libname, fn, okay, bRequired, fallback); //SDL_GL_GetProcAddress(fn);
 	//printf("CDynamicFunctionOpenGL: SDL_GL_GetProcAddress(\"%s\") returned %p\n", fn, retval);

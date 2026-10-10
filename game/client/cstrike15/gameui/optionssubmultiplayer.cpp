@@ -7,7 +7,7 @@
 
 #undef fopen
 
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <windows.h> // SRC only!!
 #endif
 
@@ -66,7 +66,7 @@
 #include "ivtex.h"
 // dgoodenough - io.h doesn't exist on the PS3
 // PS3_BUILDFIX
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <io.h>
 #endif
 
@@ -1090,7 +1090,7 @@ ConversionErrorType COptionsSubMultiplayer::ConvertBMPToTGA(const char *bmpPath,
 		return CE_SOURCE_FILE_FORMAT_NOT_SUPPORTED;
 
 // @wge TODO FIXME - fix OSX build
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 	return CE_SOURCE_FILE_FORMAT_NOT_SUPPORTED;
 #else
 	HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, bmpPath, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE | LR_DEFAULTSIZE);
@@ -2365,7 +2365,7 @@ void COptionsSubMultiplayer::OnApplyButtonEnable()
 #define PLATE_HUE_END 191
 
 // @wge this struct definition is from Portal 2 source, but didn't want to conflict with other platforms so made it OSX only.
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 typedef struct tagRGBQUAD { 
 	uint8 rgbBlue;
 	uint8 rgbGreen;
@@ -2454,7 +2454,7 @@ static void PaletteHueReplace( RGBQUAD *palSrc, int newHue, int Start, int end )
 //-----------------------------------------------------------------------------
 void COptionsSubMultiplayer::RemapPalette( char *filename, int topcolor, int bottomcolor )
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	char infile[ 256 ];
 	char outfile[ 256 ];
 

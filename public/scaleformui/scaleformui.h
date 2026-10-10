@@ -20,7 +20,7 @@
 	#include "cs_workshop_manager.h"
 #endif
 
-#if ( defined( _OSX ) || defined ( _LINUX ) ) && ( defined( _DEBUG ) || defined( USE_MEM_DEBUG ) )
+#if defined( _OSX ) && ( defined( _DEBUG ) || defined( USE_MEM_DEBUG ) )
 #include <typeinfo>
 #endif
 

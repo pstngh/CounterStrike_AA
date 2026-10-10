@@ -1394,7 +1394,7 @@ IVP_RETURN_TYPE IVP_SurfaceBuilder_Ledge_Soup::create_compact_ledgetree() {
     return(IVP_OK);
 }
 
-#if defined(LINUX) || defined(SUN) || (__MWERKS__ && POWERPC)
+#if defined(SUN) || (__MWERKS__ && POWERPC)
 void IVP_SurfaceBuilder_Ledge_Soup::convert_ledges_to_templates(IVP_U_BigVector<IVP_Compact_Ledge> &ledges,
 								IVP_U_Vector<IVP_Template_Polygon> *templates_out)
 {

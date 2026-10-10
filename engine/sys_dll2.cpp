@@ -9,13 +9,12 @@
 #undef fopen
 #include <stdio.h>
 
-#if defined(OSX) || defined(LINUX) || (defined (WIN32) && defined( DX_TO_GL_ABSTRACTION ))
+#if defined(OSX) || (defined (WIN32) && defined( DX_TO_GL_ABSTRACTION ))
 	#include "appframework/ilaunchermgr.h"
 #endif
 
 #if defined( _WIN32 ) 
 #include "winlite.h"
-#elif defined(LINUX)
 #elif defined(OSX)
 #include <Carbon/Carbon.h>
 #else
@@ -106,7 +105,7 @@ IDedicatedExports *dedicated = NULL;
 extern CreateInterfaceFn g_AppSystemFactory;
 IHammer *g_pHammer = NULL;
 IPhysics *g_pPhysics = NULL;
-#if defined(OSX) || defined(LINUX) || (defined (WIN32) && defined( DX_TO_GL_ABSTRACTION ))
+#if defined(OSX) || (defined (WIN32) && defined( DX_TO_GL_ABSTRACTION ))
 ILauncherMgr *g_pLauncherMgr = NULL;
 #endif
 IAvi *avi = NULL;
@@ -154,8 +153,6 @@ void EditorToggle_f();
 HWND *pmainwindow = NULL;
 #elif OSX
 WindowRef pmainwindow;
-#elif LINUX
-void *pmainwindow = NULL;
 #else
 #error
 #endif
@@ -767,7 +764,7 @@ InitReturnVal_t CEngineAPI::Init()
 	m_bRunningSimulation = false;
 
 	// Initialize the FPU control word
-#if !defined( DEDICATED ) && !defined( PLATFORM_64BITS ) && !defined( LINUX ) && !defined(__clang__)
+#if !defined( DEDICATED ) && !defined( PLATFORM_64BITS ) && !defined(__clang__)
 	_asm
 	{
 		fninit
@@ -1011,7 +1008,6 @@ void CEngineAPI::PumpMessagesEditMode( bool &bIdle, long &lIdleCount )
 	 
 		ReleaseEvent(theEvent);
 	}
-#elif defined( LINUX )
 #else
 #error
 #endif
@@ -1655,7 +1651,6 @@ bool CModAppSystemGroup::AddLegacySystems()
 	if ( !AddSystems( appSystems ) ) 
 		return false;
 
-#if !defined( _LINUX )
 //	if ( CommandLine()->FindParm( "-tools" ) )
 	{
 		AppModule_t toolFrameworkModule = LoadModule( "engine" DLL_EXT_STRING );
@@ -1663,7 +1658,6 @@ bool CModAppSystemGroup::AddLegacySystems()
 		if ( !AddSystem( toolFrameworkModule, VTOOLFRAMEWORK_INTERFACE_VERSION ) )
 			return false;
 	}
-#endif
 
 	return true;
 }
@@ -2173,7 +2167,6 @@ bool CModAppSystemGroup::Create()
 	if ( !AddSystems( systems.Base() ) ) 
 		return false;
 
-#if !defined( _LINUX )
 //	if ( CommandLine()->FindParm( "-tools" ) )
 	{
 		AppModule_t toolFrameworkModule = LoadModule( "engine" DLL_EXT_STRING );
@@ -2181,7 +2174,6 @@ bool CModAppSystemGroup::Create()
 		if ( !AddSystem( toolFrameworkModule, VTOOLFRAMEWORK_INTERFACE_VERSION ) )
 			return false;
 	}
-#endif
 
 	COM_TimestampedLog( "CModAppSystemGroup::Create() - Finish" );
 
@@ -2398,10 +2390,6 @@ void CDedicatedServerAPI::PreMinidumpCallbackImpl()
 	EndWatchdogTimer(); // Uploading the dump can take a while, turn off our watchdog
 
 	// Win32 dedicated servers build a minidump comment in the exception handler itself
-#if defined( LINUX )
-	fprintf( stderr, "PreMinidumpCallback: updating dump comment\n" );
-	BuildMinidumpComment( NULL );
-#endif
 }
 
 

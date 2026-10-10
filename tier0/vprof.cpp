@@ -1128,9 +1128,6 @@ static bool TelemetryInitialize()
 	}
 
 	Msg( "Telemetry initialized at level %u.\n", g_Telemetry.Level );
-#ifdef LINUX
-	printf( "Telemetry initialized at level %u.\n", g_Telemetry.Level );
-#endif
 
 	if( g_bThreadNameArrayChanged )
 	{

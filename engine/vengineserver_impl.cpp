@@ -2505,8 +2505,6 @@ float CVEngineServer::GetLatencyForChoreoSounds()
 {
 #ifdef DEDICATED
   return 0.0f;
-#elif LINUX
-  return 0.0f;
 #else
 	extern ConVar	snd_mixahead;
 	extern ConVar	snd_delay_for_choreo_enabled;

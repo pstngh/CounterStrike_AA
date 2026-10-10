@@ -402,8 +402,6 @@ bool FileSystem_GetExecutableDir( char *exedir, int exeDirLen )
 				const char *pPlatPath = "x64";
 			#elif OSX
 				const char *pPlatPath = "osx64";
-			#elif LINUX
-				const char *pPlatPath = "linux64";
 			#endif
 
 			Q_strncat( exedir, CORRECT_PATH_SEPARATOR_S, exeDirLen, COPY_ALL_CHARACTERS );
@@ -1144,7 +1142,7 @@ FSReturnCode_t SetSteamInstallPath( char *steamInstallPath, int steamInstallPath
 	Q_strncpy( steamInstallPath, executablePath, steamInstallPathLen );
 #ifdef WIN32
 	const char *pchSteamDLL = "steam" DLL_EXT_STRING;
-#elif defined(OSX) || defined(LINUX)
+#elif defined(OSX)
 	const char *pchSteamDLL = "libsteam" DLL_EXT_STRING;
 
 	// under Linux & OSX the bin lives in the bin/ folder, so step back one

@@ -269,10 +269,6 @@ private:
 	char m_Memory[ SIZE*sizeof(T) + nAlignment ];
 };
 
-#ifdef _LINUX
-#define REMEMBER_ALLOC_SIZE_FOR_VALGRIND 1
-#endif
-
 //-----------------------------------------------------------------------------
 // The CUtlMemoryConservative class:
 // A dynamic memory class that tries to minimize overhead (itself small, no custom grow factor)

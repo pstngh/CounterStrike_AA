@@ -87,14 +87,6 @@ uint64 GetCPUFreqFromPROC()
 
 uint64 CalculateCPUFreq()
 {
-#ifdef LINUX
-	char const *pFreq = getenv("CPU_MHZ");
-	if ( pFreq )
-	{
-		uint64 retVal = 1000000;
-		return retVal * atoi( pFreq );
-	}
-#endif
 
 	// Compute the period. Loop until we get 3 consecutive periods that
 	// are the same to within a small error. The error is chosen

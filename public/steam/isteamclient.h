@@ -29,7 +29,7 @@
 #define STEAM_PRIVATE_API( ... ) protected: __VA_ARGS__ public:
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) 
+#if defined(__APPLE__) 
 // The 32-bit version of gcc has the alignment requirement for uint64 and double set to
 // 4 meaning that even with #pragma pack(8) these types will only be four-byte aligned.
 // The 64-bit version of gcc has the alignment requirement for these types set to

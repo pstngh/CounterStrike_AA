@@ -172,7 +172,7 @@ void CSaveGameDialogXbox::InitiateSaving()
 		// PS3_BUILDFIX
 		// FIXME - this will need a workover
 		// @wge Same for OSX
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 		unsigned currentTime = 0;
 #else
 		// Create a new save game (name is created from the current time, which should be pretty unique)

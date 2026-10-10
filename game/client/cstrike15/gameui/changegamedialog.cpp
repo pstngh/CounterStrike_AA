@@ -7,7 +7,7 @@
 
 #undef fopen
 
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <windows.h>
 #endif
 #include <stdio.h>
@@ -59,7 +59,7 @@ CChangeGameDialog::~CChangeGameDialog()
 //-----------------------------------------------------------------------------
 void CChangeGameDialog::LoadModList()
 {
-#if !defined( _OSX ) && !defined(LINUX)
+#if !defined( _OSX )
 	// look for third party games
 	char szSearchPath[_MAX_PATH + 5];
 	Q_strncpy(szSearchPath, "*.*", sizeof( szSearchPath ) );

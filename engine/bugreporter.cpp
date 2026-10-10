@@ -6,9 +6,7 @@
 
 
 #undef PROTECT_FILEIO_FUNCTIONS
-#ifndef _LINUX
 #undef fopen
-#endif
 #if defined( WIN32 ) 
 #include "winlite.h"
 #include <winsock2.h> // inaddr_any defn
@@ -17,9 +15,7 @@
 #elif defined(POSIX)
 #include <sys/stat.h>
 
-#if !defined( LINUX )
 #include <copyfile.h>
-#endif 
 
 #define GetLastError() errno
 #else
@@ -134,27 +130,6 @@ unsigned long GetRam()
 	statex.dwLength = sizeof( MEMORYSTATUSEX );
 	GlobalMemoryStatusEx( &statex );
 	return ( unsigned long )( statex.ullTotalPhys / ( 1024 * 1024 ) );
-#elif defined( LINUX )
-	unsigned long Ram = 0;
-	FILE *fh = fopen( "/proc/meminfo", "r" );
-	if( fh )
-	{
-		char buf[ 256 ];
-		const char szMemTotal[] = "MemTotal:";
-
-		while( fgets( buf, sizeof( buf ), fh ) )
-		{
-			if ( !Q_strnicmp( buf, szMemTotal, sizeof( szMemTotal ) - 1 ) )
-			{
-				// Should already be in kB
-				Ram = atoi( buf + sizeof( szMemTotal ) - 1 ) / 1024;
-				break;
-			}
-		}
-
-		fclose( fh );
-	}
-	return Ram;
 #else
 	Assert( !"Impl me " );
 	return 0;
@@ -319,24 +294,6 @@ void DisplaySystemVersion( char *osversion, int maxlen )
 			}
 		}
 		pclose( fpVersionInfo );
-	}
-#elif defined(LINUX)
-	FILE *fpKernelVer = fopen( "/proc/version_signature", "r" );
-
-	if ( !fpKernelVer )
-	{
-		Q_strncat ( osversion, "Linux ", maxlen, COPY_ALL_CHARACTERS );
-	}
-	else
-	{
-		fgets( osversion, maxlen, fpKernelVer );
-		osversion[ maxlen - 1 ] = 0;
-
-		char *szlf = Q_strrchr( osversion, '\n' );
-		if( szlf )
-			*szlf = '\0';
-
-		fclose( fpKernelVer );
 	}
 #endif
 }
@@ -2514,9 +2471,6 @@ bool CBugUIPanel::UploadFile( char const *local, char const *remote, bool bDelet
 		g_pFileSystem->Close( hLocal );
 #ifdef WIN32
 		bResult = CopyFile( local, remote, false ) ? true : false;
-#elif defined( LINUX )
-		Warning( "LINUX is missing UploadFile implementation!\n" );
-		bResult = false;
 #elif POSIX
 		bResult = (0 == copyfile( local, remote, NULL, COPYFILE_ALL )); 
 #else

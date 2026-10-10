@@ -73,13 +73,7 @@ const int MAX_THREAD_IDS = 128;
 
 static volatile bool s_bThreadIDAllocated[MAX_THREAD_IDS];
 
-#if defined(_LINUX) && defined(DEDICATED)
-
-DLL_CLASS_EXPORT __thread int g_nThreadID;
-
-#else 
 	DLL_CLASS_EXPORT CTHREADLOCALINT g_nThreadID;
-#endif 
 
 
 static CThreadFastMutex s_ThreadIDMutex;
@@ -1093,7 +1087,7 @@ bool CThreadFullMutex::Release()
 //
 //-----------------------------------------------------------------------------
 
-#if defined( WIN32 ) || defined( _OSX ) || ( defined (_LINUX) && !defined(DEDICATED) )
+#if defined( WIN32 ) || defined( _OSX )
 namespace GenericThreadLocals
 {
 CThreadLocalBase::CThreadLocalBase()

@@ -10,9 +10,6 @@
 // Ipion, June 8th 1999
 
 #include <ivp_physics.hxx>
-#ifdef LINUX
-#	include <string.h>
-#endif
 #include <ivp_compact_ledge.hxx>
 
 #include <ivp_halfspacesoup.hxx>

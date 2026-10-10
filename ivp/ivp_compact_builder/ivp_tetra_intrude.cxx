@@ -3,9 +3,6 @@
 
 
 #include <ivp_physics.hxx>
-#if defined(LINUX)
-#	include <string.h>
-#endif
 
 #include <ivu_memory.hxx>
 #include <ivp_object_polygon_tetra.hxx>

@@ -66,33 +66,15 @@ typedef void *HANDLE;
 // Start thread running  - error if already running
 enum ThreadPriorityEnum_t
 {
-#if defined( PLATFORM_LINUX )
-    // We can use nice on Linux threads to change scheduling.
-    // pthreads on Linux only allows priority setting on
-    // real-time threads.
-    // NOTE: Lower numbers are higher priority, thus the need
-    // for TP_IS_PRIORITY_HIGHER.
-	TP_PRIORITY_DEFAULT = 0,
-	TP_PRIORITY_NORMAL = 0,
-	TP_PRIORITY_HIGH = -10,
-	TP_PRIORITY_LOW = 10,
-	TP_PRIORITY_HIGHEST = -20,
-	TP_PRIORITY_LOWEST = 19,
-#else  // PLATFORM_PS3
 	TP_PRIORITY_DEFAULT = 0,	//	THREAD_PRIORITY_NORMAL
 	TP_PRIORITY_NORMAL = 0,	//	THREAD_PRIORITY_NORMAL
 	TP_PRIORITY_HIGH = 1,	//	THREAD_PRIORITY_ABOVE_NORMAL
 	TP_PRIORITY_LOW = -1,	//	THREAD_PRIORITY_BELOW_NORMAL
 	TP_PRIORITY_HIGHEST = 2,	//	THREAD_PRIORITY_HIGHEST
 	TP_PRIORITY_LOWEST = -2,	//	THREAD_PRIORITY_LOWEST 
-#endif // PLATFORM_PS3
 };
 
-#if defined( PLATFORM_LINUX )
-#define TP_IS_PRIORITY_HIGHER( a, b ) ( ( a ) < ( b ) )
-#else
 #define TP_IS_PRIORITY_HIGHER( a, b ) ( ( a ) > ( b ) )
-#endif
 
 #if (defined( PLATFORM_WINDOWS_PC )) && !defined( STEAM ) && !defined( _CERT )
 //Thread parent stack trace linkage requires ALL executing binaries to disable frame pointer omission to operate speedily/successfully. (/Oy-)  "vpc /nofpo"
@@ -215,7 +197,7 @@ PLATFORM_INTERFACE void ThreadSetAffinity( ThreadHandle_t hThread, int nAffinity
 #error Every platform needs to define ThreadMemoryBarrier to at least prevent compiler reordering
 #endif
 
-#if defined( _LINUX ) || defined( _OSX )
+#if defined( _OSX )
 #define USE_INTRINSIC_INTERLOCKED
 // linux implementation
 inline int32 ThreadInterlockedIncrement( int32 volatile *p )
@@ -407,21 +389,7 @@ PLATFORM_INTERFACE void ThreadNotifySyncReleasing(void *p);
 #ifndef NO_THREAD_LOCAL
 
 
-#if ( defined(_LINUX) && defined(DEDICATED) ) && !defined(OSX)
-// linux totally supports compiler thread locals, even across dll's.
-#define PLAT_COMPILER_SUPPORTED_THREADLOCALS 1
-#define CTHREADLOCALINTEGER( typ ) __thread int
-#define CTHREADLOCALINT __thread int
-#define CTHREADLOCALPTR( typ ) __thread typ *
-#define CTHREADLOCAL( typ ) __thread typ
-#define GETLOCAL( x ) ( x )
-#ifndef TIER0_DLL_EXPORT
-DLL_IMPORT __thread int g_nThreadID;
-#endif
-#endif
-
-
-#if defined(WIN32) || defined(OSX) || ( defined (_LINUX) && !defined(DEDICATED) )
+#if defined(WIN32) || defined(OSX)
 #ifndef __AFXTLS_H__ // not compatible with some Windows headers
 
 #define CTHREADLOCALINT GenericThreadLocals::CThreadLocalInt<int>

@@ -1,9 +1,6 @@
 // Copyright (C) Ipion Software GmbH 1999-2000. All rights reserved.
 
 #include <ivp_physics.hxx>
-#if defined(LINUX)
-#	include <string.h>
-#endif
 
 #include <ivu_linear.hxx>
 

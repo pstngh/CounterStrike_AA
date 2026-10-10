@@ -732,10 +732,8 @@ private:
 	CUtlFixedLinkedList< DecalLRU_t > m_DecalLRU;
 
 	FlashlightState_t *m_pCurrentFlashlight;
-#if !defined( LINUX )
 	// Vectors of Vector4D's for CPU-side subdivision surface processing
 	CUtlVector< fltx4, CUtlMemoryAligned<fltx4, 16> > m_vSkinnedSubDVertices;
-#endif
 
 #ifndef _CERT
 	// Each model counts how many rendered faces it accounts for each frame:

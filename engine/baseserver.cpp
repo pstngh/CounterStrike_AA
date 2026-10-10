@@ -18,11 +18,6 @@
 #include <sys/time.h>                  
 #include <sys/resource.h>                  
 #include <netinet/in.h>
-#elif defined(LINUX)
-#include <time.h>                  
-#include <sys/sysinfo.h>          
-#include <asm/param.h> // for HZ
-#include <netinet/in.h>
 #else
 #error "Includes for CPU usage calcs here"
 #endif
@@ -2420,9 +2415,6 @@ void CBaseServer::CalculateCPUUsage( void )
 			memcpy(&lastTotalTime,&totalTime,sizeof(__int64));
 			lastAvg=m_fLastCPUCheckTime;
 		}
-#elif defined ( LINUX )
-		// FAKE
-		m_fCPUPercent = 0.1;
 #elif defined ( POSIX )
 	/*
 		// linux CPU % code here :)
@@ -3225,17 +3217,6 @@ Read's packets from clients and executes messages as appropriate.
 
 void UpdateParentProcess( void )
 {
-#ifdef _LINUX
-	static double s_flNextParentProcessUpdate = -1;
-	float flNow = Sys_FloatTime();
-	if ( flNow >= s_flNextParentProcessUpdate )
-	{
-		s_flNextParentProcessUpdate = flNow + PARENT_PROCESS_UPDATE_INTERVAL;
-		char sbuf[2048];
-		sprintf( sbuf, "status map=%s;players=%d", sv.GetMapName(), sv.GetNumClients() );
-		SendStringToParentProcess( sbuf );
-	}
-#endif
 
 }
 

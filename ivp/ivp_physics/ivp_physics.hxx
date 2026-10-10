@@ -23,9 +23,6 @@
 #include <stdio.h>
 
 #include <math.h>
-#if defined(LINUX)
-#	include <string.h>
-#endif
 
 #ifndef _IVP_U_TYPES_INCLUDED
 #	include "ivu_types.hxx"

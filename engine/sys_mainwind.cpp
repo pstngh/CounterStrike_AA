@@ -17,8 +17,6 @@
 #include <winsock.h>
 #elif defined(OSX)
 #include <Carbon/Carbon.h>
-#elif defined(LINUX)
-	#include "tier0/dynfunction.h"
 #elif defined(_WIN32)
 	#include "tier0/dynfunction.h"
 #else
@@ -67,10 +65,6 @@
 
 #include <vgui/ILocalize.h>
 #include <vgui/ISystem.h>
-
-#if defined( LINUX )
-#include "snd_dev_sdl.h"
-#endif
 
 #include "matchmaking/imatchframework.h"
 #include "tier2/tier2.h"
@@ -795,8 +789,6 @@ int CGame::WindowProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 #elif defined(OSX)
 
-#elif defined( LINUX )
-
 #elif defined(_WIN32)
 
 #else
@@ -1174,9 +1166,6 @@ bool CGame::InputAttachToGameWindow()
 #elif defined(OSX)
 	Assert( !"Impl me" );
 	return false;
-#elif defined( LINUX )
-	Assert( !"Impl me" );
-	return false;
 #elif defined(_WIN32)
 	Assert( !"Impl me" );
 	return false;
@@ -1199,8 +1188,6 @@ void CGame::InputDetachFromGameWindow()
 	// Release + show the mouse
 	ReleaseCapture();
 #elif defined(OSX)
-	Assert( !"Impl me" );
-#elif defined( LINUX )
 	Assert( !"Impl me" );
 #elif defined(_WIN32)
 	Assert( !"Impl me" );
@@ -1674,9 +1661,7 @@ void CGame::PlayVideoAndWait( const char *filename, bool bNeedHealthWarning )
 
 	// Supplying a NULL context will cause Bink to allocate its own
 	// FIXME: At this point we're playing at the full volume of the computer, NOT the user's set volume in the game!
-#if defined( LINUX )
-	Audio_CreateSDLAudioDevice();
-#elif defined( PLATFORM_WINDOWS )
+#if   defined( PLATFORM_WINDOWS )
 	//BinkSoundUseDirectSound( NULL );	// Bink sound is initialized by the caller now
 #endif
 
@@ -1894,9 +1879,7 @@ void CGame::PlayVideoAndWait( const char *filename, bool bNeedHealthWarning )
 //-----------------------------------------------------------------------------
 CGame::CGame()
 {
-#ifndef LINUX
 	m_hWindow = 0;
-#endif
 	m_x = m_y = 0;
 	m_width = m_height = 0;
 	m_bActiveApp = false;
@@ -1969,11 +1952,7 @@ bool CGame::Shutdown( void )
 
 void *CGame::GetMainWindow( void )
 {
-#if defined( LINUX )
-	return 0;
-#else
 	return (void*)m_hWindow;
-#endif
 }
 
 #if defined(USE_SDL)

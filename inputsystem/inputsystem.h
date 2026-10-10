@@ -230,12 +230,6 @@ public:
 		OSXInputValue_t m_vaxis;
 		OSXInputValue_t m_POV;
 		OSXInputValue_t m_Buttons[MAX_JOYSTICK_BUTTONS];
-#elif defined(LINUX)
-		void *m_pDevice;  // Really an SDL_GameController*, NULL if not present.
-		void *m_pHaptic;  // Really an SDL_Haptic*
-		float m_fCurrentRumble;
-		bool m_bRumbleEnabled;
-
 #else
 #error
 #endif
@@ -355,7 +349,7 @@ public:
 	// Sets rumble values for an Xbox controller
 	void SetXDeviceRumble( float fLeftMotor, float fRightMotor, int userId );
 
-#if !defined( _CERT ) && !defined(LINUX)
+#if !defined( _CERT )
 	CON_COMMAND_MEMBER_F( CInputSystem, "press_x360_button", PressX360Button, "Press the specified Xbox 360 controller button (lt, rt, st[art], ba[ck], lb, rb, a, b, x, y, l[eft], r[right], u[p], d[own])", 0 );
 	void PollPressX360Button( void );
 	uint32 m_press_x360_buttons[ 2 ];
@@ -396,9 +390,7 @@ public:
 private:
 
 	// Purpose: Get raw joystick sample along axis
-#if defined(LINUX)
-	void AxisAnalogButtonEvent( ButtonCode_t buttonCode, bool state, int nLastSampleTick );
-#elif defined(OSX)
+#if   defined(OSX)
 	unsigned int AxisValue( JoystickAxis_t axis, JoystickInfo_t &info );
 #else
 	unsigned int AxisValue( JoystickAxis_t axis, JOYINFOEX& ji );
@@ -474,15 +466,6 @@ private:
 	int	HIDGetElementValue( JoystickInfo_t &info, OSXInputValue_t &value );
 	int HIDScaledCalibratedValue( JoystickInfo_t &info, OSXInputValue_t &value );
 	void HIDSortJoystickButtons( JoystickInfo_t &info );
-
-#elif defined(LINUX)
-public:
-	void PollInputState_Linux();
-	void JoystickHotplugAdded( int joystickIndex );
-	void JoystickHotplugRemoved( int joystickId );
-	void JoystickButtonPress( int joystickId, int button ); // button is a SDL_CONTROLLER_BUTTON;
-	void JoystickButtonRelease( int joystickId, int button ); // same as above.
-	void JoystickAxisMotion( int joystickId, int axis, int value );
 
 #endif
 

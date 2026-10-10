@@ -109,7 +109,7 @@ CInputSystem::CInputSystem()
 	// This is B.S., must be a compile-time assert with valid expression:
 	// Assert( (MAX_JOYSTICKS + 7) >> 3 << sizeof(unsigned short) ); 
 
-#if !defined( _CERT ) && !defined(LINUX)
+#if !defined( _CERT )
 	V_memset( m_press_x360_buttons, 0, sizeof( m_press_x360_buttons ) );
 #endif
 
@@ -212,11 +212,7 @@ InitReturnVal_t CInputSystem::Init()
 
 	m_bRawInputSupported = false;
 
-#if defined( LINUX )
-
-	m_bRawInputSupported = true;
-	
-#elif defined( WIN32 )
+#if   defined( WIN32 )
 	// Check if this version of windows supports raw mouse input (later than win2k)
 
 	CSysModule *m_pRawInputDLL = Sys_LoadModule( "USER32.dll" );
@@ -790,9 +786,7 @@ bool MapCocoaVirtualKeyToButtonCode( int nCocoaVirtualKeyCode, ButtonCode_t *pOu
 
 
 
-#ifdef LINUX
-void CInputSystem::PollInputState_Linux()
-#elif defined( OSX )
+#if   defined( OSX )
 void CInputSystem::PollInputState_OSX()
 #elif defined( _WIN32 )
 void CInputSystem::PollInputState_Windows()
@@ -827,9 +821,6 @@ void CInputSystem::PollInputState_Windows()
 					{
 						ButtonCode_t scanCode = virtualCode;
 
-#ifdef LINUX
-						if( scanCode != BUTTON_CODE_NONE )
-#endif
 						{
 							// For SDL, hitting spacebar causes a SDL_KEYDOWN event, then SDL_TEXTINPUT with
 							//	event.text.text[0] = ' ', and then we get here and wind up sending two events
@@ -846,7 +837,7 @@ void CInputSystem::PollInputState_Windows()
 						event.m_nData = scanCode;
 						g_pInputSystem->PostUserEvent( event );
 						
-#if defined( LINUX ) || (defined( OSX ) && defined( USE_SDL ) )
+#if defined( OSX ) && defined( USE_SDL )
 						if ( scanCode == KEY_BACKSPACE )
 						{
 							// On Linux (and OS X, when using SDL), we need to fire this event to have backspace keypresses picked up by scaleform.
@@ -955,11 +946,7 @@ void CInputSystem::PollInputState_Windows()
 					PostEvent( IE_ButtonPressed, m_nLastSampleTick, code, code );
 					PostEvent( IE_ButtonReleased, m_nLastSampleTick, code, code );
 					
-#ifdef LINUX
-					state.m_pAnalogDelta[ MOUSE_WHEEL ] = pEvent->m_MousePos[1];
-#else
 					state.m_pAnalogDelta[ MOUSE_WHEEL ] = ( (short)pEvent->m_MousePos[1] ) / 10;
-#endif
 					state.m_pAnalogValue[ MOUSE_WHEEL ] += state.m_pAnalogDelta[ MOUSE_WHEEL ];
 					PostEvent( IE_AnalogValueChanged, m_nLastSampleTick, MOUSE_WHEEL, state.m_pAnalogValue[ MOUSE_WHEEL ], state.m_pAnalogDelta[ MOUSE_WHEEL ] );
 				}
@@ -993,7 +980,7 @@ void CInputSystem::PollInputState_Windows()
 //-----------------------------------------------------------------------------
 void CInputSystem::PollInputState( bool bIsInGame )
 {
-#if !defined( _CERT ) && !defined(LINUX)
+#if !defined( _CERT )
 	PollPressX360Button();
 #endif
 
@@ -1017,8 +1004,6 @@ void CInputSystem::PollInputState( bool bIsInGame )
 
 #if defined( PLATFORM_OSX )
 	PollInputState_OSX();
-#elif defined( LINUX )
-	PollInputState_Linux();
 #elif defined( WIN32 )
 	PollInputState_Windows();
 #else
@@ -1092,10 +1077,8 @@ void CInputSystem::SampleDevices( void )
 //-----------------------------------------------------------------------------
 void CInputSystem::SetRumble( float fLeftMotor, float fRightMotor, int userId )
 {
-#ifndef LINUX
 	// TODO: send force feedback to rumble-enabled joysticks
 	SetXDeviceRumble( fLeftMotor, fRightMotor, userId );
-#endif
 }
 
 
@@ -1136,9 +1119,7 @@ void CInputSystem::StopRumble( int userId )
 	}
 	else
 	{
-#ifndef LINUX
 		SetXDeviceRumble( 0, 0, userId );
-#endif
 	}
 }
 
@@ -1235,7 +1216,7 @@ uint64 CInputSystem::GetMotionControllerDeviceStatusFlags( ) const
 	return m_nMotionControllerStatusFlags;
 }
 
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 // this is defined in xcontroller.cpp, but that file isn't included
 // in posix builds
 void CInputSystem::SetMotionControllerCalibrationInvalid( void )
@@ -2175,8 +2156,6 @@ void  CInputSystem::InitPlatfromInputDeviceInfo( void )
 	m_currentlyConnectedInputDevices = INPUT_DEVICE_KEYBOARD_MOUSE;
 #elif defined( PLATFORM_OSX )
 	m_currentlyConnectedInputDevices = INPUT_DEVICE_KEYBOARD_MOUSE;
-#elif defined( PLATFORM_LINUX )
-	m_currentlyConnectedInputDevices = INPUT_DEVICE_KEYBOARD_MOUSE;
 #else
 	m_currentlyConnectedInputDevices = INPUT_DEVICE_NONE;
 #endif
@@ -2198,8 +2177,6 @@ void CInputSystem::ResetCurrentInputDevice( void )
 #if defined( PLATFORM_WINDOWS_PC )
 	m_currentInputDevice = INPUT_DEVICE_KEYBOARD_MOUSE;
 #elif defined( PLATFORM_OSX )
-	m_currentInputDevice = INPUT_DEVICE_KEYBOARD_MOUSE;
-#elif defined( PLATFORM_LINUX )
 	m_currentInputDevice = INPUT_DEVICE_KEYBOARD_MOUSE;
 #else
 	m_currentInputDevice = INPUT_DEVICE_NONE;
@@ -2331,8 +2308,6 @@ bool CInputSystem::IsSamplingForCurrentDevice( void )
 }
 
 
-#ifndef LINUX
-
 #if !defined( _CERT )
 // [mhansen] Add support for pressing Xbox 360 controller buttons (should work on PS3 too)
 struct C_press_x360_button_code
@@ -2425,4 +2400,3 @@ void CInputSystem::PollPressX360Button( void )
 
 #endif // !_CERT
 
-#endif

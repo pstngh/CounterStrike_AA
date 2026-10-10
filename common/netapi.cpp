@@ -196,11 +196,7 @@ bool CNetAPI::StringToAdr( const char *s, netadr_t *a )
 // Input  : socket - 
 //			*a - 
 //-----------------------------------------------------------------------------
-#ifdef _LINUX
-typedef socklen_t SOCKLEN;
-#else
 typedef int SOCKLEN;
-#endif
 
 void CNetAPI::GetSocketAddress( int socket, netadr_t *a )
 {

@@ -698,8 +698,6 @@ bool CShaderDeviceMgrBase::GetRecommendedConfigurationInfo( int nAdapter, int nD
 	VidMatConfigData_t configData;
 #ifdef OSX
 	V_strcpy_safe( configData.szFileName, "../bin/dxsupport_mac.cfg" );
-#elif LINUX
-	V_strcpy_safe( configData.szFileName, "../bin/dxsupport.cfg" );
 #else
 	V_strcpy_safe( configData.szFileName, "..\\bin\\dxsupport.cfg" );
 #endif

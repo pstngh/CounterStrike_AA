@@ -689,14 +689,6 @@ void* CAppSystemGroup::CreateAppWindow( void *hInstance, const char *pTitle, boo
 	extern ICocoaMgr *g_pCocoaMgr;
 	g_pCocoaMgr->CreateGameWindow( pTitle, bWindowed, w, h );
 	return (void*)Sys_GetFactoryThis();	// Other stuff will query for ICocoaBridge out of this.
-#elif defined( PLATFORM_LINUX )
-#ifndef DEDICATED
-
-// PBTODO
-// 	extern IGLXMgr *g_pGLXMgr;
-// 	g_pGLXMgr->CreateWindow( pTitle, bWindowed, w, h );
-	return (void*)Sys_GetFactoryThis();	// Other stuff will query for ICocoaBridge out of this.
-#endif
 #endif
 	return NULL;
 }

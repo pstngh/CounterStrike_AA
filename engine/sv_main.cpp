@@ -83,9 +83,6 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-#ifdef _LINUX
-#include <syscall.h>
-#endif
 
 extern CNetworkStringTableContainer *networkStringTableContainerServer;
 extern CNetworkStringTableContainer *networkStringTableContainerClient;
@@ -1798,13 +1795,6 @@ void CGameServer::SetHibernating( bool bHibernating )
 				}
             }
             
-#ifdef _LINUX
-            // if we are a child process running forked, we want to exit now. We want to "really" exit. no destructors, no nothing
-            if ( IsChildProcess() )							// are we a subprocess?
-            {
-                syscall( SYS_exit, 0 );	// we are not going to perform a normal c++ exit. We _dont_ want to run destructors, etc.
-            }
-#endif
             if ( bExit )
             {
                 HostState_Shutdown();
@@ -3066,8 +3056,6 @@ bool CGameServer::SpawnServer( char *mapname, char * mapGroupName, char *startsp
         event->SetInt(	  "password", 0 );				// TODO
 #if defined( _WIN32 )
         event->SetString( "os", "WIN32" );
-#elif defined ( LINUX )
-        event->SetString( "os", "LINUX" );
 #elif defined ( OSX )
         event->SetString( "os", "OSX" );
 #else

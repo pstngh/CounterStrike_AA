@@ -15,7 +15,7 @@
 
 #if defined(PSXII) || defined(GEKKO)
 #	include <string.h>
-#elif defined(LINUX) || defined(WIN32) || defined(SGI) || (defined(__MWERKS__) && defined(__POWERPC__)) || defined(GEKKO)
+#elif defined(WIN32) || defined(SGI) || (defined(__MWERKS__) && defined(__POWERPC__)) || defined(GEKKO)
 #	include <memory.h>
 #	include <string.h>
 #endif

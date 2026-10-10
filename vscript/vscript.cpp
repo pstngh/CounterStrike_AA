@@ -38,12 +38,10 @@ public:
 		{
 			pVM = ScriptCreateSquirrelVM();
 		}
-#if !defined( LINUX )
 		else if ( language == SL_LUA )
 		{
 			pVM = ScriptCreateLuaVM();
 		}
-#endif
 #if VPYTHON_ENABLED
 		else if ( language == SL_PYTHON )
 		{
@@ -76,12 +74,10 @@ public:
 			{
 				ScriptDestroySquirrelVM( p );
 			}
-#if !defined( LINUX )
 			else if ( p->GetLanguage() == SL_LUA )
 			{
 				ScriptDestroyLuaVM( p );
 			}
-#endif
 #if VPYTHON_ENABLED
 			else if ( p->GetLanguage() == SL_PYTHON )
 			{

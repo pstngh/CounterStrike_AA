@@ -2908,10 +2908,8 @@ bool CBaseClientState::SVCMsg_UpdateStringTable( const CSVCMsg_UpdateStringTable
 
 bool CBaseClientState::SVCMsg_SetView( const CSVCMsg_SetView& msg )
 {
-#if !defined( LINUX )
 	// dkorus: may need this for online split screen
 	ASSERT_LOCAL_PLAYER_RESOLVABLE();
-#endif
 
 	m_nViewEntity = msg.entity_index();
 	return true;

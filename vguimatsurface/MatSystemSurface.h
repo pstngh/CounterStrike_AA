@@ -32,11 +32,6 @@
 #include "inputsystem/iinputstacksystem.h"
 #include "vgui/ILocalize.h"
 
-#ifdef LINUX
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#endif
-
 
 using namespace vgui;
 
@@ -598,18 +593,6 @@ private:
 	};
 
 	CUtlRBTree< ContextAbsPos_t > m_ContextAbsPos;
-
-#ifdef LINUX
-	struct font_entry
-	{
-		void *data;
-		int size;
-	};
-
-	static CUtlDict< font_entry, unsigned short > m_FontData;
-
-	static void *FontDataHelper( const char *pchFontName, int &size );		
-#endif
 
 
 #if defined( PLATFORM_WINDOWS_PC )

@@ -17,24 +17,8 @@
 #define PLATFORM_E2K 1
 #endif
 
-#if defined( LINUX ) && ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
-// based on some Jonathan Wakely macros on the net...
-#define GCC_DIAG_STR(s) #s
-#define GCC_DIAG_JOINSTR(x,y) GCC_DIAG_STR(x ## y)
-#define GCC_DIAG_DO_PRAGMA(x) _Pragma (#x)
-#define GCC_DIAG_PRAGMA(x)	GCC_DIAG_DO_PRAGMA(GCC diagnostic x)
-
-#define GCC_DIAG_PUSH_OFF(x)	GCC_DIAG_PRAGMA(push) GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,x))
-#define GCC_DIAG_POP()		GCC_DIAG_PRAGMA(pop)
-#else
 #define GCC_DIAG_PUSH_OFF(x)
 #define GCC_DIAG_POP()
-#endif
-
-#ifdef LINUX
-#pragma GCC diagnostic ignored "-Wconversion-null"	// passing NULL to non-pointer argument 1
-#pragma GCC diagnostic ignored "-Wpointer-arith"	// NULL used in arithmetic. Ie, vpanel == NULL where VPANEL is uint.
-#endif
 
 #ifdef _DEBUG
 #if !defined( PLAT_COMPILE_TIME_ASSERT )
@@ -69,7 +53,7 @@
 	#include <float.h>
 	#include <stdlib.h>
 	#include <string.h>
-#if defined( OSX ) || defined ( _LINUX )
+#if defined( OSX )
 	#include <signal.h>
 	#include <stdarg.h>
 #endif
@@ -181,13 +165,7 @@
 	#define IsPlatformPosix()		1
 	#define PLATFORM_POSIX 1
 
-	#if defined( LINUX ) && !defined( OSX ) // for havok we define both symbols, so don't let the osx build wander down here
-		#define IsPlatformLinux() 1
-		#define IsPlatformOSX() 0
-		#define IsOSXOpenGL() 0
-		#define PLATFORM_OPENGL 0
-		#define PLATFORM_LINUX 1
-	#elif defined ( OSX )
+	#if   defined ( OSX )
 		#define IsPlatformLinux() 0
 		#define IsPlatformOSX() 1
 		#define IsOSXOpenGL() 1
@@ -568,7 +546,7 @@ typedef void * HINSTANCE;
 	#define DLL_IMPORT				extern "C" 
 
 	// Can't use extern "C" when DLL exporting a class
-#if !defined( LINUX ) && !defined( PLATFORM_64BITS )
+#if !defined( PLATFORM_64BITS )
 	#define  __stdcall			__attribute__ ((__stdcall__))
 #endif
 	#define DLL_CLASS_EXPORT		DLL_DECLARATION_DEFAULT_VISIBILITY 
@@ -690,7 +668,7 @@ typedef void * HINSTANCE;
 	#endif
 #endif
 
-#if defined __i386__ && !defined __linux__
+#if defined __i386__
 	#define id386	1
 #else
 	#define id386	0
@@ -1589,7 +1567,7 @@ class CReuseVaList
 public:
 	CReuseVaList( va_list List )
 	{
-#if defined(LINUX) || defined(OSX)
+#if defined(OSX)
 		va_copy( m_ReuseList, List );
 #else
 		m_ReuseList = List;
@@ -1597,7 +1575,7 @@ public:
 	}
 	~CReuseVaList()
 	{
-#if defined(LINUX) || defined(OSX)
+#if defined(OSX)
 		va_end( m_ReuseList );
 #endif
 	}
@@ -1688,7 +1666,7 @@ inline T* MoveConstruct( T* pMemory, T&& src )
 
 // [will] - Fixing a clang compile: unable to create a pseudo-destructor (aka a destructor that does nothing) for float __attribute__((__vector_size__(16)))
 // Fixed by specializing the Destroy function to not call destructor for that type.
-#if defined( __clang__ ) || defined (LINUX)
+#if defined( __clang__ )
 
 template <class T>
 inline void Destruct( T* pMemory );
@@ -1710,7 +1688,7 @@ inline void Destruct( T* pMemory )
 
 // [will] - Fixing a clang compile: unable to create a pseudo-destructor (aka a destructor that does nothing) for float __attribute__((__vector_size__(16)))
 // Fixed by specializing the Destroy function to not call destructor for that type.
-#if defined( __clang__ ) || defined (LINUX)
+#if defined( __clang__ )
 
 template <>
 inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )

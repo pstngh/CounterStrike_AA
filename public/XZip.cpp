@@ -126,8 +126,6 @@
 
 #ifdef XZIP_NOT_THREAD_SAFE
 static ZRESULT lasterrorZ=ZR_OK;
-#elif defined( LINUX )
-static ZRESULT lasterrorZ=ZR_OK;
 #else
 #include "tier0/threadtools.h"
 static GenericThreadLocals::CThreadLocalInt<ZRESULT> lasterrorZ;
@@ -677,14 +675,6 @@ void AssertXZip(TState &state,bool cond, const char *msg)
 	if (cond) return;
 	state.err=msg;
 }
-
-#if defined( LINUX )
-// __cdecl appears to be undefined under linux.  Define it for the following functions to compile
-#if defined( __cdecl )
-  #undef __cdecl
-#endif
-#define __cdecl 
-#endif
 
 void __cdecl Trace(const char *x, ...) {va_list paramList; va_start(paramList, x); paramList; va_end(paramList);}
 void __cdecl Tracec(bool ,const char *x, ...) {va_list paramList; va_start(paramList, x); paramList; va_end(paramList);}

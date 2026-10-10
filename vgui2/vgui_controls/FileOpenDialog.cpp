@@ -583,8 +583,6 @@ void FileOpenDialog::OnOpenInExplorer()
 	char szCmd[ MAX_PATH ];
 	Q_snprintf( szCmd, sizeof(szCmd), "/usr/bin/open \"%s\"", pCurrentDirectory );
 	::system( szCmd );
-#elif defined( LINUX )
-	DevMsg( "FileOpenDialog::OnOpenInExplorer unimplemented under LINUX\n" );
 #endif
 }
 

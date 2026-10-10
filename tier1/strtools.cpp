@@ -3379,10 +3379,6 @@ bool AsianWordWrap::CanBreakRepeated( wchar_t wcCandidate )
 	return true;
 }
 
-#if defined( LINUX )
-inline int __cdecl iswascii(wchar_t c) { return ((unsigned)(c) < 0x80); } // not defined in wctype.h on the PS3
-#endif
-
 // Used to determine if we can break a line between the first two characters passed
 bool AsianWordWrap::CanBreakAfter( const wchar_t* wsz )
 {
@@ -3715,19 +3711,11 @@ size_t Q_URLDecodeRaw( char *pchDecodeDest, int nDecodeDestLen, const char *pchE
 	return Q_URLDecodeInternal( pchDecodeDest, nDecodeDestLen, pchEncodedSource, nEncodedSourceLen, false );
 }
 
-#if defined( LINUX )
-extern "C" void qsort_s( void *base, size_t num, size_t width, int (*compare )(void *, const void *, const void *), void * context );
-#endif
-
 void V_qsort_s( void *base, size_t num, size_t width, int ( __cdecl *compare )(void *, const void *, const void *), void * context ) 
 {
 #if defined OSX
 	// the arguments are swapped 'round on the mac - awesome, huh?
 	return qsort_r( base, num, width, context, compare );
-#elif defined LINUX
-	// FIXME: still not finding qsort_s, even though it's defined in qsort_s.cpp
-	// What's up with that?
-	return;
 #else
 	return qsort_s( base, num, width, compare, context );
 #endif

@@ -53,8 +53,6 @@
 	bool			NewNSGLContext( unsigned long *attribs, PseudoNSGLContextPtr nsglShareCtx, PseudoNSGLContextPtr *nsglCtxOut, CGLContextObj *cglCtxOut );
 	CGLContextObj	GetCGLContextFromNSGL( PseudoNSGLContextPtr nsglCtx );
 	void			DelNSGLContext( PseudoNSGLContextPtr nsglCtx );
-#elif LINUX
-#define LIBGL_SONAME "libGL.so.1"
 #elif WIN32
 #define LIBGL_SONAME "OpenGL32.dll"
 #endif

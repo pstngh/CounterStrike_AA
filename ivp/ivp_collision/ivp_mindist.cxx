@@ -1130,9 +1130,6 @@ void IVP_Mindist::mindist_hull_limit_exceeded_event( IVP_HTIME hull_intrusion_va
       
       if ( estimated_distance > speed * obj0->get_environment()->get_delta_PSI_time() * look_ahead_factor){
 	// successfull delay
-#ifdef LINUX
-	ivp_optimiztion_center_check_successfull();
-#endif
 	IVP_IF(ivp_check_debug_mindist(this)){
 	  ivp_message("%32s estimated_distance into hull dist: %f error %f speed %f\n","hull_limit_exceeded_event",  IVP_Inline_Math::ivp_sqrtf(qdistance),estimated_distance,speed);
 	}

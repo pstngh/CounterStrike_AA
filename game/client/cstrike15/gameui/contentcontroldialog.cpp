@@ -10,7 +10,7 @@
 // dgoodenough - memory.h doesn't exist on PS3
 // PS3_BUILDFIX
 #include <memory.h>
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 #include <windows.h>
 #endif
 
@@ -98,7 +98,7 @@ void CContentControlDialog::Activate()
 //-----------------------------------------------------------------------------
 void CContentControlDialog::ResetPassword()
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	// Set initial value
 	HKEY key;
 	if ( ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_READ, &key))
@@ -207,7 +207,7 @@ void CContentControlDialog::OnClose()
 //-----------------------------------------------------------------------------
 void CContentControlDialog::WriteToken( const char *str )
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	// Set initial value
 	HKEY key;
 	if ( ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_WRITE, &key))

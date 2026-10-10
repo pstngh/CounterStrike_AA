@@ -26,7 +26,7 @@
 
 // @wge Doing the same for OSX. Same concerns apply.
 
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 // @wge - adapted from portal2/sys_utils.cpp
 const unsigned int SYS_NO_ERROR = 0;
 const unsigned int SYS_ERROR_INVALID_HANDLE = -1;
@@ -37,14 +37,14 @@ const unsigned int SYS_ERROR_INVALID_HANDLE = ERROR_INVALID_HANDLE;
 
 void Sys_SetLastError(unsigned long error)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::SetLastError(error);
 #endif
 }
 
 unsigned long Sys_GetLastError()
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return ::GetLastError();
 #else
 	return 0;
@@ -54,7 +54,7 @@ unsigned long Sys_GetLastError()
 
 WHANDLE Sys_CreateMutex(const char *mutexName)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return (WHANDLE)::CreateMutex(NULL, FALSE, TEXT(mutexName));
 #else
 	return 0;
@@ -63,13 +63,13 @@ WHANDLE Sys_CreateMutex(const char *mutexName)
 
 void Sys_ReleaseMutex(WHANDLE mutexHandle)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::ReleaseMutex((HANDLE)mutexHandle);
 #endif
 }
 
 
-#if defined( _OSX ) || defined (LINUX)
+#if defined( _OSX )
 // @wge - adapted from portal2/sys_utils.cpp
 const unsigned int SYS_WAIT_OBJECT_0 = WAIT_OBJECT_0;
 const unsigned int SYS_WAIT_ABANDONED = -2;
@@ -80,7 +80,7 @@ const unsigned int SYS_WAIT_ABANDONED = WAIT_ABANDONED;
 
 unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return WaitForSingleObject((HANDLE)mutexHandle, milliseconds);
 #else
     return -1;
@@ -89,7 +89,7 @@ unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds)
 
 unsigned int Sys_RegisterWindowMessage(const char *msgName)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return ::RegisterWindowMessage(msgName);
 #else
 	return 0;
@@ -98,7 +98,7 @@ unsigned int Sys_RegisterWindowMessage(const char *msgName)
 
 WHANDLE Sys_FindWindow(const char *className, const char *windowName)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return (WHANDLE)::FindWindow(className, windowName);
 #else
 	return 0;
@@ -107,7 +107,7 @@ WHANDLE Sys_FindWindow(const char *className, const char *windowName)
 
 void Sys_EnumWindows(void *callbackFunction, int lparam)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::EnumWindows((WNDENUMPROC)callbackFunction, lparam);
 #endif
 }
@@ -116,7 +116,7 @@ void Sys_GetWindowText(WHANDLE wnd, char *buffer, int bufferSize)
 {
 // dgoodenough - duplicate changes in portal2, i.e. stub these out on PS3
 // PS3_BUILDFIX
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::GetWindowText((HWND)wnd, buffer, bufferSize - 1);
 #else
 	buffer[0] = 0;
@@ -125,26 +125,26 @@ void Sys_GetWindowText(WHANDLE wnd, char *buffer, int bufferSize)
 
 void Sys_PostMessage(WHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::PostMessageA((HWND)wnd, msg, wParam, lParam);
 #endif
 }
 
 void Sys_SetCursorPos(int x, int y)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	::SetCursorPos(x, y);
 //	engine->SetCursorPos(x,y); // SRC version
 #endif
 }
 
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 static ATOM staticWndclassAtom = 0;
 static WNDCLASS staticWndclass = { NULL };
 
 static LRESULT CALLBACK staticProc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
-#if !defined( _OSX ) && !defined (LINUX)
+#if !defined( _OSX )
 	return DefWindowProc(hwnd,msg,wparam,lparam);
 #else
 	return 0;

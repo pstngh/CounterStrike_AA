@@ -423,7 +423,6 @@ CSysModule *Sys_LoadModule( const char *pModuleName )
 	}
 
 //lwss - Was having issues with the "BuiltDebug" symbol here. Looked at source-sdk-2013 and they just ifdef it out
-#if !defined(LINUX)
     // If running in the debugger, assume debug binaries are okay, otherwise they must run with -allowdebug
 	if ( !IsGameConsole() && Sys_GetProcAddress( hDLL, "BuiltDebug" ) )
 	{
@@ -449,15 +448,9 @@ CSysModule *Sys_LoadModule( const char *pModuleName )
 #endif
 		}
 	}
-#endif
 //lwss end
 
 //lwss - add dlopen error checking here.
-#if defined(LINUX64)
-    if( !hDLL ){
-        Warning( "Module %s failed to load! Error: (%s)\n", pModuleName, dlerror());
-	}
-#endif
 //lwss end
 	return reinterpret_cast<CSysModule *>(hDLL);
 }

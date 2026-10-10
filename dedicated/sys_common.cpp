@@ -180,32 +180,11 @@ void PerformCommandLineSubstitutions( int nIndex )
 	}
 }
 
-#ifdef _LINUX												// linux uses the implementation in sys_subproc
-void CDedicatedExports::RunServer( void )
-{
-	// check for forking
-	char const *pForkParam = CommandLine()->ParmValue( "-fork" );
-	if ( pForkParam )
-	{
-		int nNumChildInstances = atoi( pForkParam );
-		if ( nNumChildInstances >= 1 )
-		{
-			RunServerSubProcesses( nNumChildInstances );
-		}
-	}
-	else
-	{
-		::RunServer( false );
-	}
-}
-
-#else
 void CDedicatedExports::RunServer( void )
 {
 	PerformCommandLineSubstitutions( 0 );
 	::RunServer( false );
 }
-#endif
 
 bool CDedicatedExports::IsGuiDedicatedServer()
 {

@@ -4311,15 +4311,6 @@ long CBaseFileSystem::FastFileTime( const CSearchPath *path, const char *pFileNa
 		{
 			return buf.st_mtime;
 		}
-#ifdef LINUX
-		// Support Linux and its case sensitive file system
-		char realName[MAX_PATH];
-		const char *pRealName = findFileInDirCaseInsensitive( tempFileName, realName );
-		if ( pRealName && FS_stat( pRealName, &buf ) != -1 )
-		{
-			return buf.st_mtime;
-		}
-#endif
 	}
 
 	return ( 0L );
@@ -4398,15 +4389,6 @@ int CBaseFileSystem::FastFindFile( const CSearchPath *path, const char *pFileNam
 		LogAccessToFile( "stat", tempFileName, "" );
 		return buf.st_size;
 	}
-
-#ifdef LINUX
-	// Support Linux and its case sensitive file system
-	char realName[MAX_PATH];
-	if ( findFileInDirCaseInsensitive( tempFileName, realName ) && FS_stat( realName, &buf ) != -1 )
-	{
-		return buf.st_size;
-	}
-#endif
 
 	return ( -1 );
 }
@@ -6780,11 +6762,7 @@ CSysModule *CBaseFileSystem::LoadModule( const char *pFileName, const char *pPat
 #if defined(POSIX) && defined(PLATFORM_64BITS)
 		else if ( bPathIsGameBin )
 		{
-#if defined(LINUX)
-			const char* plat_dir = "linux64";
-#else
 			const char* plat_dir = "osx64";
-#endif
 			Q_snprintf( tempPathID, sizeof( tempPathID ), "%s%s%s%s", m_SearchPaths[ i ].GetPathString(), plat_dir, CORRECT_PATH_SEPARATOR_S, pFileName ); // append the path to this dir.
 			pModule = Sys_LoadModule( tempPathID );
 			if ( pModule )

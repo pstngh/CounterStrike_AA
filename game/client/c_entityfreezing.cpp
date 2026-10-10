@@ -85,8 +85,7 @@ void C_EntityFreezing::OnDataChanged( DataUpdateType_t updateType )
 //-----------------------------------------------------------------------------
 void C_EntityFreezing::ClientThink( void )
 {
-#if defined(LINUX)
-#elif defined( __clang__ )
+#if   defined( __clang__ )
 	asm("nop");
 #elif defined( _WIN32 ) && !defined( WIN64 )
 	__asm nop;

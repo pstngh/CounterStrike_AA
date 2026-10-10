@@ -18,9 +18,6 @@
 #include <Carbon/Carbon.h>
 #include <CoreText/CoreText.h>
 #endif
-#ifdef LINUX
-#include <fontconfig/fontconfig.h>
-#endif
 
 #if defined( USE_SDL ) || defined(OSX) 
 #include <appframework/ilaunchermgr.h>
@@ -152,10 +149,6 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CMatSystemSurface, ISurface,
 
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CMatSystemSurface, ISchemeSurface, 
 						SCHEME_SURFACE_INTERFACE_VERSION, g_MatSystemSurface );
-
-#ifdef LINUX
-CUtlDict< CMatSystemSurface::font_entry, unsigned short > CMatSystemSurface::m_FontData;
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -456,9 +449,6 @@ InitReturnVal_t CMatSystemSurface::Init( void )
 	{
 		FontManager().SetLanguage( "english" );
 	}
-#ifdef LINUX
-	FontManager().SetFontDataHelper( &CMatSystemSurface::FontDataHelper );
-#endif
 
 	// font manager needs the file system and material system for bitmap fonts
 	FontManager().SetInterfaces( g_pFullFileSystem, g_pMaterialSystem );
@@ -2404,63 +2394,10 @@ bool CMatSystemSurface::AddCustomFontFile( const char *fontFileName )
 
 	Msg( "Failed to register custom font file '%s'\n", fontFileName );
 	return false;
-#elif defined(LINUX)
-	// Just load the font data, decrypt in memory and register for this process
-	CUtlBuffer buf;
-	if ( !g_pFullFileSystem->ReadFile( fontFileName, NULL, buf ) )
-	{
-		Msg( "Failed to load custom font file '%s'\n", fontFileName );
-		return false;
-	}
-	
-	FT_Error error;
-	FT_Face face;
-	if ( !ValveFont::DecodeFont( buf ) )
-		error = FT_New_Face( FontManager().GetFontLibraryHandle(), (const char *)fullPath, 0, &face );
-	else
-		error = FT_New_Memory_Face( FontManager().GetFontLibraryHandle(), (FT_Byte *)buf.Base(), buf.TellPut(), 0, &face );
-
-	if ( error == FT_Err_Unknown_File_Format ) 
-	{
-		return false;
-	} 
-	else if ( error ) 
-	{ 
-		return false;
-	} 
-	const char *pchFontName = FT_Get_Postscript_Name( face );
-	if ( !V_stricmp( pchFontName, "TradeGothic" ) )
-		pchFontName = "Trade Gothic";
-	if ( !V_stricmp( pchFontName, "TradeGothicBold" ) )
-		pchFontName = "Trade Gothic Bold";
-	if ( !V_stricmp( pchFontName, "Stubble-bold" ) )
-		pchFontName = "Stubble bold";
-
-	font_entry entry;
-	entry.size = buf.TellPut();
-	entry.data = buf.Detach();
-	m_FontData.Insert( pchFontName, entry );
-	FT_Done_Face ( face );
-	return true;	
 #else
 #error	
 #endif
 }
-
-#ifdef LINUX
-void *CMatSystemSurface::FontDataHelper( const char *pchFontName, int &size )
-{
-	int iIndex = m_FontData.Find( pchFontName );
-	if ( iIndex != m_FontData.InvalidIndex() )
-	{
-		size = m_FontData[ iIndex ].size;
-		return m_FontData[ iIndex ].data;
-	}
-	size = 0;
-	return NULL;
-}
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: adds a bitmap font file

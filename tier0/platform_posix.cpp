@@ -334,16 +334,6 @@ PLATFORM_INTERFACE bool Is64BitOS()
 {
 #if defined OSX
 	return true;
-#elif defined LINUX
-	FILE *pp = popen( "uname -m", "r" );
-	if ( pp != NULL )
-	{
-		char rgchArchString[256];
-		fgets( rgchArchString, sizeof( rgchArchString ), pp );
-		pclose( pp );
-		if ( !strncasecmp( rgchArchString, "x86_64", strlen( "x86_64" ) ) )
-			return true;
-	}
 #else
 	Assert( !"implement Is64BitOS" );
 #endif
@@ -366,17 +356,6 @@ bool Plat_IsInDebugSession()
 	sysctl(mib,4,&info,&size,NULL,0);
 	bool result = ((info.kp_proc.p_flag & P_TRACED) == P_TRACED);
 	return result;
-#elif defined(LINUX)
-	char s[256];
-	snprintf(s, 256, "/proc/%d/cmdline", getppid());
-	FILE * fp = fopen(s, "r");
-	if (fp != NULL) 
-	{
-		fread(s, 256, 1, fp);
-		fclose(fp);
-		return (0 == strncmp(s, "gdb", 3));
-	}
-	return false;
 #endif
 }
 
@@ -499,48 +478,10 @@ void Platform_gmtime( uint64 nTime, struct tm *pTime )
 	* pTime = * tmp;
 }
 
-#ifdef LINUX
-/*
-From http://man7.org/linux/man-pages/man5/proc.5.html:
-       /proc/[pid]/statm
-              Provides information about memory usage, measured in pages.
-              The columns are:
-
-                  size       (1) total program size
-                             (same as VmSize in /proc/[pid]/status)
-                  resident   (2) resident set size
-                             (same as VmRSS in /proc/[pid]/status)
-                  share      (3) shared pages (i.e., backed by a file)
-                  text       (4) text (code)
-                  lib        (5) library (unused in Linux 2.6)
-                  data       (6) data + stack
-                  dt         (7) dirty pages (unused in Linux 2.6)
-*/
-
-// This returns the resident memory size (RES column in 'top') in bytes.
-size_t ApproximateProcessMemoryUsage( void )
-{
-	size_t nRet = 0;
-	FILE *pFile = fopen( "/proc/self/statm", "r" );
-	if ( pFile )
-	{
-		size_t nSize, nResident, nShare, nText, nLib_Unused, nDataPlusStack, nDt_Unused;
-		if ( fscanf( pFile, "%zu %zu %zu %zu %zu %zu %zu", &nSize, &nResident, &nShare, &nText, &nLib_Unused, &nDataPlusStack, &nDt_Unused ) >= 2 )
-		{
-			nRet = 4096 * nResident;
-		}
-		fclose( pFile );
-	}
-	return nRet;
-}
-#else
-
 size_t ApproximateProcessMemoryUsage( void )
 {
 	return 0;
 }
-
-#endif
 
 char const * Plat_GetEnv(char const *pEnvVarName)
 {
@@ -554,16 +495,6 @@ PLATFORM_INTERFACE bool Plat_GetExecutablePath( char *pBuff, size_t nBuff )
 	bool bSuccess = _NSGetExecutablePath(pBuff, &_nBuff) == 0;
 	pBuff[nBuff-1] = '\0';
 	return bSuccess;
-#elif defined LINUX
-	ssize_t nRead = readlink("/proc/self/exe", pBuff, nBuff-1 );
-	if ( nRead != -1 )
-	{
-		pBuff[ nRead ] = 0;
-		return true;
-	 }
-
-	pBuff[0] = 0;
-	return false;
 #else
 	AssertMsg( false, "Implement Plat_GetExecutablePath" );
 	return false;

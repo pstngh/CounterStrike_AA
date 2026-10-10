@@ -67,9 +67,5 @@
 // offsetof survives the STL includes that happened because of the
 // protobuf includes above.
 //lwss- thank you very much mr. Valve!
-#ifdef LINUX
-#undef offsetof
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
-#endif
 
 #endif // GCCLIENTSDK_H

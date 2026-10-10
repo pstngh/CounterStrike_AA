@@ -1073,9 +1073,6 @@ void CEngineVGui::Connect()
 	#if OSX
 //		g_pLauncherMgr = (ILauncherMgr *)g_GameSystemFactory(  COCOAMGR_INTERFACE_VERSION, NULL );	
 	#endif
-	#if LINUX
-//		g_pLauncherMgr = (ILauncherMgr *)g_GameSystemFactory(  LINUXMGR_INTERFACE_VERSION, NULL );	
-	#endif
 	#if defined( _WIN32 ) && defined( DX_TO_GL_ABSTRACTION )
 //		g_pLauncherMgr = (ILauncherMgr *)g_GameSystemFactory(  WINMGR_INTERFACE_VERSION, NULL );	
 	#endif

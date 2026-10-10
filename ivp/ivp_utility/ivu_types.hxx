@@ -177,7 +177,7 @@ typedef unsigned int	uint;
 typedef const char *IVP_ERROR_STRING;
 #define IVP_NO_ERROR 0
 
-#if defined(PSXII) || defined(LINUX) || defined(GEKKO)
+#if defined(PSXII) || defined(GEKKO)
 #   define IVP_ALIGN_16  __attribute__ ((aligned(16)))
 #endif
 
@@ -207,18 +207,10 @@ enum IVP_RETURN_TYPE {
 
 #define IVP_CDECL       /* set this to whatever you need to satisfy your linker */
 
-#if defined(LINUX)
-	extern "C" {
-	    //lwss: comment these out
-	    //void free(void *) __THROW;
-	    //void *memset( void *, int, unsigned int) __THROW;
-	};
-#else
 #if !defined(__MWERKS__) || !defined(__POWERPC__)
 #	include <malloc.h>
 #endif
 #	include <string.h>
-#endif
 	
 	char * IVP_CDECL p_calloc(int nelem,int size);
 	void * IVP_CDECL p_realloc(void* memblock, int size);

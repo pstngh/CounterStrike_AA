@@ -31,9 +31,6 @@
 #include <time.h>
 #if defined( OSX )
 #include <sys/sysctl.h>
-#elif defined( LINUX )
-#include <sys/utsname.h>
-#include <unistd.h>
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -171,13 +168,6 @@ static void DescribeSystem( char *pOut, int nOutSize )
 	{
 		flMemoryGB = nMemory / ( 1024.0 * 1024.0 * 1024.0 );
 	}
-#elif defined( LINUX )
-	struct utsname name;
-	if ( uname( &name ) == 0 )
-	{
-		V_snprintf( szOS, sizeof( szOS ), "%s %s", name.sysname, name.release );
-	}
-	flMemoryGB = (double)sysconf( _SC_PHYS_PAGES ) * sysconf( _SC_PAGESIZE ) / ( 1024.0 * 1024.0 * 1024.0 );
 #endif
 
 	V_snprintf( pOut, nOutSize, "%s | %s | %s | %.0f GB",

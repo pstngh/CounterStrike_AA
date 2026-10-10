@@ -757,7 +757,7 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 #ifndef DEDICATED
 
 #if defined( USE_SDL )
-#if !defined( LINUX ) && !defined( OSX )
+#if !defined( OSX )
 	g_pHWConfig = g_pHardwareConfig;
 #endif
 
@@ -1938,23 +1938,6 @@ void CMaterialSystem::GenerateConfigFromConfigKeyValues( MaterialSystem_Config_t
 	int nUnsupported = 0;
 	ReadInt( pKeyValues, "setting.unsupported", 0, -1, &nUnsupported );
 	pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_UNSUPPORTED, nUnsupported != 0 );
-
-#ifdef LINUX
-
-	uint width = 0;
-	uint height = 0;
-	uint refreshHz = 0; // Not used
-
-	// query backbuffer size (window size whether FS or windowed)
-	if( g_pLauncherMgr )
-	{
-		g_pLauncherMgr->GetNativeDisplayInfo( -1, width, height, refreshHz );
-	}
-
-	pConfig->m_VideoMode.m_Width = width;
-	pConfig->m_VideoMode.m_Height = height;
-
-#endif
 
 	// Destroy the keys.
 	pKeyValues->deleteThis();
