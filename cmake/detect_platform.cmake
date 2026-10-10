@@ -3,27 +3,14 @@
 if(WIN32)
     message(FATAL_ERROR "install gentoo")
 elseif(UNIX AND NOT APPLE) #LINUX
-    add_definitions(-DLINUX -D_LINUX -DPOSIX)
-    set(LINUXALL "1")
-    set(POSIX "1")
-    set(GL "1")
-    set(_DLL_EXT "_client.so")
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        add_definitions(-DLINUX64)
-        set(LINUX64 "1")
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        add_definitions(-DLINUX32)
-        set(LINUX32 "1")
-    else()
-        message(FATAL_ERROR "Weird pointer size! Couldn't detect x64/x86")
-    endif()
+    message(FATAL_ERROR "Linux is not supported: this source tree builds only for macOS on Apple Silicon.")
 elseif(UNIX AND APPLE) #MAC
     add_definitions(-DPOSIX -D_POSIX -DOSX -D_OSX)
     set(OSXALL "1")
     set(POSIX "1")
     set(GL "1")
     # Valve's macOS loader uses conventional .dylib module names (engine.dylib,
-    # client.dylib, and so on) rather than Linux's *_client.so suffix.
+    # client.dylib, and so on).
     set(_DLL_EXT ".dylib")
     set(OUTDLLEXT ".dylib")
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)

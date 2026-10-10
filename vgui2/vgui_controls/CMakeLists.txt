@@ -9,10 +9,6 @@ include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
 include_directories(${SRCDIR}/thirdparty)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTLIBNAME} PRIVATE "AnalogBar.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "AnimatingImagePanel.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "AnimationController.cpp")

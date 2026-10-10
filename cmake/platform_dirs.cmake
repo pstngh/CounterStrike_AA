@@ -1,10 +1,1 @@
-if(LINUX64)
-    set(PLATSUBDIR "/linux64")
-endif()
-if(OSX64)
-    set(PLATSUBDIR "/osx64")
-endif()
-
-if( NOT DEFINED PLATSUBDIR )
-    message(FATAL_ERROR "platform not found!")
-endif()
+set(PLATSUBDIR "/osx64")

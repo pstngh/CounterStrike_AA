@@ -18,10 +18,6 @@ include_directories(${SRCDIR}/ivp/ivp_controller)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
 add_definitions(-DHAVANA_CONSTRAINTS -DIVP_VERSION_SDK)
-if(LINUXALL)
-    target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
-    add_definitions(-DLINUX)
-endif()
 
 target_sources(${OUTLIBNAME} PRIVATE constraint.cpp)
 target_sources(${OUTLIBNAME} PRIVATE ball_socket/ball_socket_constraint.cpp)

@@ -1,5 +1,5 @@
-# Builds the game client for each supported platform and uploads the
-# resulting game directory (binaries only, no Valve assets) as an artifact.
+# Builds the macOS arm64 game client and uploads the resulting game
+# directory (binaries only, no Valve assets) as an artifact.
 #
 # Kisak-Strike writes its runtime binaries to ../game, a sibling of the source
 # tree, so the repository is checked out into src/ and the build lands in
@@ -26,7 +26,7 @@ defaults:
 
 env:
   # Release builds without debug info: CI would only strip it again. The
-  # default CPU target (x86-64-v2 / apple-m1) keeps the binaries portable.
+  # default CPU target (apple-m1) keeps the binaries portable.
   CMAKE_ARGS: >-
     -G Ninja
     -DCMAKE_BUILD_TYPE=Release
@@ -40,48 +40,6 @@ env:
   CCACHE_MAXSIZE: 2G
 
 jobs:
-  linux-x64:
-    name: Linux x64
-    runs-on: ubuntu-24.04
-    timeout-minutes: 180
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          path: src
-
-      - name: Install dependencies
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build ccache \
-            libsdl2-dev libsdl2-mixer-dev libopenal-dev \
-            libcurl4-openssl-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev
-
-      - uses: actions/cache@v4
-        with:
-          path: .ccache
-          key: ccache-linux-x64-${{ github.sha }}
-          restore-keys: ccache-linux-x64-
-
-      - name: Configure
-        run: cmake -S src -B build $CMAKE_ARGS
-
-      - name: Build
-        run: cmake --build build && ccache --show-stats
-
-      # A tarball keeps the executable bits that artifact zips drop.
-      - name: Package
-        run: tar -C game -czf csgo-linux-x64.tar.gz .
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: csgo-linux-x64
-          path: csgo-linux-x64.tar.gz
-          compression-level: 0
-          if-no-files-found: error
-
   macos-arm64:
     name: macOS arm64
     # Apple Silicon runner; the build refuses Intel Macs.

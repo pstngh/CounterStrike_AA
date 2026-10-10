@@ -14,12 +14,6 @@ add_definitions(-DBOTS -DCSTRIKE_DLL)
 include( ./server_base.cmake )
 include( ./server_econ_base.cmake )
 
-if( LINUXALL )
-    #lwss- add Wno-narrowing to fix compilation
-    target_compile_options(${OUTBINNAME} PRIVATE "-Wno-narrowing")
-    #lwss end
-endif()
-
 include_directories(${SRCDIR}/game/shared/cstrike15)
 include_directories(${SRCDIR}/game/shared/cstrike15/bot)
 include_directories(${SRVSRCDIR})

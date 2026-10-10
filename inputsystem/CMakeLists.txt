@@ -15,18 +15,11 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 add_definitions(-DNO_STRING_T -DVERSION_SAFE_STEAM_API_INTERFACES -DPROTECTED_THINGS_ENABLE)
 
-if( LINUXALL )
-    target_link_libraries(${OUTBINNAME} SDL2)
-endif()
-
 target_sources(${OUTBINNAME} PRIVATE "inputstacksystem.cpp")
 target_sources(${OUTBINNAME} PRIVATE "inputsystem.cpp")
 target_sources(${OUTBINNAME} PRIVATE "inputsystem.h")
 if( OSXALL )
     target_sources(${OUTBINNAME} PRIVATE "joystick_osx.cpp")
-endif()
-if( LINUXALL )
-    target_sources(${OUTBINNAME} PRIVATE "joystick_linux.cpp")
 endif()
 target_sources(${OUTBINNAME} PRIVATE "steamcontroller.cpp")
 target_sources(${OUTBINNAME} PRIVATE "key_translation.cpp")

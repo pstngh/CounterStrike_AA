@@ -10,60 +10,48 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0" AND NOT DEFINED CMAKE_POLICY_VERSIO
     set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 endif()
 
+if(NOT APPLE)
+    message(FATAL_ERROR "Linux and Windows are not supported: this source tree builds only for macOS on Apple Silicon.")
+endif()
+
 include(kisak-strike-build-options.cmake)
 
 if(USE_MAC_PRESET)
     add_definitions(-DUSE_MAC_PRESET)
 endif()
 
-if(APPLE)
-    set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/osx64")
-    if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
-        message(FATAL_ERROR "macOS builds support Apple Silicon (arm64) only")
-    endif()
-    include_directories(BEFORE "${CMAKE_SOURCE_DIR}/thirdparty/macos_compat")
-    include_directories(BEFORE "${CMAKE_SOURCE_DIR}/thirdparty/sse2neon")
-    # The 2017 codebase intentionally initializes signed SIMD masks with
-    # hexadecimal bit patterns outside INT_MAX. Modern Clang diagnoses those
-    # pre-C++11 initializers as errors even though the resulting bits are exact.
-    add_compile_options(-Wno-c++11-narrowing)
-    # PRECISE_SQRT stays off: on arm64 it replaces the native, exactly rounded
-    # square root in _mm_sqrt_ps/_ss (FastSqrt) with an estimate and two Newton
-    # steps, which is slower and less exact. _mm_rsqrt_ps then refines its
-    # estimate once, which is still more precise than SSE's rsqrtps.
-    add_compile_definitions(
-        SSE2NEON_PRECISE_MINMAX=1
-        SSE2NEON_PRECISE_SQRT=0
-        SSE2NEON_PRECISE_DIV=1
-    )
-
-    # Homebrew's sdl2-compat package provides SDL2. Prefer its opt link, then
-    # fall back to the default search (the second call is skipped once found).
-    find_library(SDL2_LIBRARY SDL2 PATHS /opt/homebrew/opt/sdl2/lib NO_DEFAULT_PATH)
-    find_library(SDL2_LIBRARY SDL2 REQUIRED)
-
-    # Offline Steam API shim; game modules find it through their @rpath.
-    add_library(steam_api_offline SHARED thirdparty/steam_api_offline/steam_api_offline.cpp)
-    target_include_directories(steam_api_offline PRIVATE "${CMAKE_SOURCE_DIR}/public")
-    target_compile_definitions(steam_api_offline PRIVATE STEAM_API_EXPORTS GNUC VERSION_SAFE_STEAM_API_INTERFACES)
-    set_target_properties(steam_api_offline PROPERTIES
-        OUTPUT_NAME steam_offline
-        LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
-else()
-    set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/linux64")
-    # Modules find each other relative to their own location, as the macOS
-    # toolchain does with @loader_path, so the game directory runs wherever it
-    # is copied. Modules in csgo/bin/linux64 reach bin/linux64 three levels up.
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../../../bin/linux64")
-
-    # Ship Valve's Steam API library beside the modules that link it.
-    set(STEAM_API_SOURCE "${CMAKE_SOURCE_DIR}/lib/public/linux64/libsteam_api.so")
-    add_custom_command(OUTPUT "${GAME_BIN_DIR}/libsteam_api.so"
-        COMMAND "${CMAKE_COMMAND}" -E copy "${STEAM_API_SOURCE}" "${GAME_BIN_DIR}/libsteam_api.so"
-        DEPENDS "${STEAM_API_SOURCE}")
-    add_custom_target(steam_api_runtime ALL DEPENDS "${GAME_BIN_DIR}/libsteam_api.so")
+set(GAME_BIN_DIR "${CMAKE_SOURCE_DIR}/../game/bin/osx64")
+if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    message(FATAL_ERROR "macOS builds support Apple Silicon (arm64) only")
 endif()
+include_directories(BEFORE "${CMAKE_SOURCE_DIR}/thirdparty/macos_compat")
+include_directories(BEFORE "${CMAKE_SOURCE_DIR}/thirdparty/sse2neon")
+# The 2017 codebase intentionally initializes signed SIMD masks with
+# hexadecimal bit patterns outside INT_MAX. Modern Clang diagnoses those
+# pre-C++11 initializers as errors even though the resulting bits are exact.
+add_compile_options(-Wno-c++11-narrowing)
+# PRECISE_SQRT stays off: on arm64 it replaces the native, exactly rounded
+# square root in _mm_sqrt_ps/_ss (FastSqrt) with an estimate and two Newton
+# steps, which is slower and less exact. _mm_rsqrt_ps then refines its
+# estimate once, which is still more precise than SSE's rsqrtps.
+add_compile_definitions(
+    SSE2NEON_PRECISE_MINMAX=1
+    SSE2NEON_PRECISE_SQRT=0
+    SSE2NEON_PRECISE_DIV=1
+)
+
+# Homebrew's sdl2-compat package provides SDL2. Prefer its opt link, then
+# fall back to the default search (the second call is skipped once found).
+find_library(SDL2_LIBRARY SDL2 PATHS /opt/homebrew/opt/sdl2/lib NO_DEFAULT_PATH)
+find_library(SDL2_LIBRARY SDL2 REQUIRED)
+
+# Offline Steam API shim; game modules find it through their @rpath.
+add_library(steam_api_offline SHARED thirdparty/steam_api_offline/steam_api_offline.cpp)
+target_include_directories(steam_api_offline PRIVATE "${CMAKE_SOURCE_DIR}/public")
+target_compile_definitions(steam_api_offline PRIVATE STEAM_API_EXPORTS GNUC VERSION_SAFE_STEAM_API_INTERFACES)
+set_target_properties(steam_api_offline PROPERTIES
+    OUTPUT_NAME steam_offline
+    LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
 
 add_subdirectory(appframework)
 add_subdirectory(external/crypto++-5.61)

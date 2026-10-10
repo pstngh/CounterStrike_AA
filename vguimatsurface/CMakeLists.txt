@@ -10,9 +10,6 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 include_directories(../public/mathlib)
 
-if( LINUXALL )
-    include_directories(/usr/include/freetype2)
-endif()
 add_definitions(-DBENCHMARK -DGAMEUI_EXPORTS -DDONT_PROTECT_FILEIO_FUNCTIONS -DPROTECTED_THINGS_ENABLE)
 add_definitions(-DENABLE_CHROMEHTMLWINDOW)
 
@@ -31,8 +28,4 @@ target_link_libraries(${OUTBINNAME} vgui_controls_client vgui_surfacelib_client 
 
 if( APPLE )
     target_link_libraries(${OUTBINNAME} "-framework CoreText" "-framework CoreGraphics" "${SDL2_LIBRARY}")
-endif()
-
-if( LINUXALL )
-    target_link_libraries(${OUTBINNAME} fontconfig freetype SDL2)
 endif()

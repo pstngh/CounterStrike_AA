@@ -1,14 +1,13 @@
 # CounterStrike_AA
 
-CounterStrike_AA is a build of [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source port of the 2017 CS:GO engine, for Linux x64 and Apple Silicon Macs. It adds an optional gameplay preset that plays like Medal of Honor: Allied Assault, with leaning, Allied Assault movement speeds and scoped sniping, fixed loadouts and free-for-all deathmatch against bots.
+CounterStrike_AA is a build of [Kisak-Strike](https://github.com/SwagSoftware/Kisak-Strike), the open-source port of the 2017 CS:GO engine, for Apple Silicon Macs. It adds an optional gameplay preset that plays like Medal of Honor: Allied Assault, with leaning, Allied Assault movement speeds and scoped sniping, fixed loadouts and free-for-all deathmatch against bots.
 
 The repository contains source code only. You need legally acquired CS:GO game files to play.
 
 ## Features
 
 - **Native Apple Silicon build.** arm64 code throughout, no Rosetta. It starts without the Steam desktop client, using an offline Steam API shim built from source.
-- **Linux x64 build.** It links Valve's `libsteam_api.so`.
-- **Allied Assault gameplay preset.** It's on by default on macOS and off on Linux; see [Gameplay preset](#gameplay-preset).
+- **Allied Assault gameplay preset.** It's on by default; see [Gameplay preset](#gameplay-preset).
 - **Mac launcher app.** Pick a map, the bot count and difficulty, resolution and graphics settings, then start the game.
 - **Open-source physics.** Choose between the Kisak-Strike rebuild of Valve's physics and a Bullet-based implementation, instead of Valve's closed `vphysics` library.
 - **RmlUi menus.** The open-source RocketUI replaces the proprietary Scaleform UI.
@@ -19,12 +18,9 @@ The project is experimental. Some legacy assets and features are incomplete.
 
 ## Prebuilt binaries
 
-Every push to `main` builds both platforms in GitHub Actions. Open the latest successful [Build run](https://github.com/pstngh/CounterStrike_AA/actions/workflows/build.yml) and download:
+Every push to `main` builds the game in GitHub Actions. Open the latest successful [Build run](https://github.com/pstngh/CounterStrike_AA/actions/workflows/build.yml) and download `csgo-macos-arm64`.
 
-- `csgo-linux-x64` for Linux
-- `csgo-macos-arm64` for Apple Silicon Macs
-
-Each artifact is a tarball of the game directory's binaries, without Valve's assets. The macOS one also contains `CSGO Launcher.app`. Unpack it over a game directory prepared as described in [Game files](#game-files).
+The artifact is a tarball of the game directory's binaries and `CSGO Launcher.app`, without Valve's assets. Unpack it over a game directory prepared as described in [Game files](#game-files).
 
 ## Building
 
@@ -36,51 +32,6 @@ git clone https://github.com/pstngh/CounterStrike_AA.git src
 ```
 
 The game then lands in `csgo/game`. Build directories can go anywhere; the commands below use `csgo/build`.
-
-### Linux
-
-Install the dependencies. On Ubuntu, CI uses:
-
-```sh
-sudo apt install build-essential cmake ninja-build libsdl2-dev libsdl2-mixer-dev \
-  libopenal-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev libglu1-mesa-dev net-tools
-```
-
-The engine calls `ifconfig` from `net-tools` to find its LAN address.
-
-<details>
-<summary>Package lists for Fedora, Arch and Gentoo</summary>
-
-Fedora:
-
-```sh
-sudo dnf install git SDL2-devel SDL2_mixer-devel openal-soft-devel libcurl-devel openssl-devel \
-  fontconfig-devel freetype-devel cmake ninja-build gcc g++ mesa-libGL-devel mesa-libGLU-devel
-```
-
-Arch:
-
-```
-sdl2 sdl2_mixer openal libcurl-compat openssl fontconfig freetype2 mesa cmake ninja gcc base-devel
-```
-
-Gentoo:
-
-```
-media-libs/libsdl2 media-libs/sdl2-mixer media-libs/openal net-misc/curl dev-libs/openssl
-media-libs/fontconfig media-libs/freetype media-libs/mesa dev-build/cmake dev-build/ninja sys-devel/gcc
-```
-
-</details>
-
-Configure and build:
-
-```sh
-cmake -S src -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_KISAK_PHYSICS=ON
-cmake --build build
-```
-
-### macOS
 
 You need an Apple Silicon Mac; Intel Macs are not supported. Install the Command Line Tools (`xcode-select --install`), then the remaining dependencies with Homebrew:
 
@@ -98,9 +49,9 @@ cmake --build build
 
 [MACOS.md](MACOS.md) covers the macOS port in more detail.
 
-### Windows
+### Other platforms
 
-Windows is not supported: CMake stops when configuring on Windows. The engine's Windows code paths are still in the source, as a starting point for a port.
+Linux and Windows are not supported: CMake stops when configuring on them. The engine's Windows code paths are still in the source, as a starting point for a port.
 
 ### Build options
 
@@ -112,22 +63,20 @@ Pass these to the configure step as `-D<option>=<value>`:
 | `USE_KISAK_PHYSICS` | `OFF` | Build the open-source rebuild of Valve's physics. CI turns it on. |
 | `USE_BULLET_PHYSICS` | `OFF` | Build the Bullet-based physics instead. It is experimental. |
 | `USE_BULLET_PHYSICS_THREADED` | `OFF` | Multithreaded Bullet; the `bt_threadcount` console variable sets the thread count. Experimental. |
-| `USE_MAC_PRESET` | `ON` on macOS, `OFF` elsewhere | Compile the [gameplay preset](#gameplay-preset). |
+| `USE_MAC_PRESET` | `ON` | Compile the [gameplay preset](#gameplay-preset). |
 | `USE_ROCKETUI` | `ON` | Use the RmlUi menus. |
-| `USE_SCALEFORM` | `OFF` | Use Valve's incomplete Scaleform UI instead. It needs Valve's prebuilt `scaleformui_client.so`. Not recommended. |
+| `USE_SCALEFORM` | `OFF` | Use Valve's incomplete Scaleform UI instead. It needs Valve's prebuilt Scaleform library. Not recommended. |
 | `DEDICATED` | `OFF` | Build a dedicated server instead of the game; see [Dedicated server](#dedicated-server). |
-| `USE_VALVE_HRTF` | `OFF` | Linux only. Link Valve's Steam Audio HRTF library for 3D sound. Copy `libphonon3d.so` into `game/bin/linux64` before configuring. |
-| `KISAK_ARCH_FLAGS` | `-march=x86-64-v2` or `-mcpu=apple-m1` | CPU target. Set `-march=native` to tune for the build machine; the binaries then may not run elsewhere. |
+| `KISAK_ARCH_FLAGS` | `-mcpu=apple-m1` | CPU target. Set `-march=native` to tune for the build machine; the binaries then may not run on other Macs. |
 | `RELEASE_DEBUG_INFO` | `ON` | Keep debug info in Release builds for symbolized crash backtraces. |
-| `USE_ASAN` | `OFF` | Linux only. Build with AddressSanitizer. |
 | `USE_TRACY` | `OFF` | Enable the Tracy profiler. |
 | `TRACY_STORE_LOGS` | `OFF` | Make Tracy record from startup and send the data when a viewer connects, instead of only while one is connected. This uses memory quickly. |
 
-If neither physics option is on, the game loads Valve's closed-source physics library instead. On Linux, copy `vphysics_client.so` from Valve's Linux binaries; see [Game files](#game-files).
+If neither physics option is on, the game loads Valve's closed-source physics library instead. Valve never built it for Apple Silicon, so turn one of the options on.
 
 ### Dedicated server
 
-Configure a separate build directory with `-DDEDICATED=ON`. It writes `srcds_linux` (`srcds_osx` on macOS) to the game directory, and its engine modules replace the game's there. Build the game again when you want to play.
+Configure a separate build directory with `-DDEDICATED=ON`. It writes `srcds_osx` to the game directory, and its engine modules replace the game's there. Build the game again when you want to play.
 
 ## Game files
 
@@ -139,10 +88,7 @@ The repository ships no Valve content. With a Steam account that owns CS:GO, dow
 | Linux binaries | 730 | 734 | `4197642562793798650` |
 
 1. Copy everything from the assets depot into the game directory (`csgo/game` in the layout above).
-2. From the Linux binaries depot, copy `bin/map_publish/`, which holds VGUI assets. Optionally also copy these files into `game/bin/linux64`:
-   - `libphonon3d.so` for `USE_VALVE_HRTF`.
-   - `vphysics_client.so` for Valve's original physics.
-   - `scaleformui_client.so` for `USE_SCALEFORM`.
+2. From the Linux binaries depot, copy only `bin/map_publish/`, which holds VGUI assets. The depot's Linux binaries themselves are not used.
 3. Copy [Kisak-Strike-Files](https://github.com/SwagSoftware/Kisak-Strike-Files) into the game directory. Its `csgo/rocketui` directory holds the RocketUI menus. Without it, the team and pause menus cannot render.
 4. Optional: to give the AK-47 its Asiimov finish, supply `ak47_asiimov.vtf` from your CS:GO content:
 
@@ -154,23 +100,14 @@ The repository ships no Valve content. With a Steam account that owns CS:GO, dow
 
 Run the game from the game directory. The modules find each other relative to their own location, so the directory can live anywhere.
 
-Linux:
-
-```sh
-cd game
-./csgo_linux64 -insecure -novid +map de_dust2
-```
-
-macOS:
-
 ```sh
 cd game
 arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 ```
 
-`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. On macOS, messages about the Steam API failing to start are expected and harmless.
+`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. Messages about the Steam API failing to start are expected and harmless.
 
-On macOS, open `CSGO Launcher.app` in the game directory. The prebuilt macOS artifact includes it. To build it into a game directory yourself, run:
+To pick the map and settings in a window instead, open `CSGO Launcher.app` in the game directory. The prebuilt macOS artifact includes it. To build it into a game directory yourself, run:
 
 ```sh
 src/tools/install_macos_launcher.sh game
@@ -196,8 +133,7 @@ The preset changes shared client and server code, including the player network t
 
 ## Proprietary components
 
-- `lib/public/linux64/libsteam_api.so` is Valve's Steam API library. Linux builds link it and copy it to `game/bin/linux64`. macOS builds use the offline shim in `thirdparty/steam_api_offline` instead.
-- The optional files from Valve's Linux binaries depot are listed under [Game files](#game-files).
+The repository ships no Valve binaries. Instead of Valve's Steam API library, the game links the offline shim in `thirdparty/steam_api_offline`.
 
 ## Credits
 

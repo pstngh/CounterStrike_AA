@@ -11,9 +11,6 @@ include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 #linker
-if( LINUXALL )
-    target_link_libraries(${OUTBINNAME} SDL2)
-endif()
 
 #source files
 if( OSXALL )
@@ -21,6 +18,3 @@ if( OSXALL )
 endif()
 
 target_link_libraries(${OUTBINNAME} tier2_client tier3_client libvstdlib_client)
-if( LINUXALL )
-    target_link_libraries(${OUTBINNAME} SDL2_mixer)
-endif()

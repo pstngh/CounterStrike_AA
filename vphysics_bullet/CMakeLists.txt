@@ -19,10 +19,6 @@ include_directories(${SRCDIR}/public/tier1)
 include_directories(${SRCDIR}/thirdparty/bullet3/src)
 
 
-if( LINUXALL )
-    target_compile_options(${OUTBINNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 #Source files
 target_sources(${OUTBINNAME} PRIVATE "DebugDrawer.cpp")
 target_sources(${OUTBINNAME} PRIVATE "DebugDrawer.cpp")

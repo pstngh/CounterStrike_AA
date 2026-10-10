@@ -12,10 +12,6 @@ include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 include_directories(${SRCDIR}/ivp/havana/havok)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
-if(LINUXALL)
-    target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
-    add_definitions(-DLINUX)
-endif()
 
 target_sources(${OUTLIBNAME} PRIVATE gauss_elimination/gauss_elimination.cpp)
 target_sources(${OUTLIBNAME} PRIVATE incr_lu/incr_lu.cpp)

@@ -9,10 +9,6 @@ include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
 include_directories(../public)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTLIBNAME} PRIVATE "bone_setup.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "bone_ik.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "bone_utils.cpp")

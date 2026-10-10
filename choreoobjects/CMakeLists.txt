@@ -10,10 +10,6 @@ include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 include_directories(../game/shared)
 include_directories(../utils/common)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTLIBNAME} PRIVATE "${SRCDIR}/game/shared/choreoactor.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "${SRCDIR}/game/shared/choreochannel.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "${SRCDIR}/game/shared/choreoevent.cpp")

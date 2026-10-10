@@ -8,10 +8,6 @@ set(OUTLIBNAME "bitmap_client")
 
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTLIBNAME} PRIVATE "bitmap.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "colorconversion.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "floatbitmap.cpp")

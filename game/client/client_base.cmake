@@ -26,11 +26,6 @@ TargetBuildAndAddProto( ${OUTBINNAME} ${SRCDIR}/game/shared/base_gcmessages.prot
 
 #NUT stuff would go here..
 
-if( LINUXALL )
-    target_compile_options(${OUTBINNAME} PRIVATE -Wno-narrowing -Wno-ignored-attributes)
-    target_link_libraries(${OUTBINNAME} rt)
-endif()
-
 target_sources(${OUTBINNAME} PRIVATE "hl2/C_Func_Monitor.cpp")
 target_sources(${OUTBINNAME} PRIVATE "geiger.cpp")
 target_sources(${OUTBINNAME} PRIVATE "history_resource.cpp")

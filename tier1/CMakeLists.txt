@@ -7,10 +7,6 @@ set(OUTLIBNAME "tier1_client")
 include(${CMAKE_MODULE_PATH}/detect_platform.cmake)
 include(${CMAKE_MODULE_PATH}/source_lib_base.cmake)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fpic -fno-semantic-interposition)
-endif()
-
 #Sources
 target_sources(${OUTLIBNAME} PRIVATE "appinstance.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "bitbuf.cpp")
@@ -38,14 +34,7 @@ target_sources(${OUTLIBNAME} PRIVATE "memstack.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "NetAdr.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "splitstring.cpp")
 
-if( OSXALL )
-    target_sources(${OUTLIBNAME} PRIVATE "processor_detect_arm64.cpp")
-else()
-    target_sources(${OUTLIBNAME} PRIVATE "processor_detect_linux.cpp")
-endif()
-if( LINUXALL )
-    target_sources(${OUTLIBNAME} PRIVATE "qsort_s.cpp")
-endif()
+target_sources(${OUTLIBNAME} PRIVATE "processor_detect_arm64.cpp")
 
 target_sources(${OUTLIBNAME} PRIVATE "rangecheckedvar.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "stringpool.cpp")

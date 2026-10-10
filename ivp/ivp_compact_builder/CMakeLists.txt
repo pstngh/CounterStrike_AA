@@ -17,10 +17,6 @@ include_directories(${SRCDIR}/ivp/ivp_surface_manager)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
 add_definitions(-DIVP_VERSION_SDK)
-if(LINUXALL)
-    target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition -fpermissive)
-    add_definitions(-DLINUX)
-endif()
 
 target_sources(${OUTLIBNAME} PRIVATE geompack_cutfac.cxx)
 target_sources(${OUTLIBNAME} PRIVATE geompack_cvdec3.cxx)

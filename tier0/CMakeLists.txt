@@ -13,10 +13,6 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 add_definitions(-DTIER0_DLL_EXPORT -DCROSS_PLATFORM_VERSION=1 -DPOSIX)
 
-if( LINUXALL )
-    target_compile_options(${OUTBINNAME} PRIVATE -shared -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTBINNAME} PRIVATE "../unitlib/unitlib.cpp")
 target_sources(${OUTBINNAME} PRIVATE "assert_dialog.cpp")
 target_sources(${OUTBINNAME} PRIVATE "commandline.cpp")

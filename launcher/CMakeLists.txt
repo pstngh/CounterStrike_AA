@@ -27,13 +27,9 @@ elseif( USE_BULLET_PHYSICS )
     add_definitions(-DUSE_BULLET_PHYSICS)
 endif()
 
-if( LINUXALL )
-    target_link_libraries(${OUTBINNAME} SDL2)
-elseif( APPLE )
-    # Launcher owns the SDL window/event loop on macOS. Linking it explicitly
-    # also makes SDL available to TOGL's runtime-resolved entry points.
-    target_link_libraries(${OUTBINNAME} "${SDL2_LIBRARY}")
-endif()
+# Launcher owns the SDL window/event loop on macOS. Linking it explicitly
+# also makes SDL available to TOGL's runtime-resolved entry points.
+target_link_libraries(${OUTBINNAME} "${SDL2_LIBRARY}")
 
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/public/filesystem_init.cpp")
 target_sources(${OUTBINNAME} PRIVATE "launcher.cpp")

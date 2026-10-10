@@ -10,10 +10,6 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 
 add_definitions(-DVSTDLIB_DLL_EXPORT)
 
-if( LINUXALL )
-    target_compile_options(${OUTBINNAME} PRIVATE -U_FORTIFY_SOURCE -fno-stack-protector -fpic -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTBINNAME} PRIVATE "concommandhash.h")
 target_sources(${OUTBINNAME} PRIVATE "coroutine.cpp")
 target_sources(${OUTBINNAME} PRIVATE "cvar.cpp")

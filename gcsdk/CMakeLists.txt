@@ -19,10 +19,6 @@ include_directories(${SRCDIR}/public)
 include_directories(${SRCDIR}/public/gcsdk)
 include_directories(${SRCDIR}/thirdparty/JSON_parser)
 
-if( LINUXALL )
-    target_compile_options(${OUTLIBNAME} PRIVATE -fPIC -fno-semantic-interposition)
-endif()
-
 target_sources(${OUTLIBNAME} PRIVATE "gcclient.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "gcconstants.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "gclogger.cpp")

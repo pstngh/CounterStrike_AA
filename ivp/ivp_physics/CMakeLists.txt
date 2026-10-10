@@ -19,10 +19,6 @@ include_directories(${SRCDIR}/ivp/ivp_intern)
 
 target_compile_options(${OUTLIBNAME} PRIVATE -fpic)
 add_definitions(-DIVP_VERSION_SDK -DHAVANA_CONSTRAINTS)
-if(LINUXALL)
-    target_compile_options(${OUTLIBNAME} PRIVATE -fno-semantic-interposition)
-    add_definitions(-DLINUX)
-endif()
 
 #IVP_PHYSICS_SRC_DIR
 target_sources(${OUTLIBNAME} PRIVATE ../ivp_collision/ivp_3d_solver.cxx)

@@ -38,8 +38,6 @@ vphysics_bullet/cmake-build-*/*
 #Ignore rebuilt static libs
 *.a
 *.a_VALVE
-lib/public/linux64/stWJvlNz
-lib/public/linux64/*.o
 
 #Ignore crypto++ built files
 external/crypto++-5.61/*.o
@@ -59,8 +57,6 @@ engine/generated_proto/*
 gcsdk/generated_proto/*
 !gcsdk/generated_proto/placeholder.txt
 
-lib/common/linux64/st*
-lib/public/linux64/st*
 
 #lwss stashed
 hammer_qt/*

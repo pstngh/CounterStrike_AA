@@ -13,11 +13,7 @@ include(${CMAKE_MODULE_PATH}/source_dll_base.cmake)
 include_directories("../")
 include_directories("../public/togl")
 
-if(OSXALL)
-    add_definitions(-DTOGL_DLL_EXPORT)
-else()
-    add_definitions(-DTOGL_DLL_EXPORT -DPROTECTED_THINGS_ENABLE -Dstrncpy=use_Q_strncpy_instead -D_snprintf=use_Q_snprintf_instead)
-endif()
+add_definitions(-DTOGL_DLL_EXPORT)
 
 target_compile_options(${OUTBINNAME} PRIVATE -fpic -fno-semantic-interposition -Wno-narrowing)
 

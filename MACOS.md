@@ -40,7 +40,7 @@ cmake -S . -B ../build-macos-arm64 -G Ninja \
 cmake --build ../build-macos-arm64
 ```
 
-The build compiles the [Mac gameplay preset](#mac-gameplay-preset) by default. Add `-DUSE_MAC_PRESET=OFF` for stock CS:GO gameplay; Linux builds default to OFF.
+The build compiles the [Mac gameplay preset](#mac-gameplay-preset) by default. Add `-DUSE_MAC_PRESET=OFF` for stock CS:GO gameplay.
 
 The binaries target `-mcpu=apple-m1`, so they run on every Apple Silicon Mac. Add `-DKISAK_ARCH_FLAGS=-march=native` to tune a build for your own Mac instead, or `-DRELEASE_DEBUG_INFO=OFF` to leave out debug info.
 

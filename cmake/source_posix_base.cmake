@@ -4,23 +4,15 @@ MacroRequired(SRCDIR)
 MacroRequired(_DLL_EXT)
 
 set(LIBPUBLIC "${SRCDIR}/lib/public${PLATSUBDIR}") #this is where static libs are
-if(OSXALL)
-    set(STEAM_API_LIBRARY steam_api_offline)
-else()
-    set(STEAM_API_LIBRARY "${LIBPUBLIC}/libsteam_api${CMAKE_SHARED_LIBRARY_SUFFIX}")
-endif()
+set(STEAM_API_LIBRARY steam_api_offline)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
     message(STATUS "Build type not specified")
 endif(NOT CMAKE_BUILD_TYPE)
 
-#-Werror=return-type - Set these warnings to ERRORS because they can ruin your stack/day
-set(LINUX_FLAGS_COMMON " -ffast-math ${KISAK_ARCH_FLAGS} -Wno-invalid-offsetof -Wno-ignored-attributes -Wno-enum-compare -Werror=return-type ")
-set(LINUX_DEBUG_FLAGS " -ggdb -g3 -fno-eliminate-unused-debug-symbols ")
 set(OSX_DEBUG_FLAGS " -gdwarf-2 -g2 ")
 if(RELEASE_DEBUG_INFO)
-    set(LINUX_RELEASE_DEBUG_FLAGS "${LINUX_DEBUG_FLAGS}")
     set(OSX_RELEASE_DEBUG_FLAGS "${OSX_DEBUG_FLAGS}")
 endif()
 
@@ -28,24 +20,11 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
 if (BUILD_TYPE_UPPER STREQUAL "DEBUG")
     message(STATUS "Building in Debug mode")
     add_definitions(-DBASE -DDEBUG -D_DEBUG -DDBGFLAG_ASSERT)
-    if( OSXALL )
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OSX_DEBUG_FLAGS} -Og ${KISAK_ARCH_FLAGS}")
-    elseif( LINUXALL )
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og ${LINUX_DEBUG_FLAGS} ${LINUX_FLAGS_COMMON}")
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OSX_DEBUG_FLAGS} -Og ${KISAK_ARCH_FLAGS}")
 else()
     message(STATUS "Building in Release mode")
     add_definitions(-DBASE -DNDEBUG)
-    if( OSXALL )
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OSX_RELEASE_DEBUG_FLAGS} -O2 ${KISAK_ARCH_FLAGS}")
-    elseif( LINUXALL )
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "e2k")
-            # O3 on mcst-lcc approximately equal to O2 at gcc X86/ARM
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${LINUX_FLAGS_COMMON}")
-        else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ${LINUX_RELEASE_DEBUG_FLAGS} ${LINUX_FLAGS_COMMON}")
-        endif()
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OSX_RELEASE_DEBUG_FLAGS} -O2 ${KISAK_ARCH_FLAGS}")
 endif()
 
 include_directories("${SRCDIR}/common")
@@ -56,24 +35,12 @@ add_definitions(-DGNUC -DPOSIX -DCOMPILER_GCC -DMEMOVERRIDE_MODULE=${PROJECT_NAM
 if(DEDICATED)
     add_definitions(-DDEDICATED)
 endif()
-if(OSXALL)
-    add_definitions(-D_OSX -DOSX -D_DARWIN_UNLIMITED_SELECT -DFD_SETSIZE=10240)
-    # Darwin keeps iconv in a separate system library; tier1's conversion
-    # helpers are pulled into several shared modules.
-    find_library(ICONV_LIBRARY iconv REQUIRED)
-    link_libraries("${ICONV_LIBRARY}")
-endif()
+add_definitions(-D_OSX -DOSX -D_DARWIN_UNLIMITED_SELECT -DFD_SETSIZE=10240)
+# Darwin keeps iconv in a separate system library; tier1's conversion
+# helpers are pulled into several shared modules.
+find_library(ICONV_LIBRARY iconv REQUIRED)
+link_libraries("${ICONV_LIBRARY}")
 
-if(LINUXALL)
-    if( USE_ASAN )
-        add_definitions(-DUSE_ASAN)
-        add_compile_options(-fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address)
-        add_link_options(-fsanitize=address -fsanitize-recover=address)
-    endif()
-
-    #disable cpp11 ABI so libraries <gcc 5 will work
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-endif()
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 add_definitions(-DPOSIX -D_POSIX)
 if(OSX64)
