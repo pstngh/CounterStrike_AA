@@ -33,9 +33,7 @@ cmake -S . -B ../build-macos-arm64 -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/toolchains/macos-arm64.cmake" \
   -DCMAKE_BUILD_TYPE=Release \
   -DDEDICATED=OFF \
-  -DUSE_KISAK_PHYSICS=ON \
-  -DUSE_ROCKETUI=ON \
-  -DUSE_SCALEFORM=OFF
+  -DUSE_KISAK_PHYSICS=ON
 
 cmake --build ../build-macos-arm64
 ```
@@ -51,8 +49,6 @@ The port vendors the MIT-licensed [sse2neon](https://github.com/DLTcollab/sse2ne
 ## Game content
 
 This repository does not contain Valve game assets. Follow the upstream acquisition instructions for app 730, depot 731, manifest `7043469183016184477`, and place that content in the sibling `game` directory. You must have the legal right to use the content.
-
-RocketUI also needs the separate [Kisak-Strike-Files](https://github.com/SwagSoftware/Kisak-Strike-Files) GUI files. Copy that repository's `csgo/rocketui` directory into `../game/csgo/rocketui` before launching. Without it, the team-selection and pause menus cannot render.
 
 To use the AK-47 Asiimov finish, supply its `ak47_asiimov.vtf` from legally acquired CS:GO content and run:
 
@@ -174,7 +170,7 @@ Use `status` in the developer console to check the actual connected bot count.
 
 These gameplay changes are compiled in when `USE_MAC_PRESET` is ON, the default on macOS.
 
-Backtick opens the developer console. The preset locks the normal world FOV to 80, the saved Desktop-preset weapon viewmodel FOV of 60, mouse sensitivity to 1.029863, and `m_pitch` to 0.018. The persistent in-game HUD is crosshair-only; the sniper scope overlay, deliberately opened buy/team menus, and chat while you type remain available. On-screen gameplay hints, objective lessons, and local weapon-drop messages are disabled. Every weapon uses the native CS:GO crosshair, including unscoped sniper rifles; configure it in the launcher or with the `cl_crosshair*` console variables. When the game is started from the launcher, its crosshair settings are reapplied on every map load. The AWP uses Allied Assault's 20-degree sniper FOV, one-step right-click toggle, immediate FOV change, and a circular Allied Assault-style scope mask. The scroll wheel cycles weapons without showing a selection HUD.
+Escape and backtick open the developer console, which is the only UI. The preset locks the normal world FOV to 80, the saved Desktop-preset weapon viewmodel FOV of 60, mouse sensitivity to 1.029863, and `m_pitch` to 0.018. The in-game HUD is crosshair-only, apart from the sniper scope overlay. Buy with `buy <weapon>` and chat with `say` in the console, where chat and kills also print. On-screen gameplay hints, objective lessons, and local weapon-drop messages are disabled. Every weapon uses the native CS:GO crosshair, including unscoped sniper rifles; configure it in the launcher or with the `cl_crosshair*` console variables. When the game is started from the launcher, its crosshair settings are reapplied on every map load. The AWP uses Allied Assault's 20-degree sniper FOV, one-step right-click toggle, immediate FOV change, and a circular Allied Assault-style scope mask. The scroll wheel cycles weapons without showing a selection HUD.
 
 Use `cg_drawviewmodel 0` to hide the first-person weapon and hands, `cg_drawviewmodel 1` to show only the weapon, or `cg_drawviewmodel 2` for the normal weapon-and-hands view. K cycles through all three values. The default is 2, and the setting is saved. K replaces the previous voice-record binding.
 
@@ -232,7 +228,7 @@ allow 0–1: 0 disables that camera effect, and 1 restores its original strength
 The original camera-kick recenter and decay timing, weapon bob, and lean
 framing are preserved.
 
-For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. Timed respawn immunity is disabled, so bots are vulnerable as soon as they spawn. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S, AK-47 and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. Each fixed primary weapon has a separate scroll-wheel position. While alive, the host can open the buy menu and buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. The local host can carry the fixed primary weapons together; ordinary inventory limits still apply to other players. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
+For the local listen-server host, the preset keeps `sv_cheats` enabled, god mode active, hit-tagging slowdown disabled, the account at the server's maximum balance, and the active weapon's clip full. Timed respawn immunity is disabled, so bots are vulnerable as soon as they spawn. In classic and deathmatch games, each CT spawn gives a USP-S, silenced M4A1-S, AK-47 and AWP; each T spawn gives a USP-S, AK-47 and AWP. Other players on either team also spawn with a USP-S by default. Each fixed primary weapon has a separate scroll-wheel position. While alive, the host can buy anywhere throughout the round, regardless of buy zones, buy time or mode-specific buy locks. The local host can carry the fixed primary weapons together; ordinary inventory limits still apply to other players. Bots on the local server retain vest armor but receive no helmet protection. These server-side benefits do not override a remote server's rules or apply to other human players. A remote server may also impose its own mouse-pitch limit. The preset is compiled into the build rather than stored in `config.cfg`; editing that file will not change the locked values.
 
 The preset changes shared client and server code, including the player network
 table, so a preset client only plays correctly on a listen server built from
@@ -243,12 +239,11 @@ model-specific Asiimov texture and paint kit when installed from the acquired
 content. The M4A1-S uses its native Mecha Industries finish and the USP-S uses
 its native Cyrex finish. Chickens are suppressed on local maps. Warmup, the
 round-start freeze countdown, the round-restart delay, and timed spawn immunity
-are disabled. The loading screen's placeholder text is hidden. Once a map
-finishes loading, the local player joins CT and spawns automatically without
-opening the team menu. The pause menu's **Choose Team** action remains available
-for manually joining CT, T, or Spectator. Bots may join and spawn before the
-local player. Local matches never end: rounds ignore their timer, and the HUD
-clock counts up how long the round has run. If a match does end, for example
+are disabled. When the local player connects to its own server, the server
+puts it on CT straight away, without the message of the day or a team menu;
+`jointeam 2 1` and `jointeam 3 1` in the console switch to T or CT. Bots may join
+and spawn before the local player. Local matches never end: rounds ignore their
+timer. If a match does end, for example
 after `mp_ignore_round_win_conditions 0`, and the map cycle has no other
 installed map, the match restarts on the same map and every player keeps their
 team.
@@ -272,4 +267,4 @@ dedicated servers, cooperative/training modes, or builds without the preset.
 
 ## Status
 
-The port is experimental. On an Apple Silicon Mac, the native client has loaded `de_dust2`, shown the RocketUI team menu, joined a local match, and run combat with bots without Steam. Some legacy assets and features are still incomplete. This client build does not support headless map loading; without a display, SDL/OpenGL initialization fails.
+The port is experimental. On an Apple Silicon Mac, the native client has loaded `de_dust2`, joined a local match, and run combat with bots without Steam. Some legacy assets and features are still incomplete. This client build does not support headless map loading; without a display, SDL/OpenGL initialization fails.

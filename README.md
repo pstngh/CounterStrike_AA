@@ -10,7 +10,7 @@ The repository contains source code only. You need legally acquired CS:GO game f
 - **Allied Assault gameplay preset.** It's on by default; see [Gameplay preset](#gameplay-preset).
 - **Mac launcher app.** Pick a map, the bot count and difficulty, resolution and graphics settings, then start the game.
 - **Open-source physics.** Choose between the Kisak-Strike rebuild of Valve's physics and a Bullet-based implementation, instead of Valve's closed `vphysics` library.
-- **RmlUi menus.** The open-source RocketUI replaces the proprietary Scaleform UI.
+- **Console only.** There are no menus or HUD panels. The developer console is the whole UI; see [Playing from the console](#playing-from-the-console).
 
 Play is offline or on LAN listen servers. Valve's online services, such as matchmaking, VAC, inventory and achievements, are not available.
 
@@ -64,8 +64,6 @@ Pass these to the configure step as `-D<option>=<value>`:
 | `USE_BULLET_PHYSICS` | `OFF` | Build the Bullet-based physics instead. It is experimental. |
 | `USE_BULLET_PHYSICS_THREADED` | `OFF` | Multithreaded Bullet; the `bt_threadcount` console variable sets the thread count. Experimental. |
 | `USE_MAC_PRESET` | `ON` | Compile the [gameplay preset](#gameplay-preset). |
-| `USE_ROCKETUI` | `ON` | Use the RmlUi menus. |
-| `USE_SCALEFORM` | `OFF` | Use Valve's incomplete Scaleform UI instead. It needs Valve's prebuilt Scaleform library. Not recommended. |
 | `DEDICATED` | `OFF` | Build a dedicated server instead of the game; see [Dedicated server](#dedicated-server). |
 | `KISAK_ARCH_FLAGS` | `-mcpu=apple-m1` | CPU target. Set `-march=native` to tune for the build machine; the binaries then may not run on other Macs. |
 | `RELEASE_DEBUG_INFO` | `ON` | Keep debug info in Release builds for symbolized crash backtraces. |
@@ -89,8 +87,7 @@ The repository ships no Valve content. With a Steam account that owns CS:GO, dow
 
 1. Copy everything from the assets depot into the game directory (`csgo/game` in the layout above).
 2. From the Linux binaries depot, copy only `bin/map_publish/`, which holds VGUI assets. The depot's Linux binaries themselves are not used.
-3. Copy [Kisak-Strike-Files](https://github.com/SwagSoftware/Kisak-Strike-Files) into the game directory. Its `csgo/rocketui` directory holds the RocketUI menus. Without it, the team and pause menus cannot render.
-4. Optional: to give the AK-47 its Asiimov finish, supply `ak47_asiimov.vtf` from your CS:GO content:
+3. Optional: to give the AK-47 its Asiimov finish, supply `ak47_asiimov.vtf` from your CS:GO content:
 
    ```sh
    python3 src/tools/install_ak_asiimov.py /path/to/ak47_asiimov.vtf game
@@ -105,7 +102,7 @@ cd game
 arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 ```
 
-`-insecure` turns off VAC, which offline play cannot use. Leave out `+map` to start at the main menu. Messages about the Steam API failing to start are expected and harmless.
+`-insecure` turns off VAC, which offline play cannot use. Without `+map` the game starts with the console open; type `map de_dust2` there. Messages about the Steam API failing to start are expected and harmless.
 
 To pick the map and settings in a window instead, open `CSGO Launcher.app` in the game directory. The prebuilt macOS artifact includes it. To build it into a game directory yourself, run:
 
@@ -116,6 +113,16 @@ src/tools/install_macos_launcher.sh game
 [MACOS.md](MACOS.md#native-mac-launcher) describes its settings.
 
 To record performance, enter `perf_log 1` in the console, or turn on Write perf_log.txt in the Mac launcher's Graphics Settings. The game then appends frame timing, where each frame's time goes and the settings that affect it to `perf_log.txt` in the game directory. [MACOS.md](MACOS.md#performance-options) describes the log.
+
+### Playing from the console
+
+The console is the only UI. Escape and `~` open and close it.
+
+- `map de_dust2` starts a local game. With the [gameplay preset](#gameplay-preset), you join CT as soon as the map loads.
+- `jointeam 3 1` joins CT and `jointeam 2 1` joins T.
+- `buy ak47`, `buy m4a1_silencer` or `buy awp` buys a weapon.
+- `say` and `say_team` send chat. Chat, server messages and kills print to the console.
+- `disconnect` leaves the game and `quit` exits.
 
 ## Gameplay preset
 
@@ -140,7 +147,7 @@ The repository ships no Valve binaries. Instead of Valve's Steam API library, th
 - Kisak-Strike is by lwss and contributors. Its [blog post](https://lwss.github.io/Kisak-Strike/) tells the project's history.
 - The Allied Assault lean, movement and camera-kick values follow [OpenMoHAA](https://github.com/openmoh/openmohaa).
 - Apple Silicon support translates the engine's SSE code with [sse2neon](https://github.com/DLTcollab/sse2neon).
-- Bundled libraries include RmlUi, Bullet, protobuf, Crypto++, Lua, Squirrel, zlib, libpng and Tracy. Each keeps its license file beside its source.
+- Bundled libraries include Bullet, protobuf, Crypto++, Lua, Squirrel, zlib, libpng and Tracy. Each keeps its license file beside its source.
 
 ## License
 
