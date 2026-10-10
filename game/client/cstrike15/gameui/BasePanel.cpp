@@ -5370,41 +5370,36 @@ void CBaseModPanel::ShowMainMenu( bool bShow )
 	SetVisible( bShow );
 	SetMenuAlpha( bShow ? 255 : 0 );
 
+	// The console is the only UI. The game menu, its buttons and the logo stay
+	// hidden, and the console opens where the menu would have appeared.
 	if ( m_pGameLogo )
 	{
-		m_pGameLogo->SetVisible( bShow );
+		m_pGameLogo->SetVisible( false );
 	}
 
 	if ( m_pGameMenu )
 	{
-		m_pGameMenu->ShowFooter( bShow );
+		m_pGameMenu->ShowFooter( false );
 
-		m_pGameMenu->SetEnabled( bShow );
-		m_pGameMenu->SetVisible( bShow );
+		m_pGameMenu->SetEnabled( false );
+		m_pGameMenu->SetVisible( false );
 
 		for ( int i = 0; i < m_pGameMenu->GetItemCount(); ++i )
 		{
-			m_pGameMenu->GetMenuItem( i )->SetEnabled( bShow );
-			m_pGameMenu->GetMenuItem( i )->SetVisible( bShow );
+			m_pGameMenu->GetMenuItem( i )->SetEnabled( false );
+			m_pGameMenu->GetMenuItem( i )->SetVisible( false );
 		}
 	}
 
-	// Hide the standard game menu
 	for ( int i = 0; i < m_pGameMenuButtons.Count(); ++i )
 	{
-		m_pGameMenuButtons[i]->SetEnabled( bShow );
-		m_pGameMenuButtons[i]->SetVisible( bShow );
+		m_pGameMenuButtons[i]->SetEnabled( false );
+		m_pGameMenuButtons[i]->SetVisible( false );
 	}
 
 	if ( bShow )
 	{
-		if ( GameUI().IsConsoleUI() )
-		{
-			ArmFirstMenuItem();
-			m_pConsoleAnimationController->StartAnimationSequence( "InitializeUILayout" );
-			m_pConsoleAnimationController->StartAnimationSequence( "OpenMainMenu" );
-			m_bFadingInMenus = false;
-		}
+		engine->ClientCmd_Unrestricted( "showconsole" );
 	}
 
 	m_bMainMenuShown = bShow;
