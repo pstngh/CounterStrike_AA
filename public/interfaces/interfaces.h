@@ -78,9 +78,6 @@ class IWorldRendererMgr;
 class ISceneSystem;
 class IVGuiRenderSurface;
 
-class IScaleformUISystemMgr;
-class IScaleformUI;
-
 namespace vgui
 {
 	class ISurface;

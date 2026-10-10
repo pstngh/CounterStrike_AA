@@ -538,6 +538,9 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 	// [jason] Flags to enable/disable scaleform screens during the startup sequence (start screen, mainmenu)
 	m_bForceStartScreen = false;
 	m_bShowStartScreen = true;
+	// Only Scaleform turned these on, and it is gone.
+	m_bScaleformMainMenuEnabled = false;
+	m_bScaleformPauseMenuEnabled = false;
 	m_bBypassStartScreen = false;
 
     m_iIntroMovieButtonPressed = -1;

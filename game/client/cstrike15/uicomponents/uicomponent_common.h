@@ -16,10 +16,6 @@
 #define USE_PANORAMA_BINDINGS
 #endif // PANORAMA_ENABLE
 
-// Scaleform events are simply KeyValue objects, so it's possible to test defining, declaring and broadcasting events 
-// in isolation without including Scaleform headers using the define below.
-//#define TEST_SCALEFORM_EVENTS
-
 #ifndef CSGO_PORT
 // In Source1 the pointers_to_members pragma is used within Scaleform and VGUI headers to ensure member function pointers
 // are maximum size. This affects the panorama javascript bindings (see uijsregistration.h).
@@ -354,30 +350,6 @@ SF_COMPONENT_DEFINE_EVENT( category, eventname )
 
 #endif
 
-#define UI_INTEGRATION_XUID_PARAM( xuidVarName, iParam ) XUID xuidVarName = 0; { \
-	if ( pui->Params_GetArgType( obj, iParam ) != IScaleformUI::VT_String ) \
-					{ \
-		AssertMsg1( 0, "%s UI code passed a non string param for xuid!\n", __FUNCTION__ ); \
-		DevMsg( " error: Passed non-string param to %s for param %d.\n", __FUNCTION__, iParam ); \
-		pui->Params_DebugSpew( obj ); \
-		return;\
-			} \
-	const char *pFriendXuid = ( pui->Params_GetArgAsString( obj, iParam ) ); \
-	if ( !pFriendXuid ) \
-			{ \
-		/*AssertMsg( 0, __FUNCTION__ " passed an invalid xuid!\n" );*/ \
-			} \
-	CSteamID friendId( (uint64) Q_atoi64( pFriendXuid ) ); \
-	if ( !friendId.IsValid() || !friendId.BIndividualAccount() ) \
-			{ \
-		/*AssertMsg( 0, __FUNCTION__ " passed an invalid xuid!\n" );*/ \
-		xuidVarName = 0; \
-			} \
-				else \
-				{ \
-		xuidVarName = friendId.ConvertToUint64(); \
-				} \
-				}
 
 // Registration of GC job handler for ui component
 #define UI_COMPONENT_GC_REG_JOB( gcclientclass, cjobclass, cmsgclass, gcmsgid, ccomponentclass, ccomponentfn ) \
