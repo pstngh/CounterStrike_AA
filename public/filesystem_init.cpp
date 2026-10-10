@@ -68,7 +68,7 @@ public:
 			pValue = szBuf;
 		}
 #else
-		// LINUX BUG: see above
+		// BUG: see above
 		pValue = getenv( pVarName );
 #endif 
 
@@ -115,7 +115,7 @@ public:
 		// to the process environment after the DLL was loaded.
 		return GetEnvironmentVariable( m_pVarName, pszBuf, nBufSize );
 #else
-		// LINUX BUG: see above
+		// BUG: see above
 		const char *pszOut = getenv( m_pVarName );
 		if ( !pszOut )
 		{

@@ -21,7 +21,7 @@ public:
 
 #if !defined( DEICATED )
 extern IEngineToolInternal *g_pEngineToolInternal;
-#endif // !LINUX
+#endif // !DEICATED
 
 #endif // IENGINETOOLINTERNAL_H
 

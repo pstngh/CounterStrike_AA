@@ -260,7 +260,7 @@ char *p_make_string(const char *templat, ...)
 {
     // returns an allocated string with format like printf
     // NULL-Strings and empty strings allowed
-    // LINUX: check for overflow
+    // TODO: check for overflow
     
     if(!templat) return NULL;
     

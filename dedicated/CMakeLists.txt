@@ -25,7 +25,6 @@ target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/common/netapi.cpp")
 target_sources(${OUTBINNAME} PRIVATE "${SRCDIR}/common/SteamAppStartup.cpp")
 target_sources(${OUTBINNAME} PRIVATE "sys_common.cpp")
 target_sources(${OUTBINNAME} PRIVATE "sys_ded.cpp")
-target_sources(${OUTBINNAME} PRIVATE "sys_subproc.cpp")
 
 ## Console ##
 target_sources(${OUTBINNAME} PRIVATE "console/conproc.cpp")

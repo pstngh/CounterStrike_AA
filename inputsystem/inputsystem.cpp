@@ -212,7 +212,7 @@ InitReturnVal_t CInputSystem::Init()
 
 	m_bRawInputSupported = false;
 
-#if   defined( WIN32 )
+#if defined( WIN32 )
 	// Check if this version of windows supports raw mouse input (later than win2k)
 
 	CSysModule *m_pRawInputDLL = Sys_LoadModule( "USER32.dll" );
@@ -786,7 +786,7 @@ bool MapCocoaVirtualKeyToButtonCode( int nCocoaVirtualKeyCode, ButtonCode_t *pOu
 
 
 
-#if   defined( OSX )
+#if defined( OSX )
 void CInputSystem::PollInputState_OSX()
 #elif defined( _WIN32 )
 void CInputSystem::PollInputState_Windows()

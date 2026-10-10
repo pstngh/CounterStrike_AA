@@ -101,9 +101,7 @@ protected:
 	QAngle		m_ViewAngles;
 };
 
-//#if !defined( LINUX )
 extern CDemoUIPanel *g_pDemoUI;
-//#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: a special demo UI panel that is always visible allowing you

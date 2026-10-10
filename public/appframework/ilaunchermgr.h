@@ -16,9 +16,7 @@
 // Cocoa functions that we hook were never ported to 64-bit. Until that is fixed,
 // we basically have to work around this by making sure the cursor is visible 
 // and set to something that is reasonable for usage in the overlay.
-// lwss - add || defined( LINUX ). because I want to use this for rocketui
 #if defined( OSX ) && defined( PLATFORM_64BITS ) && !defined( NO_STEAM )
-// lwss end
 #define WITH_OVERLAY_CURSOR_VISIBILITY_WORKAROUND 1 
 #endif
 
@@ -179,7 +177,7 @@ public:
 	int m_MouseButton; // which of the CocoaMouseButton_t buttons this is for from above
 };
 
-#endif // defined( USE_SDL ) || defined( OSX ) || defined( LINUX) 
+#endif // defined( USE_SDL ) || defined( OSX )
 
 #endif // ILAUNCHERMGR_H
 

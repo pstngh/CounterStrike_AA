@@ -122,10 +122,8 @@ extern  ConVar		host_limitlocal;
 // Print a debug message when the client or server cache is missed
 extern	ConVar		host_showcachemiss;
 
-//#if !defined( LINUX )
 extern bool			g_bInEditMode;
 extern bool			g_bInCommentaryMode;
-//#endif
 
 extern bool			g_bLowViolence;
 extern KeyValues*	g_pLaunchOptions;

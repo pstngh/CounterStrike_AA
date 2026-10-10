@@ -44,7 +44,7 @@ BEGIN_VS_SHADER_FLAGS( Occlusion_DX9, "Help for Occlusion", SHADER_NOT_EDITABLE 
 	{
 		SHADOW_STATE
 		{
-			if ( IsOpenGL() && ( IsPlatformLinux() || IsPlatformWindowsPC() ) && gl_nvidia_occlusion_workaround.GetBool() )
+			if ( IsOpenGL() && IsPlatformWindowsPC() && gl_nvidia_occlusion_workaround.GetBool() )
 			{
 				// Another workaround is to disable color writes but enable alpha writes (with no blending), which this trashes alpha which may be used in some branches.
 				// Without either workaround colorwrite enable somehow doesn't get re-enabled in subsequent passes (even though I can clearly see the engine issuing GL calls to set the mask back to 255,255,255,255)
@@ -70,7 +70,7 @@ BEGIN_VS_SHADER_FLAGS( Occlusion_DX9, "Help for Occlusion", SHADER_NOT_EDITABLE 
 				SET_STATIC_PIXEL_SHADER( black_ps20 );
 
 				// Workaround for weird AMD bug - if sRGB write isn't enabled here then sRGB write enable in subsequent world rendering passes will randomly not take effect (even though we're enabling it) in the driver.
-				if ( ( IsPlatformLinux() || IsPlatformWindowsPC() ) && gl_amd_occlusion_workaround.GetBool() )
+				if ( IsPlatformWindowsPC() && gl_amd_occlusion_workaround.GetBool() )
 				{
 					pShaderShadow->EnableSRGBWrite( true );
 				}

@@ -53,11 +53,6 @@ bool DefaultConditionalSymbolProc( const char *pKey )
 		return IsPlatformOSX();
 	}
 
-	if ( !V_stricmp( pKey, "LINUX" ) )
-	{
-		return IsPlatformLinux();
-	}
-
 	if ( !V_stricmp( pKey, "POSIX" ) )
 	{
 		return IsPlatformPosix();

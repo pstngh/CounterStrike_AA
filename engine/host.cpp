@@ -5043,41 +5043,6 @@ void GetPlatformMapPath( const char *pMapPath, char *pPlatformMapPath, int maxLe
 }
 
 
-void AdjustThreadPoolThreadCount()
-{
-#if defined( DEDICATED ) && IsPlatformLinux()
-	extern ConVar occlusion_test_async;
-	int nTargetThreads = occlusion_test_async.GetInt();
-	if ( nTargetThreads != g_pThreadPool->NumThreads() )
-	{
-		uint64 nTickStart = GetTimebaseRegister();
-		Msg( "Stopping %d worker threads\n", g_pThreadPool->NumThreads() );
-		g_pThreadPool->ExecuteAll();
-		g_pThreadPool->Stop();
-
-		if ( nTargetThreads != 0 )
-		{
-			Msg( "Starting %d worker threads\n", nTargetThreads);
-			ThreadPoolStartParams_t startParams;
-			GetThreadPoolStartParams( startParams );
-			startParams.nThreads = Max( 1, Min( 4, nTargetThreads ) );
-			startParams.bEnableOnLinuxDedicatedServer = true; // if we run with -threads parameter, we should also enable the thread pool
-			if ( g_pThreadPool )
-			{
-				g_pThreadPool->Start( startParams );
-			}
-		}
-		uint64 nTickEnd = GetTimebaseRegister();
-		Msg( "%d threads. %s ticks\n", g_pThreadPool->NumThreads(), V_pretifynum( nTickEnd - nTickStart ) );
-		int nCmdLineThreads = CommandLine()->ParmValue( "-threads", -1 );
-		if ( nCmdLineThreads >= 0 )
-		{
-			Msg( "Note that cmd line -threads %d is specified\n", nCmdLineThreads );
-		}
-	}
-#endif
-}
-
 void Host_Changelevel( bool loadfromsavedgame, const char *mapname, char *mapGroupName, const char *start )
 {
 	char			level[ MAX_QPATH ];
@@ -5264,8 +5229,6 @@ void Host_Changelevel( bool loadfromsavedgame, const char *mapname, char *mapGro
 	NotifyDedicatedServerUI( "UpdateMap" );
 
 	DownloadListGenerator().OnLevelLoadEnd();
-
-	AdjustThreadPoolThreadCount();
 }
 
 

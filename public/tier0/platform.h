@@ -130,7 +130,6 @@
 // Set up platform defines.
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
-	#define IsPlatformLinux()	0
 	#define IsPlatformPosix()	0
 	#define IsPlatformOSX()		0
 	#define IsOSXOpenGL()		0
@@ -165,14 +164,12 @@
 	#define IsPlatformPosix()		1
 	#define PLATFORM_POSIX 1
 
-	#if   defined ( OSX )
-		#define IsPlatformLinux() 0
+	#if defined ( OSX )
 		#define IsPlatformOSX() 1
 		#define IsOSXOpenGL() 1
 		#define PLATFORM_OSX 1
 	    #define PLATFORM_OPENGL 1
 	#else
-		#define IsPlatformLinux() 0
 		#define IsPlatformOSX() 0
 		#define IsOSXOpenGL() 0
 		#define PLATFORM_OPENGL 0
@@ -203,7 +200,6 @@
 //-----------------------------------------------------------------------------
 #if CROSS_PLATFORM_VERSION < 2
 
-#define IsLinux()	IsPlatformLinux() 
 #define IsOSX()		IsPlatformOSX()
 #define IsPosix()	IsPlatformPosix()
 #define IsX360()	IsPlatformX360()

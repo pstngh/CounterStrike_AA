@@ -44,7 +44,7 @@ DEFINE_ENUM_BITWISE_OPERATORS( InputDevice_t )
 //     the platform of the player.   We can't just use the platform that the code is compiled for because
 //     some code which may be running on a dedicated server which can be a platform than the clients:
 //	   Specifically, that the dedicated server for Xbox360 and PS3 clients is compiled for and runs on
-//      either a windows PC or LINUX.   For this reason, we need a server on one platform to be able ask
+//      either a windows PC or Linux.   For this reason, we need a server on one platform to be able ask
 //      what are the valid input devices for this other platform...
 //
 enum InputDevicePlatform_t

@@ -390,7 +390,7 @@ public:
 private:
 
 	// Purpose: Get raw joystick sample along axis
-#if   defined(OSX)
+#if defined(OSX)
 	unsigned int AxisValue( JoystickAxis_t axis, JoystickInfo_t &info );
 #else
 	unsigned int AxisValue( JoystickAxis_t axis, JOYINFOEX& ji );

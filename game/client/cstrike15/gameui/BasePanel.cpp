@@ -561,7 +561,6 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 	// any platforms that go straight to main menu, no start screen, should set this flag:
 	if ( CommandLine()->FindParm( "-nostartscreen" ) || 
 		 IsPC() ||
-		 IsLinux() ||
 		 IsOSX() )
 	{
 		m_bBypassStartScreen = true;

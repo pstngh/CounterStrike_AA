@@ -2242,7 +2242,7 @@ size_t CDbgMemAlloc::MemoryAllocFailed()
 
 
 
-#if   defined( OSX )
+#if defined( OSX )
 //
 // pointers to the osx versions of these functions
 static void *osx_malloc_hook = NULL;

@@ -970,11 +970,6 @@ int CThreadPool::AbortAll()
 
 bool CThreadPool::Start( const ThreadPoolStartParams_t &startParams, const char *pszName )
 {
-#if defined( DEDICATED ) && IsPlatformLinux()
-	if ( !startParams.bEnableOnLinuxDedicatedServer )
-		return false;
-#endif
-
 	int nThreads = startParams.nThreads;
 
 	m_bExecOnThreadPoolThreadsOnly = startParams.bExecOnThreadPoolThreadsOnly;

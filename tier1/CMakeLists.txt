@@ -54,4 +54,3 @@ target_sources(${OUTLIBNAME} PRIVATE "miniprofiler_hash.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "sparsematrix.cpp")
 target_sources(${OUTLIBNAME} PRIVATE "memoverride_dummy.cpp")
 
-target_sources(${OUTLIBNAME} PRIVATE "pathmatch.cpp")

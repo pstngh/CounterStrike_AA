@@ -2,9 +2,9 @@
 #Include this in your CMakeLists.txt to set the various platform defines the codebase expects
 if(WIN32)
     message(FATAL_ERROR "install gentoo")
-elseif(UNIX AND NOT APPLE) #LINUX
+elseif(UNIX AND NOT APPLE)
     message(FATAL_ERROR "Linux is not supported: this source tree builds only for macOS on Apple Silicon.")
-elseif(UNIX AND APPLE) #MAC
+elseif(UNIX AND APPLE)
     add_definitions(-DPOSIX -D_POSIX -DOSX -D_OSX)
     set(OSXALL "1")
     set(POSIX "1")

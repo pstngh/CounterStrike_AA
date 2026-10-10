@@ -1661,7 +1661,7 @@ void CGame::PlayVideoAndWait( const char *filename, bool bNeedHealthWarning )
 
 	// Supplying a NULL context will cause Bink to allocate its own
 	// FIXME: At this point we're playing at the full volume of the computer, NOT the user's set volume in the game!
-#if   defined( PLATFORM_WINDOWS )
+#if defined( PLATFORM_WINDOWS )
 	//BinkSoundUseDirectSound( NULL );	// Bink sound is initialized by the caller now
 #endif
 

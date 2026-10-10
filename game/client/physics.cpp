@@ -554,11 +554,7 @@ void CPhysicsSystem::Update( float frametime )
 	//PhysicsSimulate();
 }
 
-//#ifdef _LINUX
-//DLL_IMPORT CLinkedMiniProfiler *g_pPhysicsMiniProfilers;
-//#else
 CLinkedMiniProfiler *g_pPhysicsMiniProfilers;
-//#endif
 CLinkedMiniProfiler g_mp_PhysicsSimulate("PhysicsSimulate",&g_pPhysicsMiniProfilers);
 CLinkedMiniProfiler g_mp_active_object_count("active_object_count",&g_pPhysicsMiniProfilers);
 

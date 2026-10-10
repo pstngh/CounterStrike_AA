@@ -1623,7 +1623,7 @@ void Host_PrintMemoryStatus( const char *mapname )
 {
 	const float MB = 1.0f / ( 1024*1024 );
 	Assert( mapname );
-#if   defined(PLATFORM_OSX)
+#if defined(PLATFORM_OSX)
 	struct mstats stats = mstats();
 	Msg( "[MEMORYSTATUS] [%s] Operating system reports  Used: %.2f MB, Free: %.2f Total: %.2f\n",
 		mapname, MB*stats.bytes_used, MB*stats.bytes_free, MB*stats.bytes_total );

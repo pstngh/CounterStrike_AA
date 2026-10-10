@@ -2445,16 +2445,10 @@ CON_COMMAND_F( occlusion_stats, "Occlusion statistics; [-jitter] [-reset]", FCVA
 	}
 }
 
-void OnOcclusionTestAsyncChanged( IConVar *var, const char *pOldValue, float flOldValue )
-{
-	extern void AdjustThreadPoolThreadCount();
-	AdjustThreadPoolThreadCount();
-}
-
 ConVar occlusion_test_margins( "occlusion_test_margins", "36", FCVAR_RELEASE, "Amount by which the player bounding box is expanded for occlusion test. This margin should be large enough to accommodate player movement within a frame or two, and the longest weapon they might hold. Shadow does not take this into account." ); // default: 360 (max speed) / 30 ( give it a couple of frames) + however much the biggest weapon can stick out
 ConVar occlusion_test_jump_margin( "occlusion_test_jump_margin", "12", FCVAR_RELEASE, "Amount by which the player bounding box is expanded up for occlusion test to account for jumping. This margin should be large enough to accommodate player movement within a frame or two. Affects both camera box and player box." ); // default: 360 (max speed) / 30 ( give it a couple of frames) + however much the biggest weapon can stick out
 ConVar occlusion_test_shadow_max_distance( "occlusion_test_shadow_max_distance", "1500", FCVAR_RELEASE, "Max distance at which to consider shadows for occlusion computations" );
-ConVar occlusion_test_async( "occlusion_test_async", "0", FCVAR_RELEASE, "Enable asynchronous occlusion test in another thread; may save some server tick time at the cost of synchronization overhead with the async occlusion query thread", OnOcclusionTestAsyncChanged );
+ConVar occlusion_test_async( "occlusion_test_async", "0", FCVAR_RELEASE, "Enable asynchronous occlusion test in another thread; may save some server tick time at the cost of synchronization overhead with the async occlusion query thread" );
 ConVar occlusion_test_async_move_tolerance( "occlusion_test_async_move_tolerance", "8.25", FCVAR_CHEAT );
 ConVar occlusion_test_async_jitter( "occlusion_test_async_jitter", "2", FCVAR_CHEAT );
 

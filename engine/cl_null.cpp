@@ -63,7 +63,7 @@ void Con_ColorPrintf( const Color& clr, const char *fmt, ... )
 	}
 
 	SendStringToNetConsoles( msg );
-#if   POSIX
+#if POSIX
 	printf( "%s", msg );
 #else
 	Msg( "%s", msg );

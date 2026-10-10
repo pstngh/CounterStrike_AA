@@ -108,9 +108,6 @@ struct ThreadPoolStartParams_t
 		: bIOThreads( bIOThreads ), nThreads( nThreads ), nThreadsMax( -1 ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority )
 	{
 		bExecOnThreadPoolThreadsOnly = false;
-#if defined( DEDICATED ) && IsPlatformLinux()
-		bEnableOnLinuxDedicatedServer = false; // by default, thread pools don't start up on Linux DS
-#endif
 
 		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != (unsigned)-1 );
 		if ( bUseAffinityTable )
@@ -134,9 +131,6 @@ struct ThreadPoolStartParams_t
 	bool			bIOThreads : 1;
 	bool			bUseAffinityTable : 1;
 	bool			bExecOnThreadPoolThreadsOnly : 1;
-#if defined( DEDICATED ) && IsPlatformLinux()
-	bool			bEnableOnLinuxDedicatedServer : 1;
-#endif
 };
 
 //-----------------------------------------------------------------------------

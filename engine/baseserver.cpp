@@ -1266,7 +1266,7 @@ bool CBaseServer::ProcessConnectionlessPacket(netpacket_t * packet)
 						  buf.PutUnsignedChar( 'w' );
 #elif defined(OSX)
 						  buf.PutUnsignedChar( 'm' );
-#else // LINUX?
+#else
 						  buf.PutUnsignedChar( 'l' );
 #endif
 

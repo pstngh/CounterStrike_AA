@@ -235,7 +235,7 @@ PLATFORM_INTERFACE void CallAssertFailedNotifyFunc( const char *pchFile, int nLi
 #define AssertAlignedWidth(PTR, width)
 #define AssertAlignedConsole(PTR)
 #else
-#  if   defined( DBGFLAG_ASSERT )
+#  if defined( DBGFLAG_ASSERT )
 #	 define  AssertAlignedWidth( adr, width )  Assert( ( ( ( intp ) ( adr ) ) & ( width - 1 ) ) == 0 )
 #    define  AssertAligned( adr )           AssertAlignedWidth( adr, 16 )
 #    define AssertAlignedConsole(adr)     // XBox only for now.

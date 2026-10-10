@@ -1063,7 +1063,7 @@ void CSteamSocketMgr::PrintStatus()
 
 #else
 
-// For LINUX it's basically all stubbed
+// Without Steam sockets it's basically all stubbed
 
 class CSteamSocketMgr : public ISteamSocketMgr
 {

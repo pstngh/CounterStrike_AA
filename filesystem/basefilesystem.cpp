@@ -5576,7 +5576,7 @@ void CBaseFileSystem::CreateDirHierarchy( const char *pRelativePath, const char 
     {
 		if	(	PATHSEPARATOR( *s ) && 
 				s != szScratchFileName && 
-				( IsLinux() || IsPS3() || *( s - 1 ) != ':' ) 
+				( IsPS3() || *( s - 1 ) != ':' ) 
 			)
         {
 			char save = *s;
