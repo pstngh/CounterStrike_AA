@@ -910,9 +910,6 @@ public:
 	virtual void RenderScaleformCursor() { Assert (0); }
 	virtual void AdvanceAndRenderScaleformSlot( int slot ) { Assert (0); }
 	virtual void AdvanceAndRenderScaleformCursor() { Assert (0); }
-#elif defined( INCLUDE_ROCKETUI )
-    virtual void RenderRocketHUD(){ Assert(0); }
-	virtual void RenderRocketMenu(){ Assert(0); }
 #endif
 
 	//--------------------------------------------------------

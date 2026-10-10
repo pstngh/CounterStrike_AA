@@ -17,8 +17,6 @@ if( DEDICATED )
 endif()
 if( USE_SCALEFORM )
     add_definitions(-DINCLUDE_SCALEFORM)
-elseif( USE_ROCKETUI )
-    add_definitions(-DINCLUDE_ROCKETUI)
 endif()
 add_definitions(-DVERSION_SAFE_STEAM_API_INTERFACES)
 

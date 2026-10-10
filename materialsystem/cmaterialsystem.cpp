@@ -94,8 +94,6 @@ IMaterialInternal *g_pErrorMaterial = NULL;
 
 #if defined( INCLUDE_SCALEFORM )
 extern IScaleformUI* g_pScaleformUI;
-#elif defined( INCLUDE_ROCKETUI )
-extern IRocketUI* g_pRocketUI;
 #endif
 
 CreateInterfaceFn g_fnMatSystemConnectCreateInterface = NULL;  
@@ -804,8 +802,6 @@ bool CMaterialSystem::Connect( CreateInterfaceFn factory )
 
 #if defined( INCLUDE_SCALEFORM )
 	g_pScaleformUI = ( IScaleformUI* ) factory( SCALEFORMUI_INTERFACE_VERSION, 0 );
-#elif defined( INCLUDE_ROCKETUI )
-	g_pRocketUI = ( IRocketUI* ) factory( ROCKETUI_INTERFACE_VERSION, 0 );
 #endif
 
 	return g_pShaderDeviceMgr->Connect( ShaderFactory );	
@@ -831,8 +827,6 @@ void CMaterialSystem::Disconnect()
 
 #if defined( INCLUDE_SCALEFORM )
 	g_pScaleformUI = NULL;
-#elif defined( INCLUDE_ROCKETUI )
-	g_pRocketUI = NULL;
 #endif
 
 	BaseClass::Disconnect();

@@ -2458,9 +2458,6 @@ public:
 
 	virtual void				AdvanceAndRenderScaleformSlot( int slot ) {}
 	virtual void				AdvanceAndRenderScaleformCursor() {}
-#elif defined( INCLUDE_ROCKETUI )
-    virtual void RenderRocketHUD(){ }
-	virtual void RenderRocketMenu(){ }
 #endif // INCLUDE_SCALEFORM
 
 	virtual void                AntiAliasingHint( int ) {}

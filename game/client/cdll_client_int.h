@@ -22,8 +22,6 @@
 
 #if defined( INCLUDE_SCALEFORM )
 #include "scaleformui/scaleformui.h"
-#elif defined( INCLUDE_ROCKETUI )
-#include "rocketui/rocketui.h"
 #endif
 
 class IVModelRender;
@@ -113,8 +111,6 @@ extern IP4 *p4;
 
 #if defined( INCLUDE_SCALEFORM )
 extern IScaleformUI* g_pScaleformUI;
-#elif defined( INCLUDE_ROCKETUI )
-extern IRocketUI* g_pRocketUI;
 #endif
 
 extern AchievementsAndStatsInterface* g_pAchievementsAndStatsInterface;

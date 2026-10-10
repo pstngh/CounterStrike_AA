@@ -150,11 +150,6 @@ IScaleformUI* ScaleformUI()
 {
 	return g_pScaleformUI;
 }
-#elif defined( INCLUDE_ROCKETUI )
-//IRocketUI* RocketUI()
-//{
-//    return g_pRocketUI;
-//}
 #endif
 
 

@@ -115,14 +115,6 @@ add_subdirectory(matchmaking) #Does all 4 matchmaking projects
 add_subdirectory(launcher)
 add_subdirectory(launcher_main) #The actual executable that just dlopen's launcher
 
-# USE_SCALEFORM compiles the Scaleform HUD into game/client instead, which
-# loads Valve's prebuilt scaleformui_client.so at runtime.
-if( USE_ROCKETUI AND NOT USE_SCALEFORM )
-    #Custom Kisak-Strike UI powered by RmlUI
-    add_subdirectory(thirdparty/RmlUi)
-    add_subdirectory(rocketui)
-endif()
-
 #Frankenstein physics lib sewn together from 3 different leaks by mad scientist lwss
 if( USE_KISAK_PHYSICS )
     message("Using Open-Source Kisakstrike Physics rebuild!\n")
@@ -149,8 +141,8 @@ elseif( USE_BULLET_PHYSICS )
     set(BUILD_ENET OFF CACHE BOOL "" FORCE)
     set(BUILD_CLSOCKET OFF CACHE BOOL "" FORCE)
     set(INSTALL_LIBS OFF CACHE BOOL "" FORCE)
-    # RmlUi's BUILD_SHARED_LIBS makes Bullet's libraries shared too; put them
-    # beside the modules so the relative rpaths find them.
+    # Put any shared Bullet libraries beside the modules so the relative
+    # rpaths find them.
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}")
     set(OpenGL_GL_PREFERENCE LEGACY)
     string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)

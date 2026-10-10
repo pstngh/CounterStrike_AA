@@ -183,9 +183,6 @@ DECLARE_TIER3_INTERFACE( IGameUISystemMgr, g_pGameUISystemMgr );
 #if defined( INCLUDE_SCALEFORM )
 #define SCALEFORMUI_INTERFACE_VERSION "ScaleformUI002"
 DECLARE_TIER3_INTERFACE( IScaleformUI, g_pScaleformUI );
-#elif defined( INCLUDE_ROCKETUI )
-#define ROCKETUI_INTERFACE_VERSION "RocketUI001"
-DECLARE_TIER3_INTERFACE( IRocketUI, g_pRocketUI );
 #endif
 
 

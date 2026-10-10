@@ -1,13 +1,12 @@
 # Welcome to the Kisak-Strike options file
 # Options here can be freely changed, however it is recommended to set the options via command line.
-# Example: cmake .. -DUSE_ROCKETUI=1 -DUSE_KISAK_PHYSICS=1 -DDEDICATED=0
+# Example: cmake .. -DUSE_KISAK_PHYSICS=1 -DDEDICATED=0
 
 
 
 # UI Options
-option(USE_ROCKETUI "Use New Open Source Kisak-Strike RmlUI" ON)
 option(USE_SCALEFORM "Use In-Complete Proprietary Flash UI with blob ( Not Recommended )" OFF)
-# There is also a 3rd option, which is nothing. Nothing will enable base VGUI UI which is also incomplete.
+# Without Scaleform the developer console is the only UI.
 
 # DEDICATED Server
 option(DEDICATED "Build as DEDICATED server. This is Separate from the main build and they are not in-tree compatible.

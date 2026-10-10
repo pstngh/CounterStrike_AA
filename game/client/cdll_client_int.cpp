@@ -153,9 +153,6 @@
         #include "Scaleform/options_scaleform.h"
         #include "Scaleform/loadingscreen_scaleform.h"
         #include "Scaleform/HUD/sfhud_deathnotice.h"
-    #elif defined( INCLUDE_ROCKETUI )
-        #include "RocketUI/rkhud_chat.h"
-        #include "RocketUI/rkhud_loadingscreen.h"
     #endif
 #endif
 
@@ -218,8 +215,6 @@ IRenderToRTHelper *g_pRenderToRTHelper = NULL;
 
 #if defined( INCLUDE_SCALEFORM )
 IScaleformUI* g_pScaleformUI = NULL;
-#elif defined( INCLUDE_ROCKETUI )
-IRocketUI* g_pRocketUI = NULL;
 #endif
 
 IUploadGameStats *gamestatsuploader = NULL;
@@ -1348,8 +1343,6 @@ int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGl
 
 #if defined( INCLUDE_SCALEFORM )
 	g_pScaleformUI = ( IScaleformUI* ) appSystemFactory( SCALEFORMUI_INTERFACE_VERSION, NULL );
-#elif defined( INCLUDE_ROCKETUI )
-    g_pRocketUI = ( IRocketUI* ) appSystemFactory( ROCKETUI_INTERFACE_VERSION, NULL );
 #endif
 
 #ifndef NO_STEAM
@@ -3819,12 +3812,6 @@ bool CHLClient::IsChatRaised( void )
 	{
 		return pChat->ChatRaised();
 	}
-#elif defined( INCLUDE_ROCKETUI )
-	RkHudChat* pChat = GET_HUDELEMENT( RkHudChat );
-	if( !pChat )
-	    return false;
-
-	return pChat->ChatRaised();
 #else
 	return false;
 #endif

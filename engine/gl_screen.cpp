@@ -254,8 +254,6 @@ void SCR_UpdateScreen( void )
 	pRenderContext.GetFrom( materials );
 #if defined( INCLUDE_SCALEFORM )
 	pRenderContext->RenderScaleformSlot(SF_RESERVED_BEGINFRAME_SLOT);
-#elif defined( INCLUDE_ROCKETUI )
-	//pRenderContext->BeginRocketRender();
 #endif
 
 
@@ -295,10 +293,6 @@ void SCR_UpdateScreen( void )
 	pRenderContext.GetFrom( materials );
 	pRenderContext->RenderScaleformSlot(SF_RESERVED_ENDFRAME_SLOT);
 	pRenderContext.SafeRelease();
-#elif defined( INCLUDE_ROCKETUI )
-    //pRenderContext.GetFrom( materials );
-    //pRenderContext->EndRocketRender();
-	//pRenderContext.SafeRelease();
 #endif
 	CL_TakeSnapshotAndSwap();	   
 

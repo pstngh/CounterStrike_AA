@@ -700,9 +700,6 @@ public:
 		// renderSlot can be queued
 		RenderScaleformCursor();
 	}
-#elif defined( INCLUDE_ROCKETUI )
-    DEFINE_QUEUED_CALL_0( RenderRocketHUD, IMatRenderContext, m_pHardwareContext );
-    DEFINE_QUEUED_CALL_0( RenderRocketMenu, IMatRenderContext, m_pHardwareContext );
 #endif // INCLUDE_SCALEFORM
 
 	virtual ColorCorrectionHandle_t			FindLookup( const char *pName );

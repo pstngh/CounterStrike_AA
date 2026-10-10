@@ -32,7 +32,6 @@ cmake-build/*
 cmake-dev-test/*
 !cmake-build/placeholder.txt
 cmake-build-*/*
-rocketui/cmake-build-*/*
 vphysics_bullet/cmake-build-*/*
 
 #Ignore rebuilt static libs
@@ -42,10 +41,6 @@ vphysics_bullet/cmake-build-*/*
 #Ignore crypto++ built files
 external/crypto++-5.61/*.o
 external/crypto++-5.61/libcryptopp.a
-
-#Thirdparty
-/thirdparty/RmlUi/build/
-/thirdparty/RmlUi/Samples/
 
 #protobuf generated files
 game/client/generated_proto/*

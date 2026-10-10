@@ -26,6 +26,4 @@ IClientMaterialSystem *g_pClientMaterialSystem = 0;
 
 #if defined( INCLUDE_SCALEFORM )
 IScaleformUI* g_pScaleformUI = 0;
-#elif defined( INCLUDE_ROCKETUI )
-IRocketUI* g_pRocketUI = 0;
 #endif

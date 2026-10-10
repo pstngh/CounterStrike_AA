@@ -110,11 +110,6 @@ bool CHudConsoleMessages::MsgFunc_TextMsg( const CCSUsrMsg_TextMsg &msg )
 		return true;
 
 	int dest = msg.msg_dst();
-#if defined( INCLUDE_ROCKETUI )
-	// RocketUI's chat already prints console and notify messages.
-	if ( dest == HUD_PRINTCONSOLE || dest == HUD_PRINTNOTIFY )
-		return true;
-#endif
 
 	wchar_t szBuf[5][256] = {};
 	for ( int i = 0; i < 5 && i < msg.params_size(); i++ )

@@ -95,8 +95,6 @@ C_PlayerResource::C_PlayerResource()
 	g_PR = this;
 #if defined ( INCLUDE_SCALEFORM )
 	g_pScaleformUI->AddDeviceDependentObject( this );
-#elif defined ( INCLUDE_ROCKETUI )
-    g_pRocketUI->AddDeviceDependentObject( this );
 #endif
 }
 
@@ -115,8 +113,6 @@ C_PlayerResource::~C_PlayerResource()
 	}
 
 	g_pScaleformUI->RemoveDeviceDependentObject( this );
-#elif defined( INCLUDE_ROCKETUI )
-    g_pRocketUI->RemoveDeviceDependentObject( this );
 #endif
     g_PR = NULL;
 }

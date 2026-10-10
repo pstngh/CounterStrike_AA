@@ -132,8 +132,6 @@ void V_RenderVGuiOnly_NoSwap()
 #if defined( INCLUDE_SCALEFORM )
 	// Render scaleform before vgui
 	pRenderContext->AdvanceAndRenderScaleformSlot( SF_FULL_SCREEN_SLOT );
-#elif defined( INCLUDE_ROCKETUI )
-    pRenderContext->RenderRocketMenu();
 #endif
 
 	EngineVGui()->Paint( PAINT_UIPANELS );
@@ -159,10 +157,6 @@ void V_RenderVGuiOnly( void )
 	pRenderContext.GetFrom( materials );
     pRenderContext->RenderScaleformSlot(SF_RESERVED_BEGINFRAME_SLOT);
 	pRenderContext.SafeRelease();
-#elif defined( INCLUDE_ROCKETUI )
-    //pRenderContext.GetFrom( materials );
-    //pRenderContext->BeginRocketRender();
-	//pRenderContext.SafeRelease();
 #endif
 
 	EngineVGui()->Simulate();
@@ -181,10 +175,6 @@ void V_RenderVGuiOnly( void )
     pRenderContext.GetFrom( materials );
     pRenderContext->RenderScaleformSlot(SF_RESERVED_ENDFRAME_SLOT);
 	pRenderContext.SafeRelease();
-#elif defined( INCLUDE_ROCKETUI )
-    //pRenderContext.GetFrom( materials );
-    //pRenderContext->EndRocketRender();
-	//pRenderContext.SafeRelease();
 #endif
 	materials->EndFrame();
 

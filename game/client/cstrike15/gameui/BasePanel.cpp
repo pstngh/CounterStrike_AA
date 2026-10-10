@@ -72,8 +72,6 @@ using namespace vgui;
 #if defined( INCLUDE_SCALEFORM )
 #include "loadingscreen_scaleform.h"
 #include "itempickup_scaleform.h"
-#elif defined( INCLUDE_ROCKETUI )
-#include "RocketUI/rkhud_loadingscreen.h"
 #endif
 // dgoodenough - limit this to X360 only
 // PS3_BUILDFIX
@@ -547,9 +545,6 @@ CBaseModPanel::CBaseModPanel( const char *panelName ) : Panel(NULL, panelName )
 #if defined( INCLUDE_SCALEFORM )
     m_bScaleformMainMenuEnabled = true;
 	m_bScaleformPauseMenuEnabled = true;
-#elif defined( INCLUDE_ROCKETUI )
-    m_bRocketMainMenuEnabled = true;
-    m_bRocketPauseMenuEnabled = true;
 #endif
 	m_bBypassStartScreen = false;
 
@@ -1174,16 +1169,6 @@ void CBaseModPanel::OnLevelLoadingStarted( const char *levelName, bool bShowProg
 			CLoadingScreenScaleform::LoadDialog( );
 		}
 	}
-#elif defined( INCLUDE_ROCKETUI )
-    // kick off the rocketui screen load if it hasn't been opened yet
-	if( !RocketLoadingScreenDocument::IsVisible() )
-    {
-        if( levelName )
-        {
-            // TODO: some fancy stuff with the rocketui loading screen.
-        }
-        RocketLoadingScreenDocument::ShowPanel( true );
-    }
 #endif
 }
 
@@ -1208,11 +1193,6 @@ void CBaseModPanel::OnLevelLoadingFinished()
 		GetViewPortInterface()->ShowPanel( PANEL_ALL, false );
 		GetViewPortInterface()->UpdateAllPanels();
 	}
-#if defined( INCLUDE_ROCKETUI ) && defined( USE_MAC_PRESET )
-	// Close the loading screen as soon as the map is loaded instead of waiting
-	// for a Continue click; the local player then joins CT automatically.
-	RocketLoadingScreenDocument::ShowPanel( false );
-#endif
 }
 
 //-----------------------------------------------------------------------------
