@@ -28,7 +28,7 @@
 #include "tier0/vprof_telemetry.h"
 #include "tier0/miniprofiler.h"
 
-#if defined ( DX_TO_GL_ABSTRACTION )
+#if defined ( DX_TO_GL_ABSTRACTION ) && !defined( USE_METAL )
 // Placed here so inlines placed in dxabstract.h can access gGL
 COpenGLEntryPoints *gGL = NULL;
 #endif
@@ -131,7 +131,9 @@ bool CShaderDeviceMgrDx8::Connect( CreateInterfaceFn factory )
 	if ( !BaseClass::Connect( factory ) )
 		return false;
 
-#if defined ( DX_TO_GL_ABSTRACTION )
+#if defined ( DX_TO_GL_ABSTRACTION ) && defined( USE_METAL )
+	ToMetalConnectLibraries( factory );
+#elif defined ( DX_TO_GL_ABSTRACTION )
 	gGL = ToGLConnectLibraries( factory );
 #endif
 
@@ -196,7 +198,9 @@ void CShaderDeviceMgrDx8::Disconnect()
 		m_pD3D = 0;
 	}
 
-#if defined ( DX_TO_GL_ABSTRACTION )
+#if defined ( DX_TO_GL_ABSTRACTION ) && defined( USE_METAL )
+	ToMetalDisconnectLibraries();
+#elif defined ( DX_TO_GL_ABSTRACTION )
 	ToGLDisconnectLibraries();
 #endif
 
@@ -2099,7 +2103,7 @@ IDirect3DDevice9* CShaderDeviceDx8::InvokeCreateDevice( void* hWnd, int nAdapter
 	devType =  CommandLine()->FindParm( "-nulldevice" ) ? D3DDEVTYPE_NULLREF: devType;
 #endif
 
-#if defined ( DX_TO_GL_ABSTRACTION )
+#if defined ( DX_TO_GL_ABSTRACTION ) && !defined( USE_METAL )
 	gGL = GetOpenGLEntryPoints(0);
 #endif
 

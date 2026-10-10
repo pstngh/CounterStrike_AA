@@ -5,7 +5,7 @@ This branch ports the Kisak-Strike client, listen server, renderer, VGUI, VScrip
 ## Current scope
 
 - Native arm64 Mach-O executables and dynamic libraries
-- Cocoa/SDL video and Apple's legacy OpenGL compatibility layer
+- Cocoa/SDL video and Apple's legacy OpenGL compatibility layer, or Metal with `-metal` (in progress)
 - Offline and LAN listen-server play with `-insecure`
 - Startup without the Steam desktop client
 - No Steam matchmaking, VAC, inventory, achievements, or other online Steam services in standalone mode
@@ -73,6 +73,16 @@ arch -arm64 ./csgo_osx64 -insecure -novid -windowed +map de_dust2
 ```
 
 Standalone listen servers intentionally fall back to LAN mode when Steam services are unavailable. Console messages from failed Steam API initialization may still appear; they are non-fatal in this mode.
+
+## Metal renderer
+
+`-metal` renders with Metal instead of OpenGL; OpenGL remains the default while the Metal renderer is completed:
+
+```sh
+arch -arm64 ./csgo_osx64 -insecure -novid -windowed -metal +map de_dust2
+```
+
+The game window then presents through a `CAMetalLayer`, and the launcher loads `shaderapimetal.dylib`, the shader API built against ToMetal (`tometal/`), in place of `shaderapidx9.dylib` and ToGL. ToMetal implements the same Direct3D 9 interface as ToGL. It translates each Direct3D 9 shader into Metal Shading Language when the shader API creates it, and compiles it when a draw first needs it. ToMetal keeps nothing on disk between runs; macOS caches compiled Metal shaders itself. `mtl_shader_spew 1` prints each translated shader. With `mat_vsync 0`, a separate thread presents the newest finished frame, so the game isn't held to the display's refresh rate; with `mat_vsync 1` it is.
 
 ## Performance options
 

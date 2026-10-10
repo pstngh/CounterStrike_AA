@@ -944,7 +944,7 @@ void CShaderManager::Shutdown()
 	}
 #endif
 
-#ifdef DX_TO_GL_ABSTRACTION
+#if defined( DX_TO_GL_ABSTRACTION ) && !defined( USE_METAL )	// Metal has no shader pairs; saving would empty OpenGL's list
 	if (mat_autosave_glshaders.GetInt())
 	{
 #if defined( OSX )
@@ -3463,6 +3463,7 @@ void CShaderManager::ClearVertexAndPixelShaderRefCounts()
 void CShaderManager::PurgeUnusedVertexAndPixelShaders()
 {
 	#ifdef DX_TO_GL_ABSTRACTION
+#if !defined( USE_METAL )	// Metal has no shader pairs; saving would empty OpenGL's list
 		if (mat_autosave_glshaders.GetInt())
 		{
 #if defined( OSX )
@@ -3471,6 +3472,7 @@ void CShaderManager::PurgeUnusedVertexAndPixelShaders()
 			SaveShaderCache("glshaders.cfg");
 #endif
 		}
+#endif
 		return;	// don't purge shaders, it's too costly to put them back
 	#endif
 	
@@ -4118,6 +4120,7 @@ void CShaderManager::AddShaderComboInformation( const ShaderComboSemantics_t *pS
 #if defined( DX_TO_GL_ABSTRACTION )
 void	CShaderManager::DoStartupShaderPreloading()
 {
+#if !defined( USE_METAL )	// OpenGL's list of shader pairs to link; Metal keeps its own caches (tometal/mtlshadercache.mm)
 	if (mat_autoload_glshaders.GetInt())
 	{
 #if defined( OSX )
@@ -4144,5 +4147,6 @@ void	CShaderManager::DoStartupShaderPreloading()
 		}
 #endif
 	}
+#endif
 }
 #endif

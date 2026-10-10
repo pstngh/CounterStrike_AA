@@ -45,8 +45,8 @@ if( NOT DEDICATED )
         VERBATIM)
     add_dependencies(${OUTBINNAME} engine_perflog_version)
     target_include_directories(${OUTBINNAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-    # The log reads togl's draw call totals.
-    target_link_libraries(${OUTBINNAME} libtogl_client)
+    # The log reads the renderer's draw call totals (togl's, or tometal's with -metal).
+    target_link_libraries(${OUTBINNAME} libtogl_client libtometal_client)
 endif()
 
 target_sources(${OUTBINNAME} PRIVATE "${ESRCDIR}/clientframe.cpp")

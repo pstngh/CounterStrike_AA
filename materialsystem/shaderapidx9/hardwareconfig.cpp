@@ -944,7 +944,12 @@ bool CHardwareConfig::SupportsResolveDepth( void ) const
 	if ( ( gpu_level.GetInt() >= 2 ) &&
 		 ( mat_resolveFullFrameDepth.GetInt() == 1 ) )
 	{
-#if defined(DX_TO_GL_ABSTRACTION)
+#if defined(DX_TO_GL_ABSTRACTION) && defined(USE_METAL)
+		{
+			// Metal copies depth with a blit or a draw
+			return true;
+		}
+#elif defined(DX_TO_GL_ABSTRACTION)
 		{
 			if ( gGL->m_bHave_GL_EXT_framebuffer_blit )
 			{

@@ -39,10 +39,18 @@
 #ifndef DEDICATED
 
 #if defined( DX_TO_GL_ABSTRACTION )
-// togl's running totals of draw calls and primitives. The profiler's draw counters are
+// The renderer's running totals of draw calls and primitives: togl's, or tometal's when the
+// game runs with -metal. The profiler's draw counters are
 // unreliable here: a counter first reached on the render thread counts into a dummy.
 extern "C" void toglGetDrawTotals( uint64 *pDraws, uint64 *pPrimitives );
+extern "C" void tometalGetDrawTotals( uint64 *pDraws, uint64 *pPrimitives );
 #endif
+
+// The graphics API the render thread drives
+static const char *RendererAPIName()
+{
+	return CommandLine()->FindParm( "-metal" ) ? "Metal" : "OpenGL";
+}
 
 static ConVar perf_log( "perf_log", "0", FCVAR_RELEASE, "Write frame timing and the settings that affect it to perf_log.txt in the game directory." );
 static ConVar perf_log_interval( "perf_log_interval", "5", FCVAR_RELEASE, "Seconds between perf_log sample lines.", true, 1.0f, true, 600.0f );
@@ -198,7 +206,7 @@ static void WriteSessionHeader()
 		"  Main thread: server (game and bot simulation), client (entity updates), render (building the\n"
 		"  frame, including wait), wait (waiting for the render thread), other (input, sound, commands),\n"
 		"  idle (frame time outside those, mostly the fps_max limit).\n"
-		"  rthread: render thread (OpenGL calls, plus any wait for the GPU). draws: draw calls per frame.\n" );
+		"  rthread: render thread (%s calls, plus any wait for the GPU). draws: draw calls per frame.\n", RendererAPIName() );
 	LogFlush();
 }
 
@@ -453,8 +461,8 @@ static void EndSegment( double flNow, const char *pszReason )
 		}
 		else if ( flQueued > 50.0 && avg.m_flRenderWait > 0.1 * avg.m_flFrame )
 		{
-			LogPrintf( "likely limit: the render thread. The main thread waits %.2f ms per frame for it. Its time is OpenGL work plus any wait for the GPU; if a lower resolution or shadow setting shortens it, the GPU is the limit.\n",
-				avg.m_flRenderWait );
+			LogPrintf( "likely limit: the render thread. The main thread waits %.2f ms per frame for it. Its time is %s work plus any wait for the GPU; if a lower resolution or shadow setting shortens it, the GPU is the limit.\n",
+				avg.m_flRenderWait, RendererAPIName() );
 		}
 		else
 		{
@@ -518,7 +526,15 @@ void PerfLog_Frame()
 	// Draws since the last call; with a render thread they trail the main thread by a frame.
 	uint64 nTotalDraws = 0, nTotalPrimitives = 0;
 #if defined( DX_TO_GL_ABSTRACTION )
-	toglGetDrawTotals( &nTotalDraws, &nTotalPrimitives );
+	static const bool s_bMetal = CommandLine()->FindParm( "-metal" ) != 0;
+	if ( s_bMetal )
+	{
+		tometalGetDrawTotals( &nTotalDraws, &nTotalPrimitives );
+	}
+	else
+	{
+		toglGetDrawTotals( &nTotalDraws, &nTotalPrimitives );
+	}
 #endif
 	const int nDraws = (int)( nTotalDraws - s_nLastDraws );
 	const int nPrimitives = (int)( nTotalPrimitives - s_nLastPrimitives );

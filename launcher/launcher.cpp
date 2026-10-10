@@ -744,6 +744,11 @@ bool CSourceAppSystemGroup::Create()
 	// This has to be done before connection.
 	char const *pDLLName = "shaderapidx9" DLL_EXT_STRING;
 	const char* pArg = NULL;
+	if ( CommandLine()->FindParm( "-metal" ) )
+	{
+		// Render with Metal instead of OpenGL
+		pDLLName = "shaderapimetal" DLL_EXT_STRING;
+	}
 	if ( CommandLine()->FindParm( "-noshaderapi" ) )
 	{
 		pDLLName = "shaderapiempty" DLL_EXT_STRING;
