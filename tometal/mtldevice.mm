@@ -607,6 +607,8 @@ id<MTLRenderCommandEncoder> CMtlDevice::RenderEncoder()
 	m_passKey = key;
 	m_nPassWidth = width;
 	m_nPassHeight = height;
+	if ( g_pMtlDump )
+		MtlDumpPass( this, rp );
 	m_bPassDirty = false;
 	m_bPassHasDraws = false;
 
@@ -1195,7 +1197,10 @@ void CMtlDevice::Draw( D3DPRIMITIVETYPE type, uint nStartVertex, uint nPrimCount
 {
 	if ( !nPrimCount || type == D3DPT_POINTLIST )
 		return;
-	if ( !PrepareDraw( type ) )
+	bool bOK = PrepareDraw( type );
+	if ( g_pMtlDump )
+		MtlDumpDraw( this, type, nPrimCount, bOK );
+	if ( !bOK )
 		return;
 
 	m_nDrawCallIndex++;
@@ -1226,7 +1231,10 @@ void CMtlDevice::DrawIndexed( D3DPRIMITIVETYPE type, int nBaseVertex, uint nMinV
 {
 	if ( !nPrimCount || type == D3DPT_POINTLIST || !m_pIndices )
 		return;
-	if ( !PrepareDraw( type ) )
+	bool bOK = PrepareDraw( type );
+	if ( g_pMtlDump )
+		MtlDumpDraw( this, type, nPrimCount, bOK );
+	if ( !bOK )
 		return;
 
 	m_nDrawCallIndex++;
@@ -1354,6 +1362,8 @@ void CMtlDevice::Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCO
 		return;
 
 	bool bFull = ( x0 == 0 && y0 == 0 && x1 == (int)width && y1 == (int)height );
+	if ( g_pMtlDump )
+		MtlDumpClear( this, nCount, nFlags, color, z, stencil, bFull && nCount <= 1 && ( !m_renderEncoder || m_bPassDirty || !m_bPassHasDraws ) );
 
 	// Nothing drawn yet in this pass: clear with the load actions
 	if ( bFull && nCount <= 1 && ( !m_renderEncoder || m_bPassDirty || !m_bPassHasDraws ) )
@@ -1639,6 +1649,9 @@ void CMtlDevice::StretchRect( IDirect3DSurface9 *pSrcSurf, const RECT *pSrcRect,
 	if ( !pSrcSurf || !pDstSurf || !pSrcSurf->m_tex || !pDstSurf->m_tex )
 		return;
 
+	if ( g_pMtlDump )
+		MtlDumpCopy( "stretchrect", pSrcSurf, pDstSurf );
+
 	CMtlTex *src = pSrcSurf->m_tex;
 	CMtlTex *dst = pDstSurf->m_tex;
 	if ( dst->m_nSamples > 1 )
@@ -1915,6 +1928,8 @@ static void DeletePresenter( CMtlPresenter *pPresenter )
 
 void CMtlDevice::Present( IDirect3DSurface9 *pBackBuffer, bool bVSync )
 {
+	MtlDumpPresent( this );
+
 	if ( m_layer.displaySyncEnabled != bVSync )
 	{
 		m_layer.displaySyncEnabled = bVSync;

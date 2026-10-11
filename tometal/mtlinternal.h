@@ -452,4 +452,12 @@ extern ILauncherMgr *g_pLauncherMgr;
 extern std::atomic<uint64> g_nMtlTotalDraws;
 extern std::atomic<uint64> g_nMtlTotalPrimitives;
 
+// mtl_dumpframe (mtldebug.mm): open while a frame is being written out
+extern FILE *g_pMtlDump;
+void MtlDumpPresent( CMtlDevice *dev );
+void MtlDumpPass( CMtlDevice *dev, MTLRenderPassDescriptor *rp );
+void MtlDumpClear( CMtlDevice *dev, DWORD nCount, DWORD nFlags, D3DCOLOR color, float z, DWORD stencil, bool bLoadAction );
+void MtlDumpCopy( const char *pWhat, IDirect3DSurface9 *pSrc, IDirect3DSurface9 *pDst );
+void MtlDumpDraw( CMtlDevice *dev, D3DPRIMITIVETYPE type, uint nPrims, bool bDrawn );
+
 #endif // MTLINTERNAL_H

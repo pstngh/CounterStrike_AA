@@ -27,6 +27,7 @@ set(TOMETAL_OBJC_SOURCES
     "${TOMETAL_SRCDIR}/mtladapter.mm"
     "${TOMETAL_SRCDIR}/mtlconnect.mm"
     "${TOMETAL_SRCDIR}/mtld3ddevice.mm"
+    "${TOMETAL_SRCDIR}/mtldebug.mm"
     "${TOMETAL_SRCDIR}/mtldevice.mm"
     "${TOMETAL_SRCDIR}/mtlformats.mm"
     "${TOMETAL_SRCDIR}/mtlresources.mm"
