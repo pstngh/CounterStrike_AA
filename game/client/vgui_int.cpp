@@ -884,8 +884,15 @@ void VGui_OnSplitScreenStateChanged()
 	// This is a hack to prevent changing the current system level during PIP mode transitions. Otherwise, on the next frame mat queue mode will be disabled for 
 	// a frame and then re-enabled, which causes various known rendering problems and a noticeable hitch.
 	// I would have loved to plumb this down in a cleaner way, but this function is a convar change callback.
-	if ( !g_bSuppressConfigSystemLevelDueToPIPTransitions )
+	// The system level settings depend on the split screen state alone, so they're reapplied
+	// only when that changes. A screen size change comes here too (the first frame in
+	// fullscreen is one), and reapplying there would undo what was set since, such as a
+	// config's cl_csm_enabled 0.
+	static int s_nConfiguredSplitScreenState = -1;
+	int nSplitScreenState = ( VGui_IsSplitScreen() ? 1 : 0 ) | ( VGui_IsSplitScreenPIP() ? 2 : 0 );
+	if ( !g_bSuppressConfigSystemLevelDueToPIPTransitions && nSplitScreenState != s_nConfiguredSplitScreenState )
 	{
+		s_nConfiguredSplitScreenState = nSplitScreenState;
 		ConfigureCurrentSystemLevel( );
 	}
 
