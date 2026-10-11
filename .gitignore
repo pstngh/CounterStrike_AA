@@ -57,3 +57,6 @@ gcsdk/generated_proto/*
 hammer_qt/*
 hammer_launcher_qt/*
 /hammer_launcher_qt/
+
+# Finder metadata
+.DS_Store
