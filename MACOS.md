@@ -153,7 +153,12 @@ Provider. The prebuilt app has no such list and reads `csgo/maps` when it
 starts; run the script again to record yours.
 
 Open `CSGO Launcher.app` in that directory to choose an installed map, bot count
-and difficulty, and windowed or fullscreen resolution. The overall Quality menu
+and difficulty, tick rate, and windowed or fullscreen resolution. Tick rate
+starts the local server at 64 ticks per second, Valve matchmaking's rate, or at
+128 (`-tickrate`), which updates movement and shots twice as often and doubles
+the server's work each frame; jump-throw grenades land differently between the
+two. `cl_updaterate` and `cl_cmdrate` follow it, since the local server sends
+snapshots at `cl_updaterate` rather than every tick. The overall Quality menu
 offers Low, Medium, High, and Very High presets; Custom appears when individual
 graphics choices differ from a preset. Graphics Settings still offers texture
 detail, texture filtering, anti-aliasing, shadows, shader detail, effect detail,
