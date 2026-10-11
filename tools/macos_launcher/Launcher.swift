@@ -215,6 +215,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
     private let effectsPopup = NSPopUpButton()
     private let vsyncCheckbox = NSButton(checkboxWithTitle: "Limit frames to display refresh", target: nil, action: nil)
     // Performance options to compare on a given Mac; none is part of a quality preset.
+    private let rendererPopup = NSPopUpButton() // OpenGL, or Metal with -metal
     private let fpsLimitPopup = NSPopUpButton()
     private let fpsLimits = [60, 120, 144, 240, 300, 0] // fps_max; 0 is unlimited
     private let multithreadedGLCheckbox = NSButton(checkboxWithTitle: "Multithreaded OpenGL engine", target: nil, action: nil)
@@ -288,6 +289,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         shadowsPopup.addItems(withTitles: ["Off", "Low", "Medium", "High"])
         shadersPopup.addItems(withTitles: ["Low", "High"])
         effectsPopup.addItems(withTitles: ["Low", "Medium", "High"])
+        rendererPopup.addItems(withTitles: ["OpenGL", "Metal"])
         fpsLimitPopup.addItems(withTitles: fpsLimits.map { $0 == 0 ? "Unlimited" : "\($0) fps" })
         bufferUploadsPopup.addItems(withTitles: ["Map buffers (default)", "Copy into buffers", "Client memory"])
         crosshairStylePopup.addItems(withTitles: [
@@ -418,10 +420,12 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             effectsPopup.selectItem(at: preset?[5] ?? 2)
         }
         vsyncCheckbox.state = defaults.bool(forKey: "vsync") ? .on : .off
+        rendererPopup.selectItem(at: storedInteger("renderer", defaultValue: 0, range: 0...1))
         fpsLimitPopup.selectItem(at: storedInteger("fpsLimit", defaultValue: 4, range: 0...5))
         multithreadedGLCheckbox.state = storedBool("multithreadedGL", defaultValue: false) ? .on : .off
         threadedBonesCheckbox.state = storedBool("threadedBoneSetup", defaultValue: false) ? .on : .off
         bufferUploadsPopup.selectItem(at: storedInteger("bufferUploads", defaultValue: 0, range: 0...2))
+        updateRendererControls()
         performanceOverlayCheckbox.state = storedBool("performanceOverlay", defaultValue: false) ? .on : .off
         performanceLogCheckbox.state = storedBool("performanceLog", defaultValue: false) ? .on : .off
         crosshairStylePopup.selectItem(at: storedInteger("crosshairStyle", defaultValue: 4, range: 0...5))
@@ -836,7 +840,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         let performanceHeading = NSTextField(labelWithString: "Performance")
         performanceHeading.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
         stack.addArrangedSubview(performanceHeading)
-        for control in [fpsLimitPopup, bufferUploadsPopup] {
+        for control in [rendererPopup, fpsLimitPopup, bufferUploadsPopup] {
             control.widthAnchor.constraint(equalToConstant: 280).isActive = true
             control.target = self
             control.action = #selector(settingsChanged)
@@ -845,6 +849,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
             checkbox.target = self
             checkbox.action = #selector(settingsChanged)
         }
+        stack.addArrangedSubview(row("Renderer", control: rendererPopup))
         stack.addArrangedSubview(row("Frame limit", control: fpsLimitPopup))
         stack.addArrangedSubview(row("OpenGL", control: multithreadedGLCheckbox))
         stack.addArrangedSubview(row("Buffer uploads", control: bufferUploadsPopup))
@@ -895,7 +900,16 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
 
     @objc private func settingsChanged() {
         syncGraphicsQuality()
+        updateRendererControls()
         saveSettings()
+    }
+
+    private var usesMetal: Bool { rendererPopup.indexOfSelectedItem == 1 }
+
+    // The multithreaded engine and the buffer upload modes are OpenGL's; Metal ignores them.
+    private func updateRendererControls() {
+        multithreadedGLCheckbox.isEnabled = !usesMetal
+        bufferUploadsPopup.isEnabled = !usesMetal
     }
 
     private func currentCrosshairSettings() -> CrosshairSettings {
@@ -942,6 +956,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         defaults.set(shadersPopup.indexOfSelectedItem, forKey: "shaderDetail")
         defaults.set(effectsPopup.indexOfSelectedItem, forKey: "effectDetail")
         defaults.set(vsyncCheckbox.state == .on, forKey: "vsync")
+        defaults.set(rendererPopup.indexOfSelectedItem, forKey: "renderer")
         defaults.set(fpsLimitPopup.indexOfSelectedItem, forKey: "fpsLimit")
         defaults.set(multithreadedGLCheckbox.state == .on, forKey: "multithreadedGL")
         defaults.set(threadedBonesCheckbox.state == .on, forKey: "threadedBoneSetup")
@@ -1063,7 +1078,7 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
         mat_reducefillrate \(shadersPopup.indexOfSelectedItem == 0 ? 1 : 0)
         mat_vsync \(vsync)
         fps_max \(fpsLimits[fpsLimitPopup.indexOfSelectedItem])
-        r_frameratesmoothing \(multithreadedGLCheckbox.state == .on ? 0 : 1)
+        r_frameratesmoothing \(multithreadedGLCheckbox.state == .on && !usesMetal ? 0 : 1)
         cl_threaded_bone_setup \(threadedBonesCheckbox.state == .on ? 1 : 0)
         \(performanceOverlayCheckbox.state == .on ? "cl_showfps 5" : "")
         perf_log \(performanceLogCheckbox.state == .on ? 1 : 0)
@@ -1088,7 +1103,11 @@ final class LauncherApp: NSObject, NSApplicationDelegate {
                              "-mat_antialias", "\(antialiasing)", "-mat_aaquality", "0",
                              "-mat_vsync", "\(vsync)",
                              "-maxplayers_override", "\(maxPlayers)"]
-            arguments += bufferUploadArguments[bufferUploadsPopup.indexOfSelectedItem]
+            if usesMetal {
+                arguments.append("-metal")
+            } else {
+                arguments += bufferUploadArguments[bufferUploadsPopup.indexOfSelectedItem]
+            }
             arguments += ["+exec", "mac_launcher.cfg", "+map", map]
             process.arguments = arguments
             process.terminationHandler = { [weak self] finished in

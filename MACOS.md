@@ -97,6 +97,9 @@ same map, spot and bot count with Show frame time breakdown turned on
 logic and bots), render-thread time and the waits between them. On this
 renderer the render-thread time includes waiting for the GPU at present.
 
+- Renderer chooses OpenGL, the default, or Metal, which launches with
+  `-metal`. With Metal, the two OpenGL options below are greyed out and have
+  no effect.
 - Frame limit sets `fps_max`. The default is 300; Unlimited is 0.
 - Multithreaded OpenGL engine sets `r_frameratesmoothing 0`, which turns on
   Apple's multithreaded OpenGL engine. The default of 1 keeps it off, which
