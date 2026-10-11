@@ -1427,9 +1427,13 @@ void CMtlDevice::Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCO
 		[enc drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart:0 vertexCount:4];
 	}
 
-	// The clear clobbered the encoder's state
+	// The clear clobbered the encoder's state, its parameters included: they
+	// went to vertex buffer 0, stream 0's, and fragment buffer 0, the pixel
+	// shader constants'
 	m_curPipeline = nil;
 	m_curDepthStencil = nil;
+	m_curVertexBuffers[0] = nil;
+	m_bPSConstantsBound = false;
 	m_bDynamicStateDirty = true;
 	m_bPassHasDraws = true;
 }
