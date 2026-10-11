@@ -135,8 +135,10 @@ void MtlDumpDraw( CMtlDevice *dev, D3DPRIMITIVETYPE type, uint nPrims, bool bDra
 	DumpShader( pVS );
 	DumpShader( pPS );
 
-	fprintf( g_pMtlDump, "draw %u%s prim=%d n=%u vs=%u:%s ps=%u:%s\n", dev->m_nDrawCallIndex, bDrawn ? "" : " SKIPPED", (int)type, nPrims,
-		pVS ? pVS->m_nId : 0, ShaderName( pVS ), pPS ? pPS->m_nId : 0, ShaderName( pPS ) );
+	uint8 srgbConvert = kMtlSRGBConvertNone;
+	bool bSRGBInPass = dev->SRGBConversion( &srgbConvert );
+	fprintf( g_pMtlDump, "draw %u%s prim=%d n=%u vs=%u:%s ps=%u:%s srgbconvert=%d%s\n", dev->m_nDrawCallIndex, bDrawn ? "" : " SKIPPED", (int)type, nPrims,
+		pVS ? pVS->m_nId : 0, ShaderName( pVS ), pPS ? pPS->m_nId : 0, ShaderName( pPS ), srgbConvert, bSRGBInPass ? "" : " (reopen)" );
 	fprintf( g_pMtlDump, "  blend=%d %d/%d op%d cwm=%x atest=%d func%d ref%d a2c=%d | z=%d zw=%d zf=%d | st=%d f%d ref%d rm%x wm%x ops%d/%d/%d | cull=%d fill=%d clip=%x srgbw=%d\n",
 		(int)rs[D3DRS_ALPHABLENDENABLE], (int)rs[D3DRS_SRCBLEND], (int)rs[D3DRS_DESTBLEND], (int)rs[D3DRS_BLENDOP], (int)rs[D3DRS_COLORWRITEENABLE],
 		(int)rs[D3DRS_ALPHATESTENABLE], (int)rs[D3DRS_ALPHAFUNC], (int)rs[D3DRS_ALPHAREF], (int)rs[D3DRS_ADAPTIVETESS_Y],

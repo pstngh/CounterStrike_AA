@@ -492,25 +492,10 @@ HRESULT IDirect3DDevice9::SetRenderState( D3DRENDERSTATETYPE State, DWORD Value 
 	if ( cur == Value )
 		return S_OK;
 
+	// D3DRS_SRGBWRITEENABLE needn't end the pass: draws convert to the views
+	// it opened with (CMtlDevice::SRGBConversion)
 	switch ( State )
 	{
-	case D3DRS_SRGBWRITEENABLE:
-	{
-		// Rendering through the sRGB views is a property of the pass
-		bool bAffects = false;
-		for ( int i = 0; i < MTL_MAX_RENDER_TARGETS; i++ )
-		{
-			IDirect3DSurface9 *rt = m_mtl->m_pRenderTargets[i];
-			bAffects |= rt && rt->m_tex && rt->m_tex->m_texRenderSRGB;
-		}
-		if ( bAffects )
-		{
-			m_mtl->FlushPass();
-			m_mtl->m_bPassDirty = true;
-		}
-		break;
-	}
-
 	case D3DRS_SCISSORTESTENABLE:
 	case D3DRS_CULLMODE:
 	case D3DRS_FILLMODE:

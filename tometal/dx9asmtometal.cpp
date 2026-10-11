@@ -708,6 +708,88 @@ static const char *g_pPSMiscStruct =
 	"#define D3DTOMETAL_ALPHA_TEST_FUNC 0\n"
 	"#endif\n\n";
 
+// Writing color 0 in the other sRGB space from the view the pass draws the
+// target through, so the pass needn't end each time D3DRS_SRGBWRITEENABLE
+// changes. D3DTOMETAL_SRGB_WRITE 1: the draw writes sRGB through the linear
+// view, so the shader encodes. 2: the draw writes its values as they are
+// through the sRGB view, so the shader decodes and the target encodes them
+// back. A draw that blends does so here, with the framebuffer converted to
+// its space and the result converted back, as the hardware would have in
+// the view the draw wanted (D3DTOMETAL_SHADER_BLEND, with the D3DBLEND
+// factors and D3DBLENDOP in D3DTOMETAL_BLEND_SRC, _DST and _OP).
+static const char *g_pPSSRGBWriteCode =
+	"#ifndef D3DTOMETAL_SRGB_WRITE\n"
+	"#define D3DTOMETAL_SRGB_WRITE 0\n"
+	"#endif\n"
+	"#ifndef D3DTOMETAL_SHADER_BLEND\n"
+	"#define D3DTOMETAL_SHADER_BLEND 0\n"
+	"#endif\n"
+	"#if D3DTOMETAL_SRGB_WRITE != 0\n"
+	"static float3 d3dtometal_to_srgb( float3 c )\n"
+	"{\n"
+	"\tc = saturate( c );\n"
+	"\treturn select( 1.055 * powr( c, 1.0 / 2.4 ) - 0.055, c * 12.92, c <= 0.0031308 );\n"
+	"}\n"
+	"static float3 d3dtometal_from_srgb( float3 c )\n"
+	"{\n"
+	"\tc = saturate( c );\n"
+	"\treturn select( powr( ( c + 0.055 ) / 1.055, 2.4 ), c / 12.92, c <= 0.04045 );\n"
+	"}\n"
+	"#if D3DTOMETAL_SRGB_WRITE == 1\n"
+	"#define D3DTOMETAL_TO_VIEW( c ) d3dtometal_to_srgb( c )\n"
+	"#define D3DTOMETAL_FROM_VIEW( c ) d3dtometal_from_srgb( c )\n"
+	"#else\n"
+	"#define D3DTOMETAL_TO_VIEW( c ) d3dtometal_from_srgb( c )\n"
+	"#define D3DTOMETAL_FROM_VIEW( c ) d3dtometal_to_srgb( c )\n"
+	"#endif\n"
+	"#if D3DTOMETAL_SHADER_BLEND\n"
+	"static float4 d3dtometal_blend_factor( int f, float4 s, float4 d )\n"
+	"{\n"
+	"\tswitch ( f )\n"
+	"\t{\n"
+	"\tcase 1: return float4( 0.0 );\n"
+	"\tcase 3: return s;\n"
+	"\tcase 4: return 1.0 - s;\n"
+	"\tcase 5: return float4( s.a );\n"
+	"\tcase 6: return float4( 1.0 - s.a );\n"
+	"\tcase 7: return float4( d.a );\n"
+	"\tcase 8: return float4( 1.0 - d.a );\n"
+	"\tcase 9: return d;\n"
+	"\tcase 10: return 1.0 - d;\n"
+	"\tcase 11: return float4( float3( min( s.a, 1.0 - d.a ) ), 1.0 );\n"
+	"\tdefault: return float4( 1.0 );\n"
+	"\t}\n"
+	"}\n"
+	"#endif\n"
+	"#endif\n\n";
+
+// The end of a pixel function: color 0 through the conversion above
+static const char *g_pPSSRGBWriteTail =
+	"#if D3DTOMETAL_SRGB_WRITE != 0\n"
+	"\t{\n"
+	"\t\tfloat4 s = saturate( gl_FragData[0] );\n"
+	"#if D3DTOMETAL_SHADER_BLEND\n"
+	"\t\tfloat4 d = float4( D3DTOMETAL_FROM_VIEW( d3dtometal_fb.rgb ), d3dtometal_fb.a );\n"
+	"#if D3DTOMETAL_BLEND_OP == 4\n"
+	"\t\ts = min( s, d );\n"
+	"#elif D3DTOMETAL_BLEND_OP == 5\n"
+	"\t\ts = max( s, d );\n"
+	"#else\n"
+	"\t\tfloat4 fs = d3dtometal_blend_factor( D3DTOMETAL_BLEND_SRC, s, d );\n"
+	"\t\tfloat4 fd = d3dtometal_blend_factor( D3DTOMETAL_BLEND_DST, s, d );\n"
+	"#if D3DTOMETAL_BLEND_OP == 2\n"
+	"\t\ts = saturate( s * fs - d * fd );\n"
+	"#elif D3DTOMETAL_BLEND_OP == 3\n"
+	"\t\ts = saturate( d * fd - s * fs );\n"
+	"#else\n"
+	"\t\ts = saturate( s * fs + d * fd );\n"
+	"#endif\n"
+	"#endif\n"
+	"#endif\n"
+	"\t\tgl_FragData[0] = float4( D3DTOMETAL_TO_VIEW( s.rgb ), s.a );\n"
+	"\t}\n"
+	"#endif\n";
+
 D3DToMetal::D3DToMetal()
 {
 }
@@ -3040,6 +3122,7 @@ bool D3DToMetal::TranslateShader( uint32* code, CUtlBuffer *pBufMSL, D3DToMetalS
 		nInterpolantMask = m_nPSInputMask;
 
 		out.PutString( g_pPSMiscStruct );
+		out.PutString( g_pPSSRGBWriteCode );
 
 		out.PutString( "struct PSIn\n{\n\tfloat4 gl_FragCoord [[ position ]];\n" );
 		WriteInterpolantMembers( out, nInterpolantMask, m_nCentroidMask, true );
@@ -3065,6 +3148,7 @@ bool D3DToMetal::TranslateShader( uint32* code, CUtlBuffer *pBufMSL, D3DToMetalS
 		out.Printf( "fragment PSOut dx9ps( PSIn in [[ stage_in ]],\n\tconstant float4 *pc [[ buffer( %d ) ]],\n\tconstant PSMisc &misc [[ buffer( %d ) ]]",
 			D3DTOMETAL_PS_CONSTANT_BUFFER, D3DTOMETAL_PS_MISC_BUFFER );
 		WriteSamplerParameters( out );
+		out.PutString( "\n#if D3DTOMETAL_SHADER_BLEND\n\t, float4 d3dtometal_fb [[ color( 0 ) ]]\n#endif\n" );
 		out.PutString( " )\n{\n" );
 		out.PutString( "\tPSOut out;\n" );
 		out.PutString( "\tvec4 gl_FragCoord = in.gl_FragCoord;\n" );
@@ -3132,6 +3216,7 @@ bool D3DToMetal::TranslateShader( uint32* code, CUtlBuffer *pBufMSL, D3DToMetalS
 			"\t\t\tdiscard_fragment();\n"
 			"\t}\n"
 			"#endif\n" );
+		out.PutString( g_pPSSRGBWriteTail );
 		for ( int i = 0; i < 4; i++ )
 		{
 			if ( m_bOutputColorRegister[i] || i == 0 )

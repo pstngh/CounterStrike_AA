@@ -10,6 +10,9 @@
 // remember the last serial that used them, so the CPU knows when it may write
 // to them directly. Render passes open lazily at the first draw after the
 // targets change; a clear that comes first becomes the pass's load action.
+// D3DRS_SRGBWRITEENABLE picks the views a pass draws its targets through
+// when it opens; later draws that want the other views convert in their
+// pixel shaders, so the pass goes on.
 //
 //==================================================================================================
 #include "mtlinternal.h"
@@ -145,6 +148,29 @@ static bool IsDepthFormat( MTLPixelFormat f )
 	return f == MTLPixelFormatDepth16Unorm || f == MTLPixelFormatDepth32Float || f == MTLPixelFormatDepth32Float_Stencil8;
 }
 
+static double LinearToSRGB( double c )
+{
+	c = MAX( 0.0, MIN( 1.0, c ) );
+	return ( c <= 0.0031308 ) ? c * 12.92 : 1.055 * pow( c, 1.0 / 2.4 ) - 0.055;
+}
+
+static double SRGBToLinear( double c )
+{
+	c = MAX( 0.0, MIN( 1.0, c ) );
+	return ( c <= 0.04045 ) ? c / 12.92 : pow( ( c + 0.055 ) / 1.055, 2.4 );
+}
+
+// A clear color, given with sRGB write on or off, for a target drawn through
+// an sRGB view or a linear one: what the view must be given to store what
+// the clear meant
+static MTLClearColor ClearColorForView( MTLClearColor c, bool bSRGBWrite, bool bSRGBView )
+{
+	if ( bSRGBWrite == bSRGBView )
+		return c;
+	double ( *convert )( double ) = bSRGBWrite ? LinearToSRGB : SRGBToLinear;
+	return MTLClearColorMake( convert( c.red ), convert( c.green ), convert( c.blue ), c.alpha );
+}
+
 // ------------------------------------------------------------------------------------------------------------------------------ //
 // Init / shutdown
 // ------------------------------------------------------------------------------------------------------------------------------ //
@@ -186,7 +212,10 @@ CMtlDevice::CMtlDevice()
 	m_bPassHasDraws = false;
 	memset( &m_passKey, 0, sizeof( m_passKey ) );
 	m_nPassWidth = m_nPassHeight = 0;
+	m_nPassSRGBViewMask = m_nPassSRGBMask = 0;
+	m_bFramebufferFetch = false;
 	m_bPendingClearColor = m_bPendingClearDepth = m_bPendingClearStencil = false;
+	m_bPendingClearSRGB = false;
 	m_pendingClearColor = MTLClearColorMake( 0, 0, 0, 0 );
 	m_flPendingClearDepth = 1.0;
 	m_nPendingClearStencil = 0;
@@ -240,6 +269,7 @@ bool CMtlDevice::Init( IDirect3DDevice9 *pD3D, const D3DPRESENT_PARAMETERS *pPar
 	if ( !m_device )
 		return false;
 	m_queue = [m_device newCommandQueueWithMaxCommandBufferCount:64];
+	m_bFramebufferFetch = [m_device supportsFamily:MTLGPUFamilyApple1];		// all Apple GPUs
 
 	m_layer = g_pLauncherMgr ? (__bridge CAMetalLayer*)g_pLauncherMgr->GetMetalLayer() : nil;
 	if ( !m_layer )
@@ -540,6 +570,7 @@ id<MTLRenderCommandEncoder> CMtlDevice::RenderEncoder()
 	memset( &key, 0, sizeof( key ) );
 	uint width = 0x7FFFFFFF, height = 0x7FFFFFFF;
 	uint nSamples = 0;
+	uint nSRGBViewMask = 0, nSRGBMask = 0;
 	bool bAny = false;
 
 	for ( int i = 0; i < MTL_MAX_RENDER_TARGETS; i++ )
@@ -553,12 +584,15 @@ id<MTLRenderCommandEncoder> CMtlDevice::RenderEncoder()
 		nSamples = tex->m_nSamples;
 
 		id<MTLTexture> view = RenderView( tex, bSRGBWrite );
+		bool bSRGBView = view != tex->m_tex;
+		nSRGBViewMask |= tex->m_texRenderSRGB ? ( 1 << i ) : 0;
+		nSRGBMask |= bSRGBView ? ( 1 << i ) : 0;
 		MTLRenderPassColorAttachmentDescriptor *att = rp.colorAttachments[i];
 		att.texture = view;
 		att.level = surf->m_mip;
 		att.slice = ( tex->m_type == MTLTextureTypeCube ) ? surf->m_face : 0;
 		att.loadAction = m_bPendingClearColor ? MTLLoadActionClear : MTLLoadActionLoad;
-		att.clearColor = m_pendingClearColor;
+		att.clearColor = ClearColorForView( m_pendingClearColor, m_bPendingClearSRGB && tex->m_texRenderSRGB, bSRGBView );
 		att.storeAction = MTLStoreActionStore;
 		key.m_color[i] = view.pixelFormat;
 		width = MIN( width, tex->MipWidth( surf->m_mip ) );
@@ -607,6 +641,8 @@ id<MTLRenderCommandEncoder> CMtlDevice::RenderEncoder()
 	m_passKey = key;
 	m_nPassWidth = width;
 	m_nPassHeight = height;
+	m_nPassSRGBViewMask = nSRGBViewMask;
+	m_nPassSRGBMask = nSRGBMask;
 	if ( g_pMtlDump )
 		MtlDumpPass( this, rp );
 	m_bPassDirty = false;
@@ -646,8 +682,47 @@ id<MTLRenderCommandEncoder> CMtlDevice::RenderEncoder()
 // Shaders and pipelines
 // ------------------------------------------------------------------------------------------------------------------------------ //
 
+// Pixel functions are keyed by what is compiled into them: the alpha test's
+// D3DCMPFUNC (bits 0-3), the sRGB conversion of color 0 (bits 4-5) and, when
+// the shader blends, that (bit 6) and the D3DBLEND factors (bits 8-12 and
+// 13-17) and D3DBLENDOP (bits 18-20).
+static const uint32 kPixelKeyShaderBlend = 1 << 6;
+
+// A blend factor as the shader computes it: D3DBLEND_ZERO to SRCALPHASAT,
+// mapped as BlendFactor maps the rest
+static uint ShaderBlendFactor( uint f )
+{
+	if ( f == D3DBLEND_BOTHSRCALPHA )
+		return D3DBLEND_SRCALPHA;
+	if ( f == D3DBLEND_BOTHINVSRCALPHA )
+		return D3DBLEND_INVSRCALPHA;
+	return ( f >= D3DBLEND_ZERO && f <= D3DBLEND_SRCALPHASAT ) ? f : D3DBLEND_ONE;
+}
+
+static uint32 PixelFunctionKey( const MtlBlendState &blend )
+{
+	uint32 key = blend.m_alphaTestFunc | ( blend.m_srgbConvert << 4 );
+	if ( blend.m_srgbConvert && blend.m_bBlendEnable )
+	{
+		// The factors as ApplyBlend sets them
+		uint src = blend.m_srcBlend, dst = blend.m_dstBlend;
+		if ( src == D3DBLEND_BOTHINVSRCALPHA )
+		{
+			src = D3DBLEND_INVSRCALPHA;
+			dst = D3DBLEND_SRCALPHA;
+		}
+		else if ( src == D3DBLEND_BOTHSRCALPHA )
+		{
+			dst = D3DBLEND_INVSRCALPHA;
+		}
+		uint op = ( blend.m_blendOp >= D3DBLENDOP_ADD && blend.m_blendOp <= D3DBLENDOP_MAX ) ? blend.m_blendOp : D3DBLENDOP_ADD;
+		key |= kPixelKeyShaderBlend | ( ShaderBlendFactor( src ) << 8 ) | ( ShaderBlendFactor( dst ) << 13 ) | ( op << 18 );
+	}
+	return key;
+}
+
 // Vertex functions are keyed by the interpolants added for the pixel shader;
-// pixel functions by alpha test function.
+// pixel functions by what is compiled into them (PixelFunctionKey).
 id<MTLFunction> CMtlDevice::GetFunction( CMtlShader *pShader, uint32 nKey )
 {
 	std::lock_guard<std::mutex> lock( pShader->m_mutex );
@@ -671,8 +746,15 @@ id<MTLFunction> CMtlDevice::GetFunction( CMtlShader *pShader, uint32 nKey )
 			NSString *source = [NSString stringWithUTF8String:(const char*)msl.Base()];
 			if ( !pShader->m_bVertex && nKey )
 			{
-				// Picks the alpha test compiled into the translation
-				source = [NSString stringWithFormat:@"#define %s %u\n%@", D3DTOMETAL_ALPHA_TEST_MACRO, nKey, source];
+				// Picks the alpha test, sRGB conversion and blend compiled into the translation
+				NSMutableString *defines = [NSMutableString stringWithFormat:@"#define %s %u\n#define %s %u\n",
+					D3DTOMETAL_ALPHA_TEST_MACRO, nKey & 15, D3DTOMETAL_SRGB_WRITE_MACRO, ( nKey >> 4 ) & 3];
+				if ( nKey & kPixelKeyShaderBlend )
+				{
+					[defines appendFormat:@"#define %s 1\n#define %s %u\n#define %s %u\n#define %s %u\n", D3DTOMETAL_SHADER_BLEND_MACRO,
+						D3DTOMETAL_BLEND_SRC_MACRO, ( nKey >> 8 ) & 31, D3DTOMETAL_BLEND_DST_MACRO, ( nKey >> 13 ) & 31, D3DTOMETAL_BLEND_OP_MACRO, ( nKey >> 18 ) & 7];
+				}
+				source = [defines stringByAppendingString:source];
 			}
 			id<MTLLibrary> lib = [m_device newLibraryWithSource:source options:[MTLCompileOptions new] error:&err];
 			if ( lib )
@@ -759,7 +841,8 @@ static void ApplyBlend( MTLRenderPipelineColorAttachmentDescriptor *ca, const Mt
 	if ( blend.m_colorWriteMask & D3DCOLORWRITEENABLE_ALPHA )	mask |= MTLColorWriteMaskAlpha;
 	ca.writeMask = mask;
 
-	if ( blend.m_bBlendEnable )
+	// A draw that converts its sRGB write blends in the pixel shader
+	if ( blend.m_bBlendEnable && !blend.m_srgbConvert )
 	{
 		// ToGL applies one blend function to color and alpha; so does this
 		ca.blendingEnabled = YES;
@@ -798,7 +881,7 @@ static id<MTLRenderPipelineState> GetPipeline( CMtlDevice *dev, const MtlPipelin
 
 	id<MTLRenderPipelineState> ps = nil;
 	id<MTLFunction> vfn = dev->GetFunction( pVS, key.m_nExtraOutputs );
-	id<MTLFunction> ffn = dev->GetFunction( pPS, key.m_blend.m_alphaTestFunc );
+	id<MTLFunction> ffn = dev->GetFunction( pPS, PixelFunctionKey( key.m_blend ) );
 	if ( vfn && ffn )
 	{
 		MTLRenderPipelineDescriptor *pd = [MTLRenderPipelineDescriptor new];
@@ -821,7 +904,7 @@ static id<MTLRenderPipelineState> GetPipeline( CMtlDevice *dev, const MtlPipelin
 		char label[256];
 		V_snprintf( label, sizeof( label ), "%s + %s", pVS->m_pDebugLabel ? pVS->m_pDebugLabel : pVS->m_name, pPS->m_pDebugLabel ? pPS->m_pDebugLabel : pPS->m_name );
 		ps = CreatePipeline( dev, pd, label );
-		if ( !ps && key.m_blend.m_bBlendEnable )
+		if ( !ps && key.m_blend.m_bBlendEnable && !key.m_blend.m_srgbConvert )
 		{
 			// Some formats can't blend (32 bit float on older GPUs); draw unblended
 			for ( int i = 0; i < MTL_MAX_RENDER_TARGETS; i++ )
@@ -953,6 +1036,35 @@ static id<MTLTexture> SampledTexture( CMtlDevice *dev, int nSampler, uint nType,
 	return tex->m_texSample;
 }
 
+// How the next draw's sRGB write is met in the open pass. The views the pass
+// draws its targets through were chosen when it opened; a draw that wants the
+// other view of target 0 converts in its pixel shader, and blends there too,
+// reading the target, if it blends. A draw that writes no color needn't.
+// Other targets aren't converted, nor blends by D3DRS_BLENDFACTOR: then the
+// pass must reopen.
+bool CMtlDevice::SRGBConversion( uint8 *pConvert )
+{
+	const DWORD *rs = m_renderStates;
+	uint nWant = rs[D3DRS_SRGBWRITEENABLE] ? m_nPassSRGBViewMask : 0;
+	*pConvert = kMtlSRGBConvertNone;
+	if ( nWant == m_nPassSRGBMask || !( rs[D3DRS_COLORWRITEENABLE] & 0xF ) )
+		return true;
+
+	for ( int i = 1; i < MTL_MAX_RENDER_TARGETS; i++ )
+	{
+		if ( m_passKey.m_color[i] != MTLPixelFormatInvalid )
+			return false;
+	}
+	if ( rs[D3DRS_ALPHABLENDENABLE] )
+	{
+		DWORD src = rs[D3DRS_SRCBLEND], dst = rs[D3DRS_DESTBLEND];
+		if ( !m_bFramebufferFetch || src == D3DBLEND_BLENDFACTOR || src == D3DBLEND_INVBLENDFACTOR || dst == D3DBLEND_BLENDFACTOR || dst == D3DBLEND_INVBLENDFACTOR )
+			return false;
+	}
+	*pConvert = ( nWant & 1 ) ? kMtlSRGBConvertEncode : kMtlSRGBConvertDecode;
+	return true;
+}
+
 bool CMtlDevice::PrepareDraw( D3DPRIMITIVETYPE type )
 {
 	if ( !m_pVertexShader || !m_pPixelShader )
@@ -968,6 +1080,17 @@ bool CMtlDevice::PrepareDraw( D3DPRIMITIVETYPE type )
 		return false;
 
 	const DWORD *rs = m_renderStates;
+
+	// sRGB write through the views the pass opened with, converting if need be
+	uint8 srgbConvert;
+	if ( !SRGBConversion( &srgbConvert ) )
+	{
+		EndEncoders();
+		enc = RenderEncoder();
+		if ( !enc )
+			return false;
+		srgbConvert = kMtlSRGBConvertNone;
+	}
 
 	// Pipeline
 	MtlPipelineKey key;
@@ -998,6 +1121,7 @@ bool CMtlDevice::PrepareDraw( D3DPRIMITIVETYPE type )
 	{
 		key.m_blend.m_alphaTestFunc = (uint8)rs[D3DRS_ALPHAFUNC];
 	}
+	key.m_blend.m_srgbConvert = srgbConvert;
 
 	id<MTLRenderPipelineState> pipeline = GetPipeline( this, key, pVS, pPS, pDecl );
 	if ( !pipeline )
@@ -1376,6 +1500,7 @@ void CMtlDevice::Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCO
 		if ( bColor )
 		{
 			m_bPendingClearColor = true;
+			m_bPendingClearSRGB = m_renderStates[D3DRS_SRGBWRITEENABLE] != 0;
 			m_pendingClearColor = MTLClearColorMake( r, g, b, a );
 		}
 		if ( bDepth )
@@ -1394,6 +1519,19 @@ void CMtlDevice::Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCO
 	id<MTLRenderCommandEncoder> enc = RenderEncoder();
 	if ( !enc )
 		return;
+
+	// The color for the view the pass draws target 0 through; one color goes
+	// to every target, so the pass reopens if others are drawn through views
+	// of the other kind
+	uint nWantSRGB = m_renderStates[D3DRS_SRGBWRITEENABLE] ? m_nPassSRGBViewMask : 0;
+	if ( ( nWantSRGB ^ m_nPassSRGBMask ) & ~1u )
+	{
+		EndEncoders();
+		enc = RenderEncoder();
+		if ( !enc )
+			return;
+	}
+	MTLClearColor clearColor = ClearColorForView( MTLClearColorMake( r, g, b, a ), ( nWantSRGB & 1 ) != 0, ( m_nPassSRGBMask & 1 ) != 0 );
 
 	bool bAnyColor = false;
 	for ( int i = 0; i < MTL_MAX_RENDER_TARGETS; i++ )
@@ -1427,7 +1565,7 @@ void CMtlDevice::Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCO
 		QuadParams qp;
 		memset( &qp, 0, sizeof( qp ) );
 		qp.dst[0] = -1; qp.dst[1] = 1; qp.dst[2] = 1; qp.dst[3] = -1;
-		qp.color[0] = r; qp.color[1] = g; qp.color[2] = b; qp.color[3] = a;
+		qp.color[0] = clearColor.red; qp.color[1] = clearColor.green; qp.color[2] = clearColor.blue; qp.color[3] = clearColor.alpha;
 		qp.depth = MAX( 0.0f, MIN( 1.0f, z ) );
 		[enc setVertexBytes:&qp length:sizeof( qp ) atIndex:0];
 		if ( bAnyColor )

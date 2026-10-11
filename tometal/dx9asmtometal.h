@@ -43,6 +43,18 @@
 // D3DCMPFUNC of the alpha test, or 0 (the default) for none.
 #define D3DTOMETAL_ALPHA_TEST_MACRO		"D3DTOMETAL_ALPHA_TEST_FUNC"
 
+// Macros the generated pixel functions are compiled with to write color 0 in
+// the other sRGB space from the view the pass draws the target through:
+// 1 encodes to sRGB, 2 decodes for an sRGB view to encode back, 0 (the
+// default) leaves it. With SHADER_BLEND 1 the function blends with the
+// framebuffer itself, by BLEND_SRC and BLEND_DST (D3DBLEND_ZERO to
+// D3DBLEND_SRCALPHASAT) and BLEND_OP (a D3DBLENDOP).
+#define D3DTOMETAL_SRGB_WRITE_MACRO		"D3DTOMETAL_SRGB_WRITE"
+#define D3DTOMETAL_SHADER_BLEND_MACRO	"D3DTOMETAL_SHADER_BLEND"
+#define D3DTOMETAL_BLEND_SRC_MACRO		"D3DTOMETAL_BLEND_SRC"
+#define D3DTOMETAL_BLEND_DST_MACRO		"D3DTOMETAL_BLEND_DST"
+#define D3DTOMETAL_BLEND_OP_MACRO		"D3DTOMETAL_BLEND_OP"
+
 // Layout of the buffer bound at D3DTOMETAL_VS_MISC_BUFFER. Must match the
 // struct emitted by the translator.
 struct D3DToMetalVSMisc

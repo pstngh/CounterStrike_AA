@@ -188,7 +188,7 @@ struct CMtlShader
 	uint32				m_nId;				// unique, for pipeline keys
 
 	// Compiled functions. Vertex shaders: by extra interpolant mask. Pixel
-	// shaders: by alpha test function.
+	// shaders: by what is compiled into them (see PixelFunctionKey).
 	std::unordered_map< uint32, id<MTLFunction> > m_functions;
 	std::mutex			m_mutex;
 };
@@ -233,7 +233,17 @@ struct MtlBlendState
 	uint8	m_colorWriteMask;	// D3DCOLORWRITEENABLE bits
 	uint8	m_bAlphaToCoverage;
 	uint8	m_alphaTestFunc;	// 0 = off, else D3DCMPFUNC
-	uint8	m_pad;
+	uint8	m_srgbConvert;		// EMtlSRGBConvert
+};
+
+// A pass draws its targets through the views the sRGB write of its first draw
+// wants. A later draw that wants the other has its pixel shader convert color
+// 0, and blend too if it blends, instead of the pass ending.
+enum EMtlSRGBConvert
+{
+	kMtlSRGBConvertNone,		// the view is the one the draw wants
+	kMtlSRGBConvertEncode,		// sRGB write through the linear view: the shader encodes
+	kMtlSRGBConvertDecode,		// no sRGB write through the sRGB view: the shader decodes, the target encodes back
 };
 
 struct MtlDepthStencilKey
@@ -314,6 +324,7 @@ public:
 
 	// Draw
 	bool PrepareDraw( D3DPRIMITIVETYPE type );
+	bool SRGBConversion( uint8 *pConvert );		// EMtlSRGBConvert for the next draw, false if the pass must reopen
 	void Clear( DWORD nCount, const D3DRECT *pRects, DWORD nFlags, D3DCOLOR color, float z, DWORD stencil );
 	void Draw( D3DPRIMITIVETYPE type, uint nStartVertex, uint nPrimCount );
 	void DrawIndexed( D3DPRIMITIVETYPE type, int nBaseVertex, uint nMinVertex, uint nNumVertices, uint nStartIndex, uint nPrimCount );
@@ -384,12 +395,16 @@ public:
 	std::vector< std::pair<uint64, id<MTLCommandBuffer> > >	m_inFlight;	// committed, maybe not finished
 	dispatch_semaphore_t		m_frameSemaphore;
 
-	bool						m_bPassDirty;			// targets or sRGB write changed: next draw opens a new pass
+	bool						m_bPassDirty;			// targets changed: next draw opens a new pass
 	bool						m_bPassHasDraws;
 	MtlRenderPassKey			m_passKey;
 	uint						m_nPassWidth, m_nPassHeight;
+	uint						m_nPassSRGBViewMask;	// bit n: color target n has an sRGB view
+	uint						m_nPassSRGBMask;		// bit n: the pass draws color target n through it
+	bool						m_bFramebufferFetch;	// pixel shaders can read the target to blend
 	// Clears that arrive before anything is drawn in a pass become load actions
 	bool						m_bPendingClearColor, m_bPendingClearDepth, m_bPendingClearStencil;
+	bool						m_bPendingClearSRGB;	// the color clear came with sRGB write on
 	MTLClearColor				m_pendingClearColor;
 	double						m_flPendingClearDepth;
 	uint						m_nPendingClearStencil;
