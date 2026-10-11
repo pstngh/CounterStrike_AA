@@ -246,10 +246,13 @@ static HRESULT LockSlice( CMtlTex *pTex, uint face, uint mip, uint x0, uint y0, 
 		b.m_pData = (uint8*)calloc( 1, size );
 		b.m_nPitch = pitch;
 		b.m_nSlicePitch = slicePitch;
-		// A partial write must keep what's outside the box
-		if ( bHasData && ( bPartial || bReadBack ) )
+		// As in D3D (and ToGL), a lock that doesn't discard sees the slice's
+		// contents, even when it covers all of it: lightmap pages are locked
+		// whole and only the surfaces that changed are written.
+		if ( bHasData && !( flags & D3DLOCK_DISCARD ) )
 		{
 			g_pMtlDevice->ReadSlice( pTex, face, mip, b );
+			b.m_bKeep = !bRenderable;
 		}
 	}
 	else if ( bReadBack && bRenderable )
@@ -290,9 +293,10 @@ static HRESULT UnlockSlice( CMtlTex *pTex, uint face, uint mip )
 		pTex->m_pSliceValid[ nSlice ] = 1;
 	}
 
-	// Keep the copy of slices updated piecemeal (lightmaps, for one) and of
-	// formats converted on upload, which can't be read back; free the rest.
-	if ( !b.m_bPartial && pTex->m_pFormat->m_eConvert == kMtlConvertNone && !( pTex->m_nFlags & kMtlTexRenderable ) )
+	// Keep the copy of slices updated piecemeal or after their first upload
+	// (lightmaps, for one) and of formats converted on upload, which can't be
+	// read back; free the rest.
+	if ( !b.m_bPartial && !b.m_bKeep && pTex->m_pFormat->m_eConvert == kMtlConvertNone && !( pTex->m_nFlags & kMtlTexRenderable ) )
 	{
 		free( b.m_pData );
 		b.m_pData = NULL;

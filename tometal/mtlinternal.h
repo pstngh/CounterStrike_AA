@@ -94,7 +94,8 @@ enum EMtlTexFlags
 };
 
 // CPU copy of one face/mip, kept while locked; kept afterwards for slices
-// that were locked partially, so the next partial lock needn't read back.
+// that are updated after their first upload, so the next lock needn't read
+// back.
 struct MtlSliceBacking
 {
 	uint8			*m_pData;
@@ -103,6 +104,7 @@ struct MtlSliceBacking
 	bool			m_bLocked;
 	bool			m_bReadOnly;
 	bool			m_bPartial;		// the lock covers part of the slice
+	bool			m_bKeep;		// the slice was locked again after its first upload
 	uint			m_x, m_y, m_z, m_w, m_h, m_d;	// locked box, in texels
 };
 
