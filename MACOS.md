@@ -150,7 +150,10 @@ it in a game directory yourself:
 The script records the maps installed at that moment inside the app, because
 listing the maps folder at startup can stall when it is synced by File
 Provider. The prebuilt app has no such list and reads `csgo/maps` when it
-starts; run the script again to record yours.
+starts; run the script again to record yours. The repository has no icon for
+the app: to give it one, put a square PNG named `launcher-icon.png` in the game
+directory before running the script, which builds it into the app at every size
+up to its own.
 
 Open `CSGO Launcher.app` in that directory to choose an installed map, bot count
 and difficulty, tick rate, and windowed or fullscreen resolution. Tick rate

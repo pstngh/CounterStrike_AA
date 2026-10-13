@@ -26,6 +26,28 @@ maps_manifest="$bundle/Contents/Resources/maps.txt"
 for map_file in "$game_directory"/csgo/maps/*.bsp(N); do
     print -r -- "${map_file:t:r}" >> "$maps_manifest"
 done
+# An icon is optional and comes from the game directory, never the repository:
+# a square launcher-icon.png there becomes the app's icon, at every size up to
+# its own.
+icon_source="$game_directory/launcher-icon.png"
+if [[ -f "$icon_source" ]]; then
+    icon_width="$(sips -g pixelWidth "$icon_source" | awk '/pixelWidth/ { print $2 }')"
+    iconset="$staging_directory/AppIcon.iconset"
+    mkdir -p "$iconset"
+    for size in 16 32 128 256 512; do
+        for scale in 1 2; do
+            (( size * scale <= icon_width )) || continue
+            suffix=""
+            if (( scale == 2 )); then
+                suffix="@2x"
+            fi
+            sips -z $(( size * scale )) $(( size * scale )) "$icon_source" \
+                --out "$iconset/icon_${size}x${size}${suffix}.png" > /dev/null
+        done
+    done
+    iconutil -c icns "$iconset" -o "$bundle/Contents/Resources/AppIcon.icns"
+    /usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string AppIcon' "$bundle/Contents/Info.plist"
+fi
 swift_compiler="/Library/Developer/CommandLineTools/usr/bin/swiftc"
 macos_sdk="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
 if [[ -z "${DEVELOPER_DIR:-}" && -x /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc ]]; then
